@@ -2,12 +2,20 @@ import { useCallback, useEffect, useState } from "react";
 import type { Project, ProjectStatus } from "../domain/types.js";
 import { projectRepository } from "../stores/project-store.js";
 
+function toLocalDateString(date: Date): string {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
 export function ProjectListPage() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [status, setStatus] = useState<ProjectStatus>("planning");
   const [startDate, setStartDate] = useState("");
+  const [error, setError] = useState<string | null>(null);
 
   const loadProjects = useCallback(async () => {
     setProjects(await projectRepository.findAll());
@@ -19,25 +27,30 @@ export function ProjectListPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
     if (!name.trim()) return;
 
-    const now = new Date().toISOString();
-    const project: Project = {
-      id: crypto.randomUUID(),
-      name: name.trim(),
-      description: description.trim(),
-      status,
-      startDate: startDate || now.slice(0, 10),
-      createdAt: now,
-      updatedAt: now,
-    };
+    try {
+      const now = new Date();
+      const project: Project = {
+        id: crypto.randomUUID(),
+        name: name.trim(),
+        description: description.trim(),
+        status,
+        startDate: startDate || toLocalDateString(now),
+        createdAt: now.toISOString(),
+        updatedAt: now.toISOString(),
+      };
 
-    await projectRepository.create(project);
-    setName("");
-    setDescription("");
-    setStatus("planning");
-    setStartDate("");
-    await loadProjects();
+      await projectRepository.create(project);
+      setName("");
+      setDescription("");
+      setStatus("planning");
+      setStartDate("");
+      await loadProjects();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "作成に失敗しました");
+    }
   };
 
   return (
@@ -68,6 +81,7 @@ export function ProjectListPage() {
       )}
 
       <h3>新規プロジェクト</h3>
+      {error && <p role="alert">{error}</p>}
       <form onSubmit={handleSubmit}>
         <div>
           <label>

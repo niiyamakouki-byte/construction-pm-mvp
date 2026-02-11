@@ -8,16 +8,20 @@ export class InMemoryRepository<T extends BaseEntity>
   private store = new Map<string, T>();
 
   async findById(id: string): Promise<T | null> {
-    return this.store.get(id) ?? null;
+    const entity = this.store.get(id);
+    return entity ? structuredClone(entity) : null;
   }
 
   async findAll(): Promise<T[]> {
-    return [...this.store.values()];
+    return [...this.store.values()].map((e) => structuredClone(e));
   }
 
   async create(entity: T): Promise<T> {
-    this.store.set(entity.id, entity);
-    return entity;
+    if (this.store.has(entity.id)) {
+      throw new Error(`Entity with id "${entity.id}" already exists`);
+    }
+    this.store.set(entity.id, structuredClone(entity));
+    return structuredClone(entity);
   }
 
   async update(
@@ -36,7 +40,7 @@ export class InMemoryRepository<T extends BaseEntity>
     } as T;
 
     this.store.set(id, updated);
-    return updated;
+    return structuredClone(updated);
   }
 
   async delete(id: string): Promise<boolean> {
