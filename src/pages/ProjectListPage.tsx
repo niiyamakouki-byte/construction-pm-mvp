@@ -9,6 +9,20 @@ function toLocalDateString(date: Date): string {
   return `${y}-${m}-${d}`;
 }
 
+const statusLabel: Record<ProjectStatus, string> = {
+  planning: "計画中",
+  active: "進行中",
+  completed: "完了",
+  on_hold: "保留",
+};
+
+const statusColor: Record<ProjectStatus, string> = {
+  planning: "bg-blue-100 text-blue-800",
+  active: "bg-green-100 text-green-800",
+  completed: "bg-slate-100 text-slate-800",
+  on_hold: "bg-amber-100 text-amber-800",
+};
+
 export function ProjectListPage() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [name, setName] = useState("");
@@ -54,82 +68,115 @@ export function ProjectListPage() {
   };
 
   return (
-    <section>
-      <h2>プロジェクト一覧</h2>
+    <div className="space-y-8">
+      {/* Project List */}
+      <section>
+        <h2 className="mb-4 text-lg font-semibold text-slate-900">
+          プロジェクト一覧
+        </h2>
 
-      {projects.length === 0 ? (
-        <p>プロジェクトがありません</p>
-      ) : (
-        <table>
-          <thead>
-            <tr>
-              <th>名前</th>
-              <th>ステータス</th>
-              <th>開始日</th>
-            </tr>
-          </thead>
-          <tbody>
-            {projects.map((p) => (
-              <tr key={p.id}>
-                <td>{p.name}</td>
-                <td>{p.status}</td>
-                <td>{p.startDate}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
+        {projects.length === 0 ? (
+          <div className="rounded-lg border border-dashed border-slate-300 bg-white p-8 text-center text-slate-500">
+            <p>プロジェクトがありません</p>
+          </div>
+        ) : (
+          <div className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
+            <table className="w-full text-left text-sm">
+              <thead className="border-b border-slate-200 bg-slate-50">
+                <tr>
+                  <th className="px-4 py-3 font-medium text-slate-600">名前</th>
+                  <th className="px-4 py-3 font-medium text-slate-600">ステータス</th>
+                  <th className="px-4 py-3 font-medium text-slate-600">開始日</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {projects.map((p) => (
+                  <tr key={p.id} className="hover:bg-slate-50">
+                    <td className="px-4 py-3 font-medium text-slate-900">{p.name}</td>
+                    <td className="px-4 py-3">
+                      <span className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-medium ${statusColor[p.status]}`}>
+                        {statusLabel[p.status]}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-slate-600">{p.startDate}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
 
-      <h3>新規プロジェクト</h3>
-      {error && <p role="alert">{error}</p>}
-      <form onSubmit={handleSubmit}>
-        <div>
-          <label>
-            名前
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              required
-            />
-          </label>
-        </div>
-        <div>
-          <label>
-            説明
-            <input
-              type="text"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-            />
-          </label>
-        </div>
-        <div>
-          <label>
-            ステータス
-            <select
-              value={status}
-              onChange={(e) => setStatus(e.target.value as ProjectStatus)}
-            >
-              <option value="planning">planning</option>
-              <option value="active">active</option>
-              <option value="completed">completed</option>
-              <option value="on_hold">on_hold</option>
-            </select>
-          </label>
-        </div>
-        <div>
-          <label>
-            開始日
-            <input
-              type="date"
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-            />
-          </label>
-        </div>
-        <button type="submit">作成</button>
-      </form>
-    </section>
+      {/* New Project Form */}
+      <section className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+        <h3 className="mb-4 text-base font-semibold text-slate-900">
+          新規プロジェクト
+        </h3>
+
+        {error && (
+          <div role="alert" className="mb-4 rounded-md bg-red-50 px-4 py-3 text-sm text-red-700">
+            {error}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-slate-700">
+              名前
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required
+                className="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-slate-500 focus:ring-1 focus:ring-slate-500 focus:outline-none"
+                placeholder="プロジェクト名を入力"
+              />
+            </label>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-700">
+              説明
+              <input
+                type="text"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                className="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-slate-500 focus:ring-1 focus:ring-slate-500 focus:outline-none"
+                placeholder="説明を入力（任意）"
+              />
+            </label>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <label className="block text-sm font-medium text-slate-700">
+              ステータス
+              <select
+                value={status}
+                onChange={(e) => setStatus(e.target.value as ProjectStatus)}
+                className="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-slate-500 focus:ring-1 focus:ring-slate-500 focus:outline-none"
+              >
+                <option value="planning">計画中</option>
+                <option value="active">進行中</option>
+                <option value="completed">完了</option>
+                <option value="on_hold">保留</option>
+              </select>
+            </label>
+            <label className="block text-sm font-medium text-slate-700">
+              開始日
+              <input
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                className="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-slate-500 focus:ring-1 focus:ring-slate-500 focus:outline-none"
+              />
+            </label>
+          </div>
+          <button
+            type="submit"
+            className="rounded-md bg-slate-800 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-slate-700 focus:ring-2 focus:ring-slate-500 focus:ring-offset-2 focus:outline-none"
+          >
+            作成
+          </button>
+        </form>
+      </section>
+    </div>
   );
 }
