@@ -1,4 +1,4 @@
-import { InMemoryRepository } from "../infra/in-memory-repository.js";
 import type { Project } from "../domain/types.js";
+import { createAppRepository } from "../infra/create-app-repository.js";
 
-export const projectRepository = new InMemoryRepository<Project>();
+export const projectRepository = createAppRepository<Project>("projects");
