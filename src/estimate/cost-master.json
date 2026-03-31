@@ -1,0 +1,130 @@
+{
+  "version": "1.0.0",
+  "updatedAt": "2026-03-31",
+  "currency": "JPY",
+  "taxRate": 0.10,
+  "categories": [
+    {
+      "id": "demolition",
+      "name": "解体・撤去",
+      "items": [
+        { "code": "DM-001", "name": "内装解体（木造）", "unit": "㎡", "unitPrice": 3500, "note": "壁・天井・床の撤去" },
+        { "code": "DM-002", "name": "内装解体（RC造）", "unit": "㎡", "unitPrice": 4500, "note": "コンクリート壁含む" },
+        { "code": "DM-003", "name": "間仕切り撤去（LGS）", "unit": "㎡", "unitPrice": 2800, "note": "ボード+スタッド" },
+        { "code": "DM-004", "name": "間仕切り撤去（木造）", "unit": "㎡", "unitPrice": 2200, "note": "" },
+        { "code": "DM-005", "name": "床材撤去（タイルカーペット）", "unit": "㎡", "unitPrice": 800, "note": "" },
+        { "code": "DM-006", "name": "床材撤去（フローリング）", "unit": "㎡", "unitPrice": 1500, "note": "" },
+        { "code": "DM-007", "name": "天井撤去（ボード）", "unit": "㎡", "unitPrice": 1200, "note": "" },
+        { "code": "DM-008", "name": "産廃処分費", "unit": "㎥", "unitPrice": 18000, "note": "混合廃棄物" },
+        { "code": "DM-009", "name": "養生費", "unit": "式", "unitPrice": 50000, "note": "共用部養生含む" },
+        { "code": "DM-010", "name": "搬出・運搬費", "unit": "式", "unitPrice": 80000, "note": "2tトラック想定" }
+      ]
+    },
+    {
+      "id": "interior",
+      "name": "内装・仕上げ",
+      "items": [
+        { "code": "IN-001", "name": "LGS間仕切り（65型）", "unit": "㎡", "unitPrice": 5500, "note": "片面ボード張り" },
+        { "code": "IN-002", "name": "LGS間仕切り（65型・両面）", "unit": "㎡", "unitPrice": 8500, "note": "両面ボード張り" },
+        { "code": "IN-003", "name": "石膏ボード張り（12.5mm）", "unit": "㎡", "unitPrice": 2800, "note": "ビス留め" },
+        { "code": "IN-004", "name": "石膏ボード張り（二重張り）", "unit": "㎡", "unitPrice": 4200, "note": "遮音仕様" },
+        { "code": "IN-005", "name": "クロス張り（量産品）", "unit": "㎡", "unitPrice": 1200, "note": "サンゲツSP等" },
+        { "code": "IN-006", "name": "クロス張り（1000番台）", "unit": "㎡", "unitPrice": 1800, "note": "サンゲツRE等" },
+        { "code": "IN-007", "name": "塗装仕上げ（EP）", "unit": "㎡", "unitPrice": 1500, "note": "下地処理込み" },
+        { "code": "IN-008", "name": "タイルカーペット", "unit": "㎡", "unitPrice": 4500, "note": "材工共" },
+        { "code": "IN-009", "name": "フローリング（複合）", "unit": "㎡", "unitPrice": 8000, "note": "材工共" },
+        { "code": "IN-010", "name": "長尺シート", "unit": "㎡", "unitPrice": 5000, "note": "材工共" },
+        { "code": "IN-011", "name": "フロアタイル", "unit": "㎡", "unitPrice": 5500, "note": "材工共" },
+        { "code": "IN-012", "name": "巾木（ビニル）", "unit": "m", "unitPrice": 800, "note": "H=60mm" },
+        { "code": "IN-013", "name": "巾木（木製）", "unit": "m", "unitPrice": 1500, "note": "H=60mm" },
+        { "code": "IN-014", "name": "システム天井", "unit": "㎡", "unitPrice": 6500, "note": "Tバー+岩綿吸音板" },
+        { "code": "IN-015", "name": "石膏ボード天井", "unit": "㎡", "unitPrice": 4500, "note": "下地LGS込み" }
+      ]
+    },
+    {
+      "id": "electrical",
+      "name": "電気設備",
+      "items": [
+        { "code": "EL-001", "name": "コンセント新設（2口）", "unit": "箇所", "unitPrice": 12000, "note": "配線込み" },
+        { "code": "EL-002", "name": "コンセント増設（既設分岐）", "unit": "箇所", "unitPrice": 8000, "note": "" },
+        { "code": "EL-003", "name": "専用回路新設（20A）", "unit": "回路", "unitPrice": 35000, "note": "分電盤より" },
+        { "code": "EL-004", "name": "照明器具（LED直管40W型）", "unit": "台", "unitPrice": 15000, "note": "材工共" },
+        { "code": "EL-005", "name": "照明器具（LEDダウンライト）", "unit": "台", "unitPrice": 12000, "note": "材工共" },
+        { "code": "EL-006", "name": "照明器具（LEDシーリング）", "unit": "台", "unitPrice": 18000, "note": "材工共" },
+        { "code": "EL-007", "name": "照明スイッチ新設", "unit": "箇所", "unitPrice": 8000, "note": "片切" },
+        { "code": "EL-008", "name": "分電盤交換（20回路）", "unit": "面", "unitPrice": 120000, "note": "材工共" },
+        { "code": "EL-009", "name": "LAN配線（CAT6A）", "unit": "箇所", "unitPrice": 15000, "note": "ジャック込み" },
+        { "code": "EL-010", "name": "TV配線", "unit": "箇所", "unitPrice": 12000, "note": "" },
+        { "code": "EL-011", "name": "インターホン設置", "unit": "式", "unitPrice": 45000, "note": "モニター付き" },
+        { "code": "EL-012", "name": "火災報知器", "unit": "台", "unitPrice": 8000, "note": "感知器+ベース" }
+      ]
+    },
+    {
+      "id": "plumbing",
+      "name": "給排水・衛生設備",
+      "items": [
+        { "code": "PL-001", "name": "給水管配管（架橋ポリ）", "unit": "m", "unitPrice": 6000, "note": "13A" },
+        { "code": "PL-002", "name": "排水管配管（VP）", "unit": "m", "unitPrice": 8000, "note": "50A" },
+        { "code": "PL-003", "name": "洋式便器（一般）", "unit": "台", "unitPrice": 150000, "note": "ウォシュレット付き" },
+        { "code": "PL-004", "name": "洋式便器（タンクレス）", "unit": "台", "unitPrice": 280000, "note": "TOTO等上位" },
+        { "code": "PL-005", "name": "洗面化粧台（W750）", "unit": "台", "unitPrice": 120000, "note": "材工共" },
+        { "code": "PL-006", "name": "洗面化粧台（W900）", "unit": "台", "unitPrice": 180000, "note": "材工共" },
+        { "code": "PL-007", "name": "ユニットバス（1216）", "unit": "式", "unitPrice": 650000, "note": "材工共" },
+        { "code": "PL-008", "name": "ユニットバス（1616）", "unit": "式", "unitPrice": 850000, "note": "材工共" },
+        { "code": "PL-009", "name": "キッチン（I型2400）", "unit": "式", "unitPrice": 450000, "note": "材工共" },
+        { "code": "PL-010", "name": "キッチン（I型2550）", "unit": "式", "unitPrice": 600000, "note": "材工共" },
+        { "code": "PL-011", "name": "給湯器（24号）", "unit": "台", "unitPrice": 180000, "note": "材工共" },
+        { "code": "PL-012", "name": "手洗い器", "unit": "台", "unitPrice": 80000, "note": "トイレ用小型" }
+      ]
+    },
+    {
+      "id": "hvac",
+      "name": "空調・換気設備",
+      "items": [
+        { "code": "HV-001", "name": "壁掛けエアコン（2.2kW）", "unit": "台", "unitPrice": 120000, "note": "6畳用・材工共" },
+        { "code": "HV-002", "name": "壁掛けエアコン（4.0kW）", "unit": "台", "unitPrice": 180000, "note": "14畳用・材工共" },
+        { "code": "HV-003", "name": "天井カセット型（5.0kW）", "unit": "台", "unitPrice": 350000, "note": "業務用・材工共" },
+        { "code": "HV-004", "name": "天井カセット型（8.0kW）", "unit": "台", "unitPrice": 500000, "note": "業務用・材工共" },
+        { "code": "HV-005", "name": "換気扇（天井埋込）", "unit": "台", "unitPrice": 25000, "note": "ダクト接続型" },
+        { "code": "HV-006", "name": "換気扇（壁付）", "unit": "台", "unitPrice": 15000, "note": "プロペラ型" },
+        { "code": "HV-007", "name": "全熱交換器（天井埋込）", "unit": "台", "unitPrice": 180000, "note": "ロスナイ等" },
+        { "code": "HV-008", "name": "レンジフード", "unit": "台", "unitPrice": 85000, "note": "材工共" },
+        { "code": "HV-009", "name": "エアコン冷媒配管延長", "unit": "m", "unitPrice": 5000, "note": "被覆銅管ペア" },
+        { "code": "HV-010", "name": "ダクト工事", "unit": "m", "unitPrice": 8000, "note": "スパイラルφ150" }
+      ]
+    },
+    {
+      "id": "fixtures",
+      "name": "建具・家具・金物",
+      "items": [
+        { "code": "FX-001", "name": "木製建具（フラッシュ戸）", "unit": "枚", "unitPrice": 65000, "note": "枠込み・W800" },
+        { "code": "FX-002", "name": "木製建具（引戸）", "unit": "枚", "unitPrice": 85000, "note": "Vレール・枠込み" },
+        { "code": "FX-003", "name": "ガラス入り建具", "unit": "枚", "unitPrice": 95000, "note": "透明ガラス" },
+        { "code": "FX-004", "name": "鋼製建具（SD）", "unit": "枚", "unitPrice": 120000, "note": "枠込み" },
+        { "code": "FX-005", "name": "アルミパーティション", "unit": "㎡", "unitPrice": 25000, "note": "スチール系" },
+        { "code": "FX-006", "name": "ガラスパーティション", "unit": "㎡", "unitPrice": 45000, "note": "8mm強化ガラス" },
+        { "code": "FX-007", "name": "造作カウンター", "unit": "m", "unitPrice": 45000, "note": "メラミン化粧板" },
+        { "code": "FX-008", "name": "造作棚（可動棚）", "unit": "m", "unitPrice": 35000, "note": "W900×D300" },
+        { "code": "FX-009", "name": "クローゼット造作", "unit": "式", "unitPrice": 150000, "note": "枕棚+パイプ" },
+        { "code": "FX-010", "name": "下駄箱造作", "unit": "式", "unitPrice": 120000, "note": "W1200程度" },
+        { "code": "FX-011", "name": "ドアクローザー", "unit": "台", "unitPrice": 15000, "note": "材工共" },
+        { "code": "FX-012", "name": "レバーハンドル錠", "unit": "セット", "unitPrice": 12000, "note": "材工共" },
+        { "code": "FX-013", "name": "鏡（W600×H1800）", "unit": "枚", "unitPrice": 25000, "note": "取付費込み" }
+      ]
+    },
+    {
+      "id": "overhead",
+      "name": "諸経費・管理費",
+      "items": [
+        { "code": "OH-001", "name": "現場管理費", "unit": "%", "unitPrice": 0, "note": "直接工事費の8-12%" },
+        { "code": "OH-002", "name": "一般管理費", "unit": "%", "unitPrice": 0, "note": "工事原価の5-8%" },
+        { "code": "OH-003", "name": "設計・監理費", "unit": "式", "unitPrice": 0, "note": "工事費の5-10%" },
+        { "code": "OH-004", "name": "仮設電気・水道", "unit": "式", "unitPrice": 30000, "note": "" },
+        { "code": "OH-005", "name": "安全対策費", "unit": "式", "unitPrice": 50000, "note": "標識・消火器等" },
+        { "code": "OH-006", "name": "クリーニング費", "unit": "㎡", "unitPrice": 500, "note": "竣工クリーニング" },
+        { "code": "OH-007", "name": "現場経費（小運搬）", "unit": "式", "unitPrice": 80000, "note": "資材搬入搬出" },
+        { "code": "OH-008", "name": "交通費・駐車場代", "unit": "式", "unitPrice": 30000, "note": "工期中" }
+      ]
+    }
+  ]
+}
