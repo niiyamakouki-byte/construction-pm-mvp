@@ -171,6 +171,210 @@ describe("nl-estimate-parser", () => {
     });
   });
 
+  describe("realistic construction descriptions", () => {
+    it("20坪オフィスリノベ: クロス・タイルカーペット・岩綿吸音板・LED20台・エアコン3台", () => {
+      const result = parseNaturalLanguage(
+        "20坪のオフィスのリノベーション、壁はクロス張替え、床はタイルカーペット、天井は岩綿吸音板、LED照明20台、エアコン3台",
+      );
+
+      expect(result.detectedArea?.source).toBe("tsubo");
+      expect(result.detectedArea?.sqm).toBeCloseTo(66.12, 0);
+
+      // クロス
+      const cross = result.items.find((i) => i.code === "IN-005");
+      expect(cross).toBeDefined();
+      expect(cross!.quantity).toBe(78); // 壁面積 ceil
+
+      // タイルカーペット
+      const carpet = result.items.find((i) => i.code === "IN-008");
+      expect(carpet).toBeDefined();
+      expect(carpet!.quantity).toBe(67); // 床面積 ceil(66.12)
+
+      // 岩綿吸音板 → システム天井 IN-014
+      const ceiling = result.items.find((i) => i.code === "IN-014");
+      expect(ceiling).toBeDefined();
+      expect(ceiling!.quantity).toBe(67);
+
+      // 天井が2重マッチしていないこと
+      expect(result.items.filter((i) => i.code === "IN-015")).toHaveLength(0);
+
+      // LED照明20台
+      const led = result.items.find((i) => i.code === "EL-004");
+      expect(led).toBeDefined();
+      expect(led!.quantity).toBe(20);
+
+      // エアコン3台 (20台ではない!)
+      const ac = result.items.find((i) => i.code === "HV-001");
+      expect(ac).toBeDefined();
+      expect(ac!.quantity).toBe(3);
+
+      // 5品目マッチ
+      expect(result.items).toHaveLength(5);
+
+      // 不要な未マッチ警告がないこと
+      expect(result.unmatched).toHaveLength(0);
+    });
+
+    it("6畳の洋室、壁紙張替えとフローリング", () => {
+      const result = parseNaturalLanguage("6畳の洋室、壁紙張替えとフローリング");
+
+      expect(result.detectedTatami).toBe(6);
+
+      const wallpaper = result.items.find((i) => i.code === "IN-005");
+      expect(wallpaper).toBeDefined();
+      expect(wallpaper!.quantity).toBe(30); // 壁面積
+
+      const floor = result.items.find((i) => i.code === "IN-009");
+      expect(floor).toBeDefined();
+      expect(floor!.quantity).toBe(10); // 床面積 ceil(9.72)
+
+      expect(result.items).toHaveLength(2);
+      expect(result.unmatched).toHaveLength(0);
+    });
+
+    it("店舗の内装解体とスケルトン戻し50㎡", () => {
+      const result = parseNaturalLanguage("店舗の内装解体とスケルトン戻し50㎡");
+
+      expect(result.detectedArea?.sqm).toBe(50);
+      expect(result.detectedArea?.source).toBe("sqm");
+
+      // 内装解体 DM-001
+      const demolition = result.items.find((i) => i.code === "DM-001");
+      expect(demolition).toBeDefined();
+      expect(demolition!.quantity).toBe(50);
+
+      // "スケルトン"もDM-001にマッチするが、同一コードなのでdedup
+      expect(result.items.filter((i) => i.code === "DM-001")).toHaveLength(1);
+    });
+
+    it("間仕切りLGS壁新設5m×2.4m、両面PB+クロス", () => {
+      const result = parseNaturalLanguage("間仕切りLGS壁新設5m×2.4m、両面PB+クロス");
+
+      // 寸法検出: 5×2.4=12㎡
+      expect(result.detectedArea?.sqm).toBe(12);
+      expect(result.detectedArea?.source).toBe("dimensions");
+
+      // 間仕切り IN-002 (両面) → 12㎡
+      const partition = result.items.find((i) => i.code === "IN-002");
+      expect(partition).toBeDefined();
+      expect(partition!.quantity).toBe(12);
+
+      // クロス IN-005 → 両面なので24㎡
+      const cross = result.items.find((i) => i.code === "IN-005");
+      expect(cross).toBeDefined();
+      expect(cross!.quantity).toBe(24); // 12㎡ × 両面 = 24㎡
+    });
+  });
+
+  describe("count extraction across clauses", () => {
+    it("does not bleed counts across comma-separated items", () => {
+      const result = parseNaturalLanguage("LED照明20台、エアコン3台");
+
+      const led = result.items.find((i) => i.code === "EL-004");
+      expect(led!.quantity).toBe(20);
+
+      const ac = result.items.find((i) => i.code === "HV-001");
+      expect(ac!.quantity).toBe(3);
+    });
+
+    it("handles counts before keyword: '3台エアコン'", () => {
+      const result = parseNaturalLanguage("3台エアコン設置");
+      const ac = result.items.find((i) => i.code === "HV-001");
+      expect(ac).toBeDefined();
+      expect(ac!.quantity).toBe(3);
+    });
+  });
+
+  describe("scaffolding keywords", () => {
+    it("枠組足場", () => {
+      const result = parseNaturalLanguage("20㎡の枠組足場");
+      const item = result.items.find((i) => i.code === "SC-001");
+      expect(item).toBeDefined();
+    });
+
+    it("単管足場", () => {
+      const result = parseNaturalLanguage("単管足場30㎡");
+      const item = result.items.find((i) => i.code === "SC-002");
+      expect(item).toBeDefined();
+    });
+
+    it("ローリングタワー", () => {
+      const result = parseNaturalLanguage("ローリングタワー2台");
+      const item = result.items.find((i) => i.code === "SC-003");
+      expect(item).toBeDefined();
+      expect(item!.quantity).toBe(2);
+    });
+
+    it("足場 (generic)", () => {
+      const result = parseNaturalLanguage("足場設置");
+      const item = result.items.find((i) =>
+        i.code.startsWith("SC-"),
+      );
+      expect(item).toBeDefined();
+    });
+  });
+
+  describe("plastering / mortar keywords", () => {
+    it("左官 → PL2-001", () => {
+      const result = parseNaturalLanguage("10㎡の左官工事");
+      const item = result.items.find((i) => i.code === "PL2-001");
+      expect(item).toBeDefined();
+    });
+
+    it("モルタル造形 → PL2-009", () => {
+      const result = parseNaturalLanguage("壁モルタル造形5㎡");
+      const item = result.items.find((i) => i.code === "PL2-009");
+      expect(item).toBeDefined();
+    });
+
+    it("モルタル造形レンガ → PL2-011", () => {
+      const result = parseNaturalLanguage("レンガ調造形10㎡");
+      const item = result.items.find((i) => i.code === "PL2-011");
+      expect(item).toBeDefined();
+    });
+
+    it("エイジング塗装 → PL2-012", () => {
+      const result = parseNaturalLanguage("エイジング塗装8㎡");
+      const item = result.items.find((i) => i.code === "PL2-012");
+      expect(item).toBeDefined();
+    });
+
+    it("セルフレベリング → PL2-008", () => {
+      const result = parseNaturalLanguage("セルフレベリング20㎡");
+      const item = result.items.find((i) => i.code === "PL2-008");
+      expect(item).toBeDefined();
+      expect(item!.quantity).toBe(20);
+    });
+  });
+
+  describe("edge cases", () => {
+    it("unknown items produce unmatched warning", () => {
+      const result = parseNaturalLanguage("謎の特殊工事");
+      expect(result.items).toHaveLength(0);
+      expect(result.unmatched.length).toBeGreaterThan(0);
+    });
+
+    it("extremely large area (10000㎡) still works", () => {
+      const result = parseNaturalLanguage("10000㎡のクロス張替え");
+      const cross = result.items.find((i) => i.code === "IN-005");
+      expect(cross).toBeDefined();
+      expect(cross!.quantity).toBeGreaterThan(100);
+    });
+
+    it("zero area produces minimum quantity 1", () => {
+      const result = parseNaturalLanguage("0㎡のクロス");
+      const cross = result.items.find((i) => i.code === "IN-005");
+      expect(cross).toBeDefined();
+      expect(cross!.quantity).toBeGreaterThanOrEqual(1);
+    });
+
+    it("dimension notation: 3m×2m", () => {
+      const result = parseNaturalLanguage("3m×2mのクロス");
+      expect(result.detectedArea?.sqm).toBe(6);
+      expect(result.detectedArea?.source).toBe("dimensions");
+    });
+  });
+
   describe("formatParseResult", () => {
     it("formats output with detected area and items", () => {
       const result = parseNaturalLanguage("6畳の壁紙張替え");

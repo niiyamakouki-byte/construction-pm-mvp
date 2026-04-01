@@ -70,7 +70,7 @@ function normalizeNumbers(text: string): string {
 }
 
 /** テキストから面積(㎡)を抽出。畳表記があれば変換 */
-function extractArea(text: string): { sqm: number; source: "tatami" | "sqm" | "tsubo" } | null {
+function extractArea(text: string): { sqm: number; source: "tatami" | "sqm" | "tsubo" | "dimensions" } | null {
   const n = normalizeNumbers(text);
 
   // N畳
@@ -91,7 +91,30 @@ function extractArea(text: string): { sqm: number; source: "tatami" | "sqm" | "t
     return { sqm: parseFloat(tsuboMatch[1]) * 3.306, source: "tsubo" };
   }
 
+  // WxH寸法表記: "5m×2.4m", "3m*2m", "5mx2.4m"
+  const dimMatch = n.match(/(\d+(?:\.\d+)?)\s*m?\s*[×xX\*]\s*(\d+(?:\.\d+)?)\s*m/);
+  if (dimMatch) {
+    const w = parseFloat(dimMatch[1]);
+    const h = parseFloat(dimMatch[2]);
+    return { sqm: Math.round(w * h * 100) / 100, source: "dimensions" };
+  }
+
   return null;
+}
+
+/** テキストから寸法(W×H)を抽出（間仕切り等の壁面積計算用） */
+function extractDimensions(text: string): { width: number; height: number } | null {
+  const n = normalizeNumbers(text);
+  const dimMatch = n.match(/(\d+(?:\.\d+)?)\s*m?\s*[×xX\*]\s*(\d+(?:\.\d+)?)\s*m/);
+  if (dimMatch) {
+    return { width: parseFloat(dimMatch[1]), height: parseFloat(dimMatch[2]) };
+  }
+  return null;
+}
+
+/** テキストに「両面」が含まれるかチェック */
+function hasBothSides(text: string): boolean {
+  return /両面/.test(text);
 }
 
 /** テキストから畳数だけ取得 (部屋寸法推定用) */
@@ -104,18 +127,40 @@ function extractTatami(text: string): number | null {
 /** テキストから個数を抽出: "10台", "3箇所", "5本" 等 */
 function extractCount(text: string, keyword: string): number | null {
   const n = normalizeNumbers(text);
-  // キーワード前後の数字を探す
-  const patterns = [
-    new RegExp(`(\\d+)\\s*(?:台|個|箇所|本|枚|セット|面|回路|式).*${keyword}`, "i"),
-    new RegExp(`${keyword}.*?(\\d+)\\s*(?:台|個|箇所|本|枚|セット|面|回路|式)`, "i"),
-    new RegExp(`(\\d+)\\s*${keyword}`),
-    new RegExp(`${keyword}\\s*(\\d+)`),
+  const units = "台|個|箇所|本|枚|セット|面|回路|式";
+
+  // まず、キーワードを含む句（、。,で区切られた区間）を特定して、その中で数値を探す
+  // これにより「LED照明20台、エアコン3台」で「エアコン」→3、「照明」→20 と正しく抽出できる
+  const clauses = n.split(/[、。,.]+/);
+  for (const clause of clauses) {
+    if (!clause.includes(keyword)) continue;
+    // この句の中でキーワード近傍の数値を探す
+    const clausePatterns = [
+      new RegExp(`(\\d+)\\s*(?:${units})`, "i"),
+      new RegExp(`(\\d+)\\s*${escapeRegex(keyword)}`),
+      new RegExp(`${escapeRegex(keyword)}\\s*(\\d+)`),
+    ];
+    for (const pat of clausePatterns) {
+      const m = clause.match(pat);
+      if (m) return parseInt(m[1], 10);
+    }
+  }
+
+  // 句分割でヒットしなかった場合のフォールバック（スペース区切りなど）
+  const fallbackPatterns = [
+    new RegExp(`${escapeRegex(keyword)}\\s*(\\d+)\\s*(?:${units})`, "i"),
+    new RegExp(`(\\d+)\\s*(?:${units})\\s*(?:の)?\\s*${escapeRegex(keyword)}`, "i"),
   ];
-  for (const pat of patterns) {
+  for (const pat of fallbackPatterns) {
     const m = n.match(pat);
     if (m) return parseInt(m[1], 10);
   }
   return null;
+}
+
+/** 正規表現のメタ文字をエスケープ */
+function escapeRegex(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
 // ──────────────────────────────────────────────
@@ -163,7 +208,8 @@ const KEYWORD_RULES: KeywordRule[] = [
   { keywords: ["長尺シート", "長尺"], code: "IN-010", areaType: "floor" },
   { keywords: ["フロアタイル"], code: "IN-011", areaType: "floor" },
   { keywords: ["巾木"], code: "IN-012", areaType: "perimeter" },
-  { keywords: ["天井張替", "天井", "天井仕上げ"], code: "IN-015", areaType: "ceiling" },
+  { keywords: ["岩綿吸音板", "ロックウール吸音板", "システム天井"], code: "IN-014", areaType: "ceiling" },
+  { keywords: ["天井張替", "天井仕上げ", "天井"], code: "IN-015", areaType: "ceiling" },
 
   // --- 電気 ---
   { keywords: ["コンセント新設", "コンセント追加"], code: "EL-001", areaType: "count", defaultCount: 2 },
@@ -292,6 +338,8 @@ export function parseNaturalLanguage(
   const normalized = normalizeNumbers(text);
   const area = extractArea(text);
   const tatami = extractTatami(text);
+  const dimensions = extractDimensions(text);
+  const bothSides = hasBothSides(text);
 
   // 部屋寸法の推定
   let floorArea: number;
@@ -299,12 +347,25 @@ export function parseNaturalLanguage(
   let ceilingArea: number;
   let perimeter: number;
 
+  // 寸法表記 (W×H) がある場合は壁面積として直接使用（間仕切り等向け）
+  let dimensionWallArea: number | null = null;
+  if (dimensions) {
+    dimensionWallArea = Math.round(dimensions.width * dimensions.height * 10) / 10;
+  }
+
   if (tatami) {
     const dims = roomDimensionsFromTatami(tatami);
     floorArea = dims.floorArea;
     wallArea = Math.round(dims.perimeter * ceilingHeight * 10) / 10;
     ceilingArea = dims.ceilingArea;
     perimeter = dims.perimeter;
+  } else if (area && area.source === "dimensions") {
+    // 寸法表記の場合は壁面積として扱う（部屋ではなくパーツ）
+    floorArea = area.sqm;
+    wallArea = area.sqm;
+    ceilingArea = area.sqm;
+    const side = Math.sqrt(area.sqm);
+    perimeter = Math.round(side * 4 * 10) / 10;
   } else if (area) {
     floorArea = Math.round(area.sqm * 10) / 10;
     const side = Math.sqrt(area.sqm);
@@ -322,6 +383,12 @@ export function parseNaturalLanguage(
   const items: ParsedEstimateItem[] = [];
   const matchedKeywords = new Set<string>();
 
+  // 間仕切りコード一覧（壁面クロス等の両面計算で参照）
+  const partitionCodes = new Set(["IN-001", "IN-002"]);
+
+  // 天井系品目のコード一覧（具体的な天井材が先にマッチしたら汎用天井をスキップ）
+  const ceilingCodes = new Set(["IN-014", "IN-015"]);
+
   // 各ルールをテスト（先にマッチしたものが優先）
   for (const rule of KEYWORD_RULES) {
     const matchedKw = rule.keywords.find((kw) => normalized.includes(kw));
@@ -329,6 +396,9 @@ export function parseNaturalLanguage(
 
     // 同じコードが既にマッチ済みならスキップ（より具体的なルールが先にマッチ済み）
     if (items.some((i) => i.code === rule.code)) continue;
+
+    // 天井系: 具体的な天井材(IN-014等)が既にマッチ済みなら汎用天井(IN-015)はスキップ
+    if (ceilingCodes.has(rule.code) && items.some((i) => ceilingCodes.has(i.code))) continue;
 
     let quantity: number;
     let basis: string;
@@ -338,10 +408,23 @@ export function parseNaturalLanguage(
         quantity = Math.ceil(floorArea);
         basis = `床面積 ${floorArea}㎡`;
         break;
-      case "wall":
-        quantity = Math.ceil(wallArea);
-        basis = `壁面積 ${wallArea}㎡ (周長${perimeter}m × 天井高${ceilingHeight}m)`;
+      case "wall": {
+        // 間仕切り系の品目で寸法表記がある場合、寸法から直接面積を算出
+        const useDirectWall = partitionCodes.has(rule.code) && dimensionWallArea != null;
+        const effectiveWallArea = useDirectWall ? dimensionWallArea! : wallArea;
+        quantity = Math.ceil(effectiveWallArea);
+        basis = useDirectWall
+          ? `壁面積 ${dimensionWallArea}㎡ (${dimensions!.width}m × ${dimensions!.height}m)`
+          : `壁面積 ${wallArea}㎡ (周長${perimeter}m × 天井高${ceilingHeight}m)`;
+
+        // 壁仕上げ（クロス・塗装等）で間仕切りとセットかつ両面の場合、面積を2倍
+        if (!partitionCodes.has(rule.code) && bothSides && dimensionWallArea != null) {
+          const doubled = dimensionWallArea * 2;
+          quantity = Math.ceil(doubled);
+          basis = `壁面積 ${doubled}㎡ (${dimensionWallArea}㎡ × 両面)`;
+        }
         break;
+      }
       case "ceiling":
         quantity = Math.ceil(ceilingArea);
         basis = `天井面積 ${ceilingArea}㎡`;
@@ -363,6 +446,12 @@ export function parseNaturalLanguage(
       default:
         quantity = 1;
         basis = "不明";
+    }
+
+    // 数量が0以下の場合は警告付きでスキップせず、最低1にする
+    if (quantity <= 0) {
+      quantity = 1;
+      basis += " (数量0→最低1に補正)";
     }
 
     // マスターから品目名を取得
@@ -410,9 +499,28 @@ export function parseNaturalLanguage(
 
   // マッチしなかったフレーズの抽出（簡易: 句読点・読点で分割して未マッチを検出）
   const phrases = normalized.split(/[、。,.\s]+/).filter((p) => p.length > 0);
+
+  // 面積+場所の複合フレーズを無視するパターン
+  // "20坪のオフィスのリノベーション" → 面積情報が含まれている記述は場所+総称として無視
+  const areaLocationPattern = /\d+(?:畳|㎡|平米|坪|m2|m²).*(?:の|リノベ|リフォーム|改装|改修|工事)/;
+  // 「壁は」「床は」「天井は」のような助詞付き対象指定
+  const surfaceRefPattern = /^(?:壁|床|天井)(?:は|の|を|も)/;
+
   const unmatched = phrases.filter((phrase) => {
     // 数値や面積の記述だけのフレーズは無視
     if (/^\d+(?:畳|㎡|平米|坪|台|箇所|本)$/.test(phrase)) return false;
+    // 寸法表記 (5m×2.4m 等) を無視
+    if (/^\d+(?:\.\d+)?\s*m?\s*[×xX\*]\s*\d+(?:\.\d+)?\s*m$/.test(phrase)) return false;
+    // "両面PB" 等の修飾フレーズを無視
+    if (/^両面/.test(phrase)) return false;
+    // 純粋な数字フレーズを無視
+    if (/^\d+(?:\.\d+)?m?$/.test(phrase)) return false;
+    // 面積+場所の複合フレーズ（"20坪のオフィスのリノベーション"等）は無視
+    if (areaLocationPattern.test(phrase)) return false;
+    // 「壁はクロス」等の対象指定は品目がマッチ済みなら無視
+    if (surfaceRefPattern.test(phrase) && items.length > 0) return false;
+    // 面積情報なしの純粋な場所名フレーズ（"6畳の洋室"等）は数値+場所のパターンで無視
+    if (/^\d+(?:畳|㎡|坪)の(?:洋室|和室|リビング|ダイニング|玄関|廊下|寝室|子供部屋|書斎|オフィス|事務所|店舗|会議室|応接室|受付|ホール)/.test(phrase)) return false;
     // いずれかのキーワードにマッチしていればOK
     return !KEYWORD_RULES.some((rule) => rule.keywords.some((kw) => phrase.includes(kw)));
   });

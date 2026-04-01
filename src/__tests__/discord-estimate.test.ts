@@ -70,6 +70,52 @@ describe("discordEstimate", () => {
   });
 });
 
+describe("discordEstimate realistic scenarios", () => {
+  it("20坪のオフィスリノベーション → professional output with 5 items", () => {
+    const result = discordEstimate(
+      "20坪のオフィスのリノベーション、壁はクロス張替え、床はタイルカーペット、天井は岩綿吸音板、LED照明20台、エアコン3台",
+    );
+
+    expect(result.estimate.total).toBeGreaterThan(1_000_000);
+    expect(result.estimate.sections.length).toBeGreaterThanOrEqual(3);
+    expect(result.message).toContain("クロス");
+    expect(result.message).toContain("タイルカーペット");
+    expect(result.message).toContain("システム天井");
+    expect(result.message).toContain("LED");
+    expect(result.message).toContain("エアコン");
+    // No false unmatched warnings
+    expect(result.parseResult.unmatched).toHaveLength(0);
+  });
+
+  it("間仕切り5m×2.4m両面PB+クロス → correct dimensions", () => {
+    const result = discordEstimate("間仕切りLGS壁新設5m×2.4m、両面PB+クロス");
+
+    expect(result.message).toContain("LGS間仕切り");
+    expect(result.message).toContain("クロス");
+    // 間仕切り12㎡, クロス24㎡(両面)
+    expect(result.message).toContain("12㎡");
+    expect(result.message).toContain("24㎡");
+    expect(result.estimate.total).toBeGreaterThan(0);
+  });
+
+  it("6畳の洋室、壁紙張替えとフローリング → clean output", () => {
+    const result = discordEstimate("6畳の洋室、壁紙張替えとフローリング");
+
+    expect(result.message).toContain("クロス");
+    expect(result.message).toContain("フローリング");
+    expect(result.parseResult.unmatched).toHaveLength(0);
+    expect(result.estimate.total).toBeGreaterThan(100_000);
+  });
+
+  it("店舗の内装解体50㎡ → demolition category", () => {
+    const result = discordEstimate("店舗の内装解体とスケルトン戻し50㎡");
+
+    expect(result.message).toContain("内装解体");
+    expect(result.message).toContain("解体・撤去");
+    expect(result.estimate.total).toBeGreaterThan(0);
+  });
+});
+
 describe("formatEstimateForDiscord", () => {
   it("Estimateオブジェクトから直接フォーマットできる", () => {
     const parseResult = parseNaturalLanguage("8畳のフローリング張替え");
