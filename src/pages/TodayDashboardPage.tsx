@@ -357,13 +357,13 @@ export function TodayDashboardPage() {
         )}
       </section>
 
-      {/* Navigation */}
-      <div className="pt-2">
+      {/* Navigation - only on desktop (bottom tab bar handles mobile) */}
+      <div className="hidden pt-2 sm:block">
         <button
           onClick={() => navigate("/")}
           className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3.5 text-sm font-semibold text-slate-600 shadow-sm active:bg-slate-50 transition-colors"
         >
-          ← プロジェクト一覧に戻る
+          &larr; プロジェクト一覧に戻る
         </button>
       </div>
     </div>

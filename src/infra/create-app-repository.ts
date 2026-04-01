@@ -2,6 +2,7 @@ import type { Repository } from "../domain/repository.js";
 import type { BaseEntity } from "../domain/types.js";
 import { hasSupabaseEnv } from "./supabase-client.js";
 import { InMemoryRepository } from "./in-memory-repository.js";
+import { LocalStorageRepository } from "./local-storage-repository.js";
 import { SupabaseRepository } from "./supabase-repository.js";
 
 export function createAppRepository<T extends BaseEntity>(
@@ -11,7 +12,10 @@ export function createAppRepository<T extends BaseEntity>(
     return new InMemoryRepository<T>();
   }
 
-  return hasSupabaseEnv()
-    ? new SupabaseRepository<T>(tableName)
-    : new InMemoryRepository<T>();
+  if (hasSupabaseEnv()) {
+    return new SupabaseRepository<T>(tableName);
+  }
+
+  // Use localStorage for persistence across page reloads
+  return new LocalStorageRepository<T>(tableName);
 }

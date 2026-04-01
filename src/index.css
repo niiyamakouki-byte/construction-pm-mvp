@@ -40,6 +40,38 @@ button, a, input, select, textarea {
   outline-offset: 2px;
 }
 
+/* Page enter animation */
+@keyframes pageEnter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.page-enter {
+  animation: pageEnter 0.25s ease-out;
+}
+
+/* Status change animation */
+@keyframes statusPulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.15); }
+  100% { transform: scale(1); }
+}
+
+.status-pulse {
+  animation: statusPulse 0.3s ease-in-out;
+}
+
+/* Safe area for bottom tab bar on iPhone */
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
 /* Custom scrollbar */
 ::-webkit-scrollbar {
   width: 6px;

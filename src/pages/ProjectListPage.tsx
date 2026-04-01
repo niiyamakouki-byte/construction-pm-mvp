@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import type { Project, ProjectStatus } from "../domain/types.js";
 import { projectRepository } from "../stores/project-store.js";
 import { geocodeAddress } from "../infra/geocode.js";
+import { navigate } from "../hooks/useHashRouter.js";
 
 function toLocalDateString(date: Date): string {
   const y = date.getFullYear();
@@ -280,7 +281,11 @@ export function ProjectListPage() {
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {projects.map((p) => (
-                    <tr key={p.id} className="hover:bg-brand-50/30 transition-colors">
+                    <tr
+                      key={p.id}
+                      className="hover:bg-brand-50/30 transition-colors cursor-pointer"
+                      onClick={() => navigate(`/project/${p.id}`)}
+                    >
                       <td className="px-5 py-4">
                         <p className="font-semibold text-slate-900">{p.name}</p>
                         {p.description && (
@@ -370,7 +375,10 @@ function FeatureHint({ title, description }: { title: string; description: strin
 
 function ProjectCard({ project }: { project: Project }) {
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm active:bg-slate-50 transition-colors">
+    <div
+      className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm active:bg-slate-50 transition-colors cursor-pointer"
+      onClick={() => navigate(`/project/${project.id}`)}
+    >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <h3 className="font-semibold text-slate-900 text-sm leading-tight truncate">
