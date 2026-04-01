@@ -1,6 +1,6 @@
 {
-  "version": "1.0.0",
-  "updatedAt": "2026-03-31",
+  "version": "1.1.0",
+  "updatedAt": "2026-04-01",
   "currency": "JPY",
   "taxRate": 0.10,
   "categories": [
@@ -110,6 +110,58 @@
         { "code": "FX-011", "name": "ドアクローザー", "unit": "台", "unitPrice": 15000, "note": "材工共" },
         { "code": "FX-012", "name": "レバーハンドル錠", "unit": "セット", "unitPrice": 12000, "note": "材工共" },
         { "code": "FX-013", "name": "鏡（W600×H1800）", "unit": "枚", "unitPrice": 25000, "note": "取付費込み" }
+      ]
+    },
+    {
+      "id": "shop_fitting",
+      "name": "店舗工事",
+      "items": [
+        { "code": "SF-001", "name": "什器取付（壁面棚）", "unit": "m", "unitPrice": 45000, "note": "壁下地補強込み" },
+        { "code": "SF-002", "name": "什器取付（ゴンドラ）", "unit": "台", "unitPrice": 80000, "note": "自立型W900" },
+        { "code": "SF-003", "name": "ショーケース設置（冷蔵）", "unit": "台", "unitPrice": 350000, "note": "業務用。電源工事別途" },
+        { "code": "SF-004", "name": "ショーケース設置（常温）", "unit": "台", "unitPrice": 120000, "note": "ガラスケース・照明付き" },
+        { "code": "SF-005", "name": "カウンター造作（受付）", "unit": "m", "unitPrice": 80000, "note": "天板人工大理石" },
+        { "code": "SF-006", "name": "カウンター造作（飲食）", "unit": "m", "unitPrice": 100000, "note": "無垢天板。給排水含まず" },
+        { "code": "SF-007", "name": "サイン工事（チャンネル文字）", "unit": "文字", "unitPrice": 25000, "note": "SUS/アルミ切文字" },
+        { "code": "SF-008", "name": "サイン工事（内照式）", "unit": "式", "unitPrice": 250000, "note": "LED内照ファサード看板" },
+        { "code": "SF-009", "name": "サイン工事（突出し看板）", "unit": "式", "unitPrice": 180000, "note": "照明付き。道路使用許可別途" },
+        { "code": "SF-010", "name": "サイン工事（ウィンドウサイン）", "unit": "㎡", "unitPrice": 8000, "note": "カッティングシート" },
+        { "code": "SF-011", "name": "サイン工事（スタンド看板）", "unit": "台", "unitPrice": 50000, "note": "A型看板・電飾スタンド等" },
+        { "code": "SF-012", "name": "厨房設備設置（ガスコンロ台）", "unit": "台", "unitPrice": 150000, "note": "業務用。ガス配管接続込み" },
+        { "code": "SF-013", "name": "厨房設備設置（フライヤー）", "unit": "台", "unitPrice": 120000, "note": "業務用。排気対策必須" },
+        { "code": "SF-014", "name": "厨房設備設置（製氷機）", "unit": "台", "unitPrice": 80000, "note": "設置・給排水接続込み" },
+        { "code": "SF-015", "name": "厨房設備設置（冷蔵庫業務用）", "unit": "台", "unitPrice": 50000, "note": "搬入・設置・電源接続" },
+        { "code": "SF-016", "name": "厨房シンク（1槽）", "unit": "台", "unitPrice": 100000, "note": "SUS製。給排水接続込み" },
+        { "code": "SF-017", "name": "厨房シンク（2槽）", "unit": "台", "unitPrice": 150000, "note": "保健所基準対応" },
+        { "code": "SF-018", "name": "厨房作業台（SUS）", "unit": "台", "unitPrice": 60000, "note": "W1200" },
+        { "code": "SF-019", "name": "厨房壁面ステンレス張り", "unit": "㎡", "unitPrice": 12000, "note": "SUS304。保健所対策" },
+        { "code": "SF-020", "name": "厨房床防水・排水溝", "unit": "㎡", "unitPrice": 15000, "note": "防水モルタル+ノンスリップ" }
+      ]
+    },
+    {
+      "id": "renovation",
+      "name": "リノベーション",
+      "items": [
+        { "code": "RN-001", "name": "スケルトン解体（マンション）", "unit": "㎡", "unitPrice": 12000, "note": "躯体残し全撤去" },
+        { "code": "RN-002", "name": "スケルトン解体（戸建木造）", "unit": "㎡", "unitPrice": 8000, "note": "構造体残し内装全撤去" },
+        { "code": "RN-003", "name": "下地処理（壁・パテ補修）", "unit": "㎡", "unitPrice": 1500, "note": "クロス下地。不陸調整込み" },
+        { "code": "RN-004", "name": "下地処理（床・レベリング）", "unit": "㎡", "unitPrice": 3000, "note": "セルフレベリング材" },
+        { "code": "RN-005", "name": "間仕切り変更（新設LGS+PB）", "unit": "㎡", "unitPrice": 9000, "note": "両面ボード+断熱材" },
+        { "code": "RN-006", "name": "間仕切り変更（撤去+復旧）", "unit": "箇所", "unitPrice": 150000, "note": "撤去+補修+仕上げ一式" },
+        { "code": "RN-007", "name": "窓サッシ交換（カバー工法）", "unit": "箇所", "unitPrice": 150000, "note": "既存枠にカバー。複層ガラス" },
+        { "code": "RN-008", "name": "窓サッシ交換（はつり工法）", "unit": "箇所", "unitPrice": 250000, "note": "枠ごと交換。外壁補修込み" },
+        { "code": "RN-009", "name": "内窓設置（インプラス等）", "unit": "箇所", "unitPrice": 80000, "note": "断熱・防音目的" },
+        { "code": "RN-010", "name": "防水工事（FRP）", "unit": "㎡", "unitPrice": 8000, "note": "バルコニー・ベランダ" },
+        { "code": "RN-011", "name": "防水工事（ウレタン塗膜）", "unit": "㎡", "unitPrice": 6500, "note": "屋上・ルーフバルコニー" },
+        { "code": "RN-012", "name": "防水工事（シート防水）", "unit": "㎡", "unitPrice": 5500, "note": "塩ビシート。機械固定工法" },
+        { "code": "RN-013", "name": "断熱工事（壁・充填）", "unit": "㎡", "unitPrice": 3500, "note": "GW16K t=100mm" },
+        { "code": "RN-014", "name": "断熱工事（壁・吹付ウレタン）", "unit": "㎡", "unitPrice": 5000, "note": "現場発泡。厚30-50mm" },
+        { "code": "RN-015", "name": "断熱工事（天井裏）", "unit": "㎡", "unitPrice": 3000, "note": "GW敷込み t=100mm" },
+        { "code": "RN-016", "name": "耐震補強（筋交い）", "unit": "箇所", "unitPrice": 100000, "note": "木造戸建。金物込み" },
+        { "code": "RN-017", "name": "配管更新（給水管全体）", "unit": "式", "unitPrice": 350000, "note": "2LDK目安。鉄管→架橋ポリ" },
+        { "code": "RN-018", "name": "配管更新（排水管全体）", "unit": "式", "unitPrice": 400000, "note": "2LDK目安" },
+        { "code": "RN-019", "name": "電気配線全面更新", "unit": "式", "unitPrice": 300000, "note": "2LDK目安。分電盤含む" },
+        { "code": "RN-020", "name": "フルリノベーション（マンション）", "unit": "㎡", "unitPrice": 150000, "note": "スケルトンからの全面改修" }
       ]
     },
     {

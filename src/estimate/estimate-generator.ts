@@ -29,6 +29,8 @@ function findCategory(code: string) {
     PL: "plumbing",
     HV: "hvac",
     FX: "fixtures",
+    SF: "shop_fitting",
+    RN: "renovation",
     OH: "overhead",
   };
   const catId = map[prefix];
