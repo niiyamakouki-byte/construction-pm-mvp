@@ -9,7 +9,7 @@
  *   → [{ code: "IN-008", quantity: 20 }, { code: "EL-004", quantity: 10 }]
  */
 
-import type { EstimateInput, MasterItem, MasterCategory } from "./types";
+import type { EstimateInput, MasterItem } from "./types";
 import type { CostMaster } from "./types";
 import costMasterData from "./cost-master.json";
 

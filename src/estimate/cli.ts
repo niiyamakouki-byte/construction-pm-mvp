@@ -88,8 +88,8 @@ const items: EstimateInput[] = itemArgs.map((arg) => {
 });
 
 const estimate = generateEstimate({
-  propertyName: property,
-  clientName: client,
+  propertyName: property as string,
+  clientName: client as string,
   items,
   managementFeeRate: mgmtRate,
   generalExpenseRate: genRate,

@@ -8,7 +8,7 @@
  *   // → Discordに貼れるMarkdownテーブル文字列
  */
 
-import { parseNaturalLanguage, nlToEstimateInputs } from "./nl-estimate-parser";
+import { parseNaturalLanguage } from "./nl-estimate-parser";
 import { generateEstimate } from "./estimate-generator";
 import type { Estimate, EstimateInput } from "./types";
 import type { ParseResult } from "./nl-estimate-parser";
