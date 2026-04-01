@@ -12,3 +12,5 @@ export type {
   EstimateInput,
 } from "./types";
 export type { ParsedEstimateItem, ParseResult } from "./nl-estimate-parser";
+export { discordEstimate, formatEstimateForDiscord } from "./discord-estimate";
+export type { DiscordEstimateResult } from "./discord-estimate";
