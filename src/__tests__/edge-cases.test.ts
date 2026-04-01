@@ -9,12 +9,12 @@
  * 5. Hash router edge cases
  */
 
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { LocalStorageRepository, StorageQuotaError } from "../infra/local-storage-repository.js";
 import type { BaseEntity } from "../domain/types.js";
 import { discordEstimate } from "../estimate/discord-estimate.js";
 import { generateEstimate } from "../estimate/estimate-generator.js";
-import { parseNaturalLanguage, nlToEstimateInputs } from "../estimate/nl-estimate-parser.js";
+import { parseNaturalLanguage } from "../estimate/nl-estimate-parser.js";
 
 type TestEntity = BaseEntity & { name: string; data?: string };
 
@@ -494,11 +494,10 @@ describe("Hash router - route matching", () => {
 
   it("project detail route does not match bare /project/", () => {
     const route = "/project/";
-    const match = route.match(/^\/project\/(.+)$/);
-    // This actually matches with empty string captured, which is a potential issue
-    // The app will try to find a project with id="" which returns null → "not found" page
-    // This is acceptable behavior (no crash)
-    expect(true).toBe(true);
+    // Regex (.+) requires at least one char after the final slash
+    const result = route.match(/^\/project\/(.+)$/);
+    // Should NOT match because there's nothing after /project/
+    expect(result).toBeNull();
   });
 
   it("unknown routes do not match known patterns", () => {
