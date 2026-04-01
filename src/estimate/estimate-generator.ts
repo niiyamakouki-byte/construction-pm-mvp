@@ -56,10 +56,25 @@ export function generateEstimate(req: EstimateRequest): Estimate {
     notes = [],
   } = req;
 
+  // 入力バリデーション
+  if (managementFeeRate < 0 || managementFeeRate > 1) {
+    throw new Error(`現場管理費率が不正です: ${managementFeeRate} (0〜1の範囲で指定)`);
+  }
+  if (generalExpenseRate < 0 || generalExpenseRate > 1) {
+    throw new Error(`一般管理費率が不正です: ${generalExpenseRate} (0〜1の範囲で指定)`);
+  }
+
   // カテゴリ別にグループ化
   const sectionMap = new Map<string, EstimateLine[]>();
 
   for (const input of items) {
+    if (input.quantity < 0) {
+      throw new Error(`数量が不正です: ${input.code} quantity=${input.quantity}`);
+    }
+    if (input.unitPriceOverride !== undefined && input.unitPriceOverride < 0) {
+      throw new Error(`単価が不正です: ${input.code} unitPrice=${input.unitPriceOverride}`);
+    }
+
     const masterItem = findMasterItem(input.code);
     if (!masterItem) {
       throw new Error(`品目コード ${input.code} が見つかりません`);

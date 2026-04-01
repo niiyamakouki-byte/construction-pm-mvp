@@ -393,4 +393,91 @@ describe("nl-estimate-parser", () => {
       expect(text).toContain("未マッチ");
     });
   });
+
+  describe("kanji numeral conversion", () => {
+    it("十五畳 → 15畳 (not 105)", () => {
+      const result = parseNaturalLanguage("十五畳の壁紙張替え");
+      expect(result.detectedTatami).toBe(15);
+      expect(result.detectedArea?.sqm).toBeCloseTo(15 * 1.62, 1);
+    });
+
+    it("二十㎡ → 20㎡ (not 210)", () => {
+      const result = parseNaturalLanguage("二十㎡のクロス張替え");
+      expect(result.detectedArea?.sqm).toBe(20);
+    });
+
+    it("百二十㎡ → 120㎡", () => {
+      const result = parseNaturalLanguage("百二十㎡のタイルカーペット");
+      expect(result.detectedArea?.sqm).toBe(120);
+      const carpet = result.items.find((i) => i.code === "IN-008");
+      expect(carpet!.quantity).toBe(120);
+    });
+
+    it("六畳 → 6畳 (single kanji digit still works)", () => {
+      const result = parseNaturalLanguage("六畳の壁紙張替え");
+      expect(result.detectedTatami).toBe(6);
+    });
+  });
+
+  describe("keyword exclusion (specific overrides generic)", () => {
+    it("業務用エアコン → HV-003 only, not HV-001", () => {
+      const result = parseNaturalLanguage("業務用エアコン2台");
+      const hvac003 = result.items.find((i) => i.code === "HV-003");
+      const hvac001 = result.items.find((i) => i.code === "HV-001");
+      expect(hvac003).toBeDefined();
+      expect(hvac003!.quantity).toBe(2);
+      expect(hvac001).toBeUndefined();
+    });
+
+    it("天カセ → HV-003 only, not HV-001", () => {
+      const result = parseNaturalLanguage("天カセ3台");
+      expect(result.items.find((i) => i.code === "HV-003")).toBeDefined();
+      expect(result.items.find((i) => i.code === "HV-001")).toBeUndefined();
+    });
+
+    it("タンクレストイレ → PL-004 only, not PL-003", () => {
+      const result = parseNaturalLanguage("タンクレストイレ1台");
+      const pl004 = result.items.find((i) => i.code === "PL-004");
+      const pl003 = result.items.find((i) => i.code === "PL-003");
+      expect(pl004).toBeDefined();
+      expect(pl003).toBeUndefined();
+    });
+
+    it("generic エアコン still works when no specific keyword", () => {
+      const result = parseNaturalLanguage("エアコン2台");
+      expect(result.items.find((i) => i.code === "HV-001")).toBeDefined();
+      expect(result.items.find((i) => i.code === "HV-003")).toBeUndefined();
+    });
+  });
+
+  describe("シーリング false positive fix", () => {
+    it("シーリングライト → EL-006", () => {
+      const result = parseNaturalLanguage("シーリングライト2台");
+      expect(result.items.find((i) => i.code === "EL-006")).toBeDefined();
+    });
+
+    it("シーリング打ち替え → NOT EL-006 (construction sealant)", () => {
+      const result = parseNaturalLanguage("シーリング打ち替え");
+      expect(result.items.find((i) => i.code === "EL-006")).toBeUndefined();
+    });
+  });
+
+  describe("material loss rate", () => {
+    it("5% loss rate increases floor quantity", () => {
+      const result = parseNaturalLanguage("20㎡のタイルカーペット", {
+        materialLossRate: 0.05,
+      });
+      const carpet = result.items.find((i) => i.code === "IN-008");
+      expect(carpet).toBeDefined();
+      // 20 * 1.05 = 21
+      expect(carpet!.quantity).toBe(21);
+      expect(carpet!.quantityBasis).toContain("ロス5%込");
+    });
+
+    it("0% loss rate (default) does not change quantity", () => {
+      const result = parseNaturalLanguage("20㎡のタイルカーペット");
+      const carpet = result.items.find((i) => i.code === "IN-008");
+      expect(carpet!.quantity).toBe(20);
+    });
+  });
 });

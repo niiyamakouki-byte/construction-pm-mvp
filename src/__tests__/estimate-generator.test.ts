@@ -98,6 +98,50 @@ describe("estimate-generator", () => {
       "カテゴリ unknown が見つかりません",
     );
   });
+
+  describe("input validation", () => {
+    it("throws on negative quantity", () => {
+      expect(() =>
+        generateEstimate({
+          propertyName: "テスト",
+          clientName: "テスト",
+          items: [{ code: "DM-001", quantity: -5 }],
+        }),
+      ).toThrow("数量が不正です");
+    });
+
+    it("throws on negative unitPriceOverride", () => {
+      expect(() =>
+        generateEstimate({
+          propertyName: "テスト",
+          clientName: "テスト",
+          items: [{ code: "DM-001", quantity: 10, unitPriceOverride: -1000 }],
+        }),
+      ).toThrow("単価が不正です");
+    });
+
+    it("throws on management fee rate > 1", () => {
+      expect(() =>
+        generateEstimate({
+          propertyName: "テスト",
+          clientName: "テスト",
+          items: [{ code: "DM-001", quantity: 10 }],
+          managementFeeRate: 1.5,
+        }),
+      ).toThrow("現場管理費率が不正です");
+    });
+
+    it("throws on negative general expense rate", () => {
+      expect(() =>
+        generateEstimate({
+          propertyName: "テスト",
+          clientName: "テスト",
+          items: [{ code: "DM-001", quantity: 10 }],
+          generalExpenseRate: -0.1,
+        }),
+      ).toThrow("一般管理費率が不正です");
+    });
+  });
 });
 
 describe("format-estimate", () => {

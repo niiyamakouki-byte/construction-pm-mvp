@@ -57,16 +57,53 @@ function normalizeNumbers(text: string): string {
   let s = text;
   // 全角→半角
   s = s.replace(/[０-９]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0xfee0));
-  // 漢数字（単純なもの）
-  const kanjiMap: Record<string, string> = {
-    "一": "1", "二": "2", "三": "3", "四": "4", "五": "5",
-    "六": "6", "七": "7", "八": "8", "九": "9", "十": "10",
-    "百": "100",
-  };
-  for (const [k, v] of Object.entries(kanjiMap)) {
-    s = s.replaceAll(k, v);
-  }
+  // 漢数字→アラビア数字（複合漢数字対応: 二十五→25, 百二十→120 等）
+  s = convertKanjiNumbers(s);
   return s;
+}
+
+/**
+ * 漢数字をアラビア数字に変換する
+ * 「十五」→15, 「二十」→20, 「百二十五」→125, 「三百」→300 等
+ * 単独の「六」→6 も対応
+ */
+function convertKanjiNumbers(text: string): string {
+  const kanjiDigits: Record<string, number> = {
+    "〇": 0, "零": 0,
+    "一": 1, "二": 2, "三": 3, "四": 4, "五": 5,
+    "六": 6, "七": 7, "八": 8, "九": 9,
+  };
+
+  // 漢数字の連続部分を検出して変換
+  // 百、十、一〜九 の組み合わせにマッチ
+  const kanjiPattern = /[〇零一二三四五六七八九十百千]+/g;
+
+  return text.replace(kanjiPattern, (match) => {
+    // 百・十を含まない単純な1文字の場合
+    if (match.length === 1 && kanjiDigits[match] !== undefined) {
+      return String(kanjiDigits[match]);
+    }
+
+    let result = 0;
+    let current = 0;
+
+    for (const ch of match) {
+      if (ch === "千") {
+        result += (current || 1) * 1000;
+        current = 0;
+      } else if (ch === "百") {
+        result += (current || 1) * 100;
+        current = 0;
+      } else if (ch === "十") {
+        result += (current || 1) * 10;
+        current = 0;
+      } else if (kanjiDigits[ch] !== undefined) {
+        current = kanjiDigits[ch];
+      }
+    }
+    result += current;
+    return String(result);
+  });
 }
 
 /** テキストから面積(㎡)を抽出。畳表記があれば変換 */
@@ -127,18 +164,26 @@ function extractTatami(text: string): number | null {
 /** テキストから個数を抽出: "10台", "3箇所", "5本" 等 */
 function extractCount(text: string, keyword: string): number | null {
   const n = normalizeNumbers(text);
-  const units = "台|個|箇所|本|枚|セット|面|回路|式";
+  // 数量単位 - 「面」は「三面鏡」等の誤マッチ防止のため除外
+  const units = "台|個|箇所|本|枚|セット|回路|式";
 
   // まず、キーワードを含む句（、。,で区切られた区間）を特定して、その中で数値を探す
   // これにより「LED照明20台、エアコン3台」で「エアコン」→3、「照明」→20 と正しく抽出できる
   const clauses = n.split(/[、。,.]+/);
   for (const clause of clauses) {
     if (!clause.includes(keyword)) continue;
-    // この句の中でキーワード近傍の数値を探す
+    // この句の中でキーワード近傍の数値を探す（キーワードに近い順で試行）
     const clausePatterns = [
-      new RegExp(`(\\d+)\\s*(?:${units})`, "i"),
+      // キーワード直後の数値+単位: "エアコン3台"
+      new RegExp(`${escapeRegex(keyword)}\\s*(\\d+)\\s*(?:${units})`, "i"),
+      // 数値+単位+キーワード: "3台エアコン"
+      new RegExp(`(\\d+)\\s*(?:${units})\\s*(?:の)?\\s*${escapeRegex(keyword)}`, "i"),
+      // キーワード直後の数値（単位なし）: "エアコン3"
+      new RegExp(`${escapeRegex(keyword)}\\s*(\\d+)(?!\\d)`),
+      // 数値+キーワード: "3エアコン"
       new RegExp(`(\\d+)\\s*${escapeRegex(keyword)}`),
-      new RegExp(`${escapeRegex(keyword)}\\s*(\\d+)`),
+      // フォールバック: 句内の数値+単位（キーワードが同じ句にある場合のみ）
+      new RegExp(`(\\d+)\\s*(?:${units})`, "i"),
     ];
     for (const pat of clausePatterns) {
       const m = clause.match(pat);
@@ -146,7 +191,7 @@ function extractCount(text: string, keyword: string): number | null {
     }
   }
 
-  // 句分割でヒットしなかった場合のフォールバック（スペース区切りなど）
+  // 句分割でヒットしなかった場合のフォールバック（「と」で繋がった場合など）
   const fallbackPatterns = [
     new RegExp(`${escapeRegex(keyword)}\\s*(\\d+)\\s*(?:${units})`, "i"),
     new RegExp(`(\\d+)\\s*(?:${units})\\s*(?:の)?\\s*${escapeRegex(keyword)}`, "i"),
@@ -174,6 +219,8 @@ type KeywordRule = {
   code: string;
   areaType: AreaType;
   defaultCount?: number;
+  /** このルールがマッチした場合、指定コードのマッチをブロックする */
+  excludes?: string[];
 };
 
 /**
@@ -217,7 +264,7 @@ const KEYWORD_RULES: KeywordRule[] = [
   { keywords: ["専用回路", "専用電源"], code: "EL-003", areaType: "count", defaultCount: 1 },
   { keywords: ["LED直管", "蛍光灯", "直管照明"], code: "EL-004", areaType: "count", defaultCount: 4 },
   { keywords: ["ダウンライト"], code: "EL-005", areaType: "count", defaultCount: 4 },
-  { keywords: ["シーリング", "シーリングライト"], code: "EL-006", areaType: "count", defaultCount: 1 },
+  { keywords: ["シーリングライト"], code: "EL-006", areaType: "count", defaultCount: 1 },
   { keywords: ["照明"], code: "EL-004", areaType: "count", defaultCount: 4 },
   { keywords: ["スイッチ"], code: "EL-007", areaType: "count", defaultCount: 2 },
   { keywords: ["LAN", "LAN配線"], code: "EL-009", areaType: "count", defaultCount: 2 },
@@ -225,8 +272,9 @@ const KEYWORD_RULES: KeywordRule[] = [
   { keywords: ["火災報知器", "火報"], code: "EL-012", areaType: "count", defaultCount: 1 },
 
   // --- 給排水 ---
+  // タンクレスを先に判定（「タンクレストイレ」が「トイレ」にも引っかかるのを防ぐ）
+  { keywords: ["タンクレス", "高級トイレ"], code: "PL-004", areaType: "count", defaultCount: 1, excludes: ["PL-003"] },
   { keywords: ["トイレ", "便器"], code: "PL-003", areaType: "count", defaultCount: 1 },
-  { keywords: ["タンクレス", "高級トイレ"], code: "PL-004", areaType: "count", defaultCount: 1 },
   { keywords: ["洗面台", "洗面化粧台", "洗面"], code: "PL-005", areaType: "count", defaultCount: 1 },
   { keywords: ["ユニットバス", "浴室", "お風呂"], code: "PL-007", areaType: "fixed" },
   { keywords: ["キッチン", "台所"], code: "PL-009", areaType: "fixed" },
@@ -234,8 +282,9 @@ const KEYWORD_RULES: KeywordRule[] = [
   { keywords: ["手洗い"], code: "PL-012", areaType: "count", defaultCount: 1 },
 
   // --- 空調 ---
+  // 業務用エアコン/天カセを先に判定（「業務用エアコン」が汎用「エアコン」に引っかかるのを防ぐ）
+  { keywords: ["天井カセット", "業務用エアコン", "天カセ"], code: "HV-003", areaType: "count", defaultCount: 1, excludes: ["HV-001"] },
   { keywords: ["エアコン"], code: "HV-001", areaType: "count", defaultCount: 1 },
-  { keywords: ["天井カセット", "業務用エアコン", "天カセ"], code: "HV-003", areaType: "count", defaultCount: 1 },
   { keywords: ["換気扇"], code: "HV-005", areaType: "count", defaultCount: 1 },
   { keywords: ["全熱交換", "ロスナイ"], code: "HV-007", areaType: "count", defaultCount: 1 },
   { keywords: ["レンジフード"], code: "HV-008", areaType: "count", defaultCount: 1 },
@@ -326,6 +375,8 @@ export function parseNaturalLanguage(
     includeProtection?: boolean;
     /** 自動でクリーニングを追加 (default: false) */
     includeCleaning?: boolean;
+    /** 材料ロス率 (default: 0.05 = 5%)。面積ベースの品目に適用 */
+    materialLossRate?: number;
   } = {},
 ): ParseResult {
   const {
@@ -333,6 +384,7 @@ export function parseNaturalLanguage(
     ceilingHeight = DEFAULT_CEILING_HEIGHT,
     includeProtection = false,
     includeCleaning = false,
+    materialLossRate = 0,
   } = options;
 
   const normalized = normalizeNumbers(text);
@@ -382,6 +434,8 @@ export function parseNaturalLanguage(
 
   const items: ParsedEstimateItem[] = [];
   const matchedKeywords = new Set<string>();
+  /** excludesによってブロックされたコード */
+  const excludedCodes = new Set<string>();
 
   // 間仕切りコード一覧（壁面クロス等の両面計算で参照）
   const partitionCodes = new Set(["IN-001", "IN-002"]);
@@ -394,6 +448,9 @@ export function parseNaturalLanguage(
     const matchedKw = rule.keywords.find((kw) => normalized.includes(kw));
     if (!matchedKw) continue;
 
+    // excludesでブロックされたコードはスキップ
+    if (excludedCodes.has(rule.code)) continue;
+
     // 同じコードが既にマッチ済みならスキップ（より具体的なルールが先にマッチ済み）
     if (items.some((i) => i.code === rule.code)) continue;
 
@@ -403,16 +460,23 @@ export function parseNaturalLanguage(
     let quantity: number;
     let basis: string;
 
+    // ロス率の適用判定（面積/周長ベースの仕上げ材に適用、解体・一式・個数には不要）
+    const applyLoss = materialLossRate > 0 &&
+      (rule.areaType === "floor" || rule.areaType === "wall" ||
+       rule.areaType === "ceiling" || rule.areaType === "perimeter");
+
     switch (rule.areaType) {
-      case "floor":
-        quantity = Math.ceil(floorArea);
-        basis = `床面積 ${floorArea}㎡`;
+      case "floor": {
+        const raw = floorArea;
+        quantity = Math.ceil(applyLoss ? raw * (1 + materialLossRate) : raw);
+        basis = `床面積 ${floorArea}㎡` + (applyLoss ? ` (ロス${(materialLossRate * 100).toFixed(0)}%込)` : "");
         break;
+      }
       case "wall": {
         // 間仕切り系の品目で寸法表記がある場合、寸法から直接面積を算出
         const useDirectWall = partitionCodes.has(rule.code) && dimensionWallArea != null;
         const effectiveWallArea = useDirectWall ? dimensionWallArea! : wallArea;
-        quantity = Math.ceil(effectiveWallArea);
+        quantity = Math.ceil(applyLoss ? effectiveWallArea * (1 + materialLossRate) : effectiveWallArea);
         basis = useDirectWall
           ? `壁面積 ${dimensionWallArea}㎡ (${dimensions!.width}m × ${dimensions!.height}m)`
           : `壁面積 ${wallArea}㎡ (周長${perimeter}m × 天井高${ceilingHeight}m)`;
@@ -420,19 +484,24 @@ export function parseNaturalLanguage(
         // 壁仕上げ（クロス・塗装等）で間仕切りとセットかつ両面の場合、面積を2倍
         if (!partitionCodes.has(rule.code) && bothSides && dimensionWallArea != null) {
           const doubled = dimensionWallArea * 2;
-          quantity = Math.ceil(doubled);
+          quantity = Math.ceil(applyLoss ? doubled * (1 + materialLossRate) : doubled);
           basis = `壁面積 ${doubled}㎡ (${dimensionWallArea}㎡ × 両面)`;
         }
+        if (applyLoss) basis += ` (ロス${(materialLossRate * 100).toFixed(0)}%込)`;
         break;
       }
-      case "ceiling":
-        quantity = Math.ceil(ceilingArea);
-        basis = `天井面積 ${ceilingArea}㎡`;
+      case "ceiling": {
+        const raw = ceilingArea;
+        quantity = Math.ceil(applyLoss ? raw * (1 + materialLossRate) : raw);
+        basis = `天井面積 ${ceilingArea}㎡` + (applyLoss ? ` (ロス${(materialLossRate * 100).toFixed(0)}%込)` : "");
         break;
-      case "perimeter":
-        quantity = Math.ceil(perimeter);
-        basis = `周長 ${perimeter}m`;
+      }
+      case "perimeter": {
+        const raw = perimeter;
+        quantity = Math.ceil(applyLoss ? raw * (1 + materialLossRate) : raw);
+        basis = `周長 ${perimeter}m` + (applyLoss ? ` (ロス${(materialLossRate * 100).toFixed(0)}%込)` : "");
         break;
+      }
       case "count": {
         const extracted = extractCount(normalized, matchedKw);
         quantity = extracted ?? rule.defaultCount ?? 1;
@@ -467,6 +536,13 @@ export function parseNaturalLanguage(
     });
 
     matchedKeywords.add(matchedKw);
+
+    // excludes: このルールがマッチしたら、指定コードをブロック
+    if (rule.excludes) {
+      for (const ex of rule.excludes) {
+        excludedCodes.add(ex);
+      }
+    }
   }
 
   // オプション: 養生費自動追加
