@@ -1,5 +1,6 @@
 export { generateEstimate, listAllItems, listCategories, listItemsByCategory } from "./estimate-generator";
 export { formatEstimateText, formatEstimateCSV, formatEstimateJSON } from "./format-estimate";
+export { parseNaturalLanguage, nlToEstimateInputs, formatParseResult } from "./nl-estimate-parser";
 export type {
   CostMaster,
   MasterItem,
@@ -10,3 +11,4 @@ export type {
   EstimateRequest,
   EstimateInput,
 } from "./types";
+export type { ParsedEstimateItem, ParseResult } from "./nl-estimate-parser";
