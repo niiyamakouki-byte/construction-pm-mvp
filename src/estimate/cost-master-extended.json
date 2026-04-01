@@ -265,6 +265,40 @@
       ]
     },
     {
+      "id": "scaffolding",
+      "name": "足場・仮設",
+      "prefix": "SC",
+      "items": [
+        { "item_id": "SC-001", "name": "枠組足場（外壁）", "unit": "㎡", "unit_price": 1200, "price_range_low": 800, "price_range_high": 1800, "subcategory": "足場", "notes": "架面積算定。階高・建物形状で変動。メッシュシート別途" },
+        { "item_id": "SC-002", "name": "単管足場", "unit": "㎡", "unit_price": 900, "price_range_low": 600, "price_range_high": 1300, "subcategory": "足場", "notes": "低層・狭小地向き。ブラケット足場含む" },
+        { "item_id": "SC-003", "name": "室内足場（ローリングタワー）", "unit": "日", "unit_price": 8000, "price_range_low": 5000, "price_range_high": 12000, "subcategory": "室内足場", "notes": "天井高3m超の室内作業用。移動式。高さ5m超は割増" },
+        { "item_id": "SC-004", "name": "脚立足場", "unit": "日", "unit_price": 3000, "price_range_low": 2000, "price_range_high": 5000, "subcategory": "室内足場", "notes": "天井高2.5-3m程度の軽作業用" },
+        { "item_id": "SC-005", "name": "養生シート", "unit": "㎡", "unit_price": 300, "price_range_low": 200, "price_range_high": 500, "subcategory": "養生", "notes": "防炎メッシュ。飛散防止・落下物防護" },
+        { "item_id": "SC-006", "name": "足場組立・解体", "unit": "式", "unit_price": 80000, "price_range_low": 50000, "price_range_high": 150000, "subcategory": "足場", "notes": "組立+解体一式。面積・階高で変動大" },
+        { "item_id": "SC-007", "name": "足場運搬費", "unit": "式", "unit_price": 30000, "price_range_low": 20000, "price_range_high": 60000, "subcategory": "運搬", "notes": "4tトラック想定。都心部は道路事情で割増" },
+        { "item_id": "SC-008", "name": "安全ネット", "unit": "㎡", "unit_price": 400, "price_range_low": 250, "price_range_high": 600, "subcategory": "安全", "notes": "墜落防止・落下物防護。労安法準拠" }
+      ]
+    },
+    {
+      "id": "plastering",
+      "name": "左官・モルタル造形",
+      "prefix": "PL2",
+      "items": [
+        { "item_id": "PL2-001", "name": "モルタル塗り（壁）", "unit": "㎡", "unit_price": 3500, "price_range_low": 2500, "price_range_high": 5000, "subcategory": "左官", "notes": "厚15-20mm。下地の状態（不陸・吸水）で変動" },
+        { "item_id": "PL2-002", "name": "モルタル塗り（床）", "unit": "㎡", "unit_price": 3000, "price_range_low": 2000, "price_range_high": 4500, "subcategory": "左官", "notes": "厚20-30mm。仕上げ精度で変動。金鏝仕上げ" },
+        { "item_id": "PL2-003", "name": "珪藻土塗り", "unit": "㎡", "unit_price": 5500, "price_range_low": 4000, "price_range_high": 7500, "subcategory": "左官", "notes": "調湿・消臭効果。パターン仕上げ。下地処理込み" },
+        { "item_id": "PL2-004", "name": "漆喰塗り", "unit": "㎡", "unit_price": 6000, "price_range_low": 4500, "price_range_high": 8500, "subcategory": "左官", "notes": "消石灰系。抗菌・調湿効果。磨き仕上げは+2,000円/㎡" },
+        { "item_id": "PL2-005", "name": "タイル下地モルタル", "unit": "㎡", "unit_price": 2800, "price_range_low": 2000, "price_range_high": 4000, "subcategory": "下地", "notes": "タイル張り前の下地調整。不陸精度±3mm以内" },
+        { "item_id": "PL2-006", "name": "巾木モルタル", "unit": "m", "unit_price": 1200, "price_range_low": 800, "price_range_high": 1800, "subcategory": "左官", "notes": "H=100mm程度。面取り仕上げ" },
+        { "item_id": "PL2-007", "name": "コーナー補修", "unit": "箇所", "unit_price": 3000, "price_range_low": 2000, "price_range_high": 5000, "subcategory": "補修", "notes": "出隅・入隅の欠損補修。ステンレスコーナー材使用" },
+        { "item_id": "PL2-008", "name": "セルフレベリング", "unit": "㎡", "unit_price": 2500, "price_range_low": 1800, "price_range_high": 3500, "subcategory": "下地", "notes": "厚5-10mm。精密な床レベル調整。乾燥期間要" },
+        { "item_id": "PL2-009", "name": "モルタル造形（木目調）", "unit": "㎡", "unit_price": 25000, "price_range_low": 18000, "price_range_high": 35000, "subcategory": "造形", "notes": "手彫り造形+塗装。ディテール精度・面積で変動。職人技量に依存" },
+        { "item_id": "PL2-010", "name": "モルタル造形（石目調）", "unit": "㎡", "unit_price": 22000, "price_range_low": 15000, "price_range_high": 32000, "subcategory": "造形", "notes": "石積み・石壁の造形+塗装。目地深さ・石種パターンで変動" },
+        { "item_id": "PL2-011", "name": "モルタル造形（レンガ調）", "unit": "㎡", "unit_price": 20000, "price_range_low": 14000, "price_range_high": 28000, "subcategory": "造形", "notes": "レンガ積みの造形+塗装。目地幅・レンガサイズで変動" },
+        { "item_id": "PL2-012", "name": "エイジング塗装", "unit": "㎡", "unit_price": 8000, "price_range_low": 5000, "price_range_high": 15000, "subcategory": "塗装", "notes": "経年変化風の特殊塗装。モルタル造形との組合せが一般的" }
+      ]
+    },
+    {
       "id": "overhead",
       "name": "諸経費・管理費",
       "prefix": "OH",

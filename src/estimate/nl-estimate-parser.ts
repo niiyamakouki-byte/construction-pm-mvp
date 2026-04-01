@@ -203,6 +203,31 @@ const KEYWORD_RULES: KeywordRule[] = [
   { keywords: ["クローゼット", "収納"], code: "FX-009", areaType: "fixed" },
   { keywords: ["下駄箱", "靴箱"], code: "FX-010", areaType: "fixed" },
 
+  // --- 足場・仮設 ---
+  { keywords: ["枠組足場", "外壁足場"], code: "SC-001", areaType: "wall" },
+  { keywords: ["単管足場"], code: "SC-002", areaType: "wall" },
+  { keywords: ["ローリングタワー", "室内足場"], code: "SC-003", areaType: "count", defaultCount: 1 },
+  { keywords: ["脚立足場", "脚立"], code: "SC-004", areaType: "count", defaultCount: 1 },
+  { keywords: ["養生シート", "飛散防止シート"], code: "SC-005", areaType: "wall" },
+  { keywords: ["足場組立", "足場解体"], code: "SC-006", areaType: "fixed" },
+  { keywords: ["足場運搬"], code: "SC-007", areaType: "fixed" },
+  { keywords: ["安全ネット"], code: "SC-008", areaType: "wall" },
+  { keywords: ["足場"], code: "SC-006", areaType: "fixed" },
+
+  // --- 左官・モルタル造形 ---
+  { keywords: ["モルタル塗り壁", "壁モルタル"], code: "PL2-001", areaType: "wall" },
+  { keywords: ["モルタル塗り床", "床モルタル"], code: "PL2-002", areaType: "floor" },
+  { keywords: ["モルタル造形木目", "木目調造形"], code: "PL2-009", areaType: "wall" },
+  { keywords: ["モルタル造形石目", "石目調造形", "石壁造形"], code: "PL2-010", areaType: "wall" },
+  { keywords: ["モルタル造形レンガ", "レンガ調造形", "レンガ造形"], code: "PL2-011", areaType: "wall" },
+  { keywords: ["モルタル造形"], code: "PL2-009", areaType: "wall" },
+  { keywords: ["エイジング塗装", "エイジング"], code: "PL2-012", areaType: "wall" },
+  { keywords: ["タイル下地", "下地モルタル"], code: "PL2-005", areaType: "wall" },
+  { keywords: ["セルフレベリング", "レベリング"], code: "PL2-008", areaType: "floor" },
+  { keywords: ["左官", "モルタル塗り"], code: "PL2-001", areaType: "wall" },
+  { keywords: ["コーナー補修"], code: "PL2-007", areaType: "count", defaultCount: 1 },
+  { keywords: ["巾木モルタル"], code: "PL2-006", areaType: "perimeter" },
+
   // --- 諸経費 ---
   { keywords: ["クリーニング", "清掃", "美装"], code: "OH-006", areaType: "floor" },
 ];

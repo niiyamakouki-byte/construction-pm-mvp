@@ -31,6 +31,8 @@ function findCategory(code: string) {
     FX: "fixtures",
     SF: "shop_fitting",
     RN: "renovation",
+    SC: "scaffolding",
+    PL2: "plastering",
     OH: "overhead",
   };
   const catId = map[prefix];

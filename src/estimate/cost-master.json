@@ -165,6 +165,38 @@
       ]
     },
     {
+      "id": "scaffolding",
+      "name": "足場・仮設",
+      "items": [
+        { "code": "SC-001", "name": "枠組足場（外壁）", "unit": "㎡", "unitPrice": 1200, "note": "架面積算定" },
+        { "code": "SC-002", "name": "単管足場", "unit": "㎡", "unitPrice": 900, "note": "低層・狭小地向き" },
+        { "code": "SC-003", "name": "室内足場（ローリングタワー）", "unit": "日", "unitPrice": 8000, "note": "天井高3m超用" },
+        { "code": "SC-004", "name": "脚立足場", "unit": "日", "unitPrice": 3000, "note": "軽作業用" },
+        { "code": "SC-005", "name": "養生シート", "unit": "㎡", "unitPrice": 300, "note": "飛散防止" },
+        { "code": "SC-006", "name": "足場組立・解体", "unit": "式", "unitPrice": 80000, "note": "組立+解体一式" },
+        { "code": "SC-007", "name": "足場運搬費", "unit": "式", "unitPrice": 30000, "note": "4tトラック想定" },
+        { "code": "SC-008", "name": "安全ネット", "unit": "㎡", "unitPrice": 400, "note": "墜落防止" }
+      ]
+    },
+    {
+      "id": "plastering",
+      "name": "左官・モルタル造形",
+      "items": [
+        { "code": "PL2-001", "name": "モルタル塗り（壁）", "unit": "㎡", "unitPrice": 3500, "note": "厚15-20mm" },
+        { "code": "PL2-002", "name": "モルタル塗り（床）", "unit": "㎡", "unitPrice": 3000, "note": "厚20-30mm" },
+        { "code": "PL2-003", "name": "珪藻土塗り", "unit": "㎡", "unitPrice": 5500, "note": "調湿・消臭効果" },
+        { "code": "PL2-004", "name": "漆喰塗り", "unit": "㎡", "unitPrice": 6000, "note": "抗菌・調湿効果" },
+        { "code": "PL2-005", "name": "タイル下地モルタル", "unit": "㎡", "unitPrice": 2800, "note": "下地調整" },
+        { "code": "PL2-006", "name": "巾木モルタル", "unit": "m", "unitPrice": 1200, "note": "H=100mm" },
+        { "code": "PL2-007", "name": "コーナー補修", "unit": "箇所", "unitPrice": 3000, "note": "出隅・入隅" },
+        { "code": "PL2-008", "name": "セルフレベリング", "unit": "㎡", "unitPrice": 2500, "note": "床レベル調整" },
+        { "code": "PL2-009", "name": "モルタル造形（木目調）", "unit": "㎡", "unitPrice": 25000, "note": "手彫り造形+塗装" },
+        { "code": "PL2-010", "name": "モルタル造形（石目調）", "unit": "㎡", "unitPrice": 22000, "note": "石積み造形+塗装" },
+        { "code": "PL2-011", "name": "モルタル造形（レンガ調）", "unit": "㎡", "unitPrice": 20000, "note": "レンガ積み造形+塗装" },
+        { "code": "PL2-012", "name": "エイジング塗装", "unit": "㎡", "unitPrice": 8000, "note": "経年変化風特殊塗装" }
+      ]
+    },
+    {
       "id": "overhead",
       "name": "諸経費・管理費",
       "items": [
