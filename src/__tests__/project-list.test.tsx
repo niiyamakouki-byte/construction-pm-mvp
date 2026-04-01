@@ -18,10 +18,10 @@ describe("ProjectListPage", () => {
     vi.restoreAllMocks();
   });
 
-  it("空状態で「プロジェクトがありません」と表示される", async () => {
+  it("空状態でオンボーディングメッセージが表示される", async () => {
     render(<ProjectListPage />);
     expect(
-      await screen.findByText("プロジェクトがありません"),
+      await screen.findByText("最初のプロジェクトを作成しましょう"),
     ).toBeDefined();
   });
 
@@ -29,13 +29,18 @@ describe("ProjectListPage", () => {
     const user = userEvent.setup();
     render(<ProjectListPage />);
 
-    await user.type(screen.getByLabelText("名前"), "テスト工事A");
-    await user.type(screen.getByLabelText("説明"), "説明文");
+    // Open the form first (collapsible)
+    await user.click(screen.getByText("新規プロジェクト"));
+
+    await user.type(screen.getByPlaceholderText("例: 渋谷オフィスビル内装工事"), "テスト工事A");
+    await user.type(screen.getByPlaceholderText("工事概要やメモを入力"), "説明文");
     await user.type(screen.getByLabelText("開始日"), "2025-04-01");
     await user.click(screen.getByRole("button", { name: "作成" }));
 
-    expect(await screen.findByText("テスト工事A")).toBeDefined();
-    expect(screen.queryByText("プロジェクトがありません")).toBeNull();
+    // Project name appears in both desktop table and mobile card
+    const elements = await screen.findAllByText("テスト工事A");
+    expect(elements.length).toBeGreaterThan(0);
+    expect(screen.queryByText("最初のプロジェクトを作成しましょう")).toBeNull();
   });
 
   it("開始日未入力時はローカル日付がデフォルトで使われる", async () => {
@@ -45,10 +50,14 @@ describe("ProjectListPage", () => {
     const user = userEvent.setup();
     render(<ProjectListPage />);
 
-    await user.type(screen.getByLabelText("名前"), "日付テスト");
+    // Open the form
+    await user.click(screen.getByText("新規プロジェクト"));
+
+    await user.type(screen.getByPlaceholderText("例: 渋谷オフィスビル内装工事"), "日付テスト");
     await user.click(screen.getByRole("button", { name: "作成" }));
 
-    expect(await screen.findByText("2025-06-15")).toBeDefined();
+    const dateElements = await screen.findAllByText("2025-06-15");
+    expect(dateElements.length).toBeGreaterThan(0);
   });
 
   it("作成失敗時にエラーメッセージが表示される", async () => {
@@ -59,10 +68,13 @@ describe("ProjectListPage", () => {
     const user = userEvent.setup();
     render(<ProjectListPage />);
 
-    await user.type(screen.getByLabelText("名前"), "工事X");
+    // Open the form
+    await user.click(screen.getByText("新規プロジェクト"));
+
+    await user.type(screen.getByPlaceholderText("例: 渋谷オフィスビル内装工事"), "工事X");
     await user.click(screen.getByRole("button", { name: "作成" }));
 
     const alert = await screen.findByRole("alert");
-    expect(alert.textContent).toBe("テストエラー");
+    expect(alert.textContent).toContain("テストエラー");
   });
 });

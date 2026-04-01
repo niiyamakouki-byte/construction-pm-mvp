@@ -13,6 +13,14 @@ function toLocalDateString(date: Date): string {
   return `${y}-${m}-${d}`;
 }
 
+function formatDateJP(dateStr: string): string {
+  const [, m, d] = dateStr.split("-");
+  const weekdays = ["日", "月", "火", "水", "木", "金", "土"];
+  const date = new Date(dateStr);
+  const weekday = weekdays[date.getDay()];
+  return `${Number(m)}月${Number(d)}日 (${weekday})`;
+}
+
 const statusLabel: Record<TaskStatus, string> = {
   todo: "未着手",
   in_progress: "進行中",
@@ -28,11 +36,11 @@ const statusIcon: Record<TaskStatus, string> = {
 const statusBg: Record<TaskStatus, string> = {
   todo: "bg-slate-100 text-slate-700 border-slate-200",
   in_progress: "bg-blue-50 text-blue-700 border-blue-200",
-  done: "bg-green-50 text-green-700 border-green-200",
+  done: "bg-emerald-50 text-emerald-700 border-emerald-200",
 };
 
 const statusButtonStyle: Record<TaskStatus, string> = {
-  done: "bg-green-600 text-white active:bg-green-700",
+  done: "bg-emerald-600 text-white active:bg-emerald-700",
   in_progress: "bg-blue-600 text-white active:bg-blue-700",
   todo: "bg-amber-500 text-white active:bg-amber-600",
 };
@@ -53,7 +61,7 @@ type ProjectWeather = {
   weather: WeatherData | null;
 };
 
-// Default: Tokyo (南青山)
+// Default: Tokyo
 const TOKYO_LAT = 35.6762;
 const TOKYO_LON = 139.6503;
 
@@ -105,10 +113,6 @@ async function fetchWeather(
   return null;
 }
 
-/**
- * Deduplicate weather fetches by rounding coordinates to ~1km grid.
- * Projects at the same location share one API call.
- */
 function coordKey(lat: number, lon: number): string {
   return `${lat.toFixed(2)},${lon.toFixed(2)}`;
 }
@@ -124,7 +128,6 @@ function useProjectWeathers(projects: Project[]): {
     let cancelled = false;
 
     async function load() {
-      // Build unique coordinate buckets
       const buckets = new Map<
         string,
         { lat: number; lon: number; entries: { name: string; label: string }[] }
@@ -135,7 +138,6 @@ function useProjectWeathers(projects: Project[]): {
       );
 
       if (activeProjects.length === 0) {
-        // No active projects: show Tokyo default
         const key = coordKey(TOKYO_LAT, TOKYO_LON);
         buckets.set(key, {
           lat: TOKYO_LAT,
@@ -161,7 +163,6 @@ function useProjectWeathers(projects: Project[]): {
         }
       }
 
-      // Fetch weather for each unique location
       const results: ProjectWeather[] = [];
       for (const bucket of buckets.values()) {
         const w = await fetchWeather(bucket.lat, bucket.lon);
@@ -212,12 +213,11 @@ export function TodayDashboardPage() {
       const projectMap = new Map<string, Project>();
       for (const p of allP) projectMap.set(p.id, p);
 
-      // Tasks for today: due today, or in_progress with no due date, or overdue
       const todayTasks = allT
         .filter((t) => {
           if (t.status === "done") return false;
           if (t.dueDate === today) return true;
-          if (t.dueDate && t.dueDate < today) return true; // overdue
+          if (t.dueDate && t.dueDate < today) return true;
           if (!t.dueDate && t.status === "in_progress") return true;
           return false;
         })
@@ -260,44 +260,47 @@ export function TodayDashboardPage() {
   return (
     <div className="mx-auto max-w-lg space-y-4 px-4 pb-8">
       {/* Date Header */}
-      <div className="rounded-xl bg-gradient-to-r from-slate-800 to-slate-700 px-5 py-4 text-white shadow-md">
+      <div className="rounded-2xl bg-gradient-to-br from-brand-700 via-brand-800 to-brand-900 px-5 py-5 text-white shadow-lg">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-xs font-medium tracking-wider text-slate-300 uppercase">
-              Today
+            <p className="text-xs font-semibold tracking-widest text-brand-300 uppercase">
+              Today&apos;s Overview
             </p>
-            <p className="text-lg font-bold">{today}</p>
+            <p className="mt-1 text-xl font-bold">{formatDateJP(today)}</p>
           </div>
           {weatherLoading && (
-            <p className="text-sm text-slate-400">天気取得中...</p>
+            <div className="flex items-center gap-2">
+              <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+              <span className="text-xs text-brand-300">天気取得中</span>
+            </div>
           )}
         </div>
 
         {/* Per-project weather */}
         {!weatherLoading && weathers.length > 0 && (
-          <div className="mt-3 grid gap-2" style={{ gridTemplateColumns: `repeat(${Math.min(weathers.length, 3)}, 1fr)` }}>
+          <div className="mt-4 grid gap-2" style={{ gridTemplateColumns: `repeat(${Math.min(weathers.length, 3)}, 1fr)` }}>
             {weathers.map((pw, i) => (
               <div
                 key={i}
-                className="rounded-lg bg-white/10 px-3 py-2 text-center"
+                className="rounded-xl bg-white/10 backdrop-blur-sm px-3 py-3 text-center"
               >
                 {pw.weather ? (
                   <>
-                    <p className="text-xl leading-tight">{pw.weather.icon}</p>
-                    <p className="text-sm font-bold">
+                    <p className="text-2xl leading-tight">{pw.weather.icon}</p>
+                    <p className="mt-1 text-base font-bold">
                       {pw.weather.temperature}°C
                     </p>
-                    <p className="text-[10px] text-slate-300">
+                    <p className="text-[11px] text-brand-200">
                       {pw.weather.description}
                     </p>
                   </>
                 ) : (
-                  <p className="text-xs text-slate-400">取得不可</p>
+                  <p className="text-xs text-brand-300">取得不可</p>
                 )}
-                <p className="mt-1 truncate text-[10px] font-medium text-slate-200">
+                <p className="mt-1.5 truncate text-[11px] font-semibold text-white">
                   {pw.projectName}
                 </p>
-                <p className="truncate text-[9px] text-slate-400">
+                <p className="truncate text-[10px] text-brand-300">
                   {pw.locationLabel}
                 </p>
               </div>
@@ -308,30 +311,36 @@ export function TodayDashboardPage() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-4 gap-2">
-        <StatCard label="全タスク" value={totalTasks} color="text-slate-900" />
-        <StatCard label="進行中" value={inProgressTasks} color="text-blue-600" />
-        <StatCard label="完了" value={completedTasks} color="text-green-600" />
-        <StatCard label="遅延" value={overdueTasks} color="text-red-600" />
+        <StatCard label="全タスク" value={totalTasks} color="text-slate-900" bgColor="bg-white" />
+        <StatCard label="進行中" value={inProgressTasks} color="text-blue-600" bgColor="bg-blue-50" />
+        <StatCard label="完了" value={completedTasks} color="text-emerald-600" bgColor="bg-emerald-50" />
+        <StatCard label="遅延" value={overdueTasks} color="text-red-600" bgColor={overdueTasks > 0 ? "bg-red-50" : "bg-white"} />
       </div>
 
       {/* Today's Tasks */}
       <section>
-        <h2 className="mb-3 text-base font-bold text-slate-800">
+        <h2 className="mb-3 flex items-center gap-2 text-base font-bold text-slate-800">
           今日のタスク
-          <span className="ml-2 inline-block rounded-full bg-slate-200 px-2 py-0.5 text-xs font-medium text-slate-600">
+          <span className="inline-flex items-center justify-center rounded-full bg-brand-100 px-2 py-0.5 text-xs font-semibold text-brand-700">
             {tasks.length}件
           </span>
         </h2>
 
         {loading ? (
-          <div className="py-8 text-center text-sm text-slate-400">
-            読み込み中...
+          <div className="flex items-center justify-center gap-2 py-8">
+            <span className="inline-block h-5 w-5 animate-spin rounded-full border-2 border-brand-200 border-t-brand-600" />
+            <span className="text-sm text-slate-400">読み込み中...</span>
           </div>
         ) : tasks.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-slate-300 bg-white p-6 text-center">
-            <p className="text-3xl">🎉</p>
-            <p className="mt-2 text-sm font-medium text-slate-600">
+          <div className="rounded-2xl border-2 border-dashed border-slate-200 bg-white p-8 text-center">
+            <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-emerald-50">
+              <span className="text-2xl">✓</span>
+            </div>
+            <p className="text-sm font-semibold text-slate-700">
               今日のタスクはありません
+            </p>
+            <p className="mt-1 text-xs text-slate-400">
+              お疲れ様です。プロジェクト一覧からタスクを追加できます。
             </p>
           </div>
         ) : (
@@ -352,7 +361,7 @@ export function TodayDashboardPage() {
       <div className="pt-2">
         <button
           onClick={() => navigate("/")}
-          className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-600 shadow-sm active:bg-slate-50"
+          className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3.5 text-sm font-semibold text-slate-600 shadow-sm active:bg-slate-50 transition-colors"
         >
           ← プロジェクト一覧に戻る
         </button>
@@ -367,15 +376,17 @@ function StatCard({
   label,
   value,
   color,
+  bgColor,
 }: {
   label: string;
   value: number;
   color: string;
+  bgColor: string;
 }) {
   return (
-    <div className="rounded-xl bg-white p-3 text-center shadow-sm border border-slate-100">
-      <p className={`text-xl font-bold ${color}`}>{value}</p>
-      <p className="text-[10px] font-medium text-slate-500">{label}</p>
+    <div className={`rounded-xl ${bgColor} p-3 text-center shadow-sm border border-slate-100`}>
+      <p className={`text-xl font-bold tabular-nums ${color}`}>{value}</p>
+      <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">{label}</p>
     </div>
   );
 }
@@ -404,8 +415,8 @@ function TaskCard({
 
   return (
     <li
-      className={`rounded-xl border bg-white p-4 shadow-sm ${
-        isOverdue ? "border-red-200 bg-red-50/30" : "border-slate-200"
+      className={`rounded-xl border bg-white p-4 shadow-sm transition-all ${
+        isOverdue ? "border-red-200 bg-red-50/40" : "border-slate-200"
       }`}
     >
       {/* Header */}
@@ -417,7 +428,7 @@ function TaskCard({
           <p className="mt-0.5 text-xs text-slate-500">{task.projectName}</p>
         </div>
         <span
-          className={`shrink-0 rounded-full border px-2 py-0.5 text-xs font-medium ${statusBg[task.status]}`}
+          className={`shrink-0 rounded-full border px-2 py-0.5 text-xs font-semibold ${statusBg[task.status]}`}
         >
           {statusIcon[task.status]} {statusLabel[task.status]}
         </span>
@@ -444,11 +455,11 @@ function TaskCard({
               key={s}
               disabled={updating}
               onClick={() => handleClick(s)}
-              className={`flex-1 rounded-lg px-3 py-2 text-xs font-bold shadow-sm transition-opacity ${
+              className={`flex-1 rounded-lg px-3 py-2.5 text-xs font-bold shadow-sm transition-all ${
                 statusButtonStyle[s]
               } ${updating ? "opacity-50" : ""}`}
             >
-              {s === "done" ? "✓ 完了" : s === "in_progress" ? "◉ 進行中" : "○ 遅延"}
+              {s === "done" ? "✓ 完了" : s === "in_progress" ? "◉ 進行中" : "○ 未着手"}
             </button>
           ))}
       </div>

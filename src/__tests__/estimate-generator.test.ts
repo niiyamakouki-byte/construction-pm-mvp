@@ -66,7 +66,7 @@ describe("estimate-generator", () => {
 
   it("has correct number of categories", () => {
     const cats = listCategories();
-    expect(cats).toHaveLength(7);
+    expect(cats).toHaveLength(9);
     expect(cats.map((c) => c.id)).toEqual([
       "demolition",
       "interior",
@@ -74,13 +74,15 @@ describe("estimate-generator", () => {
       "plumbing",
       "hvac",
       "fixtures",
+      "shop_fitting",
+      "renovation",
       "overhead",
     ]);
   });
 
-  it("lists all items (80 total)", () => {
+  it("lists all items (120 total)", () => {
     const items = listAllItems();
-    expect(items.length).toBe(80);
+    expect(items.length).toBe(120);
   });
 
   it("lists items by category", () => {
