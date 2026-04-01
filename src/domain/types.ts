@@ -15,6 +15,9 @@ export type Project = BaseEntity & {
   status: ProjectStatus;
   startDate: string;
   endDate?: string;
+  address?: string;
+  latitude?: number;
+  longitude?: number;
 };
 
 // ── Task ────────────────────────────────────────────

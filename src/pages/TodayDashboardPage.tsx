@@ -45,7 +45,17 @@ type WeatherData = {
   temperature: number;
   description: string;
   icon: string;
-} | null;
+};
+
+type ProjectWeather = {
+  projectName: string;
+  locationLabel: string;
+  weather: WeatherData | null;
+};
+
+// Default: Tokyo (南青山)
+const TOKYO_LAT = 35.6762;
+const TOKYO_LON = 139.6503;
 
 const weatherCodes: Record<number, { desc: string; icon: string }> = {
   0: { desc: "快晴", icon: "☀️" },
@@ -69,37 +79,114 @@ const weatherCodes: Record<number, { desc: string; icon: string }> = {
   95: { desc: "雷雨", icon: "⛈" },
 };
 
-function useWeather(): { weather: WeatherData; loading: boolean } {
-  const [weather, setWeather] = useState<WeatherData>(null);
+async function fetchWeather(
+  lat: number,
+  lon: number,
+): Promise<WeatherData | null> {
+  try {
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weather_code&timezone=Asia%2FTokyo`;
+    const res = await fetch(url);
+    const data = (await res.json()) as {
+      current?: { temperature_2m?: number; weather_code?: number };
+    };
+    const current = data.current;
+    if (current) {
+      const code = current.weather_code ?? 0;
+      const info = weatherCodes[code] ?? { desc: "不明", icon: "🌡" };
+      return {
+        temperature: current.temperature_2m ?? 0,
+        description: info.desc,
+        icon: info.icon,
+      };
+    }
+  } catch {
+    // non-critical
+  }
+  return null;
+}
+
+/**
+ * Deduplicate weather fetches by rounding coordinates to ~1km grid.
+ * Projects at the same location share one API call.
+ */
+function coordKey(lat: number, lon: number): string {
+  return `${lat.toFixed(2)},${lon.toFixed(2)}`;
+}
+
+function useProjectWeathers(projects: Project[]): {
+  weathers: ProjectWeather[];
+  loading: boolean;
+} {
+  const [weathers, setWeathers] = useState<ProjectWeather[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Tokyo coordinates (default for construction company in 南青山)
-    const lat = 35.6762;
-    const lon = 139.6503;
-    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weather_code&timezone=Asia%2FTokyo`;
+    let cancelled = false;
 
-    fetch(url)
-      .then((res) => res.json())
-      .then((data: { current?: { temperature_2m?: number; weather_code?: number } }) => {
-        const current = data.current;
-        if (current) {
-          const code = current.weather_code ?? 0;
-          const info = weatherCodes[code] ?? { desc: "不明", icon: "🌡" };
-          setWeather({
-            temperature: current.temperature_2m ?? 0,
-            description: info.desc,
-            icon: info.icon,
+    async function load() {
+      // Build unique coordinate buckets
+      const buckets = new Map<
+        string,
+        { lat: number; lon: number; entries: { name: string; label: string }[] }
+      >();
+
+      const activeProjects = projects.filter(
+        (p) => p.status === "active" || p.status === "planning",
+      );
+
+      if (activeProjects.length === 0) {
+        // No active projects: show Tokyo default
+        const key = coordKey(TOKYO_LAT, TOKYO_LON);
+        buckets.set(key, {
+          lat: TOKYO_LAT,
+          lon: TOKYO_LON,
+          entries: [{ name: "本社", label: "東京" }],
+        });
+      } else {
+        for (const p of activeProjects) {
+          const lat = p.latitude ?? TOKYO_LAT;
+          const lon = p.longitude ?? TOKYO_LON;
+          const label = p.address ?? "東京";
+          const key = coordKey(lat, lon);
+          const existing = buckets.get(key);
+          if (existing) {
+            existing.entries.push({ name: p.name, label });
+          } else {
+            buckets.set(key, {
+              lat,
+              lon,
+              entries: [{ name: p.name, label }],
+            });
+          }
+        }
+      }
+
+      // Fetch weather for each unique location
+      const results: ProjectWeather[] = [];
+      for (const bucket of buckets.values()) {
+        const w = await fetchWeather(bucket.lat, bucket.lon);
+        for (const entry of bucket.entries) {
+          results.push({
+            projectName: entry.name,
+            locationLabel: entry.label,
+            weather: w,
           });
         }
-      })
-      .catch(() => {
-        // Weather is non-critical
-      })
-      .finally(() => setLoading(false));
-  }, []);
+      }
 
-  return { weather, loading };
+      if (!cancelled) {
+        setWeathers(results);
+        setLoading(false);
+      }
+    }
+
+    void load();
+    return () => {
+      cancelled = true;
+    };
+  }, [projects]);
+
+  return { weathers, loading };
 }
 
 // ── Main Component ─────────────────────────────────────
@@ -108,8 +195,9 @@ export function TodayDashboardPage() {
   const today = toLocalDateString(new Date());
   const [tasks, setTasks] = useState<TaskWithProject[]>([]);
   const [allTasks, setAllTasks] = useState<Task[]>([]);
+  const [allProjects, setAllProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
-  const { weather, loading: weatherLoading } = useWeather();
+  const { weathers, loading: weatherLoading } = useProjectWeathers(allProjects);
 
   const loadData = useCallback(async () => {
     try {
@@ -119,6 +207,7 @@ export function TodayDashboardPage() {
       ]);
 
       setAllTasks(allT);
+      setAllProjects(allP);
 
       const projectMap = new Map<string, Project>();
       for (const p of allP) projectMap.set(p.id, p);
@@ -170,28 +259,51 @@ export function TodayDashboardPage() {
   // ── Render ───────────────────────────────────────────
   return (
     <div className="mx-auto max-w-lg space-y-4 px-4 pb-8">
-      {/* Date & Weather Header */}
-      <div className="flex items-center justify-between rounded-xl bg-gradient-to-r from-slate-800 to-slate-700 px-5 py-4 text-white shadow-md">
-        <div>
-          <p className="text-xs font-medium tracking-wider text-slate-300 uppercase">
-            Today
-          </p>
-          <p className="text-lg font-bold">{today}</p>
-        </div>
-        <div className="text-right">
-          {weatherLoading ? (
+      {/* Date Header */}
+      <div className="rounded-xl bg-gradient-to-r from-slate-800 to-slate-700 px-5 py-4 text-white shadow-md">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-xs font-medium tracking-wider text-slate-300 uppercase">
+              Today
+            </p>
+            <p className="text-lg font-bold">{today}</p>
+          </div>
+          {weatherLoading && (
             <p className="text-sm text-slate-400">天気取得中...</p>
-          ) : weather ? (
-            <div>
-              <p className="text-2xl">{weather.icon}</p>
-              <p className="text-sm font-medium">
-                {weather.temperature}°C {weather.description}
-              </p>
-            </div>
-          ) : (
-            <p className="text-sm text-slate-400">天気取得不可</p>
           )}
         </div>
+
+        {/* Per-project weather */}
+        {!weatherLoading && weathers.length > 0 && (
+          <div className="mt-3 grid gap-2" style={{ gridTemplateColumns: `repeat(${Math.min(weathers.length, 3)}, 1fr)` }}>
+            {weathers.map((pw, i) => (
+              <div
+                key={i}
+                className="rounded-lg bg-white/10 px-3 py-2 text-center"
+              >
+                {pw.weather ? (
+                  <>
+                    <p className="text-xl leading-tight">{pw.weather.icon}</p>
+                    <p className="text-sm font-bold">
+                      {pw.weather.temperature}°C
+                    </p>
+                    <p className="text-[10px] text-slate-300">
+                      {pw.weather.description}
+                    </p>
+                  </>
+                ) : (
+                  <p className="text-xs text-slate-400">取得不可</p>
+                )}
+                <p className="mt-1 truncate text-[10px] font-medium text-slate-200">
+                  {pw.projectName}
+                </p>
+                <p className="truncate text-[9px] text-slate-400">
+                  {pw.locationLabel}
+                </p>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Stats Cards */}

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import type { Project, ProjectStatus } from "../domain/types.js";
 import { projectRepository } from "../stores/project-store.js";
+import { geocodeAddress } from "../infra/geocode.js";
 
 function toLocalDateString(date: Date): string {
   const y = date.getFullYear();
@@ -27,6 +28,7 @@ export function ProjectListPage() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
+  const [address, setAddress] = useState("");
   const [status, setStatus] = useState<ProjectStatus>("planning");
   const [startDate, setStartDate] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -46,6 +48,19 @@ export function ProjectListPage() {
 
     try {
       const now = new Date();
+      const trimmedAddress = address.trim();
+
+      // Geocode address if provided
+      let latitude: number | undefined;
+      let longitude: number | undefined;
+      if (trimmedAddress) {
+        const geo = await geocodeAddress(trimmedAddress);
+        if (geo) {
+          latitude = geo.lat;
+          longitude = geo.lon;
+        }
+      }
+
       const project: Project = {
         id: crypto.randomUUID(),
         name: name.trim(),
@@ -54,11 +69,14 @@ export function ProjectListPage() {
         startDate: startDate || toLocalDateString(now),
         createdAt: now.toISOString(),
         updatedAt: now.toISOString(),
+        ...(trimmedAddress ? { address: trimmedAddress } : {}),
+        ...(latitude !== undefined ? { latitude, longitude } : {}),
       };
 
       await projectRepository.create(project);
       setName("");
       setDescription("");
+      setAddress("");
       setStatus("planning");
       setStartDate("");
       await loadProjects();
@@ -85,6 +103,7 @@ export function ProjectListPage() {
               <thead className="border-b border-slate-200 bg-slate-50">
                 <tr>
                   <th className="px-4 py-3 font-medium text-slate-600">名前</th>
+                  <th className="px-4 py-3 font-medium text-slate-600">現場</th>
                   <th className="px-4 py-3 font-medium text-slate-600">ステータス</th>
                   <th className="px-4 py-3 font-medium text-slate-600">開始日</th>
                 </tr>
@@ -93,6 +112,7 @@ export function ProjectListPage() {
                 {projects.map((p) => (
                   <tr key={p.id} className="hover:bg-slate-50">
                     <td className="px-4 py-3 font-medium text-slate-900">{p.name}</td>
+                    <td className="px-4 py-3 text-xs text-slate-600">{p.address ?? "-"}</td>
                     <td className="px-4 py-3">
                       <span className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-medium ${statusColor[p.status]}`}>
                         {statusLabel[p.status]}
@@ -142,6 +162,18 @@ export function ProjectListPage() {
                 onChange={(e) => setDescription(e.target.value)}
                 className="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-slate-500 focus:ring-1 focus:ring-slate-500 focus:outline-none"
                 placeholder="説明を入力（任意）"
+              />
+            </label>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-700">
+              現場住所
+              <input
+                type="text"
+                value={address}
+                onChange={(e) => setAddress(e.target.value)}
+                className="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-slate-500 focus:ring-1 focus:ring-slate-500 focus:outline-none"
+                placeholder="例: 東京都港区南青山3-1-1"
               />
             </label>
           </div>
