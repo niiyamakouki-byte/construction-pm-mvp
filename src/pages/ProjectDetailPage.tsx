@@ -370,7 +370,7 @@ export function ProjectDetailPage({ projectId }: { projectId: string }) {
                               : "done",
                         )
                       }
-                      className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-bold transition-all ${statusBg[task.status]}`}
+                      className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-bold transition-all ${statusBg[task.status]}`}
                       title={`${statusLabel[task.status]} - タップで変更`}
                     >
                       {statusIcon[task.status]}
@@ -391,7 +391,7 @@ export function ProjectDetailPage({ projectId }: { projectId: string }) {
                     </div>
                     <button
                       onClick={() => handleDeleteTask(task.id)}
-                      className="shrink-0 rounded-lg p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 transition-colors"
+                      className="shrink-0 rounded-lg p-2.5 text-slate-300 hover:text-red-500 hover:bg-red-50 transition-colors"
                       title="削除"
                     >
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

@@ -105,7 +105,7 @@ export function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] pb-16 sm:pb-0">
+    <div className="min-h-screen bg-[#f8fafc] pb-20 sm:pb-0">
       {/* Top header */}
       <header className="bg-gradient-to-r from-brand-700 to-brand-800 text-white shadow-lg">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3 sm:py-4">
@@ -155,7 +155,7 @@ export function App() {
               <button
                 key={tab.key}
                 onClick={() => navigate(tab.path)}
-                className={`flex flex-1 flex-col items-center gap-0.5 py-2 transition-colors ${
+                className={`relative flex flex-1 flex-col items-center gap-0.5 py-2.5 transition-colors ${
                   isActive
                     ? "text-brand-600"
                     : "text-slate-400 active:text-slate-600"

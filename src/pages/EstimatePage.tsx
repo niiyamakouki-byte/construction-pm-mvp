@@ -241,10 +241,10 @@ export function EstimatePage() {
                     ¥{item.unitPrice.toLocaleString()} / {item.unit}
                   </p>
                 </div>
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1.5">
                   <button
                     onClick={() => handleQuantityChange(item.code, item.quantity - 1)}
-                    className="h-7 w-7 rounded-md bg-slate-100 text-sm font-bold text-slate-600 hover:bg-slate-200"
+                    className="h-9 w-9 rounded-lg bg-slate-100 text-sm font-bold text-slate-600 hover:bg-slate-200 active:bg-slate-300"
                   >
                     -
                   </button>
@@ -254,12 +254,12 @@ export function EstimatePage() {
                     onChange={(e) =>
                       handleQuantityChange(item.code, Math.max(0, Number(e.target.value)))
                     }
-                    className="w-12 rounded-md border border-slate-200 px-1 py-1 text-center text-xs tabular-nums"
+                    className="w-14 rounded-lg border border-slate-200 px-1 py-1.5 text-center text-sm tabular-nums"
                     min={0}
                   />
                   <button
                     onClick={() => handleQuantityChange(item.code, item.quantity + 1)}
-                    className="h-7 w-7 rounded-md bg-slate-100 text-sm font-bold text-slate-600 hover:bg-slate-200"
+                    className="h-9 w-9 rounded-lg bg-slate-100 text-sm font-bold text-slate-600 hover:bg-slate-200 active:bg-slate-300"
                   >
                     +
                   </button>

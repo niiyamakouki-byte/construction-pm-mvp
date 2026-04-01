@@ -82,14 +82,14 @@ describe("estimate-generator", () => {
     ]);
   });
 
-  it("lists all items (140 total)", () => {
+  it("lists all items (227 total)", () => {
     const items = listAllItems();
-    expect(items.length).toBe(140);
+    expect(items.length).toBe(227);
   });
 
   it("lists items by category", () => {
     const items = listItemsByCategory("demolition");
-    expect(items).toHaveLength(10);
+    expect(items).toHaveLength(15);
     expect(items[0].code).toBe("DM-001");
   });
 
