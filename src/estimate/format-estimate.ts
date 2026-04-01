@@ -90,13 +90,29 @@ export function formatEstimateText(est: Estimate): string {
   return lines.join("\n");
 }
 
+/**
+ * Escape a value for safe CSV embedding.
+ * Prevents CSV injection (formula injection) and handles commas/quotes/newlines.
+ */
+function csvEscape(value: string | number): string {
+  const s = String(value);
+  // Prevent formula injection: prefix with single quote if starts with =, +, -, @, \t, \r
+  const needsFormulaGuard = /^[=+\-@\t\r]/.test(s);
+  const escaped = needsFormulaGuard ? `'${s}` : s;
+  // Wrap in quotes if contains comma, quote, or newline
+  if (/[",\n\r]/.test(escaped) || needsFormulaGuard) {
+    return `"${escaped.replace(/"/g, '""')}"`;
+  }
+  return escaped;
+}
+
 /** 見積書をCSV形式にフォーマット */
 export function formatEstimateCSV(est: Estimate): string {
   const rows: string[] = [];
 
   rows.push("見積番号,作成日,有効期限,物件名,宛先");
   rows.push(
-    `${est.id},${est.createdAt},${est.validUntil},${est.propertyName},${est.clientName}`,
+    [est.id, est.createdAt, est.validUntil, csvEscape(est.propertyName), csvEscape(est.clientName)].join(","),
   );
   rows.push("");
   rows.push("カテゴリ,コード,品名,数量,単位,単価,金額,備考");
@@ -105,14 +121,14 @@ export function formatEstimateCSV(est: Estimate): string {
     for (const line of section.lines) {
       rows.push(
         [
-          section.categoryName,
+          csvEscape(section.categoryName),
           line.code,
-          line.name,
+          csvEscape(line.name),
           line.quantity,
-          line.unit,
+          csvEscape(line.unit),
           line.unitPrice,
           line.amount,
-          line.note,
+          csvEscape(line.note),
         ].join(","),
       );
     }

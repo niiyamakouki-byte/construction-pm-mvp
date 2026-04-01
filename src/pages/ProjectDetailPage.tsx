@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { Project, Task, TaskStatus, CostItem } from "../domain/types.js";
 import { projectRepository } from "../stores/project-store.js";
 import { taskRepository } from "../stores/task-store.js";
@@ -49,8 +49,12 @@ async function fetchWeather(
   lon: number,
 ): Promise<WeatherData | null> {
   try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000);
     const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weather_code&timezone=Asia%2FTokyo`;
-    const res = await fetch(url);
+    const res = await fetch(url, { signal: controller.signal });
+    clearTimeout(timeoutId);
+    if (!res.ok) return null;
     const data = (await res.json()) as {
       current?: { temperature_2m?: number; weather_code?: number };
     };
@@ -65,7 +69,7 @@ async function fetchWeather(
       };
     }
   } catch {
-    // non-critical
+    // non-critical: weather is a nice-to-have
   }
   return null;
 }
@@ -80,9 +84,13 @@ export function ProjectDetailPage({ projectId }: { projectId: string }) {
   const [taskName, setTaskName] = useState("");
   const [taskDueDate, setTaskDueDate] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [deletingTaskId, setDeletingTaskId] = useState<string | null>(null);
+  const weatherFetched = useRef(false);
 
   const loadData = useCallback(async () => {
     try {
+      setError(null);
       const [p, allTasks, allCosts] = await Promise.all([
         projectRepository.findById(projectId),
         taskRepository.findAll(),
@@ -92,12 +100,13 @@ export function ProjectDetailPage({ projectId }: { projectId: string }) {
       setTasks(allTasks.filter((t) => t.projectId === projectId));
       setCostItems(allCosts.filter((c) => c.projectId === projectId));
 
-      if (p?.latitude && p?.longitude) {
+      if (p?.latitude && p?.longitude && !weatherFetched.current) {
+        weatherFetched.current = true;
         const w = await fetchWeather(p.latitude, p.longitude);
         setWeather(w);
       }
-    } catch {
-      // silent
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "データの読み込みに失敗しました");
     } finally {
       setLoading(false);
     }
@@ -108,17 +117,22 @@ export function ProjectDetailPage({ projectId }: { projectId: string }) {
   }, [loadData]);
 
   const handleStatusChange = async (taskId: string, newStatus: TaskStatus) => {
-    await taskRepository.update(taskId, {
-      status: newStatus,
-      updatedAt: new Date().toISOString(),
-    });
-    await loadData();
+    try {
+      await taskRepository.update(taskId, {
+        status: newStatus,
+        updatedAt: new Date().toISOString(),
+      });
+      await loadData();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "ステータス更新に失敗しました");
+    }
   };
 
   const handleAddTask = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!taskName.trim()) return;
     setSubmitting(true);
+    setError(null);
     try {
       const now = new Date();
       await taskRepository.create({
@@ -135,16 +149,27 @@ export function ProjectDetailPage({ projectId }: { projectId: string }) {
       setTaskDueDate("");
       setShowTaskForm(false);
       await loadData();
-    } catch {
-      // silent
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "タスクの追加に失敗しました");
     } finally {
       setSubmitting(false);
     }
   };
 
   const handleDeleteTask = async (taskId: string) => {
-    await taskRepository.delete(taskId);
-    await loadData();
+    setDeletingTaskId(taskId);
+  };
+
+  const confirmDeleteTask = async () => {
+    if (!deletingTaskId) return;
+    try {
+      await taskRepository.delete(deletingTaskId);
+      setDeletingTaskId(null);
+      await loadData();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "タスクの削除に失敗しました");
+      setDeletingTaskId(null);
+    }
   };
 
   if (loading) {
@@ -200,6 +225,41 @@ export function ProjectDetailPage({ projectId }: { projectId: string }) {
         <span aria-hidden="true">&larr;</span>
         プロジェクト一覧
       </button>
+
+      {/* Error banner */}
+      {error && (
+        <div role="alert" className="flex items-start gap-2 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
+          <span className="shrink-0 mt-0.5">!</span>
+          <span className="flex-1">{error}</span>
+          <button onClick={() => setError(null)} className="shrink-0 text-red-400 hover:text-red-600" aria-label="エラーを閉じる">&times;</button>
+        </div>
+      )}
+
+      {/* Delete confirmation dialog */}
+      {deletingTaskId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={() => setDeletingTaskId(null)}>
+          <div className="mx-4 w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-base font-bold text-slate-900">タスクを削除</h3>
+            <p className="mt-2 text-sm text-slate-600">
+              このタスクを削除してもよろしいですか？この操作は取り消せません。
+            </p>
+            <div className="mt-5 flex justify-end gap-3">
+              <button
+                onClick={() => setDeletingTaskId(null)}
+                className="rounded-lg px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 transition-colors"
+              >
+                キャンセル
+              </button>
+              <button
+                onClick={confirmDeleteTask}
+                className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-700 transition-colors"
+              >
+                削除する
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Project Header */}
       <div className="rounded-2xl bg-gradient-to-br from-brand-700 via-brand-800 to-brand-900 p-5 text-white shadow-lg">
@@ -318,6 +378,9 @@ export function ProjectDetailPage({ projectId }: { projectId: string }) {
                 onChange={(e) => setTaskName(e.target.value)}
                 placeholder="タスク名"
                 required
+                maxLength={200}
+                autoComplete="off"
+                aria-label="タスク名"
                 className="flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 focus:outline-none"
               />
               <input
@@ -372,6 +435,7 @@ export function ProjectDetailPage({ projectId }: { projectId: string }) {
                       }
                       className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-bold transition-all ${statusBg[task.status]}`}
                       title={`${statusLabel[task.status]} - タップで変更`}
+                      aria-label={`${task.name}のステータスを変更 (現在: ${statusLabel[task.status]})`}
                     >
                       {statusIcon[task.status]}
                     </button>
@@ -393,6 +457,7 @@ export function ProjectDetailPage({ projectId }: { projectId: string }) {
                       onClick={() => handleDeleteTask(task.id)}
                       className="shrink-0 rounded-lg p-2.5 text-slate-300 hover:text-red-500 hover:bg-red-50 transition-colors"
                       title="削除"
+                      aria-label={`${task.name}を削除`}
                     >
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2" />

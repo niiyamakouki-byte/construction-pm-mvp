@@ -157,10 +157,11 @@ export function ProjectListPage() {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-slate-700">
+              <label htmlFor="project-name" className="block text-sm font-medium text-slate-700">
                 プロジェクト名 <span className="text-red-500">*</span>
               </label>
               <input
+                id="project-name"
                 type="text"
                 value={name}
                 onChange={(e) => {
@@ -169,6 +170,8 @@ export function ProjectListPage() {
                 }}
                 onBlur={() => { if (name) validateName(name); }}
                 required
+                maxLength={200}
+                autoComplete="off"
                 className={`mt-1.5 block w-full rounded-lg border px-3 py-2.5 text-sm shadow-sm transition-colors focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 focus:outline-none ${
                   nameError ? "border-red-300 bg-red-50" : "border-slate-300 bg-white"
                 }`}
@@ -179,25 +182,31 @@ export function ProjectListPage() {
               )}
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700">
+              <label htmlFor="project-description" className="block text-sm font-medium text-slate-700">
                 説明
               </label>
               <input
+                id="project-description"
                 type="text"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
+                maxLength={500}
+                autoComplete="off"
                 className="mt-1.5 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm shadow-sm transition-colors focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 focus:outline-none"
                 placeholder="工事概要やメモを入力"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700">
+              <label htmlFor="project-address" className="block text-sm font-medium text-slate-700">
                 現場住所
               </label>
               <input
+                id="project-address"
                 type="text"
                 value={address}
                 onChange={(e) => setAddress(e.target.value)}
+                maxLength={300}
+                autoComplete="street-address"
                 className="mt-1.5 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm shadow-sm transition-colors focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 focus:outline-none"
                 placeholder="例: 東京都港区南青山3-1-1"
               />
@@ -285,6 +294,10 @@ export function ProjectListPage() {
                       key={p.id}
                       className="hover:bg-brand-50/30 transition-colors cursor-pointer"
                       onClick={() => navigate(`/project/${p.id}`)}
+                      onKeyDown={(e) => { if (e.key === "Enter") navigate(`/project/${p.id}`); }}
+                      tabIndex={0}
+                      role="link"
+                      aria-label={`${p.name} - ${statusLabel[p.status]}`}
                     >
                       <td className="px-5 py-4">
                         <p className="font-semibold text-slate-900">{p.name}</p>

@@ -2,6 +2,20 @@ import type { BaseEntity } from "../domain/types.js";
 import type { Repository } from "../domain/repository.js";
 
 /**
+ * Error thrown when localStorage quota is exceeded.
+ * Callers can catch this to show a user-facing message.
+ */
+export class StorageQuotaError extends Error {
+  constructor(key: string, cause?: unknown) {
+    super(
+      `ストレージの容量が不足しています (key: ${key})。不要なプロジェクトを削除するか、ブラウザのストレージを確認してください。`,
+    );
+    this.name = "StorageQuotaError";
+    this.cause = cause;
+  }
+}
+
+/**
  * localStorage-backed repository.
  * Data survives page reloads. Falls back to in-memory Map if localStorage is unavailable.
  */
@@ -9,12 +23,29 @@ export class LocalStorageRepository<T extends BaseEntity>
   implements Repository<T>
 {
   private readonly key: string;
+  /** In-memory fallback used when localStorage is completely unavailable */
+  private fallbackStore: Map<string, T> | null = null;
 
   constructor(storageKey: string) {
     this.key = `genbahub:${storageKey}`;
   }
 
+  /** Check if localStorage is available at all */
+  private isLocalStorageAvailable(): boolean {
+    try {
+      const testKey = "__genbahub_test__";
+      localStorage.setItem(testKey, "1");
+      localStorage.removeItem(testKey);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
   private readAll(): Map<string, T> {
+    // If we already fell back to in-memory, use that
+    if (this.fallbackStore) return this.fallbackStore;
+
     try {
       const raw = localStorage.getItem(this.key);
       if (!raw) return new Map();
@@ -25,11 +56,30 @@ export class LocalStorageRepository<T extends BaseEntity>
     }
   }
 
+  /**
+   * Persist the store to localStorage.
+   * Throws StorageQuotaError if the write fails due to quota limits,
+   * so callers can inform the user instead of silently losing data.
+   */
   private writeAll(store: Map<string, T>): void {
+    // If localStorage is entirely unavailable, use in-memory fallback
+    if (!this.isLocalStorageAvailable()) {
+      this.fallbackStore = store;
+      return;
+    }
+
     try {
       localStorage.setItem(this.key, JSON.stringify([...store.values()]));
-    } catch {
-      // quota exceeded or unavailable — silent
+    } catch (err: unknown) {
+      // Detect quota exceeded (DOMException name varies across browsers)
+      const isDomException =
+        err instanceof DOMException ||
+        (err instanceof Error && err.name === "QuotaExceededError");
+      if (isDomException) {
+        throw new StorageQuotaError(this.key, err);
+      }
+      // For other unexpected errors, still throw so data loss is visible
+      throw err;
     }
   }
 

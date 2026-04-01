@@ -97,21 +97,49 @@ export function App() {
         </ErrorBoundary>
       );
     }
+    if (route === "/") {
+      return (
+        <ErrorBoundary fallbackTitle="プロジェクト一覧エラー">
+          <ProjectListPage />
+        </ErrorBoundary>
+      );
+    }
+    // 404 - unknown route
     return (
-      <ErrorBoundary fallbackTitle="プロジェクト一覧エラー">
-        <ProjectListPage />
-      </ErrorBoundary>
+      <div className="mx-auto max-w-lg px-4 py-12 text-center" role="alert">
+        <div className="rounded-2xl border-2 border-dashed border-slate-200 bg-white p-8">
+          <h2 className="text-lg font-bold text-slate-900">ページが見つかりません</h2>
+          <p className="mt-2 text-sm text-slate-500">
+            「{route}」は存在しないページです。
+          </p>
+          <button
+            onClick={() => navigate("/")}
+            className="mt-4 rounded-lg bg-brand-500 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-brand-600"
+          >
+            プロジェクト一覧へ
+          </button>
+        </div>
+      </div>
     );
   };
 
   return (
     <div className="min-h-screen bg-[#f8fafc] pb-20 sm:pb-0">
+      {/* Skip navigation link for keyboard/screen reader users */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[100] focus:rounded-lg focus:bg-brand-600 focus:px-4 focus:py-2 focus:text-white focus:shadow-lg"
+      >
+        メインコンテンツへスキップ
+      </a>
+
       {/* Top header */}
       <header className="bg-gradient-to-r from-brand-700 to-brand-800 text-white shadow-lg">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3 sm:py-4">
           <button
             onClick={() => navigate("/")}
             className="flex items-center gap-2.5 hover:opacity-90 transition-opacity"
+            aria-label="GenbaHub ホームへ"
           >
             <LogoIcon />
             <div className="flex flex-col">
@@ -124,7 +152,7 @@ export function App() {
             </div>
           </button>
           {/* Desktop nav */}
-          <nav className="hidden gap-1 sm:flex">
+          <nav className="hidden gap-1 sm:flex" aria-label="メインナビゲーション">
             {tabs.map((tab) => (
               <NavButton
                 key={tab.key}
@@ -140,6 +168,7 @@ export function App() {
 
       {/* Main content */}
       <main
+        id="main-content"
         key={route}
         className="page-enter mx-auto max-w-5xl px-4 py-6 sm:py-8"
       >
@@ -147,7 +176,10 @@ export function App() {
       </main>
 
       {/* Mobile bottom tab bar */}
-      <nav className="fixed inset-x-0 bottom-0 z-50 border-t border-slate-200 bg-white/95 backdrop-blur-sm sm:hidden safe-bottom">
+      <nav
+        className="fixed inset-x-0 bottom-0 z-50 border-t border-slate-200 bg-white/95 backdrop-blur-sm sm:hidden safe-bottom"
+        aria-label="モバイルナビゲーション"
+      >
         <div className="flex">
           {tabs.map((tab) => {
             const isActive = tab.matchRoute(route);
@@ -155,6 +187,8 @@ export function App() {
               <button
                 key={tab.key}
                 onClick={() => navigate(tab.path)}
+                aria-current={isActive ? "page" : undefined}
+                aria-label={tab.label}
                 className={`relative flex flex-1 flex-col items-center gap-0.5 py-2.5 transition-colors ${
                   isActive
                     ? "text-brand-600"
@@ -197,6 +231,7 @@ function NavButton({
   return (
     <button
       onClick={onClick}
+      aria-current={active ? "page" : undefined}
       className={`flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition-all ${
         active
           ? "bg-white/20 text-white shadow-sm"

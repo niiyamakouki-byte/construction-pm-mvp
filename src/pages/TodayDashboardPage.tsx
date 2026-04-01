@@ -92,8 +92,12 @@ async function fetchWeather(
   lon: number,
 ): Promise<WeatherData | null> {
   try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000);
     const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weather_code&timezone=Asia%2FTokyo`;
-    const res = await fetch(url);
+    const res = await fetch(url, { signal: controller.signal });
+    clearTimeout(timeoutId);
+    if (!res.ok) return null;
     const data = (await res.json()) as {
       current?: { temperature_2m?: number; weather_code?: number };
     };
@@ -108,7 +112,7 @@ async function fetchWeather(
       };
     }
   } catch {
-    // non-critical
+    // Network error or timeout — non-critical, return null
   }
   return null;
 }
@@ -198,10 +202,12 @@ export function TodayDashboardPage() {
   const [allTasks, setAllTasks] = useState<Task[]>([]);
   const [allProjects, setAllProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const { weathers, loading: weatherLoading } = useProjectWeathers(allProjects);
 
   const loadData = useCallback(async () => {
     try {
+      setLoadError(null);
       const [allT, allP] = await Promise.all([
         taskRepository.findAll(),
         projectRepository.findAll(),
@@ -227,8 +233,8 @@ export function TodayDashboardPage() {
         }));
 
       setTasks(todayTasks);
-    } catch {
-      // Silent fail for dashboard
+    } catch (err) {
+      setLoadError(err instanceof Error ? err.message : "データの読み込みに失敗しました");
     } finally {
       setLoading(false);
     }
@@ -239,11 +245,15 @@ export function TodayDashboardPage() {
   }, [loadData]);
 
   const handleStatusChange = async (taskId: string, newStatus: TaskStatus) => {
-    await taskRepository.update(taskId, {
-      status: newStatus,
-      updatedAt: new Date().toISOString(),
-    });
-    await loadData();
+    try {
+      await taskRepository.update(taskId, {
+        status: newStatus,
+        updatedAt: new Date().toISOString(),
+      });
+      await loadData();
+    } catch (err) {
+      setLoadError(err instanceof Error ? err.message : "ステータス更新に失敗しました");
+    }
   };
 
   // ── Stats ────────────────────────────────────────────
@@ -259,6 +269,15 @@ export function TodayDashboardPage() {
   // ── Render ───────────────────────────────────────────
   return (
     <div className="mx-auto max-w-lg space-y-4 px-4 pb-8">
+      {/* Error banner */}
+      {loadError && (
+        <div role="alert" className="flex items-start gap-2 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
+          <span className="shrink-0 mt-0.5">!</span>
+          <span className="flex-1">{loadError}</span>
+          <button onClick={() => setLoadError(null)} className="shrink-0 text-red-400 hover:text-red-600" aria-label="エラーを閉じる">&times;</button>
+        </div>
+      )}
+
       {/* Date Header */}
       <div className="rounded-2xl bg-gradient-to-br from-brand-700 via-brand-800 to-brand-900 px-5 py-5 text-white shadow-lg">
         <div className="flex items-center justify-between">

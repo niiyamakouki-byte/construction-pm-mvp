@@ -92,7 +92,7 @@ function extractArea(text: string): { sqm: number; source: "tatami" | "sqm" | "t
   }
 
   // WxH寸法表記: "5m×2.4m", "3m*2m", "5mx2.4m"
-  const dimMatch = n.match(/(\d+(?:\.\d+)?)\s*m?\s*[×xX\*]\s*(\d+(?:\.\d+)?)\s*m/);
+  const dimMatch = n.match(/(\d+(?:\.\d+)?)\s*m?\s*[×xX*]\s*(\d+(?:\.\d+)?)\s*m/);
   if (dimMatch) {
     const w = parseFloat(dimMatch[1]);
     const h = parseFloat(dimMatch[2]);
@@ -105,7 +105,7 @@ function extractArea(text: string): { sqm: number; source: "tatami" | "sqm" | "t
 /** テキストから寸法(W×H)を抽出（間仕切り等の壁面積計算用） */
 function extractDimensions(text: string): { width: number; height: number } | null {
   const n = normalizeNumbers(text);
-  const dimMatch = n.match(/(\d+(?:\.\d+)?)\s*m?\s*[×xX\*]\s*(\d+(?:\.\d+)?)\s*m/);
+  const dimMatch = n.match(/(\d+(?:\.\d+)?)\s*m?\s*[×xX*]\s*(\d+(?:\.\d+)?)\s*m/);
   if (dimMatch) {
     return { width: parseFloat(dimMatch[1]), height: parseFloat(dimMatch[2]) };
   }
@@ -510,7 +510,7 @@ export function parseNaturalLanguage(
     // 数値や面積の記述だけのフレーズは無視
     if (/^\d+(?:畳|㎡|平米|坪|台|箇所|本)$/.test(phrase)) return false;
     // 寸法表記 (5m×2.4m 等) を無視
-    if (/^\d+(?:\.\d+)?\s*m?\s*[×xX\*]\s*\d+(?:\.\d+)?\s*m$/.test(phrase)) return false;
+    if (/^\d+(?:\.\d+)?\s*m?\s*[×xX*]\s*\d+(?:\.\d+)?\s*m$/.test(phrase)) return false;
     // "両面PB" 等の修飾フレーズを無視
     if (/^両面/.test(phrase)) return false;
     // 純粋な数字フレーズを無視
