@@ -31,7 +31,10 @@ function normalizeError(error: { message: string } | null): Error {
 export class SupabaseRepository<T extends BaseEntity>
   implements Repository<T>
 {
-  constructor(private readonly tableName: string) {}
+  constructor(
+    private readonly tableName: string,
+    private readonly getOrganizationId?: () => string | null,
+  ) {}
 
   async findById(id: string): Promise<T | null> {
     const client = await getSupabaseClient();
@@ -63,7 +66,12 @@ export class SupabaseRepository<T extends BaseEntity>
 
   async create(entity: T): Promise<T> {
     const client = await getSupabaseClient();
-    const { data, error } = await client.from(this.tableName).insert(toSnakeRecord(entity)).select("*").single();
+    const record = toSnakeRecord(entity as Record<string, unknown>);
+    const orgId = this.getOrganizationId?.();
+    if (orgId && !record.organization_id) {
+      record.organization_id = orgId;
+    }
+    const { data, error } = await client.from(this.tableName).insert(record).select("*").single();
     if (error) {
       throw normalizeError(error);
     }

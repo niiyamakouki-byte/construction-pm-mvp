@@ -7,9 +7,11 @@ import { LandingPage } from "./pages/LandingPage.js";
 import { LoginPage } from "./pages/LoginPage.js";
 import { SignupPage } from "./pages/SignupPage.js";
 import { LegalPages } from "./pages/LegalPages.js";
+import { PricingPage } from "./pages/PricingPage.js";
 import { ErrorBoundary } from "./components/ErrorBoundary.js";
 import { AuthGuard } from "./components/AuthGuard.js";
 import { AuthProvider, useAuth } from "./contexts/AuthContext.js";
+import { OrganizationProvider } from "./contexts/OrganizationContext.js";
 import { useHashRoute, navigate } from "./hooks/useHashRouter.js";
 
 function LogoIcon() {
@@ -87,6 +89,9 @@ function AppShell() {
   if (legalMatch) {
     const section = legalMatch[1] as "tokushoho" | "privacy" | "tos" | undefined;
     return <LegalPages section={section} />;
+  }
+  if (route === "/pricing") {
+    return <PricingPage />;
   }
 
   // Protected app routes
@@ -257,7 +262,9 @@ function AppShell() {
 export function App() {
   return (
     <AuthProvider>
-      <AppShell />
+      <OrganizationProvider>
+        <AppShell />
+      </OrganizationProvider>
     </AuthProvider>
   );
 }

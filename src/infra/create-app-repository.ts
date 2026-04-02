@@ -7,13 +7,14 @@ import { SupabaseRepository } from "./supabase-repository.js";
 
 export function createAppRepository<T extends BaseEntity>(
   tableName: string,
+  getOrganizationId?: () => string | null,
 ): Repository<T> {
   if (import.meta.env.MODE === "test" || import.meta.env.VITEST) {
     return new InMemoryRepository<T>();
   }
 
   if (hasSupabaseEnv()) {
-    return new SupabaseRepository<T>(tableName);
+    return new SupabaseRepository<T>(tableName, getOrganizationId);
   }
 
   // Use localStorage for persistence across page reloads
