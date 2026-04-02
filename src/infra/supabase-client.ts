@@ -1,3 +1,82 @@
+// ── DB型定義（Supabaseテーブルのsnake_caseカラム） ──────────
+export type DbProject = {
+  id: string;
+  name: string;
+  description: string;
+  status: "planning" | "active" | "completed" | "on_hold";
+  start_date: string;
+  end_date: string | null;
+  address: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  budget: number | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type DbTask = {
+  id: string;
+  project_id: string;
+  name: string;
+  description: string;
+  status: "todo" | "in_progress" | "done";
+  assignee_id: string | null;
+  start_date: string | null;
+  due_date: string | null;
+  progress: number;
+  dependencies: string[];
+  created_at: string;
+  updated_at: string;
+};
+
+export type DbTeamMember = {
+  id: string;
+  name: string;
+  role: string;
+  email: string | null;
+  phone: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type DbDailyReport = {
+  id: string;
+  project_id: string;
+  report_date: string;
+  weather: string | null;
+  content: string;
+  photo_urls: string[];
+  author_id: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type DbEstimate = {
+  id: string;
+  project_id: string;
+  item_name: string;
+  quantity: number;
+  unit: string;
+  unit_price: number;
+  amount: number;
+  category: string;
+  created_at: string;
+  updated_at: string;
+};
+
+export type DbExpense = {
+  id: string;
+  project_id: string;
+  expense_date: string;
+  description: string;
+  amount: number;
+  category: string;
+  receipt_url: string | null;
+  approval_status: "pending" | "approved" | "rejected";
+  created_at: string;
+  updated_at: string;
+};
+
 type SupabaseRow = Record<string, unknown>;
 
 type SupabaseQueryResult = {

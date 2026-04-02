@@ -142,6 +142,8 @@ export function ProjectDetailPage({ projectId }: { projectId: string }) {
         description: "",
         status: "todo",
         dueDate: taskDueDate || undefined,
+        progress: 0,
+        dependencies: [],
         createdAt: now.toISOString(),
         updatedAt: now.toISOString(),
       });

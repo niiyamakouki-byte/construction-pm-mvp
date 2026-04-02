@@ -18,6 +18,7 @@ export type Project = BaseEntity & {
   address?: string;
   latitude?: number;
   longitude?: number;
+  budget?: number;
 };
 
 // ── Task ────────────────────────────────────────────
@@ -30,7 +31,10 @@ export type Task = BaseEntity & {
   description: string;
   status: TaskStatus;
   assigneeId?: string;
+  startDate?: string;
   dueDate?: string;
+  progress: number;
+  dependencies: string[];
 };
 
 // ── Resource ────────────────────────────────────────
@@ -51,4 +55,50 @@ export type CostItem = BaseEntity & {
   description: string;
   amount: number;
   category: string;
+};
+
+// ── TeamMember ──────────────────────────────────────
+
+export type TeamMember = BaseEntity & {
+  name: string;
+  role: string;
+  email?: string;
+  phone?: string;
+};
+
+// ── DailyReport ─────────────────────────────────────
+
+export type DailyReport = BaseEntity & {
+  projectId: string;
+  reportDate: string;
+  weather?: string;
+  content: string;
+  photoUrls: string[];
+  authorId?: string;
+};
+
+// ── Estimate ────────────────────────────────────────
+
+export type Estimate = BaseEntity & {
+  projectId: string;
+  itemName: string;
+  quantity: number;
+  unit: string;
+  unitPrice: number;
+  amount: number;
+  category: string;
+};
+
+// ── Expense ─────────────────────────────────────────
+
+export type ExpenseApprovalStatus = "pending" | "approved" | "rejected";
+
+export type Expense = BaseEntity & {
+  projectId: string;
+  expenseDate: string;
+  description: string;
+  amount: number;
+  category: string;
+  receiptUrl?: string;
+  approvalStatus: ExpenseApprovalStatus;
 };
