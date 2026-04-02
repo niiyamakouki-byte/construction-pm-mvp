@@ -17,8 +17,8 @@ import type { ParseResult } from "./nl-estimate-parser";
 export type DiscordEstimateResult = {
   /** Discord用Markdown文字列 */
   message: string;
-  /** 生成された見積オブジェクト */
-  estimate: Estimate;
+  /** 生成された見積オブジェクト（パース失敗時はnull） */
+  estimate: Estimate | null;
   /** パース結果 (デバッグ用) */
   parseResult: ParseResult;
 };
@@ -175,7 +175,7 @@ export function discordEstimate(
   if (parseResult.items.length === 0) {
     return {
       message: `## \uD83D\uDCCB 概算見積\n> ${text}\n\n\u274C 工事内容を特定できませんでした。\n例: 「6畳の壁紙張替え」「20m\u00B2のタイルカーペット張替えとLED照明10台」\n\n-# \uD83C\uDFD7\uFE0F ラポルタ概算見積AI`,
-      estimate: null as unknown as Estimate,
+      estimate: null,
       parseResult,
     };
   }
