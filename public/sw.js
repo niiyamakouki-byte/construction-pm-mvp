@@ -1,8 +1,8 @@
 // GenbaHub Service Worker - Cache-first for assets, network-first for API
 const CACHE_NAME = "genbahub-v1";
 const STATIC_ASSETS = [
-  "/construction-pm-mvp/",
-  "/construction-pm-mvp/index.html",
+  "/",
+  "/index.html",
 ];
 
 // Install: pre-cache shell
@@ -51,7 +51,7 @@ self.addEventListener("fetch", (event) => {
           caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
           return response;
         })
-        .catch(() => caches.match(request).then((r) => r || caches.match("/construction-pm-mvp/")))
+        .catch(() => caches.match(request).then((r) => r || caches.match("/")))
     );
     return;
   }

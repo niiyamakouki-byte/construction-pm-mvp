@@ -17,3 +17,10 @@ export function useHashRoute(): string {
 export function navigate(path: string): void {
   window.location.hash = path;
 }
+
+/** Routes that are accessible without authentication. */
+export const PUBLIC_ROUTES = ["/", "/login", "/signup", "/pricing", "/legal"];
+
+export function isPublicRoute(route: string): boolean {
+  return PUBLIC_ROUTES.some((pub) => route === pub || route.startsWith(pub + "#"));
+}
