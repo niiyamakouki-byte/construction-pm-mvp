@@ -41,7 +41,7 @@ function findCategory(code: string) {
 
 /** ユニークID生成 */
 function generateId(): string {
-  return `EST-${Date.now().toString(36).toUpperCase()}`;
+  return `EST-${crypto.randomUUID().replace(/-/g, '').toUpperCase()}`;
 }
 
 /** 見積書を生成 */
