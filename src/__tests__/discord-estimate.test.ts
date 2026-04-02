@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { discordEstimate, formatEstimateForDiscord } from "../estimate/discord-estimate";
+import { discordEstimate, formatEstimateForDiscord, handleDiscordEstimateMessage, isEstimateRequest } from "../estimate/discord-estimate";
 import { parseNaturalLanguage } from "../estimate/nl-estimate-parser";
 import { generateEstimate } from "../estimate/estimate-generator";
 
@@ -131,5 +131,90 @@ describe("formatEstimateForDiscord", () => {
     expect(message).toContain("| 品目 | 数量 | 単価 | 金額 |");
     expect(message).toContain("フローリング");
     expect(message).toContain("税込合計");
+  });
+});
+
+describe("handleDiscordEstimateMessage", () => {
+  it("工事メッセージ → ok=true + contentにMarkdownテーブル", () => {
+    const reply = handleDiscordEstimateMessage("6畳の壁紙張替え");
+
+    expect(reply.ok).toBe(true);
+    expect(reply.content).toContain("| 品目 | 数量 | 単価 | 金額 |");
+    expect(reply.content).toContain("税込合計");
+    expect(reply.estimate).not.toBeNull();
+    expect(reply.estimate!.total).toBeGreaterThan(0);
+  });
+
+  it("未マッチテキスト → ok=false + エラーメッセージ", () => {
+    const reply = handleDiscordEstimateMessage("こんにちは");
+
+    expect(reply.ok).toBe(false);
+    expect(reply.content).toContain("工事内容を特定できませんでした");
+    expect(reply.estimate).toBeNull();
+  });
+
+  it("空文字 → ok=false + 案内メッセージ", () => {
+    const reply = handleDiscordEstimateMessage("");
+
+    expect(reply.ok).toBe(false);
+    expect(reply.content).toContain("メッセージが空です");
+    expect(reply.estimate).toBeNull();
+  });
+
+  it("空白のみ → ok=false + 案内メッセージ", () => {
+    const reply = handleDiscordEstimateMessage("   ");
+
+    expect(reply.ok).toBe(false);
+    expect(reply.estimate).toBeNull();
+  });
+
+  it("複数品目 → 複数セクションを含む見積を返す", () => {
+    const reply = handleDiscordEstimateMessage("20㎡のタイルカーペット張替え、LED照明10台");
+
+    expect(reply.ok).toBe(true);
+    expect(reply.estimate!.sections.length).toBeGreaterThanOrEqual(2);
+    expect(reply.content).toContain("タイルカーペット");
+    expect(reply.content).toContain("LED");
+  });
+
+  it("メッセージ前後の空白はトリムされる", () => {
+    const reply = handleDiscordEstimateMessage("  6畳の壁紙張替え  ");
+
+    expect(reply.ok).toBe(true);
+    expect(reply.content).toContain("6畳の壁紙張替え");
+  });
+});
+
+describe("isEstimateRequest", () => {
+  it("「見積」を含む → true", () => {
+    expect(isEstimateRequest("見積を出してください")).toBe(true);
+  });
+
+  it("「工事」を含む → true", () => {
+    expect(isEstimateRequest("壁紙工事はいくらですか")).toBe(true);
+  });
+
+  it("「壁紙」を含む → true", () => {
+    expect(isEstimateRequest("6畳の壁紙張替え")).toBe(true);
+  });
+
+  it("「フローリング」を含む → true", () => {
+    expect(isEstimateRequest("フローリングの費用は?")).toBe(true);
+  });
+
+  it("「エアコン」を含む → true", () => {
+    expect(isEstimateRequest("エアコン設置お願いします")).toBe(true);
+  });
+
+  it("「estimate」(英字) → true", () => {
+    expect(isEstimateRequest("estimate please")).toBe(true);
+  });
+
+  it("無関係なテキスト → false", () => {
+    expect(isEstimateRequest("おはようございます")).toBe(false);
+  });
+
+  it("空文字 → false", () => {
+    expect(isEstimateRequest("")).toBe(false);
   });
 });

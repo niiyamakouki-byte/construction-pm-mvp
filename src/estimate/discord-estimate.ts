@@ -97,6 +97,63 @@ export function formatEstimateForDiscord(estimate: Estimate, parseResult: ParseR
   return lines.join("\n");
 }
 
+/** Discord Botへの返答ペイロード */
+export type DiscordReplyPayload = {
+  /** 返答Markdown文字列 */
+  content: string;
+  /** 見積が生成された場合は見積データ、失敗時はnull */
+  estimate: DiscordEstimateResult["estimate"] | null;
+  /** 処理成功フラグ */
+  ok: boolean;
+};
+
+/**
+ * Discord Botがメッセージを受け取って見積を処理するハンドラー
+ *
+ * トリガーパターン:
+ *   「見積」「見積もり」「estimate」「いくら」「費用」「工事」などを含むメッセージ
+ *
+ * @param message - Discordから届いた生テキスト
+ * @returns 返答ペイロード（content をそのままDiscordに送れる）
+ */
+export function handleDiscordEstimateMessage(message: string): DiscordReplyPayload {
+  const trimmed = message.trim();
+
+  if (!trimmed) {
+    return {
+      content: "メッセージが空です。例: 「6畳の壁紙張替え」「20m²のタイルカーペット張替えとLED照明10台」",
+      estimate: null,
+      ok: false,
+    };
+  }
+
+  const result = discordEstimate(trimmed);
+
+  return {
+    content: result.message,
+    estimate: result.estimate ?? null,
+    ok: result.estimate != null,
+  };
+}
+
+/**
+ * Discordメッセージが見積依頼かどうか判定
+ *
+ * @param message - Discordから届いた生テキスト
+ * @returns 見積依頼と判定した場合はtrue
+ */
+export function isEstimateRequest(message: string): boolean {
+  const lower = message.toLowerCase();
+  const triggers = [
+    "見積", "見積もり", "みつもり",
+    "estimate", "いくら", "費用", "値段", "価格",
+    "工事", "張替", "はりかえ", "リノベ", "解体",
+    "壁紙", "フローリング", "タイル", "照明", "エアコン",
+    "内装", "塗装",
+  ];
+  return triggers.some((t) => lower.includes(t) || message.includes(t));
+}
+
 /**
  * 自然言語テキストからDiscord用見積メッセージを一発生成
  *
