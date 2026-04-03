@@ -1,4 +1,5 @@
 import { jsPDF } from "jspdf";
+import { NOTO_SANS_JP_REGULAR_BASE64 } from "./noto-sans-jp-font.js";
 import type { Estimate } from "./types.js";
 
 /** 金額を日本円フォーマット */
@@ -7,56 +8,14 @@ function yen(n: number): string {
 }
 
 /**
- * ArrayBuffer を base64 文字列に変換
- */
-function arrayBufferToBase64(buffer: ArrayBuffer): string {
-  const bytes = new Uint8Array(buffer);
-  let binary = "";
-  for (let i = 0; i < bytes.byteLength; i++) {
-    binary += String.fromCharCode(bytes[i]);
-  }
-  return btoa(binary);
-}
-
-/**
- * Noto Sans JP (subset) を Google Fonts CDN から取得して jsPDF に登録する。
- * 一度取得したらモジュールスコープでキャッシュする。
- */
-let cachedFontBase64: string | null = null;
-
-async function loadJapaneseFontBase64(): Promise<string | null> {
-  if (cachedFontBase64 !== null) return cachedFontBase64;
-
-  // Google Fonts API で Noto Sans JP Regular の TTF を取得
-  // ※ CORS: fonts.gstatic.com は cross-origin リクエストを許可している
-  const FONT_URL =
-    "https://fonts.gstatic.com/s/notosansjp/v53/-F6jfjtqLzI2JPCgQBnw7HFyzSD-AsregP8VFBEj75s5bDakDfgyUU4u1E8K4vlh4A.ttf";
-
-  try {
-    const response = await fetch(FONT_URL);
-    if (!response.ok) throw new Error(`Font fetch failed: ${response.status}`);
-    const buffer = await response.arrayBuffer();
-    cachedFontBase64 = arrayBufferToBase64(buffer);
-    return cachedFontBase64;
-  } catch {
-    // フォント取得失敗時は null を返す（Latin フォールバックを使用）
-    return null;
-  }
-}
-
-/**
  * jsPDF インスタンスに日本語フォントを設定する。
- * フォント取得に失敗した場合は Helvetica にフォールバックする。
+ * ビルド時にバンドルされたサブセットフォントを使用するため、CDN不要・オフライン動作可。
+ * 収録文字: ASCII + ひらがな + カタカナ + 建設業務頻出漢字（約642文字）
  */
-async function setupJapaneseFont(doc: jsPDF): Promise<void> {
-  const fontBase64 = await loadJapaneseFontBase64();
-  if (fontBase64) {
-    doc.addFileToVFS("NotoSansJP-Regular.ttf", fontBase64);
-    doc.addFont("NotoSansJP-Regular.ttf", "NotoSansJP", "normal");
-    doc.setFont("NotoSansJP");
-  } else {
-    doc.setFont("helvetica");
-  }
+function setupJapaneseFont(doc: jsPDF): void {
+  doc.addFileToVFS("NotoSansJP-Regular.ttf", NOTO_SANS_JP_REGULAR_BASE64);
+  doc.addFont("NotoSansJP-Regular.ttf", "NotoSansJP", "normal");
+  doc.setFont("NotoSansJP");
 }
 
 /**
@@ -67,7 +26,7 @@ async function setupJapaneseFont(doc: jsPDF): Promise<void> {
 export async function generateEstimatePdf(estimate: Estimate): Promise<Blob> {
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
 
-  await setupJapaneseFont(doc);
+  setupJapaneseFont(doc);
 
   const pageWidth = 210;
   const marginL = 18;
