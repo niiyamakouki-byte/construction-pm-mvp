@@ -4,6 +4,7 @@ import {
   listCategories,
   listItemsByCategory,
 } from "../estimate/estimate-generator.js";
+import { generateEstimatePdf } from "../estimate/pdf-estimate.js";
 import type { Estimate, EstimateInput } from "../estimate/types.js";
 
 type SelectedItem = EstimateInput & { name: string; unit: string; unitPrice: number };
@@ -15,6 +16,7 @@ export function EstimatePage() {
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [estimate, setEstimate] = useState<Estimate | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [pdfLoading, setPdfLoading] = useState(false);
 
   const categories = listCategories();
 
@@ -65,17 +67,44 @@ export function EstimatePage() {
     }
   };
 
+  const handleDownloadPdf = async () => {
+    if (!estimate) return;
+    setPdfLoading(true);
+    try {
+      const blob = await generateEstimatePdf(estimate);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `見積書_${estimate.propertyName}_${estimate.createdAt}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      setError("PDF出力に失敗しました");
+    } finally {
+      setPdfLoading(false);
+    }
+  };
+
   // Estimate result view
   if (estimate) {
     return (
       <div className="mx-auto max-w-2xl px-4 pb-24">
-        <button
-          onClick={() => setEstimate(null)}
-          className="mb-4 flex items-center gap-1 text-sm text-slate-500 hover:text-brand-600 transition-colors"
-        >
-          <span aria-hidden="true">&larr;</span>
-          見積入力に戻る
-        </button>
+        <div className="mb-4 flex items-center justify-between">
+          <button
+            onClick={() => setEstimate(null)}
+            className="flex items-center gap-1 text-sm text-slate-500 hover:text-brand-600 transition-colors"
+          >
+            <span aria-hidden="true">&larr;</span>
+            見積入力に戻る
+          </button>
+          <button
+            onClick={handleDownloadPdf}
+            disabled={pdfLoading}
+            className="flex items-center gap-1.5 rounded-lg bg-red-600 px-3 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-red-700 active:bg-red-800 transition-colors disabled:opacity-60"
+          >
+            {pdfLoading ? "生成中..." : "PDF出力"}
+          </button>
+        </div>
 
         <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
           <div className="border-b border-slate-200 pb-4 mb-4">
