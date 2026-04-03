@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useMemo, useState, useRef } from "react";
 import type { Project, Task, TaskStatus } from "../domain/types.js";
-import { projectRepository } from "../stores/project-store.js";
-import { taskRepository } from "../stores/task-store.js";
+import { createProjectRepository } from "../stores/project-store.js";
+import { createTaskRepository } from "../stores/task-store.js";
 import { navigate } from "../hooks/useHashRouter.js";
+import { useOrganizationContext } from "../contexts/OrganizationContext.js";
 
 // ── Helpers ──────────────────────────────────────────
 
@@ -56,6 +57,15 @@ const MAX_CHART_DAYS = 365;
 // ── Component ────────────────────────────────────────
 
 export function GanttPage() {
+  const { organizationId } = useOrganizationContext();
+  const projectRepository = useMemo(
+    () => createProjectRepository(() => organizationId),
+    [organizationId],
+  );
+  const taskRepository = useMemo(
+    () => createTaskRepository(() => organizationId),
+    [organizationId],
+  );
   const [ganttTasks, setGanttTasks] = useState<GanttTask[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

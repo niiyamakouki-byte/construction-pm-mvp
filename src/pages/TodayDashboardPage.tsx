@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { Task, TaskStatus, Project } from "../domain/types.js";
-import { taskRepository } from "../stores/task-store.js";
-import { projectRepository } from "../stores/project-store.js";
+import { createTaskRepository } from "../stores/task-store.js";
+import { createProjectRepository } from "../stores/project-store.js";
 import { navigate } from "../hooks/useHashRouter.js";
+import { useOrganizationContext } from "../contexts/OrganizationContext.js";
 
 // ── Helpers ────────────────────────────────────────────
 
@@ -197,6 +198,15 @@ function useProjectWeathers(projects: Project[]): {
 // ── Main Component ─────────────────────────────────────
 
 export function TodayDashboardPage() {
+  const { organizationId } = useOrganizationContext();
+  const taskRepository = useMemo(
+    () => createTaskRepository(() => organizationId),
+    [organizationId],
+  );
+  const projectRepository = useMemo(
+    () => createProjectRepository(() => organizationId),
+    [organizationId],
+  );
   const today = toLocalDateString(new Date());
   const [tasks, setTasks] = useState<TaskWithProject[]>([]);
   const [allTasks, setAllTasks] = useState<Task[]>([]);

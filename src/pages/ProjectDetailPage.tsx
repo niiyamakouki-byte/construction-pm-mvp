@@ -1,9 +1,10 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Project, Task, TaskStatus, CostItem } from "../domain/types.js";
-import { projectRepository } from "../stores/project-store.js";
-import { taskRepository } from "../stores/task-store.js";
-import { costItemRepository } from "../stores/cost-item-store.js";
+import { createProjectRepository } from "../stores/project-store.js";
+import { createTaskRepository } from "../stores/task-store.js";
+import { createCostItemRepository } from "../stores/cost-item-store.js";
 import { navigate } from "../hooks/useHashRouter.js";
+import { useOrganizationContext } from "../contexts/OrganizationContext.js";
 
 const statusLabel: Record<TaskStatus, string> = {
   todo: "未着手",
@@ -75,6 +76,19 @@ async function fetchWeather(
 }
 
 export function ProjectDetailPage({ projectId }: { projectId: string }) {
+  const { organizationId } = useOrganizationContext();
+  const projectRepository = useMemo(
+    () => createProjectRepository(() => organizationId),
+    [organizationId],
+  );
+  const taskRepository = useMemo(
+    () => createTaskRepository(() => organizationId),
+    [organizationId],
+  );
+  const costItemRepository = useMemo(
+    () => createCostItemRepository(() => organizationId),
+    [organizationId],
+  );
   const [project, setProject] = useState<Project | null>(null);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [costItems, setCostItems] = useState<CostItem[]>([]);

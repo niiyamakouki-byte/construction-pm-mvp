@@ -176,7 +176,7 @@ describe("Estimate pipeline - 5 realistic scenarios", () => {
     const result = discordEstimate("6畳の洋室、壁紙張替えとフローリング張替え");
 
     expect(result.estimate).toBeTruthy();
-    const est = result.estimate;
+    const est = result.estimate!;
 
     // Verify items parsed
     expect(result.parseResult.items.length).toBe(2);
@@ -232,7 +232,7 @@ describe("Estimate pipeline - 5 realistic scenarios", () => {
       "20坪のオフィス、タイルカーペット張替え、クロス張替え、岩綿吸音板、LED照明20台、エアコン3台",
     );
 
-    const est = result.estimate;
+    const est = result.estimate!;
     expect(result.parseResult.items.length).toBe(5);
 
     // 20坪 = 66.12㎡
@@ -264,7 +264,7 @@ describe("Estimate pipeline - 5 realistic scenarios", () => {
    */
   it("Scenario 3: 50㎡店舗内装解体+クリーニング+養生", () => {
     const result = discordEstimate("50㎡の店舗内装解体");
-    const est = result.estimate;
+    const est = result.estimate!;
 
     const demo = est.sections.flatMap((s) => s.lines).find((l) => l.code === "DM-001");
     expect(demo!.quantity).toBe(50);
@@ -281,7 +281,7 @@ describe("Estimate pipeline - 5 realistic scenarios", () => {
    */
   it("Scenario 4: 間仕切り5m×2.4m両面クロス", () => {
     const result = discordEstimate("間仕切りLGS壁新設5m×2.4m、両面PB+クロス");
-    const est = result.estimate;
+    const est = result.estimate!;
 
     // Partition: 12㎡ (5*2.4)
     const partition = est.sections.flatMap((s) => s.lines).find((l) => l.code === "IN-002");
@@ -305,7 +305,7 @@ describe("Estimate pipeline - 5 realistic scenarios", () => {
       "ユニットバス交換、キッチン交換、トイレ1台、給湯器1台",
     );
 
-    const est = result.estimate;
+    const est = result.estimate!;
     expect(result.parseResult.items.length).toBe(4);
 
     // All should be quantity 1
@@ -461,14 +461,14 @@ describe("discordEstimate - edge cases", () => {
     const longText = "この工事は非常に長い説明文を持っています。" + "壁紙張替え";
     const result = discordEstimate(longText);
     // Property name should be auto-generated and limited
-    expect(result.estimate.propertyName.length).toBeLessThanOrEqual(40);
-    expect(result.estimate.total).toBeGreaterThan(0);
+    expect(result.estimate!.propertyName.length).toBeLessThanOrEqual(40);
+    expect(result.estimate!.total).toBeGreaterThan(0);
   });
 
   it("special characters in input do not break markdown", () => {
     const result = discordEstimate("6畳の壁紙張替え | テスト & 確認 <html>");
     expect(result.message).toBeTruthy();
-    expect(result.estimate.total).toBeGreaterThan(0);
+    expect(result.estimate!.total).toBeGreaterThan(0);
   });
 
   it("output contains proper Discord markdown table format", () => {

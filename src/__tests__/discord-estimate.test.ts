@@ -24,16 +24,16 @@ describe("discordEstimate", () => {
     expect(result.message).toContain("税込合計");
 
     // 金額が0でない
-    expect(result.estimate.total).toBeGreaterThan(0);
+    expect(result.estimate!.total).toBeGreaterThan(0);
   });
 
   it("複数品目: タイルカーペットとLED照明", () => {
     const result = discordEstimate("20㎡のタイルカーペット張替え、LED照明10台");
 
-    expect(result.estimate.sections.length).toBeGreaterThanOrEqual(2);
+    expect(result.estimate!.sections.length).toBeGreaterThanOrEqual(2);
     expect(result.message).toContain("タイルカーペット");
     expect(result.message).toContain("LED");
-    expect(result.estimate.total).toBeGreaterThan(0);
+    expect(result.estimate!.total).toBeGreaterThan(0);
   });
 
   it("マッチなしの場合はエラーメッセージ", () => {
@@ -47,7 +47,7 @@ describe("discordEstimate", () => {
     const result = discordEstimate("6畳の壁紙張替え、謎の工事");
 
     // 壁紙は拾える
-    expect(result.estimate.total).toBeGreaterThan(0);
+    expect(result.estimate!.total).toBeGreaterThan(0);
     // 「謎の工事」は未マッチ警告
     expect(result.message).toContain("未対応");
   });
@@ -66,7 +66,7 @@ describe("discordEstimate", () => {
 
   it("propertyNameを指定できる", () => {
     const result = discordEstimate("6畳の壁紙張替え", "テスト物件A");
-    expect(result.estimate.propertyName).toBe("テスト物件A");
+    expect(result.estimate!.propertyName).toBe("テスト物件A");
   });
 });
 
@@ -76,8 +76,8 @@ describe("discordEstimate realistic scenarios", () => {
       "20坪のオフィスのリノベーション、壁はクロス張替え、床はタイルカーペット、天井は岩綿吸音板、LED照明20台、エアコン3台",
     );
 
-    expect(result.estimate.total).toBeGreaterThan(1_000_000);
-    expect(result.estimate.sections.length).toBeGreaterThanOrEqual(3);
+    expect(result.estimate!.total).toBeGreaterThan(1_000_000);
+    expect(result.estimate!.sections.length).toBeGreaterThanOrEqual(3);
     expect(result.message).toContain("クロス");
     expect(result.message).toContain("タイルカーペット");
     expect(result.message).toContain("システム天井");
@@ -95,7 +95,7 @@ describe("discordEstimate realistic scenarios", () => {
     // 間仕切り12㎡, クロス24㎡(両面)
     expect(result.message).toContain("12㎡");
     expect(result.message).toContain("24㎡");
-    expect(result.estimate.total).toBeGreaterThan(0);
+    expect(result.estimate!.total).toBeGreaterThan(0);
   });
 
   it("6畳の洋室、壁紙張替えとフローリング → clean output", () => {
@@ -104,7 +104,7 @@ describe("discordEstimate realistic scenarios", () => {
     expect(result.message).toContain("クロス");
     expect(result.message).toContain("フローリング");
     expect(result.parseResult.unmatched).toHaveLength(0);
-    expect(result.estimate.total).toBeGreaterThan(100_000);
+    expect(result.estimate!.total).toBeGreaterThan(100_000);
   });
 
   it("店舗の内装解体50㎡ → demolition category", () => {
@@ -112,7 +112,7 @@ describe("discordEstimate realistic scenarios", () => {
 
     expect(result.message).toContain("内装解体");
     expect(result.message).toContain("解体・撤去");
-    expect(result.estimate.total).toBeGreaterThan(0);
+    expect(result.estimate!.total).toBeGreaterThan(0);
   });
 });
 

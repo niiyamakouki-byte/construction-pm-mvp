@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { Project, ProjectStatus } from "../domain/types.js";
-import { projectRepository } from "../stores/project-store.js";
+import { createProjectRepository } from "../stores/project-store.js";
 import { geocodeAddress } from "../infra/geocode.js";
 import { navigate } from "../hooks/useHashRouter.js";
+import { useOrganizationContext } from "../contexts/OrganizationContext.js";
 
 function toLocalDateString(date: Date): string {
   const y = date.getFullYear();
@@ -33,6 +34,11 @@ const statusDot: Record<ProjectStatus, string> = {
 };
 
 export function ProjectListPage() {
+  const { organizationId } = useOrganizationContext();
+  const projectRepository = useMemo(
+    () => createProjectRepository(() => organizationId),
+    [organizationId],
+  );
   const [projects, setProjects] = useState<Project[]>([]);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
