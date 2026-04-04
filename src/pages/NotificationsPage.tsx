@@ -32,6 +32,47 @@ export function NotificationsPage() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [updating, setUpdating] = useState<Set<string>>(new Set());
+
+  const handleMarkSent = useCallback(async (id: string) => {
+    setUpdating((prev) => new Set(prev).add(id));
+    try {
+      await notificationRepository.update(id, {
+        status: "sent",
+        sentAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      });
+      await loadData();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "更新に失敗しました");
+    } finally {
+      setUpdating((prev) => { const next = new Set(prev); next.delete(id); return next; });
+    }
+  }, [notificationRepository, loadData]);
+
+  const handleMarkAllSent = useCallback(async () => {
+    const pending = notifications.filter((n) => n.status === "pending");
+    if (pending.length === 0) return;
+    if (!confirm(`${pending.length}件の通知を全て送信済みにしますか？`)) return;
+    const now = new Date().toISOString();
+    try {
+      for (const n of pending) {
+        await notificationRepository.update(n.id, { status: "sent", sentAt: now, updatedAt: now });
+      }
+      await loadData();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "一括更新に失敗しました");
+    }
+  }, [notifications, notificationRepository, loadData]);
+
+  const handleDelete = useCallback(async (id: string) => {
+    try {
+      await notificationRepository.delete(id);
+      await loadData();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "削除に失敗しました");
+    }
+  }, [notificationRepository, loadData]);
 
   const loadData = useCallback(async () => {
     try {
@@ -62,14 +103,26 @@ export function NotificationsPage() {
 
   return (
     <div className="mx-auto max-w-2xl space-y-4 px-4 pb-24">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-2 flex-wrap">
         <h1 className="text-lg font-bold text-slate-900">通知一覧</h1>
-        <button
-          onClick={() => { setLoading(true); void loadData(); }}
-          className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 transition-colors shadow-sm"
-        >
-          更新
-        </button>
+        <div className="flex items-center gap-2">
+          {notifications.some((n) => n.status === "pending") && (
+            <button
+              onClick={() => void handleMarkAllSent()}
+              className="rounded-lg bg-emerald-500 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-600 transition-colors shadow-sm"
+              style={{ minHeight: 36 }}
+            >
+              全て送信済みに
+            </button>
+          )}
+          <button
+            onClick={() => { setLoading(true); void loadData(); }}
+            className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 transition-colors shadow-sm"
+            style={{ minHeight: 36 }}
+          >
+            更新
+          </button>
+        </div>
       </div>
 
       {error && (
@@ -107,7 +160,7 @@ export function NotificationsPage() {
       ) : (
         <div className="divide-y divide-slate-100 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
           {notifications.map((n) => (
-            <div key={n.id} className="flex items-start gap-3 px-4 py-3">
+            <div key={n.id} className="flex items-start gap-3 px-4 py-3 hover:bg-slate-50 transition-colors">
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${statusColor[n.status]}`}>
@@ -136,6 +189,25 @@ export function NotificationsPage() {
                     })}
                   </p>
                 )}
+              </div>
+              <div className="flex shrink-0 items-center gap-1">
+                {n.status === "pending" && (
+                  <button
+                    onClick={() => void handleMarkSent(n.id)}
+                    disabled={updating.has(n.id)}
+                    className="rounded px-2 py-1 text-xs font-medium text-emerald-600 hover:bg-emerald-50 transition-colors disabled:opacity-50"
+                    aria-label="送信済みにする"
+                  >
+                    {updating.has(n.id) ? "..." : "送信済み"}
+                  </button>
+                )}
+                <button
+                  onClick={() => void handleDelete(n.id)}
+                  className="rounded px-2 py-1 text-xs text-slate-400 hover:bg-red-50 hover:text-red-600 transition-colors"
+                  aria-label="削除"
+                >
+                  削除
+                </button>
               </div>
             </div>
           ))}

@@ -169,28 +169,40 @@ export function GanttChart({
         <div ref={scrollRef} className="flex-1 overflow-x-auto">
           <div style={{ width: totalDays * dayWidth, minWidth: "100%" }} className="relative">
             {/* Date header */}
-            <div className="flex border-b border-slate-200" style={{ height: headerHeight }}>
-              {dateInfo.map((di) => (
-                <div
-                  key={di.date}
-                  data-today={di.isToday ? "true" : undefined}
-                  className={`flex flex-col items-center justify-end border-r border-slate-100 pb-1 ${
-                    di.isToday ? "bg-red-50" : di.isWeekend ? "bg-slate-50" : ""
-                  }`}
-                  style={{ width: dayWidth }}
-                >
-                  <span
-                    className={`text-xs font-semibold tabular-nums ${
-                      di.isToday ? "text-red-600" : di.isWeekend ? "text-slate-400" : "text-slate-500"
+            <div className="flex border-b border-slate-200 relative" style={{ height: headerHeight }}>
+              {dateInfo.map((di) => {
+                const dayNum = di.date.split("-")[2];
+                const isFirstOfMonth = dayNum === "01";
+                const monthLabel = isFirstOfMonth
+                  ? `${Number(di.date.split("-")[1])}月`
+                  : null;
+                return (
+                  <div
+                    key={di.date}
+                    data-today={di.isToday ? "true" : undefined}
+                    className={`relative flex flex-col items-center justify-end border-r border-slate-100 pb-1 ${
+                      di.isToday ? "bg-red-50" : di.isWeekend ? "bg-slate-50" : ""
                     }`}
+                    style={{ width: dayWidth }}
                   >
-                    {formatDateShort(di.date)}
-                  </span>
-                  {di.isToday && (
-                    <span className="mt-0.5 text-[8px] font-bold text-red-600 uppercase">TODAY</span>
-                  )}
-                </div>
-              ))}
+                    {monthLabel && (
+                      <span className="absolute top-1 left-1 text-[10px] font-bold text-brand-600 whitespace-nowrap z-10 pointer-events-none">
+                        {monthLabel}
+                      </span>
+                    )}
+                    <span
+                      className={`text-xs font-semibold tabular-nums ${
+                        di.isToday ? "text-red-600" : di.isWeekend ? "text-slate-400" : "text-slate-500"
+                      }`}
+                    >
+                      {formatDateShort(di.date)}
+                    </span>
+                    {di.isToday && (
+                      <span className="mt-0.5 text-[8px] font-bold text-red-600 uppercase">TODAY</span>
+                    )}
+                  </div>
+                );
+              })}
             </div>
 
             {/* Today vertical red dashed line */}
