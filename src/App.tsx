@@ -16,6 +16,7 @@ import { ErrorBoundary } from "./components/ErrorBoundary.js";
 import { AuthGuard } from "./components/AuthGuard.js";
 import { AuthProvider, useAuth } from "./contexts/AuthContext.js";
 import { OrganizationProvider } from "./contexts/OrganizationContext.js";
+import { SubscriptionProvider } from "./contexts/SubscriptionContext.js";
 import { PersonaProvider, usePersona } from "./contexts/PersonaContext.js";
 import { useHashRoute, navigate } from "./hooks/useHashRouter.js";
 
@@ -326,9 +327,11 @@ export function App() {
   return (
     <AuthProvider>
       <OrganizationProvider>
-        <PersonaProvider>
-          <AppShell />
-        </PersonaProvider>
+        <SubscriptionProvider>
+          <PersonaProvider>
+            <AppShell />
+          </PersonaProvider>
+        </SubscriptionProvider>
       </OrganizationProvider>
     </AuthProvider>
   );
