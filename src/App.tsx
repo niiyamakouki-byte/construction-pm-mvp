@@ -47,7 +47,7 @@ type TabDef = {
 const tabs: TabDef[] = [
   {
     key: "today",
-    label: "Today",
+    label: "今日",
     icon: "📋",
     matchRoute: (r) => r === "/today",
     path: "/today",

@@ -305,7 +305,7 @@ export function TodayDashboardPage() {
         <div className="flex items-center justify-between">
           <div>
             <p className="text-xs font-semibold tracking-widest text-brand-300 uppercase">
-              Today&apos;s Overview
+              本日の概要
             </p>
             <p className="mt-1 text-xl font-bold">{formatDateJP(today)}</p>
           </div>

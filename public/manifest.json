@@ -1,6 +1,6 @@
 {
-  "name": "GenbaHub - 建設プロジェクト管理",
-  "short_name": "GenbaHub",
+  "name": "現場Hub",
+  "short_name": "現場Hub",
   "description": "建設現場のプロジェクト管理ツール。工程・タスク・天気・見積を一元管理。",
   "start_url": "/",
   "scope": "/",
