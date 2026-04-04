@@ -6,6 +6,13 @@ import { createContractorRepository } from "../stores/contractor-store.js";
 import { createNotificationRepository } from "../stores/notification-store.js";
 import { navigate } from "../hooks/useHashRouter.js";
 import { useOrganizationContext } from "../contexts/OrganizationContext.js";
+import { AiActionCard } from "../components/AiActionCard.js";
+import type { AiAction } from "../components/AiActionCard.js";
+import { CommunicationSidebar } from "../components/CommunicationSidebar.js";
+import {
+  cascadeShiftPhase,
+  detectPhaseOverlap,
+} from "../domain/cascade-service.js";
 
 // ── Helpers ──────────────────────────────────────────
 
@@ -265,6 +272,8 @@ type TaskDetailState = {
   editContractorId: string;
   editProgress: number;
   editStatus: TaskStatus;
+  editMaterials: string;
+  editLeadTimeDays: string;
   saving: boolean;
 };
 
@@ -320,6 +329,16 @@ export function GanttPage() {
   // Connect (dependency) mode state
   const [connectMode, setConnectMode] = useState(false);
   const [connectState, setConnectState] = useState<ConnectState | null>(null);
+
+  // Sidebar state
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  // Cascade shift confirm dialog state
+  const [cascadeConfirm, setCascadeConfirm] = useState<{
+    targetProjectId: string;
+    delayDays: number;
+    affectedCount: number;
+  } | null>(null);
 
   const loadData = useCallback(async () => {
     try {
@@ -572,6 +591,8 @@ export function GanttPage() {
       editContractorId: task.contractorId ?? "",
       editProgress: task.progress,
       editStatus: task.status,
+      editMaterials: task.materials?.join(", ") ?? "",
+      editLeadTimeDays: task.leadTimeDays != null ? String(task.leadTimeDays) : "",
       saving: false,
     });
   }, []);
@@ -585,6 +606,12 @@ export function GanttPage() {
     const newStartDate = taskDetail.editStartDate || undefined;
     setTaskDetail((d) => d ? { ...d, saving: true } : d);
     try {
+      const parsedLeadTime = taskDetail.editLeadTimeDays
+        ? Number(taskDetail.editLeadTimeDays)
+        : undefined;
+      const parsedMaterials = taskDetail.editMaterials
+        ? taskDetail.editMaterials.split(",").map((s) => s.trim()).filter(Boolean)
+        : undefined;
       await taskRepository.update(taskDetail.task.id, {
         name: taskDetail.editName.trim(),
         startDate: newStartDate,
@@ -593,6 +620,8 @@ export function GanttPage() {
         contractorId: newContractorId,
         progress: taskDetail.editProgress,
         status: taskDetail.editStatus,
+        materials: parsedMaterials,
+        leadTimeDays: Number.isFinite(parsedLeadTime) ? parsedLeadTime : undefined,
         updatedAt: new Date().toISOString(),
       });
       // Create notification record when start date changes and contractor is set
@@ -736,6 +765,191 @@ export function GanttPage() {
     return { overdue, urgent, soon };
   }, [ganttTasks, today]);
 
+  // Cascade shift: detect overlapping phases per project
+  const cascadeOpportunities = useMemo(() => {
+    const results: Array<{
+      projectId: string;
+      delayDays: number;
+      affectedCount: number;
+    }> = [];
+
+    for (const group of phaseGroups) {
+      // For each project with 2+ tasks, check if the "earlier half" overlaps the "later half"
+      const sorted = [...group.tasks].sort((a, b) =>
+        a.startDate.localeCompare(b.startDate),
+      );
+      if (sorted.length < 2) continue;
+
+      const midpoint = Math.floor(sorted.length / 2);
+      const firstHalf = sorted.slice(0, midpoint);
+      const secondHalf = sorted.slice(midpoint);
+
+      const delayDays = detectPhaseOverlap(
+        { projectId: group.projectId, tasks: firstHalf.map((t) => ({ id: t.id, projectId: t.projectId, startDate: t.startDate, endDate: t.endDate })) },
+        { projectId: group.projectId, tasks: secondHalf.map((t) => ({ id: t.id, projectId: t.projectId, startDate: t.startDate, endDate: t.endDate })) },
+      );
+
+      if (delayDays !== null) {
+        results.push({
+          projectId: group.projectId,
+          delayDays,
+          affectedCount: secondHalf.length,
+        });
+      }
+    }
+    return results;
+  }, [phaseGroups]);
+
+  // AI action cards
+  const aiActions = useMemo((): AiAction[] => {
+    const actions: AiAction[] = [];
+
+    // [期限超過] overdue tasks
+    if (alertSummary.overdue.length > 0) {
+      actions.push({
+        id: "overdue-check",
+        severity: "urgent",
+        message: `${alertSummary.overdue.length}件のタスクが期限を過ぎています。担当業者に確認しますか？`,
+        actionLabel: "確認通知を作成",
+        onAction: async () => {
+          const notificationRepo = createNotificationRepository(() => organizationId);
+          const now = new Date();
+          for (const t of alertSummary.overdue) {
+            if (!t.contractorId) continue;
+            await notificationRepo.create({
+              id: crypto.randomUUID(),
+              projectId: t.projectId,
+              taskId: t.id,
+              contractorId: t.contractorId,
+              type: "alert",
+              message: `${t.name}が期限を過ぎています。進捗確認をお願いします。`,
+              status: "pending",
+              scheduledAt: now.toISOString(),
+              createdAt: now.toISOString(),
+              updatedAt: now.toISOString(),
+            });
+          }
+        },
+      });
+    }
+
+    // [工程変更] recently moved tasks with contractors
+    const recentlyMoved = ganttTasks.filter(
+      (t) => t.contractorId && getAlertLevel(t, today) !== null,
+    );
+    if (recentlyMoved.length > 0) {
+      const task = recentlyMoved[0];
+      const contractor = contractors.find((c) => c.id === task.contractorId);
+      actions.push({
+        id: `reschedule-${task.id}`,
+        severity: "warning",
+        message: `${task.name}が遅延しています。${contractor?.name ?? "担当業者"}にリスケ通知を送りますか？`,
+        actionLabel: "通知作成",
+        onAction: async () => {
+          const notificationRepo = createNotificationRepository(() => organizationId);
+          const now = new Date();
+          await notificationRepo.create({
+            id: crypto.randomUUID(),
+            projectId: task.projectId,
+            taskId: task.id,
+            contractorId: task.contractorId!,
+            type: "schedule_changed",
+            message: `${task.name}のスケジュールが変更されました。リスケをご確認ください。（業者: ${contractor?.name ?? "不明"}）`,
+            status: "pending",
+            scheduledAt: now.toISOString(),
+            createdAt: now.toISOString(),
+            updatedAt: now.toISOString(),
+          });
+        },
+      });
+    }
+
+    // [材料発注] tasks with lead_time approaching
+    const MATERIAL_ALERT_DAYS = 7;
+    const materialAlerts = ganttTasks.filter((t) => {
+      if (!t.leadTimeDays || !t.startDate) return false;
+      const orderDeadline = addDays(t.startDate, -t.leadTimeDays);
+      const diff = daysBetween(today, orderDeadline);
+      return diff <= MATERIAL_ALERT_DAYS;
+    });
+
+    for (const t of materialAlerts) {
+      const orderDeadline = addDays(t.startDate, -(t.leadTimeDays ?? 0));
+      const daysUntil = daysBetween(today, orderDeadline);
+      actions.push({
+        id: `material-${t.id}`,
+        severity: daysUntil < 0 ? "urgent" : "warning",
+        message: daysUntil < 0
+          ? `${t.name}の材料発注期限が${Math.abs(daysUntil)}日過ぎています。今すぐ発注してください。`
+          : `${t.name}の材料発注期限が${daysUntil}日後（${orderDeadline}）です。発注しますか？`,
+        actionLabel: "発注通知を作成",
+        onAction: async () => {
+          const notificationRepo = createNotificationRepository(() => organizationId);
+          const now = new Date();
+          await notificationRepo.create({
+            id: crypto.randomUUID(),
+            projectId: t.projectId,
+            taskId: t.id,
+            contractorId: t.contractorId,
+            type: "reminder",
+            message: `${t.name}の材料発注期限（${orderDeadline}）が近づいています。発注を確認してください。`,
+            status: "pending",
+            scheduledAt: now.toISOString(),
+            createdAt: now.toISOString(),
+            updatedAt: now.toISOString(),
+          });
+        },
+      });
+    }
+
+    return actions;
+  }, [alertSummary, ganttTasks, contractors, today, organizationId]);
+
+  // Handle cascade phase shift confirmation
+  const handleCascadeConfirm = useCallback(async () => {
+    if (!cascadeConfirm) return;
+    const { targetProjectId, delayDays } = cascadeConfirm;
+    const group = phaseGroups.find((g) => g.projectId === targetProjectId);
+    if (!group) {
+      setCascadeConfirm(null);
+      return;
+    }
+
+    const sorted = [...group.tasks].sort((a, b) =>
+      a.startDate.localeCompare(b.startDate),
+    );
+    const midpoint = Math.floor(sorted.length / 2);
+    const secondHalf = sorted.slice(midpoint);
+
+    const result = cascadeShiftPhase(
+      {
+        projectId: targetProjectId,
+        tasks: secondHalf.map((t) => ({
+          id: t.id,
+          projectId: t.projectId,
+          startDate: t.startDate,
+          endDate: t.endDate,
+        })),
+      },
+      delayDays,
+    );
+
+    try {
+      for (const shifted of result.shiftedTasks) {
+        await taskRepository.update(shifted.id, {
+          startDate: shifted.newStartDate,
+          dueDate: shifted.newEndDate,
+          updatedAt: new Date().toISOString(),
+        });
+      }
+      await loadData();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "フェーズシフトに失敗しました");
+    } finally {
+      setCascadeConfirm(null);
+    }
+  }, [cascadeConfirm, phaseGroups, taskRepository, loadData]);
+
   if (loading) {
     return (
       <div className="flex items-center justify-center gap-2 py-16" role="status" aria-label="読み込み中">
@@ -869,6 +1083,44 @@ export function GanttPage() {
 
   return (
     <div className="mx-auto max-w-5xl px-4 pb-24">
+      {/* Communication sidebar */}
+      <CommunicationSidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+
+      {/* Cascade shift confirm dialog */}
+      {cascadeConfirm && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm"
+          onClick={() => setCascadeConfirm(null)}
+        >
+          <div
+            className="mx-4 w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="mb-3 text-base font-bold text-slate-900">フェーズ自動調整</h3>
+            <p className="text-sm text-slate-700">
+              この変更により後続{cascadeConfirm.affectedCount}件のタスクが
+              自動的に<strong>{cascadeConfirm.delayDays}日</strong>押し出されます。
+            </p>
+            <div className="mt-5 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setCascadeConfirm(null)}
+                className="rounded-lg px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 transition-colors"
+              >
+                キャンセル
+              </button>
+              <button
+                type="button"
+                onClick={() => { void handleCascadeConfirm(); }}
+                className="rounded-lg bg-brand-500 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-brand-600"
+              >
+                調整する
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Quick-add task modal */}
       {quickAdd && (
         <div
@@ -1060,6 +1312,36 @@ export function GanttPage() {
                   </select>
                 </div>
               )}
+              {/* Materials */}
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-medium text-slate-500">必要材料（カンマ区切り）</label>
+                <input
+                  type="text"
+                  value={taskDetail.editMaterials}
+                  onChange={(e) => setTaskDetail((d) => d ? { ...d, editMaterials: e.target.value } : d)}
+                  placeholder="例: タイル, 接着剤, グラウト"
+                  className="rounded-lg border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 focus:outline-none"
+                />
+              </div>
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-medium text-slate-500">
+                  発注リードタイム（日）
+                  {taskDetail.editLeadTimeDays && taskDetail.editStartDate && (
+                    <span className="ml-2 text-brand-600">
+                      → 発注期限: {addDays(taskDetail.editStartDate, -Number(taskDetail.editLeadTimeDays))}
+                    </span>
+                  )}
+                </label>
+                <input
+                  type="number"
+                  min={0}
+                  max={365}
+                  value={taskDetail.editLeadTimeDays}
+                  onChange={(e) => setTaskDetail((d) => d ? { ...d, editLeadTimeDays: e.target.value } : d)}
+                  placeholder="0"
+                  className="rounded-lg border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 focus:outline-none"
+                />
+              </div>
               <div className="flex flex-col gap-1">
                 <label className="text-xs font-medium text-slate-500">
                   進捗 {taskDetail.editProgress}%
@@ -1142,6 +1424,22 @@ export function GanttPage() {
             {connectMode ? (connectState ? "→ 接続先を選択" : "接続元を選択") : "依存関係"}
           </button>
 
+          {/* Sidebar toggle */}
+          <button
+            onClick={() => setSidebarOpen((v) => !v)}
+            className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
+              sidebarOpen
+                ? "bg-brand-600 text-white shadow-sm"
+                : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+            }`}
+            title="コミュニケーションパネル"
+          >
+            <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M20.25 8.511c.884.284 1.5 1.128 1.5 2.097v4.286c0 1.136-.847 2.1-1.98 2.193-.34.027-.68.052-1.02.072v3.091l-3-3c-1.354 0-2.694-.055-4.02-.163a2.115 2.115 0 01-.825-.242m9.345-8.334a2.126 2.126 0 00-.476-.095 48.64 48.64 0 00-8.048 0c-1.131.094-1.976 1.057-1.976 2.192v4.286c0 .837.46 1.58 1.155 1.951m9.345-8.334V6.637c0-1.621-1.152-3.026-2.76-3.235A48.455 48.455 0 0011.25 3c-2.115 0-4.198.137-6.24.402-1.608.209-2.76 1.614-2.76 3.235v6.226c0 1.621 1.152 3.026 2.76 3.235.577.075 1.157.14 1.74.194V21l4.155-4.155" />
+            </svg>
+            現場チャット
+          </button>
+
           <div className="flex gap-3 text-xs" role="list" aria-label="ステータス凡例">
             {(["todo", "in_progress", "done"] as const).map((s) => (
               <span key={s} className="flex items-center gap-1.5" role="listitem">
@@ -1208,6 +1506,36 @@ export function GanttPage() {
           依存関係モード: タスクバーの右端のコネクタポイントをクリックして接続元を選び、次に接続先のタスクバーの左端をクリックしてください。もう一度クリックで接続解除。
         </div>
       )}
+
+      {/* AI Action Cards */}
+      {aiActions.length > 0 && (
+        <AiActionCard actions={aiActions} />
+      )}
+
+      {/* Cascade phase shift alerts */}
+      {cascadeOpportunities.map((opp) => {
+        const group = phaseGroups.find((g) => g.projectId === opp.projectId);
+        if (!group) return null;
+        return (
+          <div
+            key={`cascade-${opp.projectId}`}
+            className="mb-3 flex items-center justify-between gap-3 rounded-lg border border-orange-200 bg-orange-50 px-4 py-2.5"
+            role="alert"
+          >
+            <p className="text-sm text-orange-800">
+              <span className="font-semibold">{group.projectName}</span>:
+              フェーズの遅延により後続{opp.affectedCount}件のタスクへの影響が検出されました。
+            </p>
+            <button
+              type="button"
+              onClick={() => setCascadeConfirm(opp)}
+              className="shrink-0 rounded-md bg-orange-500 px-3 py-1 text-xs font-semibold text-white hover:bg-orange-600 transition-colors"
+            >
+              {opp.delayDays}日 自動調整
+            </button>
+          </div>
+        );
+      })}
 
       <div
         className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm"
@@ -1697,6 +2025,34 @@ export function GanttPage() {
                         )}
                       </div>
                     )}
+
+                    {/* Material order deadline marker */}
+                    {task.leadTimeDays && task.startDate && (() => {
+                      const orderDeadline = addDays(task.startDate, -task.leadTimeDays);
+                      const markerOffset = daysBetween(chartStart, orderDeadline);
+                      if (markerOffset < 0 || markerOffset > totalDays) return null;
+                      const isOverdue = orderDeadline < today;
+                      return (
+                        <div
+                          key="order-marker"
+                          className="absolute pointer-events-none z-30"
+                          style={{
+                            left: markerOffset * dayWidth + dayWidth / 2 - 5,
+                            top: 2,
+                          }}
+                          title={`発注期限: ${orderDeadline}`}
+                        >
+                          <svg width="10" height="10" viewBox="0 0 10 10">
+                            <polygon
+                              points="5,0 10,10 0,10"
+                              fill={isOverdue ? "#ef4444" : "#f59e0b"}
+                              opacity="0.9"
+                              style={{ transform: "rotate(180deg)", transformOrigin: "5px 5px" }}
+                            />
+                          </svg>
+                        </div>
+                      );
+                    })()}
                   </div>
                 );
               })}

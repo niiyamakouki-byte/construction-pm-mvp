@@ -37,6 +37,8 @@ export type Task = BaseEntity & {
   progress: number;
   dependencies: string[];
   contractorId?: string;
+  materials?: string[];
+  leadTimeDays?: number;
 };
 
 // ── Resource ────────────────────────────────────────
