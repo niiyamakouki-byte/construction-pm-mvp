@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import type { Contractor } from "../../domain/types.js";
 import { navigate } from "../../hooks/useHashRouter.js";
 import type { TaskDetailState } from "./types.js";
@@ -13,6 +14,12 @@ type Props = {
 };
 
 export function TaskEditModal({ taskDetail, contractors, onClose, onSubmit, onChange, onDelete }: Props) {
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [onClose]);
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm"

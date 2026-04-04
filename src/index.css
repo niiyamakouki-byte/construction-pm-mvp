@@ -90,3 +90,16 @@ button, a, input, select, textarea {
 ::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
 }
+
+/* Print styles for Gantt chart */
+@media print {
+  nav, footer, .no-print {
+    display: none !important;
+  }
+  body {
+    background: white !important;
+  }
+  .overflow-x-auto {
+    overflow: visible !important;
+  }
+}

@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import type { QuickAddState } from "./types.js";
 import { addDays } from "./utils.js";
 import { WORK_CATEGORIES } from "./workCategories.js";
@@ -10,6 +11,12 @@ type Props = {
 };
 
 export function QuickAddForm({ quickAdd, onClose, onSubmit, onChange }: Props) {
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [onClose]);
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm"

@@ -15,6 +15,7 @@ export function ContractorsPage() {
   const [error, setError] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
   // Form state
   const [name, setName] = useState("");
@@ -195,6 +196,17 @@ export function ContractorsPage() {
         </div>
       )}
 
+      {contractors.length > 0 && (
+        <input
+          type="search"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="業者名・専門工種で検索..."
+          className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-base focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 focus:outline-none"
+          style={{ minHeight: 48 }}
+        />
+      )}
+
       {contractors.length === 0 && !showForm ? (
         <div className="rounded-xl border-2 border-dashed border-slate-200 bg-white p-10 text-center">
           <p className="text-base font-bold text-slate-900">業者が登録されていません</p>
@@ -202,7 +214,13 @@ export function ContractorsPage() {
         </div>
       ) : (
         <div className="divide-y divide-slate-100 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-          {contractors.map((c) => (
+          {contractors.filter((c) => {
+            if (!searchQuery.trim()) return true;
+            const q = searchQuery.toLowerCase();
+            return c.name.toLowerCase().includes(q)
+              || (c.specialty ?? "").toLowerCase().includes(q)
+              || (c.contactPerson ?? "").toLowerCase().includes(q);
+          }).map((c) => (
             <div key={c.id} className="flex items-start gap-3 px-4 py-3 hover:bg-slate-50 transition-colors">
               <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-100 text-sm font-bold text-brand-700">
                 {c.name.slice(0, 1)}
