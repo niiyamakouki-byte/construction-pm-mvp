@@ -48,11 +48,6 @@ function PlanCardView({
   card: PlanCard;
   isCurrent: boolean;
 }) {
-  const handleUpgrade = () => {
-    // Stripe checkout integration placeholder
-    alert(`プランのアップグレード機能は準備中です。\nお問い合わせ: support@genbahub.com`);
-  };
-
   return (
     <div
       className={`relative flex flex-col rounded-2xl border p-6 shadow-sm ${
@@ -104,17 +99,9 @@ function PlanCardView({
           現在のプラン
         </div>
       ) : card.plan === "trial" ? null : (
-        <button
-          type="button"
-          onClick={handleUpgrade}
-          className={`w-full rounded-lg px-4 py-2.5 text-sm font-semibold shadow-sm transition-colors ${
-            card.highlight
-              ? "bg-brand-600 text-white hover:bg-brand-700"
-              : "border border-brand-500 text-brand-600 hover:bg-brand-50"
-          }`}
-        >
-          このプランに変更
-        </button>
+        <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-2.5 text-center">
+          <span className="text-xs font-semibold text-slate-400">準備中</span>
+        </div>
       )}
     </div>
   );
