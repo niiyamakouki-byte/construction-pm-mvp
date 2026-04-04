@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { ProjectListPage } from "./pages/ProjectListPage.js";
 import { TodayDashboardPage } from "./pages/TodayDashboardPage.js";
 import { ProjectDetailPage } from "./pages/ProjectDetailPage.js";
@@ -7,6 +8,7 @@ import { InvoicePage } from "./pages/InvoicePage.js";
 import { EstimatePage } from "./pages/EstimatePage.js";
 import { ContractorsPage } from "./pages/ContractorsPage.js";
 import { NotificationsPage } from "./pages/NotificationsPage.js";
+import { HelpPage } from "./pages/HelpPage.js";
 import { LandingPage } from "./pages/LandingPage.js";
 import { LoginPage } from "./pages/LoginPage.js";
 import { SignupPage } from "./pages/SignupPage.js";
@@ -14,6 +16,8 @@ import { LegalPages } from "./pages/LegalPages.js";
 import { PricingPage } from "./pages/PricingPage.js";
 import { ErrorBoundary } from "./components/ErrorBoundary.js";
 import { AuthGuard } from "./components/AuthGuard.js";
+import { OnboardingWizard, useOnboardingDone } from "./components/OnboardingWizard.js";
+import { TourGuide, useTourDone } from "./components/TourGuide.js";
 import { AuthProvider, useAuth } from "./contexts/AuthContext.js";
 import { OrganizationProvider } from "./contexts/OrganizationContext.js";
 import { SubscriptionProvider } from "./contexts/SubscriptionContext.js";
@@ -94,12 +98,28 @@ const tabs: TabDef[] = [
     matchRoute: (r) => r === "/notifications",
     path: "/notifications",
   },
+  {
+    key: "help",
+    label: "ヘルプ",
+    icon: "❓",
+    matchRoute: (r) => r === "/help",
+    path: "/help",
+  },
 ];
 
 function AppShell() {
   const route = useHashRoute();
   const { user, signOut } = useAuth();
   const { persona, setPersona } = usePersona();
+  const [onboardingDone, markOnboardingDone] = useOnboardingDone();
+  const [tourDone, markTourDone] = useTourDone();
+  const [showTour, setShowTour] = useState(false);
+
+  // Show tour after onboarding completes (on first visit to /gantt or /app)
+  const handleOnboardingComplete = () => {
+    markOnboardingDone();
+    setShowTour(true);
+  };
 
   // Parse legal section from hash fragment
   const legalMatch = route.match(/^\/legal(?:#(.+))?$/);
@@ -173,6 +193,13 @@ function AppShell() {
       return (
         <ErrorBoundary fallbackTitle="通知一覧エラー">
           <NotificationsPage />
+        </ErrorBoundary>
+      );
+    }
+    if (route === "/help") {
+      return (
+        <ErrorBoundary fallbackTitle="ヘルプエラー">
+          <HelpPage />
         </ErrorBoundary>
       );
     }
@@ -291,6 +318,7 @@ function AppShell() {
               return (
                 <button
                   key={tab.key}
+                  data-tour={tab.key === "contractors" ? "nav-contractors" : undefined}
                   onClick={() => navigate(tab.path)}
                   aria-current={isActive ? "page" : undefined}
                   aria-label={tab.label}
@@ -318,6 +346,16 @@ function AppShell() {
             })}
           </div>
         </nav>
+
+        {/* Onboarding wizard (first-time only) */}
+        {!onboardingDone && (
+          <OnboardingWizard onComplete={handleOnboardingComplete} />
+        )}
+
+        {/* Tour guide (after onboarding, first-time only) */}
+        {onboardingDone && !tourDone && showTour && (
+          <TourGuide onComplete={markTourDone} />
+        )}
       </div>
     </AuthGuard>
   );
