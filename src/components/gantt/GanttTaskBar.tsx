@@ -13,6 +13,7 @@ type GanttTaskBarProps = {
   chartStart: string;
   highlightedDates: HighlightedDate[];
   today: string;
+  dayWidth: number;
   onSetDragState: (state: DragState | null) => void;
   onOpenTaskDetail: (task: GanttTask) => void;
   onSetConnectState: (state: ConnectState | null) => void;
@@ -28,12 +29,13 @@ export function GanttTaskBar({
   chartStart,
   highlightedDates,
   today,
+  dayWidth,
   onSetDragState,
   onOpenTaskDetail,
   onSetConnectState,
   onConnectTask,
 }: GanttTaskBarProps) {
-  const { dayWidth, rowHeight } = gantt;
+  const { rowHeight } = gantt;
   const isDragging = dragState?.taskId === task.id;
   const displayStartDate = isDragging ? dragState.previewStartDate : task.startDate;
   const displayEndDate = isDragging ? dragState.previewEndDate : task.endDate;

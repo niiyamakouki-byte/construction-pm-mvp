@@ -18,6 +18,7 @@ import { QuickAddForm } from "../components/gantt/QuickAddForm.js";
 import { TaskEditModal } from "../components/gantt/TaskEditModal.js";
 
 // Types & utils
+import type { TaskStatus } from "../domain/types.js";
 import type {
   GanttTask,
   PhaseGroup,
@@ -82,6 +83,10 @@ export function GanttPage() {
     delayDays: number;
     affectedCount: number;
   } | null>(null);
+
+  // Filter + zoom state
+  const [filterStatus, setFilterStatus] = useState<TaskStatus | "all">("all");
+  const [zoomLevel, setZoomLevel] = useState<"day" | "week">("day");
 
   // CSV import state
   const [showCsvModal, setShowCsvModal] = useState(false);
@@ -231,8 +236,7 @@ export function GanttPage() {
       const drag = dragRef.current;
       if (!drag) return;
 
-      const dw = 36;
-      const deltaDays = Math.round((e.clientX - drag.startX) / dw);
+      const deltaDays = Math.round((e.clientX - drag.startX) / effectiveDayWidth);
 
       const draggedTask = ganttTasks.find((t) => t.id === drag.taskId);
       const skipWeekends = draggedTask ? !draggedTask.projectIncludesWeekends : false;
@@ -307,11 +311,26 @@ export function GanttPage() {
     };
   }, [taskRepository, loadData, ganttTasks, contractors, organizationId]);
 
+  // Filtered tasks based on status filter
+  const filteredGanttTasks = useMemo(
+    () => filterStatus === "all" ? ganttTasks : ganttTasks.filter((t) => t.status === filterStatus),
+    [ganttTasks, filterStatus],
+  );
+
+  // Summary counts
+  const completedTasksCount = useMemo(
+    () => ganttTasks.filter((t) => t.status === "done").length,
+    [ganttTasks],
+  );
+
+  // Zoom-aware dayWidth
+  const effectiveDayWidth = zoomLevel === "week" ? 14 : 36;
+
   // Build phase groups from tasks, grouped by project
   const phaseGroups = useMemo((): PhaseGroup[] => {
     const groupMap = new Map<string, GanttTask[]>();
     const projectNameMap = new Map<string, string>();
-    for (const task of ganttTasks) {
+    for (const task of filteredGanttTasks) {
       if (!groupMap.has(task.projectId)) {
         groupMap.set(task.projectId, []);
         projectNameMap.set(task.projectId, task.projectName);
@@ -328,7 +347,7 @@ export function GanttPage() {
       });
     }
     return groups;
-  }, [ganttTasks, collapsedPhases]);
+  }, [filteredGanttTasks, collapsedPhases]);
 
   // Flat list of visible rows for chart rendering
   const visibleRows = useMemo((): Array<{ type: "phase"; group: PhaseGroup } | { type: "task"; task: GanttTask }> => {
@@ -398,6 +417,16 @@ export function GanttPage() {
       setQuickAdd((q) => q ? { ...q, submitting: false } : q);
     }
   }, [quickAdd, taskRepository, loadData]);
+
+  const handleTaskDelete = useCallback(async (taskId: string) => {
+    try {
+      await taskRepository.delete(taskId);
+      setTaskDetail(null);
+      await loadData();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "タスクの削除に失敗しました");
+    }
+  }, [taskRepository, loadData]);
 
   const openTaskDetail = useCallback((task: GanttTask) => {
     setTaskDetail({
@@ -567,8 +596,9 @@ export function GanttPage() {
       dateInfo,
       highlightedDates,
       todayOffset,
+      dayWidth: effectiveDayWidth,
     };
-  }, [ganttTasks, today]);
+  }, [ganttTasks, today, effectiveDayWidth]);
 
   // Alert summary
   const alertSummary = useMemo(() => {
@@ -903,6 +933,7 @@ export function GanttPage() {
           onClose={() => setTaskDetail(null)}
           onSubmit={(e) => void handleTaskDetailSave(e)}
           onChange={(updater) => setTaskDetail((d) => d ? updater(d) : d)}
+          onDelete={(taskId) => void handleTaskDelete(taskId)}
         />
       )}
 
@@ -951,9 +982,15 @@ export function GanttPage() {
         connectMode={connectMode}
         connectState={connectState}
         sidebarOpen={sidebarOpen}
+        filterStatus={filterStatus}
+        zoomLevel={zoomLevel}
+        totalTasks={ganttTasks.length}
+        completedTasks={completedTasksCount}
         onToggleConnectMode={() => { setConnectMode((m) => !m); setConnectState(null); }}
         onToggleSidebar={() => setSidebarOpen((v) => !v)}
         onOpenCsvModal={() => { setCsvResult(null); setShowCsvModal(true); }}
+        onFilterStatus={setFilterStatus}
+        onToggleZoom={() => setZoomLevel((z) => z === "day" ? "week" : "day")}
       />
 
       {/* Alert banner */}

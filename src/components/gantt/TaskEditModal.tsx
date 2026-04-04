@@ -9,9 +9,10 @@ type Props = {
   onClose: () => void;
   onSubmit: (e: React.FormEvent) => void;
   onChange: (updater: (d: TaskDetailState) => TaskDetailState) => void;
+  onDelete?: (taskId: string) => void;
 };
 
-export function TaskEditModal({ taskDetail, contractors, onClose, onSubmit, onChange }: Props) {
+export function TaskEditModal({ taskDetail, contractors, onClose, onSubmit, onChange, onDelete }: Props) {
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm"
@@ -145,14 +146,30 @@ export function TaskEditModal({ taskDetail, contractors, onClose, onSubmit, onCh
             ))}
           </div>
           <div className="flex justify-between gap-2 pt-1">
-            <button
-              type="button"
-              onClick={() => navigate(`/project/${taskDetail.task.projectId}`)}
-              className="rounded-lg px-3 py-2 text-sm font-medium text-slate-500 hover:bg-slate-100 transition-colors"
-              style={{ minHeight: 48 }}
-            >
-              詳細ページへ
-            </button>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => navigate(`/project/${taskDetail.task.projectId}`)}
+                className="rounded-lg px-3 py-2 text-sm font-medium text-slate-500 hover:bg-slate-100 transition-colors"
+                style={{ minHeight: 48 }}
+              >
+                詳細ページへ
+              </button>
+              {onDelete && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (window.confirm(`「${taskDetail.task.name}」を削除しますか？この操作は取り消せません。`)) {
+                      onDelete(taskDetail.task.id);
+                    }
+                  }}
+                  className="rounded-lg px-3 py-2 text-sm font-medium text-red-500 hover:bg-red-50 transition-colors"
+                  style={{ minHeight: 48 }}
+                >
+                  削除
+                </button>
+              )}
+            </div>
             <div className="flex gap-2">
               <button
                 type="button"

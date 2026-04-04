@@ -70,6 +70,8 @@ export type ChartLayout = {
   dateInfo: Array<{ date: string; isToday: boolean; isWeekend: boolean }>;
   highlightedDates: Array<{ date: string; isToday: boolean; isWeekend: boolean }>;
   todayOffset: number;
+  /** Effective pixel width per day (changes with zoom level) */
+  dayWidth: number;
 };
 
 export type WorkItem = {

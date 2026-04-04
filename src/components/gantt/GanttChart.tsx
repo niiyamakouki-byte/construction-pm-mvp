@@ -44,8 +44,8 @@ export function GanttChart({
   onSetConnectState,
   onConnectTask,
 }: Props) {
-  const { dayWidth, rowHeight, phaseRowHeight, headerHeight, labelWidth } = gantt;
-  const { chartStart, totalDays, dateInfo, highlightedDates, todayOffset } = chartLayout;
+  const { rowHeight, phaseRowHeight, headerHeight, labelWidth } = gantt;
+  const { chartStart, totalDays, dateInfo, highlightedDates, todayOffset, dayWidth } = chartLayout;
 
   // Build dependency lines
   const taskRowIndexMap = new Map<string, number>();
@@ -249,6 +249,7 @@ export function GanttChart({
                   chartStart={chartStart}
                   highlightedDates={highlightedDates}
                   today={today}
+                  dayWidth={dayWidth}
                   onSetDragState={onSetDragState}
                   onOpenTaskDetail={onOpenTaskDetail}
                   onSetConnectState={onSetConnectState}
