@@ -10,6 +10,7 @@ import type { Task } from "../../domain/types.js";
 
 type CsvRow = {
   name: string;
+  description: string;
   startDate: string;
   dueDate: string;
   contractorId?: string;
@@ -24,20 +25,23 @@ function parseCsvToTaskRows(csvText: string): CsvRow[] {
 
   return lines.slice(1).map((line) => {
     const vals = line.split(",").map((v) => v.trim());
-    const get = (key: string) => vals[headers.indexOf(key)] ?? "";
+    const row: Record<string, string> = {};
+    headers.forEach((h, i) => { row[h] = vals[i] ?? ""; });
 
-    const name = get("タスク名");
-    const startDate = get("開始日") || "2025-06-01";
-    const dueDate = get("終了日") || startDate;
-    const contractorName = get("担当業者");
-    const materialStr = get("材料");
-    const leadTimeStr = get("リードタイム日数");
+    const name = row["タスク名"] ?? row["task_name"] ?? "";
+    const description = row["カテゴリ"] ?? "";
+    const startDate = row["開始日"] || "2025-06-01";
+    const dueDate = row["終了日"] || startDate;
+    const contractorId = row["担当業者"] ?? row["contractor"] ?? row["assignee"] ?? undefined;
+    const materialStr = row["材料"] ?? "";
+    const leadTimeStr = row["リードタイム日数"] ?? "";
 
     return {
       name,
+      description,
       startDate,
       dueDate,
-      contractorId: contractorName || undefined,
+      contractorId: contractorId || undefined,
       materials: materialStr ? [materialStr] : [],
       leadTimeDays: leadTimeStr ? Number(leadTimeStr) : 0,
     };
@@ -64,7 +68,7 @@ async function importCsvToRepo(
         id: crypto.randomUUID(),
         projectId,
         name: row.name,
-        description: "",
+        description: row.description,
         status: "todo",
         progress: 0,
         dependencies: [],
@@ -87,12 +91,12 @@ async function importCsvToRepo(
 
 // ── テストデータ ────────────────────────────────────────────────
 
-const SAMPLE_CSV = `タスク名,開始日,終了日,担当業者,材料,リードタイム日数
-墨出し・下地確認,2025-06-01,2025-06-02,田中工務店,,0
-解体・撤去,2025-06-03,2025-06-05,田中工務店,,1
-下地工事,2025-06-06,2025-06-10,山田建設,石膏ボード,2
-塗装工事,2025-06-11,2025-06-15,佐藤塗装,ペンキ,3
-仕上げ,2025-06-16,2025-06-20,東京内装,,0
+const SAMPLE_CSV = `タスク名,カテゴリ,開始日,終了日,担当業者,材料,リードタイム日数
+墨出し・下地確認,内装,2025-06-01,2025-06-02,田中工務店,,0
+解体・撤去,内装,2025-06-03,2025-06-05,田中工務店,,1
+下地工事,内装,2025-06-06,2025-06-10,山田建設,石膏ボード,2
+塗装工事,塗装,2025-06-11,2025-06-15,佐藤塗装,ペンキ,3
+仕上げ,内装,2025-06-16,2025-06-20,東京内装,,0
 `;
 
 // ── テスト ──────────────────────────────────────────────────

@@ -19,7 +19,8 @@ type Props = {
   connectState: ConnectState | null;
   today: string;
   scrollRef: React.RefObject<HTMLDivElement | null>;
-  onSetDragState: (state: DragState | null) => void;
+  onTaskDragStart: (task: GanttTask, event: React.MouseEvent<HTMLDivElement>) => void;
+  onTaskResizeStart: (task: GanttTask, event: React.MouseEvent<HTMLDivElement>) => void;
   onOpenTaskDetail: (task: GanttTask) => void;
   onOpenQuickAdd: (projectId: string, projectName: string) => void;
   onTogglePhase: (projectId: string) => void;
@@ -37,7 +38,8 @@ export function GanttChart({
   connectState,
   today,
   scrollRef,
-  onSetDragState,
+  onTaskDragStart,
+  onTaskResizeStart,
   onOpenTaskDetail,
   onOpenQuickAdd,
   onTogglePhase,
@@ -262,7 +264,8 @@ export function GanttChart({
                   highlightedDates={highlightedDates}
                   today={today}
                   dayWidth={dayWidth}
-                  onSetDragState={onSetDragState}
+                  onTaskDragStart={onTaskDragStart}
+                  onTaskResizeStart={onTaskResizeStart}
                   onOpenTaskDetail={onOpenTaskDetail}
                   onSetConnectState={onSetConnectState}
                   onConnectTask={onConnectTask}

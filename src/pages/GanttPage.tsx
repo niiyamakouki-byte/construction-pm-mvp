@@ -5,6 +5,7 @@ import { createTaskRepository } from "../stores/task-store.js";
 import { createContractorRepository } from "../stores/contractor-store.js";
 import { createNotificationRepository } from "../stores/notification-store.js";
 import { navigate } from "../hooks/useHashRouter.js";
+import { useGanttDrag } from "../hooks/useGanttDrag.js";
 import { useOrganizationContext } from "../contexts/OrganizationContext.js";
 import { AiActionCard } from "../components/AiActionCard.js";
 import type { AiAction } from "../components/AiActionCard.js";
@@ -22,7 +23,6 @@ import type { TaskStatus } from "../domain/types.js";
 import type {
   GanttTask,
   PhaseGroup,
-  DragState,
   ConnectState,
   QuickAddState,
   TaskDetailState,
@@ -31,7 +31,6 @@ import type {
 import {
   toLocalDateString,
   addDays,
-  addDaysSkipWeekends,
   daysBetween,
   getAlertLevel,
 } from "../components/gantt/utils.js";
@@ -67,11 +66,6 @@ export function GanttPage() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const today = useMemo(() => toLocalDateString(new Date()), []);
 
-  // Drag & drop state
-  const [dragState, setDragState] = useState<DragState | null>(null);
-  const dragRef = useRef<DragState | null>(null);
-  const mouseUpHandlerRef = useRef<((event: MouseEvent) => void) | null>(null);
-
   // Connect (dependency) mode state
   const [connectMode, setConnectMode] = useState(false);
   const [connectState, setConnectState] = useState<ConnectState | null>(null);
@@ -89,6 +83,7 @@ export function GanttPage() {
   // Filter + zoom state
   const [filterStatus, setFilterStatus] = useState<TaskStatus | "all">("all");
   const [zoomLevel, setZoomLevel] = useState<"day" | "week">("day");
+  const effectiveDayWidth = zoomLevel === "week" ? 14 : 36;
 
   // CSV import state
   const [showCsvModal, setShowCsvModal] = useState(false);
@@ -237,94 +232,15 @@ export function GanttPage() {
     e.target.value = "";
   }, [handleCsvImport]);
 
-  // Global mouse event handlers for drag
-  useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      const drag = dragRef.current;
-      if (!drag) return;
-
-      const deltaDays = Math.round((e.clientX - drag.startX) / effectiveDayWidth);
-
-      const draggedTask = ganttTasks.find((t) => t.id === drag.taskId);
-      const skipWeekends = draggedTask ? !draggedTask.projectIncludesWeekends : false;
-      const addFn = skipWeekends ? addDaysSkipWeekends : addDays;
-
-      let previewStartDate = drag.originalStartDate;
-      let previewEndDate = drag.originalEndDate;
-
-      if (drag.type === "move") {
-        previewStartDate = addFn(drag.originalStartDate, deltaDays);
-        previewEndDate = addFn(drag.originalEndDate, deltaDays);
-      } else {
-        const originalDuration = daysBetween(drag.originalStartDate, drag.originalEndDate);
-        const newDuration = Math.max(1, originalDuration + deltaDays);
-        previewEndDate = addFn(drag.originalStartDate, newDuration);
-      }
-
-      const newDrag = { ...drag, previewStartDate, previewEndDate };
-      dragRef.current = newDrag;
-      setDragState(newDrag);
-    };
-
-    const handleMouseUp = async () => {
-      const drag = dragRef.current;
-      if (!drag) return;
-      dragRef.current = null;
-      setDragState(null);
-
-      if (
-        drag.previewStartDate !== drag.originalStartDate ||
-        drag.previewEndDate !== drag.originalEndDate
-      ) {
-        try {
-          await taskRepository.update(drag.taskId, {
-            startDate: drag.previewStartDate,
-            dueDate: drag.previewEndDate,
-            updatedAt: new Date().toISOString(),
-          });
-          if (drag.previewStartDate !== drag.originalStartDate) {
-            const movedTask = ganttTasks.find((t) => t.id === drag.taskId);
-            if (movedTask?.contractorId) {
-              const contractor = contractors.find((c) => c.id === movedTask.contractorId);
-              const notificationRepo = createNotificationRepository(() => organizationId);
-              const now = new Date();
-              await notificationRepo.create({
-                id: crypto.randomUUID(),
-                projectId: movedTask.projectId,
-                taskId: movedTask.id,
-                contractorId: movedTask.contractorId,
-                type: "schedule_changed",
-                message: `${movedTask.name}の開始日が${drag.previewStartDate}に変更されました。（業者: ${contractor?.name ?? "不明"}）`,
-                status: "pending",
-                scheduledAt: now.toISOString(),
-                createdAt: now.toISOString(),
-                updatedAt: now.toISOString(),
-              });
-            }
-          }
-          await loadData();
-        } catch (err) {
-          setError(err instanceof Error ? err.message : "タスクの更新に失敗しました");
-        }
-      }
-    };
-
-    const mouseUpHandler = () => {
-      void handleMouseUp();
-    };
-    mouseUpHandlerRef.current = mouseUpHandler;
-
-    window.addEventListener("mousemove", handleMouseMove);
-    window.addEventListener("mouseup", mouseUpHandler);
-
-    return () => {
-      window.removeEventListener("mousemove", handleMouseMove);
-      window.removeEventListener("mouseup", mouseUpHandler);
-      if (mouseUpHandlerRef.current === mouseUpHandler) {
-        mouseUpHandlerRef.current = null;
-      }
-    };
-  }, [taskRepository, loadData, ganttTasks, contractors, organizationId]);
+  const { dragState, dragRef, startTaskDrag, startTaskResize } = useGanttDrag({
+    ganttTasks,
+    contractors,
+    dayWidth: effectiveDayWidth,
+    organizationId,
+    taskRepository,
+    loadData,
+    onError: setError,
+  });
 
   // Filtered tasks based on status filter
   const filteredGanttTasks = useMemo(
@@ -337,9 +253,6 @@ export function GanttPage() {
     () => ganttTasks.filter((t) => t.status === "done").length,
     [ganttTasks],
   );
-
-  // Zoom-aware dayWidth
-  const effectiveDayWidth = zoomLevel === "week" ? 14 : 36;
 
   // Build phase groups from tasks, grouped by project
   const phaseGroups = useMemo((): PhaseGroup[] => {
@@ -1113,7 +1026,8 @@ export function GanttPage() {
         connectState={connectState}
         today={today}
         scrollRef={scrollRef}
-        onSetDragState={setDragState}
+        onTaskDragStart={startTaskDrag}
+        onTaskResizeStart={startTaskResize}
         onOpenTaskDetail={openTaskDetail}
         onOpenQuickAdd={openQuickAdd}
         onTogglePhase={togglePhase}

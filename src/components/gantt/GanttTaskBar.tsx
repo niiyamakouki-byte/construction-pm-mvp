@@ -14,7 +14,8 @@ type GanttTaskBarProps = {
   highlightedDates: HighlightedDate[];
   today: string;
   dayWidth: number;
-  onSetDragState: (state: DragState | null) => void;
+  onTaskDragStart: (task: GanttTask, event: React.MouseEvent<HTMLDivElement>) => void;
+  onTaskResizeStart: (task: GanttTask, event: React.MouseEvent<HTMLDivElement>) => void;
   onOpenTaskDetail: (task: GanttTask) => void;
   onSetConnectState: (state: ConnectState | null) => void;
   onConnectTask: (toTaskId: string) => void;
@@ -30,7 +31,8 @@ export function GanttTaskBar({
   highlightedDates,
   today,
   dayWidth,
-  onSetDragState,
+  onTaskDragStart,
+  onTaskResizeStart,
   onOpenTaskDetail,
   onSetConnectState,
   onConnectTask,
@@ -147,21 +149,9 @@ export function GanttTaskBar({
             userSelect: "none",
           }}
           title={`${task.name}: ${displayStartDate} ~ ${displayEndDate} (${task.progress}%)${task.isDateEstimated ? " (推定)" : ""} — ドラッグで移動、右端をドラッグで日数変更`}
-          onMouseDown={(e) => {
+          onMouseDown={(event) => {
             if (connectMode) return;
-            if (e.button !== 0) return;
-            e.preventDefault();
-            const newDrag: DragState = {
-              taskId: task.id,
-              type: "move",
-              startX: e.clientX,
-              originalStartDate: task.startDate,
-              originalEndDate: task.endDate,
-              previewStartDate: task.startDate,
-              previewEndDate: task.endDate,
-            };
-            dragRef.current = newDrag;
-            onSetDragState(newDrag);
+            onTaskDragStart(task, event);
           }}
           onClick={(e) => {
             if (connectMode) {
@@ -209,21 +199,7 @@ export function GanttTaskBar({
             <div
               className="absolute right-0 top-0 h-full w-3 cursor-ew-resize flex items-center justify-center z-20"
               title="ドラッグで工期を伸縮"
-              onMouseDown={(e) => {
-                e.stopPropagation();
-                e.preventDefault();
-                const newDrag: DragState = {
-                  taskId: task.id,
-                  type: "resize",
-                  startX: e.clientX,
-                  originalStartDate: task.startDate,
-                  originalEndDate: task.endDate,
-                  previewStartDate: task.startDate,
-                  previewEndDate: task.endDate,
-                };
-                dragRef.current = newDrag;
-                onSetDragState(newDrag);
-              }}
+              onMouseDown={(event) => onTaskResizeStart(task, event)}
               onClick={(e) => e.stopPropagation()}
             >
               <div className="h-4 w-1 rounded-full bg-white/40" />
