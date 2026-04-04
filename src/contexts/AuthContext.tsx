@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { getSupabaseClient, hasSupabaseEnv } from "../infra/supabase-client.js";
+import { navigate } from "../hooks/useHashRouter.js";
 
 type User = {
   id: string;
@@ -46,9 +47,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
 
       // Listen for auth changes
-      const { data } = client.auth.onAuthStateChange((_event, newSession) => {
+      const { data } = client.auth.onAuthStateChange((event, newSession) => {
         setSession(newSession);
         setLoading(false);
+        // OAuth ログイン後、ランディング/ログインページにいたらアプリへ遷移
+        if (event === "SIGNED_IN") {
+          const hash = window.location.hash.replace("#", "") || "/";
+          if (hash === "/" || hash === "" || hash === "/login" || hash === "/signup") {
+            navigate("/app");
+          }
+        }
       });
       unsubscribe = () => data.subscription.unsubscribe();
     });
