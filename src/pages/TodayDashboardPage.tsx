@@ -4,6 +4,7 @@ import { createTaskRepository } from "../stores/task-store.js";
 import { createProjectRepository } from "../stores/project-store.js";
 import { navigate } from "../hooks/useHashRouter.js";
 import { useOrganizationContext } from "../contexts/OrganizationContext.js";
+import { usePersona } from "../contexts/PersonaContext.js";
 
 // ── Helpers ────────────────────────────────────────────
 
@@ -267,6 +268,7 @@ export function TodayDashboardPage() {
   };
 
   // ── Stats ────────────────────────────────────────────
+  const { persona } = usePersona();
   const totalTasks = allTasks.length;
   const completedTasks = allTasks.filter((t) => t.status === "done").length;
   const overdueTasks = allTasks.filter(
@@ -275,6 +277,16 @@ export function TodayDashboardPage() {
   const inProgressTasks = allTasks.filter(
     (t) => t.status === "in_progress",
   ).length;
+
+  // Project completion stats for executive mode
+  const projectStats = useMemo(() => {
+    return allProjects.map((p) => {
+      const pTasks = allTasks.filter((t) => t.projectId === p.id);
+      const done = pTasks.filter((t) => t.status === "done").length;
+      const pct = pTasks.length > 0 ? Math.round((done / pTasks.length) * 100) : 0;
+      return { ...p, taskCount: pTasks.length, doneCount: done, pct };
+    });
+  }, [allProjects, allTasks]);
 
   // ── Render ───────────────────────────────────────────
   return (
@@ -345,6 +357,49 @@ export function TodayDashboardPage() {
         <StatCard label="完了" value={completedTasks} color="text-emerald-600" bgColor="bg-emerald-50" />
         <StatCard label="遅延" value={overdueTasks} color="text-red-600" bgColor={overdueTasks > 0 ? "bg-red-50" : "bg-white"} />
       </div>
+
+      {/* Executive mode: project overview */}
+      {persona === "executive" && (
+        <section>
+          <h2 className="mb-3 text-base font-bold text-slate-800">全プロジェクト俯瞰</h2>
+          {allProjects.length === 0 ? (
+            <div className="rounded-xl border border-slate-200 bg-white p-4 text-center text-sm text-slate-400">
+              プロジェクトがありません
+            </div>
+          ) : (
+            <ul className="space-y-2">
+              {projectStats.map((p) => (
+                <li
+                  key={p.id}
+                  className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm cursor-pointer hover:border-brand-300 transition-colors"
+                  onClick={() => navigate(`/project/${p.id}`)}
+                >
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-sm font-semibold text-slate-800 truncate">{p.name}</span>
+                    <span className={`text-xs font-bold tabular-nums ${
+                      p.pct > 80 ? "text-emerald-600" : p.pct > 50 ? "text-blue-600" : "text-slate-500"
+                    }`}>
+                      {p.pct}%
+                    </span>
+                  </div>
+                  <div className="h-1.5 w-full rounded-full bg-slate-100 overflow-hidden">
+                    <div
+                      className={`h-full rounded-full transition-all ${
+                        p.pct > 80 ? "bg-emerald-500" : p.pct > 50 ? "bg-blue-500" : "bg-slate-400"
+                      }`}
+                      style={{ width: `${p.pct}%` }}
+                    />
+                  </div>
+                  <p className="mt-1 text-xs text-slate-400 tabular-nums">
+                    {p.doneCount}/{p.taskCount} タスク完了
+                    {p.budget ? ` · 予算 ¥${p.budget.toLocaleString()}` : ""}
+                  </p>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+      )}
 
       {/* Today's Tasks */}
       <section>

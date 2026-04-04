@@ -2,6 +2,8 @@ import { ProjectListPage } from "./pages/ProjectListPage.js";
 import { TodayDashboardPage } from "./pages/TodayDashboardPage.js";
 import { ProjectDetailPage } from "./pages/ProjectDetailPage.js";
 import { GanttPage } from "./pages/GanttPage.js";
+import { NodeSchedulePage } from "./pages/NodeSchedulePage.js";
+import { InvoicePage } from "./pages/InvoicePage.js";
 import { EstimatePage } from "./pages/EstimatePage.js";
 import { ContractorsPage } from "./pages/ContractorsPage.js";
 import { NotificationsPage } from "./pages/NotificationsPage.js";
@@ -14,6 +16,7 @@ import { ErrorBoundary } from "./components/ErrorBoundary.js";
 import { AuthGuard } from "./components/AuthGuard.js";
 import { AuthProvider, useAuth } from "./contexts/AuthContext.js";
 import { OrganizationProvider } from "./contexts/OrganizationContext.js";
+import { PersonaProvider, usePersona } from "./contexts/PersonaContext.js";
 import { useHashRoute, navigate } from "./hooks/useHashRouter.js";
 
 function LogoIcon() {
@@ -59,8 +62,15 @@ const tabs: TabDef[] = [
     key: "gantt",
     label: "工程表",
     icon: "📊",
-    matchRoute: (r) => r === "/gantt",
+    matchRoute: (r) => r === "/gantt" || r === "/node-schedule",
     path: "/gantt",
+  },
+  {
+    key: "invoice",
+    label: "請求書",
+    icon: "🧾",
+    matchRoute: (r) => r === "/invoice",
+    path: "/invoice",
   },
   {
     key: "estimate",
@@ -88,6 +98,7 @@ const tabs: TabDef[] = [
 function AppShell() {
   const route = useHashRoute();
   const { user, signOut } = useAuth();
+  const { persona, setPersona } = usePersona();
 
   // Parse legal section from hash fragment
   const legalMatch = route.match(/^\/legal(?:#(.+))?$/);
@@ -126,6 +137,20 @@ function AppShell() {
       return (
         <ErrorBoundary fallbackTitle="ガントチャートエラー">
           <GanttPage />
+        </ErrorBoundary>
+      );
+    }
+    if (route === "/node-schedule") {
+      return (
+        <ErrorBoundary fallbackTitle="ノードビューエラー">
+          <NodeSchedulePage />
+        </ErrorBoundary>
+      );
+    }
+    if (route === "/invoice") {
+      return (
+        <ErrorBoundary fallbackTitle="請求書OCRエラー">
+          <InvoicePage />
         </ErrorBoundary>
       );
     }
@@ -223,6 +248,14 @@ function AppShell() {
                   onClick={() => navigate(tab.path)}
                 />
               ))}
+              {/* Persona toggle */}
+              <button
+                onClick={() => setPersona(persona === "supervisor" ? "executive" : "supervisor")}
+                className="ml-1 flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold text-brand-200 hover:text-white hover:bg-white/10 transition-all"
+                title={persona === "supervisor" ? "現場監督モード" : "経営層モード"}
+              >
+                {persona === "supervisor" ? "現場監督" : "経営層"}
+              </button>
               {user && (
                 <button
                   onClick={signOut}
@@ -293,7 +326,9 @@ export function App() {
   return (
     <AuthProvider>
       <OrganizationProvider>
-        <AppShell />
+        <PersonaProvider>
+          <AppShell />
+        </PersonaProvider>
       </OrganizationProvider>
     </AuthProvider>
   );

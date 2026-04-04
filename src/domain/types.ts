@@ -39,6 +39,8 @@ export type Task = BaseEntity & {
   contractorId?: string;
   materials?: string[];
   leadTimeDays?: number;
+  canvasX?: number;
+  canvasY?: number;
 };
 
 // ── Resource ────────────────────────────────────────

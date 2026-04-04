@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { Project, Task, TaskStatus, CostItem } from "../domain/types.js";
+import type { Project, Task, TaskStatus, CostItem, Expense } from "../domain/types.js";
 import { createProjectRepository } from "../stores/project-store.js";
 import { createTaskRepository } from "../stores/task-store.js";
 import { createCostItemRepository } from "../stores/cost-item-store.js";
+import { createAppRepository } from "../infra/create-app-repository.js";
 import { navigate } from "../hooks/useHashRouter.js";
 import { useOrganizationContext } from "../contexts/OrganizationContext.js";
 
@@ -144,9 +145,14 @@ export function ProjectDetailPage({ projectId }: { projectId: string }) {
     () => createCostItemRepository(() => organizationId),
     [organizationId],
   );
+  const expenseRepository = useMemo(
+    () => createAppRepository<Expense>("expenses", () => organizationId),
+    [organizationId],
+  );
   const [project, setProject] = useState<Project | null>(null);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [costItems, setCostItems] = useState<CostItem[]>([]);
+  const [expenses, setExpenses] = useState<Expense[]>([]);
   const [weather, setWeather] = useState<WeatherData | null>(null);
   const [loading, setLoading] = useState(true);
   const [showTaskForm, setShowTaskForm] = useState(false);
@@ -165,14 +171,16 @@ export function ProjectDetailPage({ projectId }: { projectId: string }) {
   const loadData = useCallback(async () => {
     try {
       setError(null);
-      const [p, allTasks, allCosts] = await Promise.all([
+      const [p, allTasks, allCosts, allExpenses] = await Promise.all([
         projectRepository.findById(projectId),
         taskRepository.findAll(),
         costItemRepository.findAll(),
+        expenseRepository.findAll(),
       ]);
       setProject(p);
       setTasks(allTasks.filter((t) => t.projectId === projectId));
       setCostItems(allCosts.filter((c) => c.projectId === projectId));
+      setExpenses(allExpenses.filter((e) => e.projectId === projectId));
 
       if (p?.latitude && p?.longitude && !weatherFetched.current) {
         weatherFetched.current = true;
@@ -184,7 +192,7 @@ export function ProjectDetailPage({ projectId }: { projectId: string }) {
     } finally {
       setLoading(false);
     }
-  }, [projectId]);
+  }, [projectId, expenseRepository]);
 
   useEffect(() => {
     void loadData();
@@ -341,6 +349,33 @@ export function ProjectDetailPage({ projectId }: { projectId: string }) {
   const doneTasks = tasks.filter((t) => t.status === "done").length;
   const progressPercent = totalTasks > 0 ? Math.round((doneTasks / totalTasks) * 100) : 0;
   const totalCost = costItems.reduce((sum, c) => sum + c.amount, 0);
+
+  // Cash flow calculations
+  const budget = project?.budget ?? 0;
+  const totalExpenses = expenses.reduce((sum, e) => sum + e.amount, 0);
+  const budgetUsagePercent = budget > 0 ? Math.round((totalExpenses / budget) * 100) : 0;
+  const budgetBarColor =
+    budgetUsagePercent > 80
+      ? "bg-red-500"
+      : budgetUsagePercent > 50
+        ? "bg-amber-400"
+        : "bg-emerald-500";
+
+  // Monthly expenses for SVG bar chart (last 6 months)
+  const monthlyExpenses = (() => {
+    const now = new Date();
+    const months: { label: string; amount: number }[] = [];
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const label = `${d.getMonth() + 1}月`;
+      const monthStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+      const amount = expenses
+        .filter((e) => e.expenseDate.startsWith(monthStr))
+        .reduce((sum, e) => sum + e.amount, 0);
+      months.push({ label, amount });
+    }
+    return months;
+  })();
 
   const statusColorMap: Record<string, string> = {
     planning: "bg-blue-100 text-blue-700",
@@ -536,6 +571,78 @@ export function ProjectDetailPage({ projectId }: { projectId: string }) {
           </p>
         </div>
       </div>
+
+      {/* Cash Flow / Finance Section */}
+      <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+        <h2 className="mb-3 text-base font-bold text-slate-800">財務</h2>
+
+        {budget > 0 ? (
+          <>
+            {/* Budget bar */}
+            <div className="mb-3">
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-xs text-slate-500">予算消化率</span>
+                <span className={`text-xs font-bold tabular-nums ${
+                  budgetUsagePercent > 80 ? "text-red-600" : budgetUsagePercent > 50 ? "text-amber-600" : "text-emerald-600"
+                }`}>
+                  {budgetUsagePercent}%
+                </span>
+              </div>
+              <div className="h-3 w-full rounded-full bg-slate-100 overflow-hidden">
+                <div
+                  className={`h-full rounded-full transition-all duration-500 ${budgetBarColor}`}
+                  style={{ width: `${Math.min(budgetUsagePercent, 100)}%` }}
+                />
+              </div>
+              <div className="flex justify-between mt-1 text-xs text-slate-400 tabular-nums">
+                <span>支出: ¥{totalExpenses.toLocaleString()}</span>
+                <span>予算: ¥{budget.toLocaleString()}</span>
+              </div>
+            </div>
+
+            {/* Monthly expenses bar chart (SVG) */}
+            {expenses.length > 0 && (() => {
+              const maxAmt = Math.max(...monthlyExpenses.map((m) => m.amount), 1);
+              const chartH = 60;
+              const barW = 24;
+              const gap = 8;
+              const totalW = monthlyExpenses.length * (barW + gap) - gap;
+              return (
+                <div>
+                  <p className="text-xs font-semibold text-slate-500 mb-2">月次支出推移</p>
+                  <svg width={totalW} height={chartH + 20} className="overflow-visible">
+                    {monthlyExpenses.map((m, i) => {
+                      const barH = maxAmt > 0 ? Math.round((m.amount / maxAmt) * chartH) : 0;
+                      const x = i * (barW + gap);
+                      return (
+                        <g key={m.label}>
+                          <rect
+                            x={x}
+                            y={chartH - barH}
+                            width={barW}
+                            height={barH || 2}
+                            rx="3"
+                            fill="#2563eb"
+                            opacity="0.8"
+                          />
+                          <text x={x + barW / 2} y={chartH + 14} textAnchor="middle" fontSize="9" fill="#94a3b8">
+                            {m.label}
+                          </text>
+                        </g>
+                      );
+                    })}
+                  </svg>
+                </div>
+              );
+            })()}
+          </>
+        ) : (
+          <p className="text-xs text-slate-400">
+            プロジェクトに予算を設定するとキャッシュフローが表示されます。
+            {totalExpenses > 0 && ` 現在の支出: ¥${totalExpenses.toLocaleString()}`}
+          </p>
+        )}
+      </section>
 
       {/* Tasks */}
       <section>

@@ -340,6 +340,12 @@ export function GanttPage() {
     affectedCount: number;
   } | null>(null);
 
+  // CSV import state
+  const [showCsvModal, setShowCsvModal] = useState(false);
+  const [csvImporting, setCsvImporting] = useState(false);
+  const [csvResult, setCsvResult] = useState<{ success: number; error: number } | null>(null);
+  const csvFileRef = useRef<HTMLInputElement>(null);
+
   const loadData = useCallback(async () => {
     try {
       setError(null);
@@ -403,6 +409,78 @@ export function GanttPage() {
       }
     }
   }, [loading]);
+
+  // ── CSV Import ─────────────────────────────────────────────
+  const SAMPLE_CSV_GANTT = `タスク名,カテゴリ,開始日,終了日,担当業者,材料,リードタイム日数\n墨出し・下地確認,内装,2024-04-01,2024-04-02,田中工務店,,0\n解体・撤去,内装,2024-04-02,2024-04-05,田中工務店,,1\n`;
+
+  const downloadSampleCsv = useCallback(() => {
+    const blob = new Blob([SAMPLE_CSV_GANTT], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "sample_tasks.csv";
+    a.click();
+    URL.revokeObjectURL(url);
+  }, [SAMPLE_CSV_GANTT]);
+
+  const handleCsvImport = useCallback(async (file: File) => {
+    setCsvImporting(true);
+    setCsvResult(null);
+    try {
+      const text = await file.text();
+      const lines = text.trim().split(/\r?\n/);
+      if (lines.length < 2) { setCsvResult({ success: 0, error: 0 }); return; }
+      const headers = lines[0].split(",").map((h) => h.trim());
+      const rows = lines.slice(1).map((line) => {
+        const vals = line.split(",").map((v) => v.trim());
+        const row: Record<string, string> = {};
+        headers.forEach((h, i) => { row[h] = vals[i] ?? ""; });
+        return row;
+      });
+
+      const defaultProjectId = projects[0]?.id ?? "";
+      const now = new Date();
+      let successCount = 0;
+      let errorCount = 0;
+      for (const row of rows) {
+        const taskName = row["タスク名"] ?? row["task_name"] ?? "";
+        if (!taskName) { errorCount++; continue; }
+        try {
+          await taskRepository.create({
+            id: crypto.randomUUID(),
+            projectId: defaultProjectId,
+            name: taskName,
+            description: row["カテゴリ"] ?? "",
+            status: "todo",
+            startDate: row["開始日"] || undefined,
+            dueDate: row["終了日"] || undefined,
+            assigneeId: row["担当業者"] || undefined,
+            materials: row["材料"] ? [row["材料"]] : [],
+            leadTimeDays: row["リードタイム日数"] ? Number(row["リードタイム日数"]) : 0,
+            progress: 0,
+            dependencies: [],
+            createdAt: now.toISOString(),
+            updatedAt: now.toISOString(),
+          });
+          successCount++;
+        } catch {
+          errorCount++;
+        }
+      }
+      setCsvResult({ success: successCount, error: errorCount });
+      await loadData();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "CSVインポート失敗");
+    } finally {
+      setCsvImporting(false);
+    }
+  }, [projects, taskRepository, loadData]);
+
+  const handleCsvFileChange = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) await handleCsvImport(file);
+    e.target.value = "";
+  }, [handleCsvImport]);
 
   // Global mouse event handlers for drag
   useEffect(() => {
@@ -1402,9 +1480,50 @@ export function GanttPage() {
         </div>
       )}
 
+      {/* CSV import modal */}
+      {showCsvModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => setShowCsvModal(false)}>
+          <div className="mx-4 w-full max-w-md rounded-2xl bg-white p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-base font-bold text-slate-900 mb-4">CSVインポート</h3>
+            <p className="text-xs text-slate-500 mb-3">CSV形式: タスク名,カテゴリ,開始日,終了日,担当業者,材料,リードタイム日数</p>
+            {csvResult && (
+              <div className={`mb-3 rounded-lg px-3 py-2 text-sm ${csvResult.error === 0 ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700"}`}>
+                成功: {csvResult.success}件 / エラー: {csvResult.error}件
+              </div>
+            )}
+            <div className="space-y-3">
+              <button onClick={downloadSampleCsv} className="w-full rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors">
+                サンプルCSVをダウンロード
+              </button>
+              <input ref={csvFileRef} type="file" accept=".csv" className="hidden" onChange={handleCsvFileChange} />
+              <button onClick={() => csvFileRef.current?.click()} disabled={csvImporting} className="w-full rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-brand-700 disabled:opacity-50 transition-colors">
+                {csvImporting ? "インポート中..." : "CSVファイルを選択"}
+              </button>
+            </div>
+            <button onClick={() => setShowCsvModal(false)} className="mt-4 w-full rounded-lg px-4 py-2 text-sm text-slate-500 hover:bg-slate-100 transition-colors">閉じる</button>
+          </div>
+        </div>
+      )}
+
       <div className="mb-4 flex items-center justify-between flex-wrap gap-2">
-        <h2 className="text-lg font-bold text-slate-900">ガントチャート</h2>
+        <div className="flex items-center gap-2">
+          <h2 className="text-lg font-bold text-slate-900">ガントチャート</h2>
+          {/* View toggle */}
+          <button
+            onClick={() => navigate("/node-schedule")}
+            className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors"
+          >
+            ノード表示
+          </button>
+        </div>
         <div className="flex items-center gap-3 flex-wrap">
+          {/* CSV import button */}
+          <button
+            onClick={() => { setCsvResult(null); setShowCsvModal(true); }}
+            className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold bg-emerald-100 text-emerald-700 hover:bg-emerald-200 transition-colors"
+          >
+            CSVインポート
+          </button>
           {/* Connect mode toggle */}
           <button
             onClick={() => {
@@ -1528,7 +1647,7 @@ export function GanttPage() {
             </p>
             <button
               type="button"
-              onClick={() => setCascadeConfirm(opp)}
+              onClick={() => setCascadeConfirm({ targetProjectId: opp.projectId, delayDays: opp.delayDays, affectedCount: opp.affectedCount })}
               className="shrink-0 rounded-md bg-orange-500 px-3 py-1 text-xs font-semibold text-white hover:bg-orange-600 transition-colors"
             >
               {opp.delayDays}日 自動調整
