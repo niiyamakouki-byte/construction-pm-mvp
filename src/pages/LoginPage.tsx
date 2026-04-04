@@ -28,7 +28,8 @@ export function LoginPage() {
       } else {
         navigate("/");
       }
-    } catch {
+    } catch (err) {
+      console.error("Failed to log in with email and password", err);
       setError("ログインに失敗しました。もう一度お試しください。");
     } finally {
       setLoading(false);
@@ -50,7 +51,8 @@ export function LoginPage() {
         provider: "google",
         options: { redirectTo },
       });
-    } catch {
+    } catch (err) {
+      console.error("Failed to start Google login", err);
       setError("Google ログインに失敗しました。");
     }
   };

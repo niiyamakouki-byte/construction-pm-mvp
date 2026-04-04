@@ -34,7 +34,8 @@ export function SignupPage() {
       } else {
         setSuccess(true);
       }
-    } catch {
+    } catch (err) {
+      console.error("Failed to sign up", err);
       setError("登録に失敗しました。もう一度お試しください。");
     } finally {
       setLoading(false);

@@ -100,6 +100,7 @@ export function NodeSchedulePage() {
       const all = await taskRepository.findAll();
       setTasks(all);
     } catch (err) {
+      console.error("Failed to load node schedule tasks", err);
       setError(err instanceof Error ? err.message : "読み込み失敗");
     } finally {
       setLoading(false);
@@ -179,8 +180,9 @@ export function NodeSchedulePage() {
             canvasY: task.canvasY,
             updatedAt: new Date().toISOString(),
           });
-        } catch {
-          // non-critical
+        } catch (err) {
+          console.error("Failed to persist node position", err);
+          setError(err instanceof Error ? err.message : "ノード位置の保存に失敗しました");
         }
       }
     }
@@ -241,8 +243,9 @@ export function NodeSchedulePage() {
             updatedAt: new Date().toISOString(),
           });
           await loadTasks();
-        } catch {
-          // non-critical
+        } catch (err) {
+          console.error("Failed to create node dependency", err);
+          setError(err instanceof Error ? err.message : "依存関係の保存に失敗しました");
         }
       }
       connectingFrom.current = null;
@@ -274,11 +277,13 @@ export function NodeSchedulePage() {
     async (file: File) => {
       setImporting(true);
       setCsvResult(null);
+      setError(null);
       try {
         const text = await file.text();
         const rows = parseCSV(text);
         let successCount = 0;
         let errorCount = 0;
+        let importErrorMessage: string | null = null;
 
         // Get projects for lookup
         const projects = await projectRepository.findAll();
@@ -310,13 +315,20 @@ export function NodeSchedulePage() {
             });
             xOffset += 220;
             successCount++;
-          } catch {
+          } catch (err) {
+            console.error("Failed to import node schedule CSV row", err);
             errorCount++;
+            importErrorMessage =
+              err instanceof Error ? err.message : "一部のタスクをインポートできませんでした";
           }
         }
         setCsvResult({ success: successCount, error: errorCount });
         await loadTasks();
+        if (importErrorMessage) {
+          setError(importErrorMessage);
+        }
       } catch (err) {
+        console.error("Failed to import node schedule CSV", err);
         setError(err instanceof Error ? err.message : "CSVインポート失敗");
       } finally {
         setImporting(false);
