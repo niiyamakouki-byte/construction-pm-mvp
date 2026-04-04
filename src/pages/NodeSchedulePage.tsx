@@ -303,7 +303,7 @@ export function NodeSchedulePage() {
               status: "todo",
               startDate: row["開始日"] ?? row["start_date"] ?? undefined,
               dueDate: row["終了日"] ?? row["end_date"] ?? undefined,
-              assigneeId: row["担当業者"] ?? row["assignee"] ?? undefined,
+              contractorId: row["担当業者"] ?? row["contractor"] ?? row["assignee"] ?? undefined,
               materials: row["材料"] ? [row["材料"]] : [],
               leadTimeDays: row["リードタイム日数"] ? Number(row["リードタイム日数"]) : 0,
               progress: 0,

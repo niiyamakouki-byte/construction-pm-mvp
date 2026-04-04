@@ -67,6 +67,7 @@ export function OnboardingWizard({ onComplete }: Props) {
   const [projectAddress, setProjectAddress] = useState("");
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
   const [nameError, setNameError] = useState<string | null>(null);
+  const [createError, setCreateError] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
   const [createdProjectId, setCreatedProjectId] = useState<string | null>(null);
 
@@ -75,10 +76,12 @@ export function OnboardingWizard({ onComplete }: Props) {
   };
 
   const handleBack = () => {
+    setCreateError(null);
     if (step > 1) setStep((s) => (s - 1) as Step);
   };
 
   const handleStep1Next = () => {
+    setCreateError(null);
     setStep(2);
   };
 
@@ -92,12 +95,14 @@ export function OnboardingWizard({ onComplete }: Props) {
       return;
     }
     setNameError(null);
+    setCreateError(null);
     setStep(3);
   };
 
   const handleStep3Next = async () => {
     if (!selectedTemplate) return;
 
+    setCreateError(null);
     setCreating(true);
     try {
       const repo = createProjectRepository(() => organizationId);
@@ -121,9 +126,12 @@ export function OnboardingWizard({ onComplete }: Props) {
       });
       setCreatedProjectId(projectId);
       setStep(4);
-    } catch {
-      // even on error, proceed
-      setStep(4);
+    } catch (err) {
+      setCreateError(
+        err instanceof Error
+          ? err.message
+          : "プロジェクトの作成に失敗しました。もう一度お試しください。",
+      );
     } finally {
       setCreating(false);
     }
@@ -173,6 +181,7 @@ export function OnboardingWizard({ onComplete }: Props) {
           )}
           {step === 3 && (
             <Step3
+              createError={createError}
               selectedTemplate={selectedTemplate}
               setSelectedTemplate={setSelectedTemplate}
             />
@@ -361,11 +370,12 @@ function Step2({
 }
 
 type Step3Props = {
+  createError: string | null;
   selectedTemplate: string | null;
   setSelectedTemplate: (v: string) => void;
 };
 
-function Step3({ selectedTemplate, setSelectedTemplate }: Step3Props) {
+function Step3({ createError, selectedTemplate, setSelectedTemplate }: Step3Props) {
   return (
     <div>
       <div className="mb-6 flex items-center gap-3">
@@ -407,6 +417,11 @@ function Step3({ selectedTemplate, setSelectedTemplate }: Step3Props) {
       {!selectedTemplate && (
         <p className="mt-3 text-xs text-slate-400 text-center">
           テンプレートを選択してください
+        </p>
+      )}
+      {createError && (
+        <p className="mt-3 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700" role="alert">
+          {createError}
         </p>
       )}
     </div>

@@ -209,7 +209,7 @@ export function GanttPage() {
             status: "todo",
             startDate: row["開始日"] || undefined,
             dueDate: row["終了日"] || undefined,
-            assigneeId: row["担当業者"] || undefined,
+            contractorId: row["担当業者"] ?? row["contractor"] ?? row["assignee"] ?? undefined,
             materials: row["材料"] ? [row["材料"]] : [],
             leadTimeDays: row["リードタイム日数"] ? Number(row["リードタイム日数"]) : 0,
             progress: 0,

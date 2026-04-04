@@ -4,6 +4,10 @@ import userEvent from "@testing-library/user-event";
 import { OnboardingWizard, useOnboardingDone } from "../components/OnboardingWizard.js";
 import { HelpPage } from "../pages/HelpPage.js";
 
+const { mockProjectCreate } = vi.hoisted(() => ({
+  mockProjectCreate: vi.fn().mockResolvedValue(undefined),
+}));
+
 // Create a proper localStorage mock since Node's built-in localStorage is incomplete
 function createMockLocalStorage(): Storage {
   const store = new Map<string, string>();
@@ -31,7 +35,7 @@ vi.mock("../hooks/useHashRouter.js", () => ({
 // Mock project-store create
 vi.mock("../stores/project-store.js", () => ({
   createProjectRepository: () => ({
-    create: vi.fn().mockResolvedValue(undefined),
+    create: mockProjectCreate,
     findAll: vi.fn().mockResolvedValue([]),
   }),
   projectRepository: {
@@ -45,6 +49,8 @@ describe("OnboardingWizard", () => {
   beforeEach(() => {
     cleanup();
     vi.stubGlobal("localStorage", createMockLocalStorage());
+    mockProjectCreate.mockReset();
+    mockProjectCreate.mockResolvedValue(undefined);
   });
 
   it("ステップ1: ようこそ画面が表示される", () => {
@@ -107,6 +113,24 @@ describe("OnboardingWizard", () => {
     await user.click(screen.getByText("次へ →"));
     await user.click(screen.getByText("戻る"));
     expect(screen.getByText("最初のプロジェクトを作ろう")).toBeDefined();
+  });
+
+  it("プロジェクト作成失敗時はエラーを表示してステップ3に留まる", async () => {
+    mockProjectCreate.mockRejectedValueOnce(new Error("保存に失敗しました"));
+
+    const user = userEvent.setup();
+    render(<OnboardingWizard onComplete={() => {}} />);
+
+    await user.click(screen.getByText("はじめる →"));
+    await user.type(screen.getByPlaceholderText("例: 渋谷オフィスビル内装工事"), "工事C");
+    await user.click(screen.getByText("次へ →"));
+    await user.click(screen.getByText("内装工事"));
+    await user.click(screen.getByText("作成する →"));
+
+    expect((await screen.findByRole("alert")).textContent).toContain("保存に失敗しました");
+    expect(screen.getByText("工程表を作ろう")).toBeDefined();
+    expect(screen.getByText("ステップ 3 / 4")).toBeDefined();
+    expect(screen.queryByText("準備完了！")).toBeNull();
   });
 });
 

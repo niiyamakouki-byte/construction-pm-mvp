@@ -130,6 +130,16 @@ describe("E2E: CSVインポート→タスク生成", () => {
     expect(first!.dueDate).toBe("2025-06-02");
   });
 
+  it("担当業者は contractorId に保存される", async () => {
+    const repo = new InMemoryRepository<Task>();
+    await importCsvToRepo(SAMPLE_CSV, "proj-1", repo);
+
+    const tasks = await repo.findAll();
+    const first = tasks.find((t) => t.name === "墨出し・下地確認");
+    expect(first!.contractorId).toBe("田中工務店");
+    expect(first!.assigneeId).toBeUndefined();
+  });
+
   it("材料フィールドがインポートされる", async () => {
     const repo = new InMemoryRepository<Task>();
     await importCsvToRepo(SAMPLE_CSV, "proj-1", repo);

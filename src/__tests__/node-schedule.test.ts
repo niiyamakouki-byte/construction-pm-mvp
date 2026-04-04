@@ -28,6 +28,13 @@ function parseCSV(text: string): Array<Record<string, string>> {
   });
 }
 
+function mapCsvRowToImportedTask(row: Record<string, string>) {
+  return {
+    contractorId: row["担当業者"] ?? row["contractor"] ?? row["assignee"] ?? undefined,
+    assigneeId: undefined,
+  };
+}
+
 // ── bezierPath テスト ─────────────────────────────────────────────
 
 describe("bezierPath", () => {
@@ -125,6 +132,14 @@ describe("parseCSV", () => {
     expect(result[0]["タスク名"]).toBe("墨出し・下地確認");
     expect(result[2]["材料"]).toBe("石膏ボード");
     expect(result[1]["リードタイム日数"]).toBe("1");
+  });
+
+  it("担当業者は contractorId にマップされる", () => {
+    const [row] = parseCSV("タスク名,担当業者\n墨出し,田中工務店");
+    expect(mapCsvRowToImportedTask(row)).toEqual({
+      contractorId: "田中工務店",
+      assigneeId: undefined,
+    });
   });
 });
 
