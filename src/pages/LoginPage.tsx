@@ -20,7 +20,11 @@ export function LoginPage() {
       const client = await getSupabaseClient();
       const { error: authError } = await client.auth.signInWithPassword({ email, password });
       if (authError) {
-        setError(authError.message);
+        if (authError.message.toLowerCase().includes("email not confirmed")) {
+          setError("メールアドレスが確認されていません。確認メールのリンクをクリックしてからログインしてください。");
+        } else {
+          setError(authError.message);
+        }
       } else {
         navigate("/");
       }
@@ -38,9 +42,13 @@ export function LoginPage() {
     }
     try {
       const client = await getSupabaseClient();
+      const redirectTo =
+        window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"
+          ? window.location.origin
+          : "https://construction-pm-mvp.vercel.app";
       await client.auth.signInWithOAuth({
         provider: "google",
-        options: { redirectTo: window.location.origin },
+        options: { redirectTo },
       });
     } catch {
       setError("Google ログインに失敗しました。");

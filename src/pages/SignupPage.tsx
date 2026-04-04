@@ -52,7 +52,7 @@ export function SignupPage() {
           </div>
           <h2 className="text-xl font-bold text-slate-900">登録完了</h2>
           <p className="mt-2 text-sm text-slate-500">
-            確認メールを送信しました。メールのリンクをクリックしてアカウントを有効化してください。
+            確認メールを送信しました。メール内のリンクをクリックしてログインしてください。
           </p>
           <button
             onClick={() => navigate("/login")}
