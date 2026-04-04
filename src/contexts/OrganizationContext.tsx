@@ -31,67 +31,40 @@ async function ensureOrganization(
 ): Promise<Organization> {
   const client = await getSupabaseClient();
 
-  // Check if user already has an organization
-  const { data: memberships } = await client
-    .from("organization_members")
-    .select("organization_id")
-    .eq("user_id", userId)
-    .maybeSingle();
-
-  if (memberships) {
-    const orgId = (memberships as { organization_id: string }).organization_id;
-    const { data: org } = await client
-      .from("organizations")
-      .select("*")
-      .eq("id", orgId)
-      .single();
-
-    if (org) {
-      const row = org as Record<string, unknown>;
-      return {
-        id: row.id as string,
-        name: row.name as string,
-        plan: (row.plan as "trial" | "basic" | "pro") ?? "trial",
-        stripeCustomerId: (row.stripe_customer_id as string | null) ?? null,
-        stripeSubscriptionId:
-          (row.stripe_subscription_id as string | null) ?? null,
-        planPeriodEnd: (row.plan_period_end as string | null) ?? null,
-        createdAt: row.created_at as string,
-        updatedAt: row.updated_at as string,
-      };
-    }
-  }
-
-  // Create a new organization
-  const { data: newOrg, error: orgError } = await client
-    .from("organizations")
-    .insert({ name: companyName || "My Organization", plan: "trial" })
-    .select("*")
-    .single();
-
-  if (orgError || !newOrg) {
-    throw new Error(orgError?.message ?? "Failed to create organization");
-  }
-
-  const newRow = newOrg as Record<string, unknown>;
-
-  // Add user as owner
-  await client.from("organization_members").insert({
-    user_id: userId,
-    organization_id: newRow.id,
-    role: "owner",
+  // SECURITY DEFINER 関数でRLSをバイパスして組織を確実に取得/作成
+  const { data: orgId, error: rpcError } = await (client as unknown as {
+    rpc: (fn: string, args: Record<string, unknown>) => Promise<{ data: string | null; error: { message: string } | null }>;
+  }).rpc("ensure_user_organization", {
+    p_user_id: userId,
+    p_org_name: companyName || "My Organization",
   });
 
+  if (rpcError || !orgId) {
+    throw new Error(rpcError?.message ?? "Failed to ensure organization");
+  }
+
+  // 組織情報を取得
+  const { data: org, error: orgError } = await client
+    .from("organizations")
+    .select("*")
+    .eq("id", orgId)
+    .single();
+
+  if (orgError || !org) {
+    throw new Error(orgError?.message ?? "Failed to fetch organization");
+  }
+
+  const row = org as Record<string, unknown>;
   return {
-    id: newRow.id as string,
-    name: newRow.name as string,
-    plan: (newRow.plan as "trial" | "basic" | "pro") ?? "trial",
-    stripeCustomerId: (newRow.stripe_customer_id as string | null) ?? null,
+    id: row.id as string,
+    name: row.name as string,
+    plan: (row.plan as "trial" | "basic" | "pro") ?? "trial",
+    stripeCustomerId: (row.stripe_customer_id as string | null) ?? null,
     stripeSubscriptionId:
-      (newRow.stripe_subscription_id as string | null) ?? null,
-    planPeriodEnd: (newRow.plan_period_end as string | null) ?? null,
-    createdAt: newRow.created_at as string,
-    updatedAt: newRow.updated_at as string,
+      (row.stripe_subscription_id as string | null) ?? null,
+    planPeriodEnd: (row.plan_period_end as string | null) ?? null,
+    createdAt: row.created_at as string,
+    updatedAt: row.updated_at as string,
   };
 }
 
