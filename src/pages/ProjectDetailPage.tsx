@@ -6,6 +6,61 @@ import { createCostItemRepository } from "../stores/cost-item-store.js";
 import { navigate } from "../hooks/useHashRouter.js";
 import { useOrganizationContext } from "../contexts/OrganizationContext.js";
 
+// ── Construction templates ────────────────────────────
+
+type TemplateTask = { name: string; startOffsetDays: number; durationDays: number };
+
+const CONSTRUCTION_TEMPLATES: { label: string; tasks: TemplateTask[] }[] = [
+  {
+    label: "内装工事",
+    tasks: [
+      { name: "墨出し・下地確認", startOffsetDays: 0, durationDays: 1 },
+      { name: "解体・撤去", startOffsetDays: 1, durationDays: 3 },
+      { name: "下地工事", startOffsetDays: 4, durationDays: 5 },
+      { name: "電気・設備配管", startOffsetDays: 6, durationDays: 4 },
+      { name: "ボード張り", startOffsetDays: 9, durationDays: 3 },
+      { name: "塗装・クロス貼り", startOffsetDays: 11, durationDays: 5 },
+      { name: "床仕上げ", startOffsetDays: 15, durationDays: 3 },
+      { name: "建具取付", startOffsetDays: 17, durationDays: 2 },
+      { name: "清掃・養生撤去", startOffsetDays: 19, durationDays: 1 },
+      { name: "竣工検査", startOffsetDays: 20, durationDays: 1 },
+    ],
+  },
+  {
+    label: "外構工事",
+    tasks: [
+      { name: "測量・墨出し", startOffsetDays: 0, durationDays: 1 },
+      { name: "掘削・土工事", startOffsetDays: 1, durationDays: 3 },
+      { name: "基礎・砕石工事", startOffsetDays: 4, durationDays: 3 },
+      { name: "配管工事", startOffsetDays: 6, durationDays: 2 },
+      { name: "コンクリート打設", startOffsetDays: 8, durationDays: 2 },
+      { name: "養生期間", startOffsetDays: 10, durationDays: 3 },
+      { name: "仕上げ・植栽", startOffsetDays: 13, durationDays: 3 },
+      { name: "竣工検査", startOffsetDays: 16, durationDays: 1 },
+    ],
+  },
+  {
+    label: "設備工事",
+    tasks: [
+      { name: "現場調査・図面確認", startOffsetDays: 0, durationDays: 1 },
+      { name: "材料搬入", startOffsetDays: 1, durationDays: 1 },
+      { name: "配管・配線工事", startOffsetDays: 2, durationDays: 5 },
+      { name: "機器取付", startOffsetDays: 7, durationDays: 3 },
+      { name: "試運転・調整", startOffsetDays: 10, durationDays: 2 },
+      { name: "竣工検査", startOffsetDays: 12, durationDays: 1 },
+    ],
+  },
+];
+
+function addDaysToDate(dateStr: string, days: number): string {
+  const d = new Date(dateStr);
+  d.setDate(d.getDate() + days);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
 const statusLabel: Record<TaskStatus, string> = {
   todo: "未着手",
   in_progress: "進行中",
@@ -96,8 +151,13 @@ export function ProjectDetailPage({ projectId }: { projectId: string }) {
   const [loading, setLoading] = useState(true);
   const [showTaskForm, setShowTaskForm] = useState(false);
   const [taskName, setTaskName] = useState("");
+  const [taskStartDate, setTaskStartDate] = useState("");
   const [taskDueDate, setTaskDueDate] = useState("");
+  const [taskAssigneeId, setTaskAssigneeId] = useState("");
+  const [taskDescription, setTaskDescription] = useState("");
+  const [taskProgress, setTaskProgress] = useState(0);
   const [submitting, setSubmitting] = useState(false);
+  const [applyingTemplate, setApplyingTemplate] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [deletingTaskId, setDeletingTaskId] = useState<string | null>(null);
   const weatherFetched = useRef(false);
@@ -142,6 +202,15 @@ export function ProjectDetailPage({ projectId }: { projectId: string }) {
     }
   };
 
+  const resetTaskForm = () => {
+    setTaskName("");
+    setTaskStartDate("");
+    setTaskDueDate("");
+    setTaskAssigneeId("");
+    setTaskDescription("");
+    setTaskProgress(0);
+  };
+
   const handleAddTask = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!taskName.trim()) return;
@@ -153,22 +222,78 @@ export function ProjectDetailPage({ projectId }: { projectId: string }) {
         id: crypto.randomUUID(),
         projectId,
         name: taskName.trim(),
-        description: "",
+        description: taskDescription.trim(),
         status: "todo",
+        startDate: taskStartDate || undefined,
         dueDate: taskDueDate || undefined,
-        progress: 0,
+        assigneeId: taskAssigneeId.trim() || undefined,
+        progress: taskProgress,
         dependencies: [],
         createdAt: now.toISOString(),
         updatedAt: now.toISOString(),
       });
-      setTaskName("");
-      setTaskDueDate("");
+      resetTaskForm();
       setShowTaskForm(false);
       await loadData();
     } catch (err) {
       setError(err instanceof Error ? err.message : "タスクの追加に失敗しました");
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleApplyTemplate = async (templateIndex: number) => {
+    const template = CONSTRUCTION_TEMPLATES[templateIndex];
+    if (!template || !project) return;
+    setApplyingTemplate(true);
+    setError(null);
+    try {
+      const baseDate = project.startDate;
+      const now = new Date();
+      for (const t of template.tasks) {
+        await taskRepository.create({
+          id: crypto.randomUUID(),
+          projectId,
+          name: t.name,
+          description: "",
+          status: "todo",
+          startDate: addDaysToDate(baseDate, t.startOffsetDays),
+          dueDate: addDaysToDate(baseDate, t.startOffsetDays + t.durationDays),
+          progress: 0,
+          dependencies: [],
+          createdAt: now.toISOString(),
+          updatedAt: now.toISOString(),
+        });
+      }
+      await loadData();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "テンプレートの適用に失敗しました");
+    } finally {
+      setApplyingTemplate(false);
+    }
+  };
+
+  const handleCopyTask = async (task: Task) => {
+    setError(null);
+    try {
+      const now = new Date();
+      await taskRepository.create({
+        id: crypto.randomUUID(),
+        projectId,
+        name: `${task.name} (コピー)`,
+        description: task.description,
+        status: "todo",
+        startDate: task.startDate,
+        dueDate: task.dueDate,
+        assigneeId: task.assigneeId,
+        progress: 0,
+        dependencies: [],
+        createdAt: now.toISOString(),
+        updatedAt: now.toISOString(),
+      });
+      await loadData();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "タスクのコピーに失敗しました");
     }
   };
 
@@ -381,37 +506,121 @@ export function ProjectDetailPage({ projectId }: { projectId: string }) {
           </button>
         </div>
 
+        {/* Construction templates — show when no tasks yet */}
+        {tasks.length === 0 && !showTaskForm && (
+          <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 p-4">
+            <p className="mb-2 text-xs font-semibold text-amber-800">工事テンプレートからまとめて追加</p>
+            <div className="flex flex-wrap gap-2">
+              {CONSTRUCTION_TEMPLATES.map((tpl, i) => (
+                <button
+                  key={tpl.label}
+                  type="button"
+                  disabled={applyingTemplate}
+                  onClick={() => void handleApplyTemplate(i)}
+                  className="inline-flex items-center gap-1 rounded-lg border border-amber-300 bg-white px-3 py-1.5 text-xs font-semibold text-amber-800 shadow-sm hover:bg-amber-100 disabled:opacity-50 transition-colors"
+                >
+                  {applyingTemplate ? "適用中..." : `${tpl.label}（${tpl.tasks.length}工程）`}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Task creation form */}
         {showTaskForm && (
           <form
             onSubmit={handleAddTask}
             className="mb-4 rounded-xl border border-brand-200 bg-white p-4 shadow-sm page-enter"
           >
-            <div className="flex flex-col gap-3 sm:flex-row">
+            <div className="flex flex-col gap-3">
+              {/* Row 1: task name */}
               <input
                 type="text"
                 value={taskName}
                 onChange={(e) => setTaskName(e.target.value)}
-                placeholder="タスク名"
+                placeholder="タスク名 *"
                 required
                 maxLength={200}
                 autoComplete="off"
                 aria-label="タスク名"
-                className="flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 focus:outline-none"
-              />
-              <input
-                type="date"
-                value={taskDueDate}
-                onChange={(e) => setTaskDueDate(e.target.value)}
                 className="rounded-lg border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 focus:outline-none"
               />
-              <button
-                type="submit"
-                disabled={submitting}
-                className="rounded-lg bg-brand-500 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-brand-600 disabled:opacity-50"
-              >
-                {submitting ? "追加中..." : "追加"}
-              </button>
+              {/* Row 2: dates */}
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <div className="flex flex-1 flex-col gap-1">
+                  <label className="text-xs font-medium text-slate-500">開始日</label>
+                  <input
+                    type="date"
+                    value={taskStartDate}
+                    onChange={(e) => setTaskStartDate(e.target.value)}
+                    aria-label="開始日"
+                    className="rounded-lg border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 focus:outline-none"
+                  />
+                </div>
+                <div className="flex flex-1 flex-col gap-1">
+                  <label className="text-xs font-medium text-slate-500">終了日（期限）</label>
+                  <input
+                    type="date"
+                    value={taskDueDate}
+                    onChange={(e) => setTaskDueDate(e.target.value)}
+                    aria-label="終了日"
+                    className="rounded-lg border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 focus:outline-none"
+                  />
+                </div>
+              </div>
+              {/* Row 3: assignee + progress */}
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <input
+                  type="text"
+                  value={taskAssigneeId}
+                  onChange={(e) => setTaskAssigneeId(e.target.value)}
+                  placeholder="担当者名"
+                  maxLength={100}
+                  autoComplete="off"
+                  aria-label="担当者名"
+                  className="flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 focus:outline-none"
+                />
+                <div className="flex flex-1 flex-col gap-1">
+                  <label className="text-xs font-medium text-slate-500">進捗 {taskProgress}%</label>
+                  <input
+                    type="range"
+                    min={0}
+                    max={100}
+                    step={10}
+                    value={taskProgress}
+                    onChange={(e) => setTaskProgress(Number(e.target.value))}
+                    aria-label="進捗率"
+                    className="w-full accent-brand-500"
+                  />
+                </div>
+              </div>
+              {/* Row 4: description */}
+              <textarea
+                value={taskDescription}
+                onChange={(e) => setTaskDescription(e.target.value)}
+                placeholder="備考・説明（任意）"
+                rows={2}
+                maxLength={500}
+                aria-label="備考・説明"
+                className="rounded-lg border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 focus:outline-none resize-none"
+              />
+              {/* Row 5: actions */}
+              <div className="flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => { resetTaskForm(); setShowTaskForm(false); }}
+                  className="rounded-lg px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 transition-colors"
+                >
+                  キャンセル
+                </button>
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="rounded-lg bg-brand-500 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-brand-600 disabled:opacity-50"
+                >
+                  {submitting ? "追加中..." : "追加"}
+                </button>
+              </div>
             </div>
           </form>
         )}
@@ -463,12 +672,40 @@ export function ProjectDetailPage({ projectId }: { projectId: string }) {
                       >
                         {task.name}
                       </p>
-                      {task.dueDate && (
-                        <p className="mt-0.5 text-xs text-slate-400 tabular-nums">
-                          期限: {task.dueDate}
-                        </p>
-                      )}
+                      <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5">
+                        {task.startDate && (
+                          <span className="text-xs text-slate-400 tabular-nums">
+                            {task.startDate}〜
+                          </span>
+                        )}
+                        {task.dueDate && (
+                          <span className="text-xs text-slate-400 tabular-nums">
+                            {task.startDate ? task.dueDate : `期限: ${task.dueDate}`}
+                          </span>
+                        )}
+                        {task.assigneeId && (
+                          <span className="inline-flex items-center rounded-full bg-brand-50 px-1.5 py-0.5 text-[10px] font-medium text-brand-700">
+                            {task.assigneeId}
+                          </span>
+                        )}
+                        {task.progress > 0 && (
+                          <span className="text-[10px] font-semibold text-slate-500 tabular-nums">
+                            {task.progress}%
+                          </span>
+                        )}
+                      </div>
                     </div>
+                    <button
+                      onClick={() => void handleCopyTask(task)}
+                      className="shrink-0 rounded-lg p-2.5 text-slate-300 hover:text-brand-500 hover:bg-brand-50 transition-colors"
+                      title="コピー"
+                      aria-label={`${task.name}をコピー`}
+                    >
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                        <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" />
+                      </svg>
+                    </button>
                     <button
                       onClick={() => handleDeleteTask(task.id)}
                       className="shrink-0 rounded-lg p-2.5 text-slate-300 hover:text-red-500 hover:bg-red-50 transition-colors"

@@ -78,6 +78,29 @@ function getAssigneeInitial(assigneeId?: string): string | null {
   return assigneeId.slice(0, 2).toUpperCase();
 }
 
+// ── Quick-add form state type ─────────────────────────
+
+type QuickAddState = {
+  projectId: string;
+  projectName: string;
+  name: string;
+  startDate: string;
+  dueDate: string;
+  assigneeId: string;
+  submitting: boolean;
+};
+
+type TaskDetailState = {
+  task: GanttTask;
+  editName: string;
+  editStartDate: string;
+  editDueDate: string;
+  editAssigneeId: string;
+  editProgress: number;
+  editStatus: TaskStatus;
+  saving: boolean;
+};
+
 // ── Component ────────────────────────────────────────
 
 export function GanttPage() {
@@ -94,6 +117,9 @@ export function GanttPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [collapsedPhases, setCollapsedPhases] = useState<Set<string>>(new Set());
+  const [quickAdd, setQuickAdd] = useState<QuickAddState | null>(null);
+  const [taskDetail, setTaskDetail] = useState<TaskDetailState | null>(null);
+  const [projects, setProjects] = useState<Project[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
   const today = useMemo(() => toLocalDateString(new Date()), []);
 
@@ -105,6 +131,7 @@ export function GanttPage() {
         projectRepository.findAll(),
       ]);
 
+      setProjects(allProjects);
       const projectMap = new Map<string, Project>();
       for (const p of allProjects) projectMap.set(p.id, p);
 
@@ -203,6 +230,83 @@ export function GanttPage() {
       return next;
     });
   }, []);
+
+  const openQuickAdd = useCallback((projectId: string, projectName: string) => {
+    const proj = projects.find((p) => p.id === projectId);
+    const defaultStart = proj?.startDate ?? today;
+    setQuickAdd({
+      projectId,
+      projectName,
+      name: "",
+      startDate: defaultStart,
+      dueDate: addDays(defaultStart, 7),
+      assigneeId: "",
+      submitting: false,
+    });
+  }, [projects, today]);
+
+  const handleQuickAddSubmit = useCallback(async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!quickAdd || !quickAdd.name.trim()) return;
+    setQuickAdd((q) => q ? { ...q, submitting: true } : q);
+    try {
+      const now = new Date();
+      await taskRepository.create({
+        id: crypto.randomUUID(),
+        projectId: quickAdd.projectId,
+        name: quickAdd.name.trim(),
+        description: "",
+        status: "todo",
+        startDate: quickAdd.startDate || undefined,
+        dueDate: quickAdd.dueDate || undefined,
+        assigneeId: quickAdd.assigneeId.trim() || undefined,
+        progress: 0,
+        dependencies: [],
+        createdAt: now.toISOString(),
+        updatedAt: now.toISOString(),
+      });
+      setQuickAdd(null);
+      await loadData();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "タスクの追加に失敗しました");
+      setQuickAdd((q) => q ? { ...q, submitting: false } : q);
+    }
+  }, [quickAdd, taskRepository, loadData]);
+
+  const openTaskDetail = useCallback((task: GanttTask) => {
+    setTaskDetail({
+      task,
+      editName: task.name,
+      editStartDate: task.startDate,
+      editDueDate: task.endDate,
+      editAssigneeId: task.assigneeId ?? "",
+      editProgress: task.progress,
+      editStatus: task.status,
+      saving: false,
+    });
+  }, []);
+
+  const handleTaskDetailSave = useCallback(async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!taskDetail) return;
+    setTaskDetail((d) => d ? { ...d, saving: true } : d);
+    try {
+      await taskRepository.update(taskDetail.task.id, {
+        name: taskDetail.editName.trim(),
+        startDate: taskDetail.editStartDate || undefined,
+        dueDate: taskDetail.editDueDate || undefined,
+        assigneeId: taskDetail.editAssigneeId.trim() || undefined,
+        progress: taskDetail.editProgress,
+        status: taskDetail.editStatus,
+        updatedAt: new Date().toISOString(),
+      });
+      setTaskDetail(null);
+      await loadData();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "タスクの更新に失敗しました");
+      setTaskDetail((d) => d ? { ...d, saving: false } : d);
+    }
+  }, [taskDetail, taskRepository, loadData]);
 
   // Memoize chart layout calculations (matters for 100+ tasks)
   const chartLayout = useMemo(() => {
@@ -346,6 +450,189 @@ export function GanttPage() {
 
   return (
     <div className="mx-auto max-w-5xl px-4 pb-24">
+      {/* Quick-add task modal */}
+      {quickAdd && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm"
+          onClick={() => setQuickAdd(null)}
+        >
+          <div
+            className="mx-4 w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="mb-4 text-base font-bold text-slate-900">
+              タスクを追加 — {quickAdd.projectName}
+            </h3>
+            <form onSubmit={(e) => void handleQuickAddSubmit(e)} className="flex flex-col gap-3">
+              <input
+                type="text"
+                value={quickAdd.name}
+                onChange={(e) => setQuickAdd((q) => q ? { ...q, name: e.target.value } : q)}
+                placeholder="タスク名 *"
+                required
+                maxLength={200}
+                autoFocus
+                className="rounded-lg border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 focus:outline-none"
+              />
+              <div className="flex gap-2">
+                <div className="flex flex-1 flex-col gap-1">
+                  <label className="text-xs font-medium text-slate-500">開始日</label>
+                  <input
+                    type="date"
+                    value={quickAdd.startDate}
+                    onChange={(e) => setQuickAdd((q) => q ? { ...q, startDate: e.target.value } : q)}
+                    className="rounded-lg border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 focus:outline-none"
+                  />
+                </div>
+                <div className="flex flex-1 flex-col gap-1">
+                  <label className="text-xs font-medium text-slate-500">終了日</label>
+                  <input
+                    type="date"
+                    value={quickAdd.dueDate}
+                    onChange={(e) => setQuickAdd((q) => q ? { ...q, dueDate: e.target.value } : q)}
+                    className="rounded-lg border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 focus:outline-none"
+                  />
+                </div>
+              </div>
+              <input
+                type="text"
+                value={quickAdd.assigneeId}
+                onChange={(e) => setQuickAdd((q) => q ? { ...q, assigneeId: e.target.value } : q)}
+                placeholder="担当者名（任意）"
+                maxLength={100}
+                className="rounded-lg border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 focus:outline-none"
+              />
+              <div className="flex justify-end gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={() => setQuickAdd(null)}
+                  className="rounded-lg px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 transition-colors"
+                >
+                  キャンセル
+                </button>
+                <button
+                  type="submit"
+                  disabled={quickAdd.submitting}
+                  className="rounded-lg bg-brand-500 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-brand-600 disabled:opacity-50"
+                >
+                  {quickAdd.submitting ? "追加中..." : "追加"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Task detail / edit modal */}
+      {taskDetail && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm"
+          onClick={() => setTaskDetail(null)}
+        >
+          <div
+            className="mx-4 w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="mb-4 text-base font-bold text-slate-900">タスク編集</h3>
+            <form onSubmit={(e) => void handleTaskDetailSave(e)} className="flex flex-col gap-3">
+              <input
+                type="text"
+                value={taskDetail.editName}
+                onChange={(e) => setTaskDetail((d) => d ? { ...d, editName: e.target.value } : d)}
+                placeholder="タスク名 *"
+                required
+                maxLength={200}
+                autoFocus
+                className="rounded-lg border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 focus:outline-none"
+              />
+              <div className="flex gap-2">
+                <div className="flex flex-1 flex-col gap-1">
+                  <label className="text-xs font-medium text-slate-500">開始日</label>
+                  <input
+                    type="date"
+                    value={taskDetail.editStartDate}
+                    onChange={(e) => setTaskDetail((d) => d ? { ...d, editStartDate: e.target.value } : d)}
+                    className="rounded-lg border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 focus:outline-none"
+                  />
+                </div>
+                <div className="flex flex-1 flex-col gap-1">
+                  <label className="text-xs font-medium text-slate-500">終了日</label>
+                  <input
+                    type="date"
+                    value={taskDetail.editDueDate}
+                    onChange={(e) => setTaskDetail((d) => d ? { ...d, editDueDate: e.target.value } : d)}
+                    className="rounded-lg border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 focus:outline-none"
+                  />
+                </div>
+              </div>
+              <input
+                type="text"
+                value={taskDetail.editAssigneeId}
+                onChange={(e) => setTaskDetail((d) => d ? { ...d, editAssigneeId: e.target.value } : d)}
+                placeholder="担当者名（任意）"
+                maxLength={100}
+                className="rounded-lg border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 focus:outline-none"
+              />
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-medium text-slate-500">
+                  進捗 {taskDetail.editProgress}%
+                </label>
+                <input
+                  type="range"
+                  min={0}
+                  max={100}
+                  step={10}
+                  value={taskDetail.editProgress}
+                  onChange={(e) => setTaskDetail((d) => d ? { ...d, editProgress: Number(e.target.value) } : d)}
+                  className="w-full accent-brand-500"
+                />
+              </div>
+              <div className="flex gap-2">
+                {(["todo", "in_progress", "done"] as const).map((s) => (
+                  <button
+                    key={s}
+                    type="button"
+                    onClick={() => setTaskDetail((d) => d ? { ...d, editStatus: s } : d)}
+                    className={`flex-1 rounded-lg border px-2 py-1.5 text-xs font-semibold transition-colors ${
+                      taskDetail.editStatus === s
+                        ? "border-brand-500 bg-brand-50 text-brand-700"
+                        : "border-slate-200 text-slate-500 hover:bg-slate-50"
+                    }`}
+                  >
+                    {statusLabel[s]}
+                  </button>
+                ))}
+              </div>
+              <div className="flex justify-between gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={() => navigate(`/project/${taskDetail.task.projectId}`)}
+                  className="rounded-lg px-3 py-2 text-xs font-medium text-slate-500 hover:bg-slate-100 transition-colors"
+                >
+                  詳細ページへ
+                </button>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setTaskDetail(null)}
+                    className="rounded-lg px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 transition-colors"
+                  >
+                    キャンセル
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={taskDetail.saving}
+                    className="rounded-lg bg-brand-500 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-brand-600 disabled:opacity-50"
+                  >
+                    {taskDetail.saving ? "保存中..." : "保存"}
+                  </button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       <div className="mb-4 flex items-center justify-between">
         <h2 className="text-lg font-bold text-slate-900">ガントチャート</h2>
         <div className="flex gap-3 text-xs" role="list" aria-label="ステータス凡例">
@@ -406,25 +693,40 @@ export function GanttPage() {
                 return (
                   <div
                     key={`phase-${group.projectId}`}
-                    className="flex items-center border-b border-slate-200 bg-slate-100/80 px-2 cursor-pointer select-none hover:bg-slate-100"
+                    className="flex items-center border-b border-slate-200 bg-slate-100/80 px-2 select-none hover:bg-slate-100"
                     style={{ height: phaseRowHeight }}
-                    onClick={() => togglePhase(group.projectId)}
                   >
-                    <svg
-                      className={`h-3.5 w-3.5 shrink-0 text-slate-400 transition-transform ${group.collapsed ? "" : "rotate-90"}`}
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                      strokeWidth={2}
+                    <button
+                      className="flex flex-1 min-w-0 items-center gap-0 cursor-pointer"
+                      onClick={() => togglePhase(group.projectId)}
+                      aria-label={`${group.projectName}を${group.collapsed ? "展開" : "折りたたむ"}`}
                     >
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
-                    </svg>
-                    <span className="ml-1.5 text-xs font-bold text-slate-700 truncate">
-                      {group.projectName}
-                    </span>
-                    <span className="ml-auto text-[10px] text-slate-400 shrink-0">
-                      {group.tasks.length}件
-                    </span>
+                      <svg
+                        className={`h-3.5 w-3.5 shrink-0 text-slate-400 transition-transform ${group.collapsed ? "" : "rotate-90"}`}
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        strokeWidth={2}
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+                      </svg>
+                      <span className="ml-1.5 text-xs font-bold text-slate-700 truncate">
+                        {group.projectName}
+                      </span>
+                      <span className="ml-1 text-[10px] text-slate-400 shrink-0">
+                        {group.tasks.length}件
+                      </span>
+                    </button>
+                    <button
+                      className="ml-1 flex h-5 w-5 shrink-0 items-center justify-center rounded text-slate-400 hover:bg-brand-100 hover:text-brand-600 transition-colors"
+                      onClick={(e) => { e.stopPropagation(); openQuickAdd(group.projectId, group.projectName); }}
+                      aria-label={`${group.projectName}にタスクを追加`}
+                      title="タスクを追加"
+                    >
+                      <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                      </svg>
+                    </button>
                   </div>
                 );
               }
@@ -434,8 +736,13 @@ export function GanttPage() {
               return (
                 <div
                   key={task.id}
-                  className="flex items-center border-b border-slate-100 px-3 gap-2"
+                  className="flex items-center border-b border-slate-100 px-3 gap-2 cursor-pointer hover:bg-slate-50 transition-colors"
                   style={{ height: rowHeight }}
+                  onClick={() => openTaskDetail(task)}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => { if (e.key === "Enter") openTaskDetail(task); }}
+                  aria-label={`${task.name}を編集`}
                 >
                   {/* Assignee avatar */}
                   {initial ? (
@@ -603,12 +910,12 @@ export function GanttPage() {
                           width: 20,
                           height: 20,
                         }}
-                        title={`${task.name}: ${task.startDate}${task.isDateEstimated ? " (推定)" : ""}`}
-                        onClick={() => navigate(`/project/${task.projectId}`)}
+                        title={`${task.name}: ${task.startDate}${task.isDateEstimated ? " (推定)" : ""} — クリックで編集`}
+                        onClick={() => openTaskDetail(task)}
                         onKeyDown={(e) => {
                           if (e.key === "Enter" || e.key === " ") {
                             e.preventDefault();
-                            navigate(`/project/${task.projectId}`);
+                            openTaskDetail(task);
                           }
                         }}
                       >
@@ -648,14 +955,12 @@ export function GanttPage() {
                               }
                             : {}),
                         }}
-                        title={`${task.name}: ${task.startDate} ~ ${task.endDate} (${task.progress}%)${task.isDateEstimated ? " (推定)" : ""}`}
-                        onClick={() =>
-                          navigate(`/project/${task.projectId}`)
-                        }
+                        title={`${task.name}: ${task.startDate} ~ ${task.endDate} (${task.progress}%)${task.isDateEstimated ? " (推定)" : ""} — クリックで編集`}
+                        onClick={() => openTaskDetail(task)}
                         onKeyDown={(e) => {
                           if (e.key === "Enter" || e.key === " ") {
                             e.preventDefault();
-                            navigate(`/project/${task.projectId}`);
+                            openTaskDetail(task);
                           }
                         }}
                       >
