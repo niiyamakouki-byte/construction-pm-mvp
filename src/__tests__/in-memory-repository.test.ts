@@ -11,6 +11,7 @@ describe("InMemoryRepository – Project CRUD", () => {
     description: "テスト用プロジェクト",
     status: "planning",
     startDate: "2025-04-01",
+    includeWeekends: true,
     createdAt: "2025-03-01T00:00:00.000Z",
     updatedAt: "2025-03-01T00:00:00.000Z",
   };

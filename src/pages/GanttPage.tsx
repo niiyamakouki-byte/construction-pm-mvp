@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useMemo, useState, useRef } from "react";
-import type { Project, Task, TaskStatus } from "../domain/types.js";
+import type { Contractor, Project, Task, TaskStatus } from "../domain/types.js";
 import { createProjectRepository } from "../stores/project-store.js";
 import { createTaskRepository } from "../stores/task-store.js";
+import { createContractorRepository } from "../stores/contractor-store.js";
+import { createNotificationRepository } from "../stores/notification-store.js";
 import { navigate } from "../hooks/useHashRouter.js";
 import { useOrganizationContext } from "../contexts/OrganizationContext.js";
 
@@ -24,6 +26,17 @@ function daysBetween(a: string, b: string): number {
   const da = new Date(a);
   const db = new Date(b);
   return Math.round((db.getTime() - da.getTime()) / (1000 * 60 * 60 * 24));
+}
+
+/** Move a date by N calendar days, then skip forward past any weekends if includeWeekends=false */
+function addDaysSkipWeekends(dateStr: string, days: number): string {
+  const d = new Date(dateStr);
+  d.setDate(d.getDate() + days);
+  // Skip weekends: if landed on Saturday push to Monday, if Sunday push to Monday
+  const dow = d.getDay();
+  if (dow === 6) d.setDate(d.getDate() + 2);
+  else if (dow === 0) d.setDate(d.getDate() + 1);
+  return toLocalDateString(d);
 }
 
 function formatDateShort(dateStr: string): string {
@@ -196,6 +209,10 @@ type GanttTask = Task & {
   isDateEstimated: boolean;
   /** True if task is a milestone (0-1 day duration) */
   isMilestone: boolean;
+  /** Whether the project includes weekends in schedule */
+  projectIncludesWeekends: boolean;
+  /** Contractor name, if any */
+  contractorName?: string;
 };
 
 /** A group of tasks under a project/phase heading */
@@ -245,6 +262,7 @@ type TaskDetailState = {
   editStartDate: string;
   editDueDate: string;
   editAssigneeId: string;
+  editContractorId: string;
   editProgress: number;
   editStatus: TaskStatus;
   saving: boolean;
@@ -280,6 +298,10 @@ export function GanttPage() {
     () => createTaskRepository(() => organizationId),
     [organizationId],
   );
+  const contractorRepository = useMemo(
+    () => createContractorRepository(() => organizationId),
+    [organizationId],
+  );
   const [ganttTasks, setGanttTasks] = useState<GanttTask[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -287,6 +309,7 @@ export function GanttPage() {
   const [quickAdd, setQuickAdd] = useState<QuickAddState | null>(null);
   const [taskDetail, setTaskDetail] = useState<TaskDetailState | null>(null);
   const [projects, setProjects] = useState<Project[]>([]);
+  const [contractors, setContractors] = useState<Contractor[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
   const today = useMemo(() => toLocalDateString(new Date()), []);
 
@@ -301,14 +324,18 @@ export function GanttPage() {
   const loadData = useCallback(async () => {
     try {
       setError(null);
-      const [allTasks, allProjects] = await Promise.all([
+      const [allTasks, allProjects, allContractors] = await Promise.all([
         taskRepository.findAll(),
         projectRepository.findAll(),
+        contractorRepository.findAll(),
       ]);
 
       setProjects(allProjects);
+      setContractors(allContractors);
       const projectMap = new Map<string, Project>();
       for (const p of allProjects) projectMap.set(p.id, p);
+      const contractorMap = new Map<string, Contractor>();
+      for (const c of allContractors) contractorMap.set(c.id, c);
 
       const tasks: GanttTask[] = allTasks.map((t) => {
         const project = projectMap.get(t.projectId);
@@ -319,6 +346,7 @@ export function GanttPage() {
         const clampedStart = startDate < projectStart ? projectStart : startDate;
         const duration = daysBetween(clampedStart, endDate);
         const isMilestone = duration <= 1;
+        const contractor = t.contractorId ? contractorMap.get(t.contractorId) : undefined;
 
         return {
           ...t,
@@ -327,6 +355,8 @@ export function GanttPage() {
           endDate,
           isDateEstimated,
           isMilestone,
+          projectIncludesWeekends: project?.includeWeekends ?? true,
+          contractorName: contractor?.name,
         };
       });
 
@@ -364,17 +394,22 @@ export function GanttPage() {
       const dayWidth = 36;
       const deltaDays = Math.round((e.clientX - drag.startX) / dayWidth);
 
+      // Check if dragged task's project excludes weekends
+      const draggedTask = ganttTasks.find((t) => t.id === drag.taskId);
+      const skipWeekends = draggedTask ? !draggedTask.projectIncludesWeekends : false;
+      const addFn = skipWeekends ? addDaysSkipWeekends : addDays;
+
       let previewStartDate = drag.originalStartDate;
       let previewEndDate = drag.originalEndDate;
 
       if (drag.type === "move") {
-        previewStartDate = addDays(drag.originalStartDate, deltaDays);
-        previewEndDate = addDays(drag.originalEndDate, deltaDays);
+        previewStartDate = addFn(drag.originalStartDate, deltaDays);
+        previewEndDate = addFn(drag.originalEndDate, deltaDays);
       } else {
         // resize: only move end date, minimum 1 day
         const originalDuration = daysBetween(drag.originalStartDate, drag.originalEndDate);
         const newDuration = Math.max(1, originalDuration + deltaDays);
-        previewEndDate = addDays(drag.originalStartDate, newDuration);
+        previewEndDate = addFn(drag.originalStartDate, newDuration);
       }
 
       const newDrag = { ...drag, previewStartDate, previewEndDate };
@@ -398,6 +433,27 @@ export function GanttPage() {
             dueDate: drag.previewEndDate,
             updatedAt: new Date().toISOString(),
           });
+          // Create notification if task has a contractor and start date changed
+          if (drag.previewStartDate !== drag.originalStartDate) {
+            const movedTask = ganttTasks.find((t) => t.id === drag.taskId);
+            if (movedTask?.contractorId) {
+              const contractor = contractors.find((c) => c.id === movedTask.contractorId);
+              const notificationRepo = createNotificationRepository(() => organizationId);
+              const now = new Date();
+              await notificationRepo.create({
+                id: crypto.randomUUID(),
+                projectId: movedTask.projectId,
+                taskId: movedTask.id,
+                contractorId: movedTask.contractorId,
+                type: "schedule_changed",
+                message: `${movedTask.name}の開始日が${drag.previewStartDate}に変更されました。（業者: ${contractor?.name ?? "不明"}）`,
+                status: "pending",
+                scheduledAt: now.toISOString(),
+                createdAt: now.toISOString(),
+                updatedAt: now.toISOString(),
+              });
+            }
+          }
           await loadData();
         } catch (err) {
           setError(err instanceof Error ? err.message : "タスクの更新に失敗しました");
@@ -412,7 +468,7 @@ export function GanttPage() {
       window.removeEventListener("mousemove", handleMouseMove);
       window.removeEventListener("mouseup", () => { void handleMouseUp(); });
     };
-  }, [taskRepository, loadData]);
+  }, [taskRepository, loadData, ganttTasks, contractors, organizationId]);
 
   // Build phase groups from tasks, grouped by project
   const phaseGroups = useMemo((): PhaseGroup[] => {
@@ -513,6 +569,7 @@ export function GanttPage() {
       editStartDate: task.startDate,
       editDueDate: task.endDate,
       editAssigneeId: task.assigneeId ?? "",
+      editContractorId: task.contractorId ?? "",
       editProgress: task.progress,
       editStatus: task.status,
       saving: false,
@@ -522,24 +579,47 @@ export function GanttPage() {
   const handleTaskDetailSave = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     if (!taskDetail) return;
+    const prevContractorId = taskDetail.task.contractorId;
+    const newContractorId = taskDetail.editContractorId || undefined;
+    const prevStartDate = taskDetail.task.startDate;
+    const newStartDate = taskDetail.editStartDate || undefined;
     setTaskDetail((d) => d ? { ...d, saving: true } : d);
     try {
       await taskRepository.update(taskDetail.task.id, {
         name: taskDetail.editName.trim(),
-        startDate: taskDetail.editStartDate || undefined,
+        startDate: newStartDate,
         dueDate: taskDetail.editDueDate || undefined,
         assigneeId: taskDetail.editAssigneeId.trim() || undefined,
+        contractorId: newContractorId,
         progress: taskDetail.editProgress,
         status: taskDetail.editStatus,
         updatedAt: new Date().toISOString(),
       });
+      // Create notification record when start date changes and contractor is set
+      if (newContractorId && newStartDate !== prevStartDate) {
+        const contractor = contractors.find((c) => c.id === newContractorId);
+        const notificationRepository = createNotificationRepository(() => organizationId);
+        const now = new Date();
+        await notificationRepository.create({
+          id: crypto.randomUUID(),
+          projectId: taskDetail.task.projectId,
+          taskId: taskDetail.task.id,
+          contractorId: newContractorId,
+          type: prevContractorId === newContractorId ? "schedule_changed" : "schedule_confirmed",
+          message: `${taskDetail.editName.trim()}の開始日が${newStartDate ?? "未設定"}に${prevContractorId === newContractorId ? "変更されました" : "確定しました"}。（業者: ${contractor?.name ?? "不明"}）`,
+          status: "pending",
+          scheduledAt: now.toISOString(),
+          createdAt: now.toISOString(),
+          updatedAt: now.toISOString(),
+        });
+      }
       setTaskDetail(null);
       await loadData();
     } catch (err) {
       setError(err instanceof Error ? err.message : "タスクの更新に失敗しました");
       setTaskDetail((d) => d ? { ...d, saving: false } : d);
     }
-  }, [taskDetail, taskRepository, loadData]);
+  }, [taskDetail, taskRepository, loadData, contractors, organizationId]);
 
   // Check if adding fromId -> toId would create a circular dependency
   const wouldCreateCycle = useCallback((fromId: string, toId: string): boolean => {
@@ -965,6 +1045,21 @@ export function GanttPage() {
                 maxLength={100}
                 className="rounded-lg border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 focus:outline-none"
               />
+              {contractors.length > 0 && (
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs font-medium text-slate-500">業者</label>
+                  <select
+                    value={taskDetail.editContractorId}
+                    onChange={(e) => setTaskDetail((d) => d ? { ...d, editContractorId: e.target.value } : d)}
+                    className="rounded-lg border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 focus:outline-none bg-white"
+                  >
+                    <option value="">-- 業者なし --</option>
+                    {contractors.map((c) => (
+                      <option key={c.id} value={c.id}>{c.name}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
               <div className="flex flex-col gap-1">
                 <label className="text-xs font-medium text-slate-500">
                   進捗 {taskDetail.editProgress}%
@@ -1215,7 +1310,9 @@ export function GanttPage() {
                       {task.name}
                     </p>
                     <p className="truncate text-[10px] text-slate-400">
-                      {task.projectName}
+                      {task.contractorName
+                        ? <span className="text-brand-500">{task.contractorName}</span>
+                        : task.projectName}
                     </p>
                   </div>
                   {/* Alert badge */}
@@ -1402,12 +1499,16 @@ export function GanttPage() {
                     {/* Grid lines */}
                     {highlightedDates.map((di) => {
                       const offset = daysBetween(chartStart, di.date);
+                      const weekendClass =
+                        di.isWeekend && !task.projectIncludesWeekends
+                          ? "bg-slate-200/70"
+                          : di.isToday
+                            ? "bg-red-50/30"
+                            : "bg-slate-50/50";
                       return (
                         <div
                           key={di.date}
-                          className={`absolute top-0 h-full ${
-                            di.isToday ? "bg-red-50/30" : "bg-slate-50/50"
-                          }`}
+                          className={`absolute top-0 h-full ${weekendClass}`}
                           style={{ left: offset * dayWidth, width: dayWidth }}
                         />
                       );

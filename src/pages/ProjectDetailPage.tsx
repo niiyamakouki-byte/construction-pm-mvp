@@ -442,6 +442,50 @@ export function ProjectDetailPage({ projectId }: { projectId: string }) {
         )}
       </div>
 
+      {/* Settings */}
+      <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+        <h2 className="mb-2 text-xs font-semibold text-slate-500 uppercase tracking-wider">プロジェクト設定</h2>
+        <label className="flex cursor-pointer items-center gap-3">
+          <div className="relative">
+            <input
+              type="checkbox"
+              className="sr-only"
+              checked={project.includeWeekends ?? true}
+              onChange={async (e) => {
+                const checked = e.target.checked;
+                try {
+                  await projectRepository.update(project.id, {
+                    includeWeekends: checked,
+                    updatedAt: new Date().toISOString(),
+                  });
+                  await loadData();
+                } catch (err) {
+                  setError(err instanceof Error ? err.message : "設定の保存に失敗しました");
+                }
+              }}
+            />
+            <div
+              className={`h-5 w-9 rounded-full transition-colors ${
+                (project.includeWeekends ?? true) ? "bg-brand-500" : "bg-slate-300"
+              }`}
+            />
+            <div
+              className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform ${
+                (project.includeWeekends ?? true) ? "translate-x-4" : "translate-x-0.5"
+              }`}
+            />
+          </div>
+          <div>
+            <p className="text-sm font-medium text-slate-800">土日を工期に含める</p>
+            <p className="text-xs text-slate-500">
+              {(project.includeWeekends ?? true)
+                ? "土日も工期カウント対象です"
+                : "土日を除いた営業日ベースで工期を計算します"}
+            </p>
+          </div>
+        </label>
+      </div>
+
       {/* Progress & Stats */}
       <div className="grid grid-cols-3 gap-3">
         <div className="rounded-xl bg-white p-4 shadow-sm border border-slate-100 text-center">

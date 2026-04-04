@@ -19,6 +19,7 @@ export type Project = BaseEntity & {
   latitude?: number;
   longitude?: number;
   budget?: number;
+  includeWeekends: boolean;
 };
 
 // ── Task ────────────────────────────────────────────
@@ -35,6 +36,7 @@ export type Task = BaseEntity & {
   dueDate?: string;
   progress: number;
   dependencies: string[];
+  contractorId?: string;
 };
 
 // ── Resource ────────────────────────────────────────
@@ -101,4 +103,36 @@ export type Expense = BaseEntity & {
   category: string;
   receiptUrl?: string;
   approvalStatus: ExpenseApprovalStatus;
+};
+
+// ── Contractor ──────────────────────────────────────
+
+export type Contractor = BaseEntity & {
+  name: string;
+  contactPerson?: string;
+  phone?: string;
+  email?: string;
+  lineId?: string;
+  specialty?: string;
+};
+
+// ── Notification ────────────────────────────────────
+
+export type NotificationType =
+  | "schedule_confirmed"
+  | "schedule_changed"
+  | "reminder"
+  | "alert";
+
+export type NotificationStatus = "pending" | "sent" | "failed";
+
+export type Notification = BaseEntity & {
+  projectId?: string;
+  taskId?: string;
+  contractorId?: string;
+  type: NotificationType;
+  message: string;
+  status: NotificationStatus;
+  scheduledAt?: string;
+  sentAt?: string;
 };

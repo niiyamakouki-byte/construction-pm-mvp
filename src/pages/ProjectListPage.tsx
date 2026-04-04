@@ -98,6 +98,7 @@ export function ProjectListPage() {
         description: description.trim(),
         status,
         startDate: startDate || toLocalDateString(now),
+        includeWeekends: true,
         createdAt: now.toISOString(),
         updatedAt: now.toISOString(),
         ...(trimmedAddress ? { address: trimmedAddress } : {}),

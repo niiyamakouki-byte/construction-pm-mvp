@@ -3,6 +3,8 @@ import { TodayDashboardPage } from "./pages/TodayDashboardPage.js";
 import { ProjectDetailPage } from "./pages/ProjectDetailPage.js";
 import { GanttPage } from "./pages/GanttPage.js";
 import { EstimatePage } from "./pages/EstimatePage.js";
+import { ContractorsPage } from "./pages/ContractorsPage.js";
+import { NotificationsPage } from "./pages/NotificationsPage.js";
 import { LandingPage } from "./pages/LandingPage.js";
 import { LoginPage } from "./pages/LoginPage.js";
 import { SignupPage } from "./pages/SignupPage.js";
@@ -67,6 +69,20 @@ const tabs: TabDef[] = [
     matchRoute: (r) => r === "/estimate",
     path: "/estimate",
   },
+  {
+    key: "contractors",
+    label: "業者",
+    icon: "🏢",
+    matchRoute: (r) => r === "/contractors",
+    path: "/contractors",
+  },
+  {
+    key: "notifications",
+    label: "通知",
+    icon: "🔔",
+    matchRoute: (r) => r === "/notifications",
+    path: "/notifications",
+  },
 ];
 
 function AppShell() {
@@ -117,6 +133,20 @@ function AppShell() {
       return (
         <ErrorBoundary fallbackTitle="見積エラー">
           <EstimatePage />
+        </ErrorBoundary>
+      );
+    }
+    if (route === "/contractors") {
+      return (
+        <ErrorBoundary fallbackTitle="業者管理エラー">
+          <ContractorsPage />
+        </ErrorBoundary>
+      );
+    }
+    if (route === "/notifications") {
+      return (
+        <ErrorBoundary fallbackTitle="通知一覧エラー">
+          <NotificationsPage />
         </ErrorBoundary>
       );
     }
