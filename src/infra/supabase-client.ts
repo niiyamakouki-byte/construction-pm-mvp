@@ -155,10 +155,7 @@ export async function getSupabaseClient(): Promise<SupabaseClientLike> {
   }
 
   clientPromise ??= (async () => {
-    const moduleName = "@supabase/supabase-js";
-    const { createClient } = (await import(
-      /* @vite-ignore */ moduleName
-    )) as SupabaseModule;
+    const { createClient } = (await import("@supabase/supabase-js")) as SupabaseModule;
     const { url, anonKey } = getSupabaseEnv();
     return createClient(url!, anonKey!);
   })();
