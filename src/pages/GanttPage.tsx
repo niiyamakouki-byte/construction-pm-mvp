@@ -38,6 +38,7 @@ import {
 
 /** Cap the total chart days to prevent browser meltdown with extreme date ranges */
 const MAX_CHART_DAYS = 365;
+const SAMPLE_CSV_GANTT = `タスク名,カテゴリ,開始日,終了日,担当業者,材料,リードタイム日数\n墨出し・下地確認,内装,2024-04-01,2024-04-02,田中工務店,,0\n解体・撤去,内装,2024-04-02,2024-04-05,田中工務店,,1\n`;
 
 // ── Component ────────────────────────────────────────
 
@@ -69,6 +70,7 @@ export function GanttPage() {
   // Drag & drop state
   const [dragState, setDragState] = useState<DragState | null>(null);
   const dragRef = useRef<DragState | null>(null);
+  const mouseUpHandlerRef = useRef<((event: MouseEvent) => void) | null>(null);
 
   // Connect (dependency) mode state
   const [connectMode, setConnectMode] = useState(false);
@@ -92,6 +94,7 @@ export function GanttPage() {
   const [showCsvModal, setShowCsvModal] = useState(false);
   const [csvImporting, setCsvImporting] = useState(false);
   const [csvResult, setCsvResult] = useState<{ success: number; error: number } | null>(null);
+  const [csvToastError, setCsvToastError] = useState<string | null>(null);
   const csvFileRef = useRef<HTMLInputElement>(null);
 
   const loadData = useCallback(async () => {
@@ -159,8 +162,6 @@ export function GanttPage() {
   }, [loading]);
 
   // ── CSV Import ─────────────────────────────────────────────
-  const SAMPLE_CSV_GANTT = `タスク名,カテゴリ,開始日,終了日,担当業者,材料,リードタイム日数\n墨出し・下地確認,内装,2024-04-01,2024-04-02,田中工務店,,0\n解体・撤去,内装,2024-04-02,2024-04-05,田中工務店,,1\n`;
-
   const downloadSampleCsv = useCallback(() => {
     const blob = new Blob([SAMPLE_CSV_GANTT], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
@@ -169,11 +170,17 @@ export function GanttPage() {
     a.download = "sample_tasks.csv";
     a.click();
     URL.revokeObjectURL(url);
-  }, [SAMPLE_CSV_GANTT]);
+  }, []);
 
   const handleCsvImport = useCallback(async (file: File) => {
+    if (projects.length === 0) {
+      setCsvToastError("CSVをインポートする前に、プロジェクトを1件以上作成してください。");
+      return;
+    }
+
     setCsvImporting(true);
     setCsvResult(null);
+    setCsvToastError(null);
     try {
       const text = await file.text();
       const lines = text.trim().split(/\r?\n/);
@@ -302,12 +309,20 @@ export function GanttPage() {
       }
     };
 
+    const mouseUpHandler = () => {
+      void handleMouseUp();
+    };
+    mouseUpHandlerRef.current = mouseUpHandler;
+
     window.addEventListener("mousemove", handleMouseMove);
-    window.addEventListener("mouseup", () => { void handleMouseUp(); });
+    window.addEventListener("mouseup", mouseUpHandler);
 
     return () => {
       window.removeEventListener("mousemove", handleMouseMove);
-      window.removeEventListener("mouseup", () => { void handleMouseUp(); });
+      window.removeEventListener("mouseup", mouseUpHandler);
+      if (mouseUpHandlerRef.current === mouseUpHandler) {
+        mouseUpHandlerRef.current = null;
+      }
     };
   }, [taskRepository, loadData, ganttTasks, contractors, organizationId]);
 
@@ -875,6 +890,23 @@ export function GanttPage() {
 
   return (
     <div className="mx-auto max-w-5xl px-4 pb-24">
+      {csvToastError && (
+        <div className="fixed right-4 top-4 z-[60] w-full max-w-sm rounded-xl border border-red-200 bg-red-50 px-4 py-3 shadow-lg" role="alert">
+          <div className="flex items-start gap-3 text-sm text-red-700">
+            <span className="mt-0.5 shrink-0">!</span>
+            <span className="flex-1">{csvToastError}</span>
+            <button
+              type="button"
+              onClick={() => setCsvToastError(null)}
+              className="shrink-0 text-red-400 hover:text-red-600"
+              aria-label="エラーを閉じる"
+            >
+              &times;
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Communication sidebar */}
       <CommunicationSidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
@@ -988,7 +1020,7 @@ export function GanttPage() {
         completedTasks={completedTasksCount}
         onToggleConnectMode={() => { setConnectMode((m) => !m); setConnectState(null); }}
         onToggleSidebar={() => setSidebarOpen((v) => !v)}
-        onOpenCsvModal={() => { setCsvResult(null); setShowCsvModal(true); }}
+        onOpenCsvModal={() => { setCsvResult(null); setCsvToastError(null); setShowCsvModal(true); }}
         onFilterStatus={setFilterStatus}
         onToggleZoom={() => setZoomLevel((z) => z === "day" ? "week" : "day")}
       />

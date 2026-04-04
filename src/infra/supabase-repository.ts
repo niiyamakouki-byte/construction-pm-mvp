@@ -36,12 +36,21 @@ export class SupabaseRepository<T extends BaseEntity>
     private readonly getOrganizationId?: () => string | null,
   ) {}
 
+  private withOrganizationScope<Query extends { eq(column: string, value: unknown): Query }>(
+    query: Query,
+  ): Query {
+    const orgId = this.getOrganizationId?.();
+    return orgId ? query.eq("organization_id", orgId) : query;
+  }
+
   async findById(id: string): Promise<T | null> {
     const client = await getSupabaseClient();
-    const { data, error } = await client
-      .from(this.tableName)
-      .select("*")
-      .eq("id", id)
+    const { data, error } = await this.withOrganizationScope(
+      client
+        .from(this.tableName)
+        .select("*")
+        .eq("id", id),
+    )
       .maybeSingle();
 
     if (error) {
@@ -53,7 +62,9 @@ export class SupabaseRepository<T extends BaseEntity>
 
   async findAll(): Promise<T[]> {
     const client = await getSupabaseClient();
-    const { data, error } = await client.from(this.tableName).select("*").order("created_at", { ascending: true });
+    const { data, error } = await this.withOrganizationScope(
+      client.from(this.tableName).select("*"),
+    ).order("created_at", { ascending: true });
 
     if (error) {
       throw normalizeError(error);
@@ -80,7 +91,14 @@ export class SupabaseRepository<T extends BaseEntity>
 
   async update(id: string, fields: Partial<Omit<T, "id" | "createdAt">>): Promise<T | null> {
     const client = await getSupabaseClient();
-    const { data, error } = await client.from(this.tableName).update(toSnakeRecord(fields as Record<string, unknown>)).eq("id", id).select("*").maybeSingle();
+    const { data, error } = await this.withOrganizationScope(
+      client
+        .from(this.tableName)
+        .update(toSnakeRecord(fields as Record<string, unknown>))
+        .eq("id", id),
+    )
+      .select("*")
+      .maybeSingle();
     if (error) {
       throw normalizeError(error);
     }
@@ -89,7 +107,14 @@ export class SupabaseRepository<T extends BaseEntity>
 
   async delete(id: string): Promise<boolean> {
     const client = await getSupabaseClient();
-    const { data, error } = await client.from(this.tableName).delete().eq("id", id).select("id").maybeSingle();
+    const { data, error } = await this.withOrganizationScope(
+      client
+        .from(this.tableName)
+        .delete()
+        .eq("id", id),
+    )
+      .select("id")
+      .maybeSingle();
     if (error) {
       throw normalizeError(error);
     }

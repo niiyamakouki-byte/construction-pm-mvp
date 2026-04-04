@@ -34,6 +34,20 @@ export function NotificationsPage() {
   const [error, setError] = useState<string | null>(null);
   const [updating, setUpdating] = useState<Set<string>>(new Set());
 
+  const loadData = useCallback(async () => {
+    try {
+      setError(null);
+      const data = await notificationRepository.findAll();
+      // Sort newest first
+      const sorted = [...data].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+      setNotifications(sorted);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "データの読み込みに失敗しました");
+    } finally {
+      setLoading(false);
+    }
+  }, [notificationRepository]);
+
   const handleMarkSent = useCallback(async (id: string) => {
     setUpdating((prev) => new Set(prev).add(id));
     try {
@@ -73,20 +87,6 @@ export function NotificationsPage() {
       setError(err instanceof Error ? err.message : "削除に失敗しました");
     }
   }, [notificationRepository, loadData]);
-
-  const loadData = useCallback(async () => {
-    try {
-      setError(null);
-      const data = await notificationRepository.findAll();
-      // Sort newest first
-      const sorted = [...data].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-      setNotifications(sorted);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "データの読み込みに失敗しました");
-    } finally {
-      setLoading(false);
-    }
-  }, [notificationRepository]);
 
   useEffect(() => {
     void loadData();
