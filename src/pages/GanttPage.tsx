@@ -50,6 +50,144 @@ const progressColor = (progress: number): string => {
   return "#94a3b8";
 };
 
+// ── Construction Work Item Categories ─────────────────
+
+type WorkItem = {
+  name: string;
+  defaultDays: number;
+};
+
+type WorkCategory = {
+  label: string;
+  items: WorkItem[];
+};
+
+const WORK_CATEGORIES: WorkCategory[] = [
+  {
+    label: "仮設工事",
+    items: [
+      { name: "足場組立", defaultDays: 3 },
+      { name: "足場解体", defaultDays: 2 },
+      { name: "養生シート設置", defaultDays: 1 },
+      { name: "仮設トイレ設置", defaultDays: 1 },
+      { name: "仮囲い設置", defaultDays: 2 },
+    ],
+  },
+  {
+    label: "解体工事",
+    items: [
+      { name: "内装解体", defaultDays: 5 },
+      { name: "床解体", defaultDays: 3 },
+      { name: "天井解体", defaultDays: 2 },
+      { name: "間仕切り撤去", defaultDays: 2 },
+      { name: "設備撤去", defaultDays: 3 },
+    ],
+  },
+  {
+    label: "躯体工事",
+    items: [
+      { name: "基礎工事", defaultDays: 7 },
+      { name: "コンクリート打設", defaultDays: 3 },
+      { name: "型枠工事", defaultDays: 5 },
+      { name: "鉄筋工事", defaultDays: 5 },
+      { name: "鉄骨工事", defaultDays: 7 },
+    ],
+  },
+  {
+    label: "内装工事",
+    items: [
+      { name: "壁ボード貼り", defaultDays: 5 },
+      { name: "クロス貼り", defaultDays: 4 },
+      { name: "床材施工", defaultDays: 3 },
+      { name: "天井施工", defaultDays: 4 },
+      { name: "間仕切り設置", defaultDays: 3 },
+      { name: "フローリング施工", defaultDays: 3 },
+    ],
+  },
+  {
+    label: "電気工事",
+    items: [
+      { name: "幹線工事", defaultDays: 3 },
+      { name: "配線工事", defaultDays: 5 },
+      { name: "照明器具取付", defaultDays: 2 },
+      { name: "コンセント取付", defaultDays: 2 },
+      { name: "分電盤工事", defaultDays: 2 },
+      { name: "弱電工事", defaultDays: 2 },
+    ],
+  },
+  {
+    label: "給排水工事",
+    items: [
+      { name: "給水配管", defaultDays: 4 },
+      { name: "排水配管", defaultDays: 4 },
+      { name: "衛生器具取付", defaultDays: 3 },
+      { name: "水道引込工事", defaultDays: 2 },
+    ],
+  },
+  {
+    label: "空調工事",
+    items: [
+      { name: "エアコン設置", defaultDays: 2 },
+      { name: "ダクト工事", defaultDays: 4 },
+      { name: "換気設備工事", defaultDays: 3 },
+    ],
+  },
+  {
+    label: "外装工事",
+    items: [
+      { name: "外壁工事", defaultDays: 7 },
+      { name: "屋根工事", defaultDays: 5 },
+      { name: "防水工事", defaultDays: 3 },
+      { name: "外装タイル貼り", defaultDays: 5 },
+    ],
+  },
+  {
+    label: "建具工事",
+    items: [
+      { name: "ドア取付", defaultDays: 2 },
+      { name: "窓サッシ取付", defaultDays: 3 },
+      { name: "引き戸設置", defaultDays: 2 },
+      { name: "シャッター設置", defaultDays: 2 },
+    ],
+  },
+  {
+    label: "左官工事",
+    items: [
+      { name: "モルタル塗り", defaultDays: 5 },
+      { name: "タイル張り", defaultDays: 4 },
+      { name: "コンクリート補修", defaultDays: 3 },
+    ],
+  },
+  {
+    label: "塗装工事",
+    items: [
+      { name: "外壁塗装", defaultDays: 5 },
+      { name: "内壁塗装", defaultDays: 3 },
+      { name: "床塗装", defaultDays: 2 },
+      { name: "鉄部塗装", defaultDays: 3 },
+    ],
+  },
+  {
+    label: "クリーニング",
+    items: [
+      { name: "中間清掃", defaultDays: 1 },
+      { name: "竣工清掃", defaultDays: 2 },
+      { name: "ガラス清掃", defaultDays: 1 },
+    ],
+  },
+  {
+    label: "検査・引渡し",
+    items: [
+      { name: "社内検査", defaultDays: 1 },
+      { name: "施主検査", defaultDays: 1 },
+      { name: "是正工事", defaultDays: 3 },
+      { name: "引渡し", defaultDays: 1 },
+    ],
+  },
+];
+
+// ── GanttTask type ────────────────────────────────────
+
 type GanttTask = Task & {
   projectName: string;
   startDate: string;
@@ -74,8 +212,18 @@ const MAX_CHART_DAYS = 365;
 /** Get initials from an assigneeId or fallback */
 function getAssigneeInitial(assigneeId?: string): string | null {
   if (!assigneeId) return null;
-  // Show first 1-2 chars as initials
   return assigneeId.slice(0, 2).toUpperCase();
+}
+
+// ── Alert helpers ─────────────────────────────────────
+
+function getAlertLevel(task: GanttTask, today: string): "overdue" | "urgent" | "soon" | null {
+  if (task.status === "done") return null;
+  const diff = daysBetween(today, task.endDate);
+  if (diff < 0) return "overdue";
+  if (diff === 0) return "urgent";
+  if (diff <= 3) return "soon";
+  return null;
 }
 
 // ── Quick-add form state type ─────────────────────────
@@ -88,6 +236,7 @@ type QuickAddState = {
   dueDate: string;
   assigneeId: string;
   submitting: boolean;
+  selectedCategory: string;
 };
 
 type TaskDetailState = {
@@ -99,6 +248,24 @@ type TaskDetailState = {
   editProgress: number;
   editStatus: TaskStatus;
   saving: boolean;
+};
+
+// ── Drag state ────────────────────────────────────────
+
+type DragState = {
+  taskId: string;
+  type: "move" | "resize";
+  startX: number;
+  originalStartDate: string;
+  originalEndDate: string;
+  previewStartDate: string;
+  previewEndDate: string;
+};
+
+// ── Connect mode state ────────────────────────────────
+
+type ConnectState = {
+  fromTaskId: string;
 };
 
 // ── Component ────────────────────────────────────────
@@ -123,6 +290,14 @@ export function GanttPage() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const today = useMemo(() => toLocalDateString(new Date()), []);
 
+  // Drag & drop state
+  const [dragState, setDragState] = useState<DragState | null>(null);
+  const dragRef = useRef<DragState | null>(null);
+
+  // Connect (dependency) mode state
+  const [connectMode, setConnectMode] = useState(false);
+  const [connectState, setConnectState] = useState<ConnectState | null>(null);
+
   const loadData = useCallback(async () => {
     try {
       setError(null);
@@ -135,12 +310,11 @@ export function GanttPage() {
       const projectMap = new Map<string, Project>();
       for (const p of allProjects) projectMap.set(p.id, p);
 
-      // Build gantt tasks - assign start/end dates based on project start + due date
       const tasks: GanttTask[] = allTasks.map((t) => {
         const project = projectMap.get(t.projectId);
         const projectStart = project?.startDate ?? today;
         const isDateEstimated = !t.dueDate;
-        const startDate = t.dueDate ? addDays(t.dueDate, -7) : projectStart;
+        const startDate = t.startDate ?? (t.dueDate ? addDays(t.dueDate, -7) : projectStart);
         const endDate = t.dueDate ?? addDays(startDate, 7);
         const clampedStart = startDate < projectStart ? projectStart : startDate;
         const duration = daysBetween(clampedStart, endDate);
@@ -156,7 +330,6 @@ export function GanttPage() {
         };
       });
 
-      // Sort by start date
       tasks.sort((a, b) => a.startDate.localeCompare(b.startDate));
       setGanttTasks(tasks);
     } catch (err) {
@@ -181,6 +354,65 @@ export function GanttPage() {
       }
     }
   }, [loading]);
+
+  // Global mouse event handlers for drag
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      const drag = dragRef.current;
+      if (!drag) return;
+
+      const dayWidth = 36;
+      const deltaDays = Math.round((e.clientX - drag.startX) / dayWidth);
+
+      let previewStartDate = drag.originalStartDate;
+      let previewEndDate = drag.originalEndDate;
+
+      if (drag.type === "move") {
+        previewStartDate = addDays(drag.originalStartDate, deltaDays);
+        previewEndDate = addDays(drag.originalEndDate, deltaDays);
+      } else {
+        // resize: only move end date, minimum 1 day
+        const originalDuration = daysBetween(drag.originalStartDate, drag.originalEndDate);
+        const newDuration = Math.max(1, originalDuration + deltaDays);
+        previewEndDate = addDays(drag.originalStartDate, newDuration);
+      }
+
+      const newDrag = { ...drag, previewStartDate, previewEndDate };
+      dragRef.current = newDrag;
+      setDragState(newDrag);
+    };
+
+    const handleMouseUp = async () => {
+      const drag = dragRef.current;
+      if (!drag) return;
+      dragRef.current = null;
+      setDragState(null);
+
+      if (
+        drag.previewStartDate !== drag.originalStartDate ||
+        drag.previewEndDate !== drag.originalEndDate
+      ) {
+        try {
+          await taskRepository.update(drag.taskId, {
+            startDate: drag.previewStartDate,
+            dueDate: drag.previewEndDate,
+            updatedAt: new Date().toISOString(),
+          });
+          await loadData();
+        } catch (err) {
+          setError(err instanceof Error ? err.message : "タスクの更新に失敗しました");
+        }
+      }
+    };
+
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mouseup", () => { void handleMouseUp(); });
+
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", () => { void handleMouseUp(); });
+    };
+  }, [taskRepository, loadData]);
 
   // Build phase groups from tasks, grouped by project
   const phaseGroups = useMemo((): PhaseGroup[] => {
@@ -242,6 +474,7 @@ export function GanttPage() {
       dueDate: addDays(defaultStart, 7),
       assigneeId: "",
       submitting: false,
+      selectedCategory: "",
     });
   }, [projects, today]);
 
@@ -308,7 +541,70 @@ export function GanttPage() {
     }
   }, [taskDetail, taskRepository, loadData]);
 
-  // Memoize chart layout calculations (matters for 100+ tasks)
+  // Check if adding fromId -> toId would create a circular dependency
+  const wouldCreateCycle = useCallback((fromId: string, toId: string): boolean => {
+    // BFS/DFS: starting from toId, can we reach fromId following existing deps?
+    const visited = new Set<string>();
+    const queue = [toId];
+    while (queue.length > 0) {
+      const current = queue.shift()!;
+      if (current === fromId) return true;
+      if (visited.has(current)) continue;
+      visited.add(current);
+      const task = ganttTasks.find((t) => t.id === current);
+      if (task) {
+        for (const dep of task.dependencies ?? []) {
+          queue.push(dep);
+        }
+      }
+    }
+    return false;
+  }, [ganttTasks]);
+
+  // Handle connecting two tasks (dependency)
+  const handleConnectTask = useCallback(async (toTaskId: string) => {
+    if (!connectState) return;
+    const fromId = connectState.fromTaskId;
+    if (fromId === toTaskId) {
+      setConnectState(null);
+      return;
+    }
+    const toTask = ganttTasks.find((t) => t.id === toTaskId);
+    if (!toTask) return;
+
+    const currentDeps = toTask.dependencies ?? [];
+    if (currentDeps.includes(fromId)) {
+      // Already connected - remove dependency
+      try {
+        await taskRepository.update(toTaskId, {
+          dependencies: currentDeps.filter((d) => d !== fromId),
+          updatedAt: new Date().toISOString(),
+        });
+        await loadData();
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "依存関係の削除に失敗しました");
+      }
+    } else {
+      // Check for circular dependency: fromId -> toTaskId would be circular if toTaskId is already upstream of fromId
+      if (wouldCreateCycle(fromId, toTaskId)) {
+        setError(`循環依存が検出されました。このタスクへの接続はできません。`);
+        setConnectState(null);
+        return;
+      }
+      try {
+        await taskRepository.update(toTaskId, {
+          dependencies: [...currentDeps, fromId],
+          updatedAt: new Date().toISOString(),
+        });
+        await loadData();
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "依存関係の追加に失敗しました");
+      }
+    }
+    setConnectState(null);
+  }, [connectState, ganttTasks, taskRepository, loadData]);
+
+  // Memoize chart layout calculations
   const chartLayout = useMemo(() => {
     if (ganttTasks.length === 0) return null;
 
@@ -322,13 +618,11 @@ export function GanttPage() {
     const totalDays = Math.min(rawTotalDays, MAX_CHART_DAYS);
     const isCapped = rawTotalDays > MAX_CHART_DAYS;
 
-    // Generate date columns
     const dates: string[] = [];
     for (let i = 0; i <= totalDays; i++) {
       dates.push(addDays(chartStart, i));
     }
 
-    // Pre-compute weekend/today info for each date
     const dateInfo = dates.map((d) => {
       const dateObj = new Date(d);
       const day = dateObj.getDay();
@@ -339,10 +633,7 @@ export function GanttPage() {
       };
     });
 
-    // Pre-compute highlighted date columns (weekends + today) to avoid per-row iteration
     const highlightedDates = dateInfo.filter((di) => di.isToday || di.isWeekend);
-
-    // Today offset for the vertical line
     const todayOffset = daysBetween(chartStart, today);
 
     return {
@@ -355,6 +646,14 @@ export function GanttPage() {
       highlightedDates,
       todayOffset,
     };
+  }, [ganttTasks, today]);
+
+  // Alert summary
+  const alertSummary = useMemo(() => {
+    const overdue = ganttTasks.filter((t) => getAlertLevel(t, today) === "overdue");
+    const urgent = ganttTasks.filter((t) => getAlertLevel(t, today) === "urgent");
+    const soon = ganttTasks.filter((t) => getAlertLevel(t, today) === "soon");
+    return { overdue, urgent, soon };
   }, [ganttTasks, today]);
 
   if (loading) {
@@ -391,9 +690,7 @@ export function GanttPage() {
           <h2 className="text-lg font-bold text-slate-900">ガントチャート</h2>
         </div>
 
-        {/* Empty Gantt chart skeleton with empty state overlay */}
         <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-          {/* Skeleton header */}
           <div className="flex border-b border-slate-200">
             <div className="shrink-0 border-r border-slate-200 bg-slate-50/80 px-3 py-3" style={{ width: 240 }}>
               <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">タスク</span>
@@ -407,7 +704,6 @@ export function GanttPage() {
             </div>
           </div>
 
-          {/* Empty area with CTA */}
           <div className="flex items-center justify-center py-20">
             <div className="text-center">
               <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-brand-50">
@@ -448,6 +744,49 @@ export function GanttPage() {
 
   const estimatedCount = ganttTasks.filter((t) => t.isDateEstimated).length;
 
+  // Build a map of taskId -> row index for SVG dependency line rendering
+  const taskRowIndexMap = new Map<string, number>();
+  let rowIdx = 0;
+  for (const row of visibleRows) {
+    if (row.type === "task") {
+      taskRowIndexMap.set(row.task.id, rowIdx);
+    }
+    rowIdx++;
+  }
+
+  // Compute SVG dependency lines
+  const dependencyLines: Array<{
+    fromTaskId: string;
+    toTaskId: string;
+    x1: number;
+    y1: number;
+    x2: number;
+    y2: number;
+  }> = [];
+
+  for (const task of ganttTasks) {
+    if (!task.dependencies || task.dependencies.length === 0) continue;
+    const toRowIdx = taskRowIndexMap.get(task.id);
+    if (toRowIdx === undefined) continue;
+
+    for (const depId of task.dependencies) {
+      const fromTask = ganttTasks.find((t) => t.id === depId);
+      if (!fromTask) continue;
+      const fromRowIdx = taskRowIndexMap.get(depId);
+      if (fromRowIdx === undefined) continue;
+
+      const fromEndOffset = daysBetween(chartStart, fromTask.endDate);
+      const toStartOffset = daysBetween(chartStart, task.startDate);
+
+      const x1 = fromEndOffset * dayWidth + dayWidth / 2;
+      const y1 = headerHeight + fromRowIdx * rowHeight + rowHeight / 2;
+      const x2 = toStartOffset * dayWidth;
+      const y2 = headerHeight + toRowIdx * rowHeight + rowHeight / 2;
+
+      dependencyLines.push({ fromTaskId: depId, toTaskId: task.id, x1, y1, x2, y2 });
+    }
+  }
+
   return (
     <div className="mx-auto max-w-5xl px-4 pb-24">
       {/* Quick-add task modal */}
@@ -457,13 +796,52 @@ export function GanttPage() {
           onClick={() => setQuickAdd(null)}
         >
           <div
-            className="mx-4 w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl"
+            className="mx-4 w-full max-w-md rounded-2xl bg-white p-6 shadow-xl"
             onClick={(e) => e.stopPropagation()}
           >
             <h3 className="mb-4 text-base font-bold text-slate-900">
               タスクを追加 — {quickAdd.projectName}
             </h3>
             <form onSubmit={(e) => void handleQuickAddSubmit(e)} className="flex flex-col gap-3">
+              {/* Work item selector */}
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-medium text-slate-500">作業項目を選ぶ（任意）</label>
+                <select
+                  value={quickAdd.selectedCategory}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (!val) {
+                      setQuickAdd((q) => q ? { ...q, selectedCategory: "" } : q);
+                      return;
+                    }
+                    // Parse "CategoryIndex:ItemIndex"
+                    const [ci, ii] = val.split(":").map(Number);
+                    const category = WORK_CATEGORIES[ci];
+                    const item = category?.items[ii];
+                    if (!item) return;
+                    const newDueDate = addDays(quickAdd.startDate, item.defaultDays);
+                    setQuickAdd((q) => q ? {
+                      ...q,
+                      selectedCategory: val,
+                      name: item.name,
+                      dueDate: newDueDate,
+                    } : q);
+                  }}
+                  className="rounded-lg border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 focus:outline-none bg-white"
+                >
+                  <option value="">-- カテゴリから選択 --</option>
+                  {WORK_CATEGORIES.map((cat, ci) => (
+                    <optgroup key={ci} label={cat.label}>
+                      {cat.items.map((item, ii) => (
+                        <option key={ii} value={`${ci}:${ii}`}>
+                          {item.name}（標準{item.defaultDays}日）
+                        </option>
+                      ))}
+                    </optgroup>
+                  ))}
+                </select>
+              </div>
+
               <input
                 type="text"
                 value={quickAdd.name}
@@ -480,7 +858,21 @@ export function GanttPage() {
                   <input
                     type="date"
                     value={quickAdd.startDate}
-                    onChange={(e) => setQuickAdd((q) => q ? { ...q, startDate: e.target.value } : q)}
+                    onChange={(e) => {
+                      const newStart = e.target.value;
+                      setQuickAdd((q) => {
+                        if (!q) return q;
+                        // If a work item was selected, auto-recalculate end date
+                        if (q.selectedCategory && newStart) {
+                          const [ci, ii] = q.selectedCategory.split(":").map(Number);
+                          const item = WORK_CATEGORIES[ci]?.items[ii];
+                          if (item) {
+                            return { ...q, startDate: newStart, dueDate: addDays(newStart, item.defaultDays) };
+                          }
+                        }
+                        return { ...q, startDate: newStart };
+                      });
+                    }}
                     className="rounded-lg border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 focus:outline-none"
                   />
                 </div>
@@ -633,28 +1025,76 @@ export function GanttPage() {
         </div>
       )}
 
-      <div className="mb-4 flex items-center justify-between">
+      <div className="mb-4 flex items-center justify-between flex-wrap gap-2">
         <h2 className="text-lg font-bold text-slate-900">ガントチャート</h2>
-        <div className="flex gap-3 text-xs" role="list" aria-label="ステータス凡例">
-          {(["todo", "in_progress", "done"] as const).map((s) => (
-            <span key={s} className="flex items-center gap-1.5" role="listitem">
-              <span
-                className="inline-block h-3 w-3 rounded"
-                style={{ backgroundColor: statusColor[s] }}
-                aria-hidden="true"
-              />
-              {statusLabel[s]}
-            </span>
-          ))}
-          {/* Milestone legend */}
-          <span className="flex items-center gap-1.5" role="listitem">
-            <svg className="h-3 w-3" viewBox="0 0 12 12" aria-hidden="true">
-              <polygon points="6,0 12,6 6,12 0,6" fill="#f59e0b" />
+        <div className="flex items-center gap-3 flex-wrap">
+          {/* Connect mode toggle */}
+          <button
+            onClick={() => {
+              setConnectMode((m) => !m);
+              setConnectState(null);
+            }}
+            className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
+              connectMode
+                ? "bg-violet-600 text-white shadow-sm"
+                : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+            }`}
+            title="依存関係接続モード"
+          >
+            <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" />
             </svg>
-            マイルストーン
-          </span>
+            {connectMode ? (connectState ? "→ 接続先を選択" : "接続元を選択") : "依存関係"}
+          </button>
+
+          <div className="flex gap-3 text-xs" role="list" aria-label="ステータス凡例">
+            {(["todo", "in_progress", "done"] as const).map((s) => (
+              <span key={s} className="flex items-center gap-1.5" role="listitem">
+                <span
+                  className="inline-block h-3 w-3 rounded"
+                  style={{ backgroundColor: statusColor[s] }}
+                  aria-hidden="true"
+                />
+                {statusLabel[s]}
+              </span>
+            ))}
+            <span className="flex items-center gap-1.5" role="listitem">
+              <svg className="h-3 w-3" viewBox="0 0 12 12" aria-hidden="true">
+                <polygon points="6,0 12,6 6,12 0,6" fill="#f59e0b" />
+              </svg>
+              マイルストーン
+            </span>
+          </div>
         </div>
       </div>
+
+      {/* Alert banner */}
+      {(alertSummary.overdue.length > 0 || alertSummary.urgent.length > 0) && (
+        <div className="mb-3 rounded-lg border border-red-200 bg-red-50 px-4 py-2.5" role="alert">
+          <div className="flex items-start gap-2">
+            <svg className="mt-0.5 h-4 w-4 shrink-0 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+            </svg>
+            <div className="text-sm text-red-700">
+              {alertSummary.overdue.length > 0 && (
+                <span className="font-semibold">{alertSummary.overdue.length}件が期限超過</span>
+              )}
+              {alertSummary.overdue.length > 0 && alertSummary.urgent.length > 0 && <span className="mx-1">·</span>}
+              {alertSummary.urgent.length > 0 && (
+                <span className="font-semibold">{alertSummary.urgent.length}件が本日期限</span>
+              )}
+              {alertSummary.soon.length > 0 && (
+                <span className="ml-2 text-amber-700">（あと{alertSummary.soon.length}件が3日以内に期限）</span>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+      {alertSummary.overdue.length === 0 && alertSummary.urgent.length === 0 && alertSummary.soon.length > 0 && (
+        <div className="mb-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-700" role="status">
+          <span className="font-semibold">{alertSummary.soon.length}件</span>のタスクが3日以内に期限を迎えます。
+        </div>
+      )}
 
       {/* Warnings */}
       {isCapped && (
@@ -665,6 +1105,12 @@ export function GanttPage() {
       {estimatedCount > 0 && (
         <div className="mb-3 rounded-lg bg-blue-50 border border-blue-200 px-4 py-2 text-xs text-blue-700" role="status">
           {estimatedCount}件のタスクに期限が未設定のため、推定日程で表示しています（破線バー）。
+        </div>
+      )}
+
+      {connectMode && (
+        <div className="mb-3 rounded-lg border border-violet-200 bg-violet-50 px-4 py-2 text-xs text-violet-700" role="status">
+          依存関係モード: タスクバーの右端のコネクタポイントをクリックして接続元を選び、次に接続先のタスクバーの左端をクリックしてください。もう一度クリックで接続解除。
         </div>
       )}
 
@@ -733,15 +1179,19 @@ export function GanttPage() {
 
               const { task } = row;
               const initial = getAssigneeInitial(task.assigneeId);
+              const alertLevel = getAlertLevel(task, today);
               return (
                 <div
                   key={task.id}
                   className="flex items-center border-b border-slate-100 px-3 gap-2 cursor-pointer hover:bg-slate-50 transition-colors"
                   style={{ height: rowHeight }}
-                  onClick={() => openTaskDetail(task)}
+                  onClick={() => {
+                    if (connectMode) return; // Don't open detail in connect mode
+                    openTaskDetail(task);
+                  }}
                   role="button"
                   tabIndex={0}
-                  onKeyDown={(e) => { if (e.key === "Enter") openTaskDetail(task); }}
+                  onKeyDown={(e) => { if (e.key === "Enter" && !connectMode) openTaskDetail(task); }}
                   aria-label={`${task.name}を編集`}
                 >
                   {/* Assignee avatar */}
@@ -768,16 +1218,34 @@ export function GanttPage() {
                       {task.projectName}
                     </p>
                   </div>
+                  {/* Alert badge */}
+                  {alertLevel === "overdue" && (
+                    <span className="shrink-0 rounded-full bg-red-100 px-1.5 py-0.5 text-[10px] font-bold text-red-600">
+                      遅延
+                    </span>
+                  )}
+                  {alertLevel === "urgent" && (
+                    <span className="shrink-0 rounded-full bg-orange-100 px-1.5 py-0.5 text-[10px] font-bold text-orange-600">
+                      今日
+                    </span>
+                  )}
+                  {alertLevel === "soon" && (
+                    <span className="shrink-0 rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-bold text-amber-600">
+                      3日
+                    </span>
+                  )}
                   {/* Progress % */}
-                  <span
-                    className="shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-bold tabular-nums"
-                    style={{
-                      backgroundColor: `${progressColor(task.progress)}15`,
-                      color: progressColor(task.progress),
-                    }}
-                  >
-                    {task.progress}%
-                  </span>
+                  {alertLevel === null && (
+                    <span
+                      className="shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-bold tabular-nums"
+                      style={{
+                        backgroundColor: `${progressColor(task.progress)}15`,
+                        color: progressColor(task.progress),
+                      }}
+                    >
+                      {task.progress}%
+                    </span>
+                  )}
                 </div>
               );
             })}
@@ -841,8 +1309,46 @@ export function GanttPage() {
                 />
               )}
 
+              {/* SVG dependency lines overlay */}
+              {dependencyLines.length > 0 && (
+                <svg
+                  className="absolute inset-0 pointer-events-none z-10"
+                  style={{ width: totalDays * dayWidth, height: "100%" }}
+                  overflow="visible"
+                >
+                  <defs>
+                    <marker
+                      id="dep-arrow"
+                      viewBox="0 0 10 10"
+                      refX="9"
+                      refY="5"
+                      markerWidth="6"
+                      markerHeight="6"
+                      orient="auto-start-reverse"
+                    >
+                      <path d="M 0 0 L 10 5 L 0 10 z" fill="#7c3aed" opacity="0.7" />
+                    </marker>
+                  </defs>
+                  {dependencyLines.map((line) => {
+                    const cx = (line.x1 + line.x2) / 2;
+                    const d = `M ${line.x1} ${line.y1} C ${cx} ${line.y1} ${cx} ${line.y2} ${line.x2} ${line.y2}`;
+                    return (
+                      <path
+                        key={`${line.fromTaskId}-${line.toTaskId}`}
+                        d={d}
+                        fill="none"
+                        stroke="#7c3aed"
+                        strokeWidth="1.5"
+                        strokeOpacity="0.6"
+                        markerEnd="url(#dep-arrow)"
+                      />
+                    );
+                  })}
+                </svg>
+              )}
+
               {/* Rows */}
-              {visibleRows.map((row) => {
+              {visibleRows.map((row, rowIndex) => {
                 if (row.type === "phase") {
                   const { group } = row;
                   return (
@@ -851,7 +1357,6 @@ export function GanttPage() {
                       className="relative border-b border-slate-200 bg-slate-100/50"
                       style={{ height: phaseRowHeight }}
                     >
-                      {/* Weekend/today shading for phase row */}
                       {highlightedDates.map((di) => {
                         const offset = daysBetween(chartStart, di.date);
                         return (
@@ -869,21 +1374,32 @@ export function GanttPage() {
                 }
 
                 const { task } = row;
-                const startOffset = daysBetween(chartStart, task.startDate);
-                const duration = Math.max(
-                  1,
-                  daysBetween(task.startDate, task.endDate),
-                );
+                const isDragging = dragState?.taskId === task.id;
+                const displayStartDate = isDragging ? dragState.previewStartDate : task.startDate;
+                const displayEndDate = isDragging ? dragState.previewEndDate : task.endDate;
+
+                const startOffset = daysBetween(chartStart, displayStartDate);
+                const duration = Math.max(1, daysBetween(displayStartDate, displayEndDate));
                 const left = startOffset * dayWidth;
                 const width = duration * dayWidth;
+                const alertLevel = getAlertLevel(task, today);
+
+                // Bar background color override for alerts
+                let barBg = statusColor[task.status];
+                if (alertLevel === "overdue") barBg = "#ef4444";
+                else if (alertLevel === "urgent") barBg = "#f97316";
+                else if (alertLevel === "soon") barBg = "#f59e0b";
+
+                const isConnectFrom = connectState?.fromTaskId === task.id;
 
                 return (
                   <div
                     key={task.id}
                     className="relative border-b border-slate-50"
                     style={{ height: rowHeight }}
+                    data-row-index={rowIndex}
                   >
-                    {/* Grid lines (weekend/today shading) - use pre-computed highlights */}
+                    {/* Grid lines */}
                     {highlightedDates.map((di) => {
                       const offset = daysBetween(chartStart, di.date);
                       return (
@@ -911,11 +1427,21 @@ export function GanttPage() {
                           height: 20,
                         }}
                         title={`${task.name}: ${task.startDate}${task.isDateEstimated ? " (推定)" : ""} — クリックで編集`}
-                        onClick={() => openTaskDetail(task)}
+                        onClick={() => {
+                          if (connectMode) {
+                            if (!connectState) {
+                              setConnectState({ fromTaskId: task.id });
+                            } else {
+                              void handleConnectTask(task.id);
+                            }
+                            return;
+                          }
+                          openTaskDetail(task);
+                        }}
                         onKeyDown={(e) => {
                           if (e.key === "Enter" || e.key === " ") {
                             e.preventDefault();
-                            openTaskDetail(task);
+                            if (!connectMode) openTaskDetail(task);
                           }
                         }}
                       >
@@ -938,29 +1464,61 @@ export function GanttPage() {
                       <div
                         role="button"
                         tabIndex={0}
-                        aria-label={`${task.name}: ${task.startDate} から ${task.endDate}${task.isDateEstimated ? " (推定)" : ""} (${task.progress}%)`}
-                        className="absolute rounded-md shadow-sm transition-all hover:shadow-md hover:brightness-110 cursor-pointer focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-1"
+                        aria-label={`${task.name}: ${displayStartDate} から ${displayEndDate}${task.isDateEstimated ? " (推定)" : ""} (${task.progress}%)`}
+                        className={`absolute rounded-md shadow-sm transition-shadow cursor-pointer focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-1 ${
+                          isDragging ? "opacity-80 shadow-lg cursor-grabbing" : "hover:shadow-md hover:brightness-110"
+                        } ${isConnectFrom ? "ring-2 ring-violet-500 ring-offset-1" : ""}`}
                         style={{
                           left: left + 2,
                           top: 8,
                           width: Math.max(width - 4, 8),
                           height: rowHeight - 16,
-                          backgroundColor: statusColor[task.status],
+                          backgroundColor: barBg,
                           opacity: task.status === "done" ? 0.6 : 0.9,
-                          // Dashed border for estimated dates
                           ...(task.isDateEstimated
                             ? {
                                 border: "2px dashed rgba(255,255,255,0.5)",
                                 boxSizing: "border-box" as const,
                               }
                             : {}),
+                          userSelect: "none",
                         }}
-                        title={`${task.name}: ${task.startDate} ~ ${task.endDate} (${task.progress}%)${task.isDateEstimated ? " (推定)" : ""} — クリックで編集`}
-                        onClick={() => openTaskDetail(task)}
+                        title={`${task.name}: ${displayStartDate} ~ ${displayEndDate} (${task.progress}%)${task.isDateEstimated ? " (推定)" : ""} — ドラッグで移動、右端をドラッグで日数変更`}
+                        onMouseDown={(e) => {
+                          if (connectMode) return;
+                          // Only initiate drag on left click on bar body
+                          if (e.button !== 0) return;
+                          e.preventDefault();
+                          const newDrag: DragState = {
+                            taskId: task.id,
+                            type: "move",
+                            startX: e.clientX,
+                            originalStartDate: task.startDate,
+                            originalEndDate: task.endDate,
+                            previewStartDate: task.startDate,
+                            previewEndDate: task.endDate,
+                          };
+                          dragRef.current = newDrag;
+                          setDragState(newDrag);
+                        }}
+                        onClick={(e) => {
+                          if (connectMode) {
+                            e.stopPropagation();
+                            if (!connectState) {
+                              setConnectState({ fromTaskId: task.id });
+                            } else {
+                              void handleConnectTask(task.id);
+                            }
+                            return;
+                          }
+                          // Only open detail if not dragging
+                          if (dragRef.current) return;
+                          openTaskDetail(task);
+                        }}
                         onKeyDown={(e) => {
                           if (e.key === "Enter" || e.key === " ") {
                             e.preventDefault();
-                            openTaskDetail(task);
+                            if (!connectMode) openTaskDetail(task);
                           }
                         }}
                       >
@@ -975,7 +1533,7 @@ export function GanttPage() {
                           />
                         )}
                         {width > 80 && (
-                          <span className="absolute inset-0 flex items-center px-2 text-[10px] font-semibold text-white truncate z-10">
+                          <span className="absolute inset-0 flex items-center px-2 text-[10px] font-semibold text-white truncate z-10 pointer-events-none">
                             {task.name}
                             {width > 130 && (
                               <span className="ml-auto text-[9px] opacity-80 shrink-0">
@@ -983,6 +1541,58 @@ export function GanttPage() {
                               </span>
                             )}
                           </span>
+                        )}
+
+                        {/* Resize handle on right edge */}
+                        {!connectMode && (
+                          <div
+                            className="absolute right-0 top-0 h-full w-3 cursor-ew-resize flex items-center justify-center z-20"
+                            title="ドラッグで工期を伸縮"
+                            onMouseDown={(e) => {
+                              e.stopPropagation();
+                              e.preventDefault();
+                              const newDrag: DragState = {
+                                taskId: task.id,
+                                type: "resize",
+                                startX: e.clientX,
+                                originalStartDate: task.startDate,
+                                originalEndDate: task.endDate,
+                                previewStartDate: task.startDate,
+                                previewEndDate: task.endDate,
+                              };
+                              dragRef.current = newDrag;
+                              setDragState(newDrag);
+                            }}
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <div className="h-4 w-1 rounded-full bg-white/40" />
+                          </div>
+                        )}
+
+                        {/* Connect mode: connector points */}
+                        {connectMode && (
+                          <>
+                            {/* Left connector */}
+                            <div
+                              className={`absolute left-0 top-1/2 -translate-x-1/2 -translate-y-1/2 h-3 w-3 rounded-full border-2 z-30 ${
+                                connectState ? "border-violet-400 bg-violet-200 cursor-pointer" : "border-slate-300 bg-white"
+                              }`}
+                              title="接続先（この点をクリック）"
+                            />
+                            {/* Right connector */}
+                            <div
+                              className={`absolute right-0 top-1/2 translate-x-1/2 -translate-y-1/2 h-3 w-3 rounded-full border-2 z-30 cursor-pointer ${
+                                isConnectFrom ? "border-violet-600 bg-violet-400" : "border-violet-400 bg-violet-200 hover:bg-violet-300"
+                              }`}
+                              title="接続元としてこのタスクを選択"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (!connectState) {
+                                  setConnectState({ fromTaskId: task.id });
+                                }
+                              }}
+                            />
+                          </>
                         )}
                       </div>
                     )}
