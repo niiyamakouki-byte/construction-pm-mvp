@@ -25,6 +25,8 @@ import { OrganizationProvider } from "./contexts/OrganizationContext.js";
 import { SubscriptionProvider } from "./contexts/SubscriptionContext.js";
 import { PersonaProvider, usePersona } from "./contexts/PersonaContext.js";
 import { useHashRoute, navigate } from "./hooks/useHashRouter.js";
+import { useTheme } from "./hooks/useTheme.js";
+import { ThemeToggle } from "./components/ThemeToggle.js";
 
 function LogoIcon() {
   return (
@@ -113,6 +115,7 @@ function AppShell() {
   const route = useHashRoute();
   const { user, signOut } = useAuth();
   const { persona, setPersona } = usePersona();
+  const { theme, cycleTheme } = useTheme();
   const [onboardingDone, markOnboardingDone] = useOnboardingDone();
   const [tourDone, markTourDone] = useTourDone();
   const [showTour, setShowTour] = useState(false);
@@ -235,7 +238,7 @@ function AppShell() {
 
   return (
     <AuthGuard>
-      <div className="min-h-screen bg-[#f8fafc] pb-20 sm:pb-0">
+      <div className="min-h-screen bg-[var(--app-bg)] text-[var(--app-text)] pb-20 sm:pb-0">
         {/* Skip navigation link for keyboard/screen reader users */}
         <a
           href="#main-content"
@@ -262,36 +265,39 @@ function AppShell() {
                 </span>
               </div>
             </button>
-            {/* Desktop nav */}
-            <nav className="hidden gap-1 sm:flex items-center" aria-label="メインナビゲーション">
-              {tabs.map((tab) => (
-                <NavButton
-                  key={tab.key}
-                  label={tab.label}
-                  icon={tab.icon}
-                  active={tab.matchRoute(route)}
-                  onClick={() => navigate(tab.path)}
-                />
-              ))}
-              {/* Persona toggle */}
-              <button
-                onClick={() => setPersona(persona === "supervisor" ? "executive" : "supervisor")}
-                className="ml-1 flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold text-brand-200 hover:text-white hover:bg-white/10 transition-all"
-                title={persona === "supervisor" ? "現場監督モード" : "経営層モード"}
-              >
-                {persona === "supervisor" ? "現場監督" : "経営層"}
-              </button>
-              {user && (
+            <div className="flex items-center gap-2">
+              <ThemeToggle theme={theme} onToggle={cycleTheme} />
+              {/* Desktop nav */}
+              <nav className="hidden gap-1 sm:flex items-center" aria-label="メインナビゲーション">
+                {tabs.map((tab) => (
+                  <NavButton
+                    key={tab.key}
+                    label={tab.label}
+                    icon={tab.icon}
+                    active={tab.matchRoute(route)}
+                    onClick={() => navigate(tab.path)}
+                  />
+                ))}
+                {/* Persona toggle */}
                 <button
-                  onClick={signOut}
-                  className="ml-2 flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-brand-200 hover:text-white hover:bg-white/10 transition-all"
-                  title={user.email ?? ""}
+                  onClick={() => setPersona(persona === "supervisor" ? "executive" : "supervisor")}
+                  className="ml-1 flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold text-brand-200 hover:text-white hover:bg-white/10 transition-all"
+                  title={persona === "supervisor" ? "現場監督モード" : "経営層モード"}
                 >
-                  <span className="text-base" aria-hidden="true">👤</span>
-                  <span className="hidden lg:block">{user.email?.split("@")[0]}</span>
+                  {persona === "supervisor" ? "現場監督" : "経営層"}
                 </button>
-              )}
-            </nav>
+                {user && (
+                  <button
+                    onClick={signOut}
+                    className="ml-2 flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-brand-200 hover:text-white hover:bg-white/10 transition-all"
+                    title={user.email ?? ""}
+                  >
+                    <span className="text-base" aria-hidden="true">👤</span>
+                    <span className="hidden lg:block">{user.email?.split("@")[0]}</span>
+                  </button>
+                )}
+              </nav>
+            </div>
           </div>
         </header>
 

@@ -18,6 +18,46 @@
   --color-accent-600: #d97706;
 }
 
+:root,
+:root[data-theme="light"],
+:root[data-theme="system"] {
+  --app-bg: #f8fafc;
+  --app-text: #0f172a;
+  --app-text-secondary: #475569;
+  --app-text-muted: #64748b;
+  --app-card: #ffffff;
+  --app-card-muted: #f8fafc;
+  --app-border: #e2e8f0;
+  --app-input-bg: #ffffff;
+  --app-input-text: #0f172a;
+}
+
+:root[data-theme="dark"] {
+  --app-bg: #0f172a;
+  --app-text: #e2e8f0;
+  --app-text-secondary: #cbd5e1;
+  --app-text-muted: #94a3b8;
+  --app-card: #111827;
+  --app-card-muted: #1e293b;
+  --app-border: #334155;
+  --app-input-bg: #0f172a;
+  --app-input-text: #e2e8f0;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root[data-theme="system"] {
+    --app-bg: #0f172a;
+    --app-text: #e2e8f0;
+    --app-text-secondary: #cbd5e1;
+    --app-text-muted: #94a3b8;
+    --app-card: #111827;
+    --app-card-muted: #1e293b;
+    --app-border: #334155;
+    --app-input-bg: #0f172a;
+    --app-input-text: #e2e8f0;
+  }
+}
+
 /* Professional base styles */
 html {
   -webkit-font-smoothing: antialiased;
@@ -26,12 +66,65 @@ html {
 
 body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif;
-  background-color: #f8fafc;
+  background-color: var(--app-bg);
+  color: var(--app-text);
 }
 
 /* Smooth transitions for interactive elements */
 button, a, input, select, textarea {
   transition: all 0.15s ease;
+}
+
+input, select, textarea {
+  background-color: var(--app-input-bg);
+  border-color: var(--app-border);
+  color: var(--app-input-text);
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--app-text-muted);
+}
+
+.bg-white {
+  background-color: var(--app-card) !important;
+}
+
+.bg-white\/95 {
+  background-color: color-mix(in srgb, var(--app-card) 95%, transparent) !important;
+}
+
+.bg-slate-50,
+.bg-slate-50\/80,
+.bg-slate-100,
+.bg-slate-100\/80,
+.bg-slate-100\/50 {
+  background-color: var(--app-card-muted) !important;
+}
+
+.text-slate-900 {
+  color: var(--app-text) !important;
+}
+
+.text-slate-700,
+.text-slate-600 {
+  color: var(--app-text-secondary) !important;
+}
+
+.text-slate-500,
+.text-slate-400 {
+  color: var(--app-text-muted) !important;
+}
+
+.border-slate-100,
+.border-slate-200,
+.border-slate-300 {
+  border-color: var(--app-border) !important;
+}
+
+.divide-slate-100 > :not([hidden]) ~ :not([hidden]),
+.divide-slate-200 > :not([hidden]) ~ :not([hidden]) {
+  border-color: var(--app-border) !important;
 }
 
 /* Focus ring styling */
