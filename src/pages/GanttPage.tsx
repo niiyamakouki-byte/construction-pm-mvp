@@ -10,6 +10,8 @@ import { useOrganizationContext } from "../contexts/OrganizationContext.js";
 import { AiActionCard } from "../components/AiActionCard.js";
 import type { AiAction } from "../components/AiActionCard.js";
 import { CommunicationSidebar } from "../components/CommunicationSidebar.js";
+import { GanttPageErrorBoundary } from "../components/PageErrorBoundaries.js";
+import { GanttPageSkeleton } from "../components/PageSkeletons.js";
 import { cascadeShiftPhase, detectPhaseOverlap } from "../domain/cascade-service.js";
 
 // Sub-components
@@ -41,7 +43,7 @@ const SAMPLE_CSV_GANTT = `タスク名,カテゴリ,開始日,終了日,担当�
 
 // ── Component ────────────────────────────────────────
 
-export function GanttPage() {
+function GanttPageContent() {
   const { organizationId } = useOrganizationContext();
   const projectRepository = useMemo(
     () => createProjectRepository(() => organizationId),
@@ -718,12 +720,7 @@ export function GanttPage() {
 
   // ── Loading / Error states ──────────────────────────────────
   if (loading) {
-    return (
-      <div className="flex items-center justify-center gap-2 py-16" role="status" aria-label="読み込み中">
-        <span className="inline-block h-5 w-5 animate-spin rounded-full border-2 border-brand-200 border-t-brand-600" />
-        <span className="text-base text-slate-400">読み込み中...</span>
-      </div>
-    );
+    return <GanttPageSkeleton />;
   }
 
   if (error) {
@@ -1035,5 +1032,13 @@ export function GanttPage() {
         onConnectTask={(toTaskId) => void handleConnectTask(toTaskId)}
       />
     </div>
+  );
+}
+
+export function GanttPage() {
+  return (
+    <GanttPageErrorBoundary>
+      <GanttPageContent />
+    </GanttPageErrorBoundary>
   );
 }

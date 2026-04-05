@@ -3,6 +3,8 @@
  * Rate limit: 1 req/sec (Nominatim policy), so cache aggressively.
  */
 
+import { fetchWithTimeout } from "./request-timeout.js";
+
 type GeoResult = { lat: number; lon: number } | null;
 
 const CACHE_KEY = "geocode_cache";
@@ -65,9 +67,17 @@ export async function geocodeAddress(address: string): Promise<GeoResult> {
 
   try {
     const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(address)}&format=json&limit=1`;
-    const res = await fetch(url, {
-      headers: { "User-Agent": "construction-pm-mvp/1.0" },
-    });
+    const res = await fetchWithTimeout(
+      url,
+      {
+        headers: { "User-Agent": "construction-pm-mvp/1.0" },
+      },
+      {
+        label: "住所ジオコーディング",
+        timeoutMs: 5000,
+      },
+    );
+    if (!res.ok) return null;
     const data = (await res.json()) as Array<{ lat: string; lon: string }>;
 
     if (data.length > 0) {

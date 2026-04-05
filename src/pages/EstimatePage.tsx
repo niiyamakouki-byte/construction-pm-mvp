@@ -6,10 +6,11 @@ import {
 } from "../estimate/estimate-generator.js";
 import { generateEstimatePdf } from "../estimate/pdf-estimate.js";
 import type { Estimate, EstimateInput } from "../estimate/types.js";
+import { EstimatePageErrorBoundary } from "../components/PageErrorBoundaries.js";
 
 type SelectedItem = EstimateInput & { name: string; unit: string; unitPrice: number };
 
-export function EstimatePage() {
+function EstimatePageContent() {
   const [propertyName, setPropertyName] = useState("");
   const [clientName, setClientName] = useState("");
   const [selectedItems, setSelectedItems] = useState<SelectedItem[]>([]);
@@ -390,5 +391,13 @@ export function EstimatePage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export function EstimatePage() {
+  return (
+    <EstimatePageErrorBoundary>
+      <EstimatePageContent />
+    </EstimatePageErrorBoundary>
   );
 }

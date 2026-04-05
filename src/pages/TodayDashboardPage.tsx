@@ -5,6 +5,8 @@ import { createProjectRepository } from "../stores/project-store.js";
 import { navigate } from "../hooks/useHashRouter.js";
 import { useOrganizationContext } from "../contexts/OrganizationContext.js";
 import { usePersona } from "../contexts/PersonaContext.js";
+import { TodayDashboardPageErrorBoundary } from "../components/PageErrorBoundaries.js";
+import { TodayDashboardSkeleton } from "../components/PageSkeletons.js";
 
 // ── Helpers ────────────────────────────────────────────
 
@@ -198,7 +200,7 @@ function useProjectWeathers(projects: Project[]): {
 
 // ── Main Component ─────────────────────────────────────
 
-export function TodayDashboardPage() {
+function TodayDashboardPageContent() {
   const { organizationId } = useOrganizationContext();
   const taskRepository = useMemo(
     () => createTaskRepository(() => organizationId),
@@ -289,6 +291,10 @@ export function TodayDashboardPage() {
   }, [allProjects, allTasks]);
 
   // ── Render ───────────────────────────────────────────
+  if (loading) {
+    return <TodayDashboardSkeleton />;
+  }
+
   return (
     <div className="mx-auto max-w-lg space-y-4 px-4 pb-8">
       {/* Error banner */}
@@ -309,16 +315,26 @@ export function TodayDashboardPage() {
             </p>
             <p className="mt-1 text-xl font-bold">{formatDateJP(today)}</p>
           </div>
-          {weatherLoading && (
-            <div className="flex items-center gap-2">
-              <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-              <span className="text-xs text-brand-300">天気取得中</span>
-            </div>
-          )}
         </div>
 
         {/* Per-project weather */}
-        {!weatherLoading && weathers.length > 0 && (
+        {weatherLoading ? (
+          <div className="mt-4 grid grid-cols-2 gap-2">
+            {Array.from({ length: 2 }, (_, index) => (
+              <div
+                key={index}
+                className="rounded-xl bg-white/10 px-3 py-3 backdrop-blur-sm"
+              >
+                <div aria-hidden="true" className="animate-pulse space-y-2">
+                  <div className="h-6 w-8 rounded bg-white/20" />
+                  <div className="h-5 w-14 rounded bg-white/25" />
+                  <div className="h-3 w-20 rounded bg-white/20" />
+                  <div className="h-3 w-16 rounded bg-white/15" />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : weathers.length > 0 && (
           <div className="mt-4 grid gap-2" style={{ gridTemplateColumns: `repeat(${Math.min(weathers.length, 3)}, 1fr)` }}>
             {weathers.map((pw, i) => (
               <div
@@ -410,12 +426,7 @@ export function TodayDashboardPage() {
           </span>
         </h2>
 
-        {loading ? (
-          <div className="flex items-center justify-center gap-2 py-8">
-            <span className="inline-block h-5 w-5 animate-spin rounded-full border-2 border-brand-200 border-t-brand-600" />
-            <span className="text-sm text-slate-400">読み込み中...</span>
-          </div>
-        ) : tasks.length === 0 ? (
+        {tasks.length === 0 ? (
           <div className="rounded-2xl border-2 border-dashed border-slate-200 bg-white p-8 text-center">
             <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-emerald-50">
               <span className="text-2xl">✓</span>
@@ -451,6 +462,14 @@ export function TodayDashboardPage() {
         </button>
       </div>
     </div>
+  );
+}
+
+export function TodayDashboardPage() {
+  return (
+    <TodayDashboardPageErrorBoundary>
+      <TodayDashboardPageContent />
+    </TodayDashboardPageErrorBoundary>
   );
 }
 

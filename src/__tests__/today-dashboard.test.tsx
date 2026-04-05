@@ -96,6 +96,17 @@ describe("TodayDashboardPage", () => {
     await waitFor(() => expect(screen.getByText("1件")).toBeDefined());
   });
 
+  it("初回ロード中はダッシュボード用スケルトンが表示される", () => {
+    mockTaskFindAll.mockReturnValueOnce(new Promise(() => {}));
+    mockProjectFindAll.mockReturnValueOnce(new Promise(() => {}));
+
+    render(<TodayDashboardPage />);
+
+    expect(
+      screen.getByRole("status", { name: "ダッシュボードを読み込み中" }),
+    ).toBeDefined();
+  });
+
   it("空状態メッセージ「今日のタスクはありません」が表示される", async () => {
     render(<TodayDashboardPage />);
     await waitFor(() =>

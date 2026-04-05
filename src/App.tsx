@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts.js";
+import { KeyboardShortcutHelp } from "./components/KeyboardShortcutHelp.js";
 import { ProjectListPage } from "./pages/ProjectListPage.js";
 import { TodayDashboardPage } from "./pages/TodayDashboardPage.js";
 import { ProjectDetailPage } from "./pages/ProjectDetailPage.js";
@@ -114,6 +116,13 @@ function AppShell() {
   const [onboardingDone, markOnboardingDone] = useOnboardingDone();
   const [tourDone, markTourDone] = useTourDone();
   const [showTour, setShowTour] = useState(false);
+  const [showShortcutHelp, setShowShortcutHelp] = useState(false);
+
+  useKeyboardShortcuts({
+    onNewTask: () => navigate("/app"),
+    onCloseModal: () => setShowShortcutHelp(false),
+    onShowHelp: () => setShowShortcutHelp((v) => !v),
+  });
 
   // Show tour after onboarding completes (on first visit to /gantt or /app)
   const handleOnboardingComplete = () => {
@@ -148,18 +157,10 @@ function AppShell() {
 
   const renderPage = () => {
     if (route === "/today") {
-      return (
-        <ErrorBoundary fallbackTitle="ダッシュボードエラー">
-          <TodayDashboardPage />
-        </ErrorBoundary>
-      );
+      return <TodayDashboardPage />;
     }
     if (route === "/gantt") {
-      return (
-        <ErrorBoundary fallbackTitle="ガントチャートエラー">
-          <GanttPage />
-        </ErrorBoundary>
-      );
+      return <GanttPage />;
     }
     if (route === "/node-schedule") {
       return (
@@ -176,11 +177,7 @@ function AppShell() {
       );
     }
     if (route === "/estimate") {
-      return (
-        <ErrorBoundary fallbackTitle="見積エラー">
-          <EstimatePage />
-        </ErrorBoundary>
-      );
+      return <EstimatePage />;
     }
     if (route === "/contractors") {
       return (
@@ -355,6 +352,11 @@ function AppShell() {
         {/* Tour guide (after onboarding, first-time only) */}
         {onboardingDone && !tourDone && showTour && (
           <TourGuide onComplete={markTourDone} />
+        )}
+
+        {/* Keyboard shortcut help modal */}
+        {showShortcutHelp && (
+          <KeyboardShortcutHelp onClose={() => setShowShortcutHelp(false)} />
         )}
       </div>
     </AuthGuard>
