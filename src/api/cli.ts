@@ -1,8 +1,11 @@
 #!/usr/bin/env -S node --experimental-strip-types
 
+import { readFile } from "node:fs/promises";
+import { basename, extname } from "node:path";
+
 const DEFAULT_API_URL = process.env.GENBAHUB_API_URL ?? "http://127.0.0.1:3001";
 
-type CommandName = "add-project" | "add-task";
+type CommandName = "add-project" | "add-task" | "import-schedule";
 
 function printHelp(): void {
   console.log(`GenbaHub CLI
@@ -10,6 +13,7 @@ function printHelp(): void {
 使い方:
   genbahub-cli add-project --name "ゴディバ" --contractor "フィールドクラブ" --address "東京都" [--status planning]
   genbahub-cli add-task --project-id <project-id> --name "LGS工事" --start 2026-04-10 --end 2026-04-15 [--contractor-id <id>] [--description "補足"]
+  genbahub-cli import-schedule --project-id <project-id> --file ./schedule.xlsx
 
 オプション:
   --api-url <url>      API サーバーURL (既定値: ${DEFAULT_API_URL})
@@ -39,7 +43,7 @@ function parseArgs(argv: string[]): {
     options[key] = value;
   }
 
-  if (!command || !["add-project", "add-task"].includes(command)) {
+  if (!command || !["add-project", "add-task", "import-schedule"].includes(command)) {
     return { command: null, options };
   }
 
@@ -84,6 +88,19 @@ async function requestJson(
   return data;
 }
 
+function getUploadContentType(filePath: string): string {
+  switch (extname(filePath).toLowerCase()) {
+    case ".csv":
+      return "text/csv";
+    case ".xls":
+      return "application/vnd.ms-excel";
+    case ".xlsx":
+      return "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+    default:
+      return "application/octet-stream";
+  }
+}
+
 async function run(): Promise<void> {
   const argv = process.argv.slice(2);
   if (argv.length === 0 || argv.includes("--help")) {
@@ -113,6 +130,28 @@ async function run(): Promise<void> {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     });
+    console.log(JSON.stringify(result, null, 2));
+    return;
+  }
+
+  if (command === "import-schedule") {
+    const projectId = requireOption(options, "project-id", "プロジェクトID");
+    const filePath = requireOption(options, "file", "ファイルパス");
+    const fileBuffer = await readFile(filePath);
+    const formData = new FormData();
+    formData.append(
+      "file",
+      new Blob([fileBuffer], { type: getUploadContentType(filePath) }),
+      basename(filePath),
+    );
+
+    const result = await requestJson(
+      `${apiUrl}/api/projects/${encodeURIComponent(projectId)}/import`,
+      {
+        method: "POST",
+        body: formData,
+      },
+    );
     console.log(JSON.stringify(result, null, 2));
     return;
   }

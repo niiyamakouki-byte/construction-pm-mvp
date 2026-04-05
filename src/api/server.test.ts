@@ -5,7 +5,9 @@ import {
   ApiError,
   InMemoryApiStore,
   handleApiRequest,
+  parseMultipartBody,
 } from "./server.js";
+import { createMockXlsxBuffer } from "./test-utils.js";
 
 describe("GenbaHub API", () => {
   let store: InMemoryApiStore;
@@ -140,6 +142,7 @@ describe("GenbaHub API", () => {
         startDate: "2026-04-10",
         endDate: "2026-04-15",
         contractorId: "contractor-1",
+        contractor: null,
       },
     });
   });
@@ -203,7 +206,84 @@ describe("GenbaHub API", () => {
         status: "in_progress",
         startDate: "2026-06-02",
         endDate: "2026-06-04",
+        contractor: null,
       },
+    });
+  });
+
+  it("multipart/form-data のファイルを解析できる", () => {
+    const boundary = "----genbahub-boundary";
+    const workbook = createMockXlsxBuffer([
+      ["作業名", "開始日", "完了日"],
+      ["軽量下地", "R8.4.10", "2026年4月12日"],
+    ]);
+    const body = Buffer.concat([
+      Buffer.from(`--${boundary}\r\n`),
+      Buffer.from("Content-Disposition: form-data; name=\"file\"; filename=\"schedule.xlsx\"\r\n"),
+      Buffer.from("Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet\r\n\r\n"),
+      workbook,
+      Buffer.from(`\r\n--${boundary}--\r\n`),
+    ]);
+
+    const parsed = parseMultipartBody(body, boundary);
+
+    expect(parsed.files).toHaveLength(1);
+    expect(parsed.files[0]).toMatchObject({
+      fieldName: "file",
+      filename: "schedule.xlsx",
+      contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    });
+    expect(Buffer.compare(parsed.files[0].buffer, workbook)).toBe(0);
+  });
+
+  it("POST /api/projects/:id/import で工程表を取り込める", async () => {
+    const createdProject = await request("POST", "/api/projects", {
+      name: "案件Import",
+      contractor: "元請Import",
+      address: "東京都",
+      status: "planning",
+    });
+    const projectId = (createdProject.body as { project: { id: string } }).project.id;
+
+    const response = await request("POST", `/api/projects/${projectId}/import`, {
+      files: [
+        {
+          fieldName: "file",
+          filename: "schedule.xlsx",
+          contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+          buffer: createMockXlsxBuffer([
+            ["作業名", "開始日", "完了日", "業者", "備考"],
+            ["軽量下地", "R8.4.10", "2026年4月12日", "山田内装", "先行施工"],
+          ]),
+        },
+      ],
+      fields: {},
+    });
+
+    expect(response.status).toBe(201);
+    expect(response.body).toMatchObject({
+      tasks: [
+        {
+          projectId,
+          name: "軽量下地",
+          startDate: "2026-04-10",
+          endDate: "2026-04-12",
+          contractor: "山田内装",
+          description: "先行施工",
+        },
+      ],
+    });
+
+    const listResponse = await request("GET", `/api/projects/${projectId}/tasks`);
+    expect(listResponse.body).toMatchObject({
+      tasks: [
+        {
+          name: "軽量下地",
+          startDate: "2026-04-10",
+          endDate: "2026-04-12",
+          contractor: "山田内装",
+        },
+      ],
     });
   });
 
