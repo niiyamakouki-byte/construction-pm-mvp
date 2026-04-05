@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import type { CSSProperties, MouseEvent, MutableRefObject, RefObject } from "react";
 import type { GanttTask, PhaseGroup, DragState, ConnectState, ChartLayout } from "./types.js";
 import { gantt } from "../../theme/index.js";
 import { daysBetween, formatDateShort } from "./utils.js";
@@ -14,13 +14,13 @@ type Props = {
   visibleRows: VisibleRow[];
   chartLayout: ChartLayout;
   dragState: DragState | null;
-  dragRef: React.MutableRefObject<DragState | null>;
+  dragRef: MutableRefObject<DragState | null>;
   connectMode: boolean;
   connectState: ConnectState | null;
   today: string;
-  scrollRef: React.RefObject<HTMLDivElement | null>;
-  onTaskDragStart: (task: GanttTask, event: React.MouseEvent<HTMLDivElement>) => void;
-  onTaskResizeStart: (task: GanttTask, event: React.MouseEvent<HTMLDivElement>) => void;
+  scrollRef: RefObject<HTMLDivElement | null>;
+  onTaskDragStart: (task: GanttTask, event: MouseEvent<HTMLDivElement>) => void;
+  onTaskResizeStart: (task: GanttTask, event: MouseEvent<HTMLDivElement>) => void;
   onOpenTaskDetail: (task: GanttTask) => void;
   onOpenQuickAdd: (projectId: string, projectName: string) => void;
   onTogglePhase: (projectId: string) => void;
@@ -48,6 +48,9 @@ export function GanttChart({
 }: Props) {
   const { rowHeight, phaseRowHeight, headerHeight, labelWidth } = gantt;
   const { chartStart, totalDays, dateInfo, highlightedDates, todayOffset, dayWidth } = chartLayout;
+  const chartShellStyle = {
+    "--gantt-label-width": `${labelWidth}px`,
+  } as CSSProperties;
 
   // Build dependency lines
   const taskRowIndexMap = new Map<string, number>();
@@ -96,12 +99,12 @@ export function GanttChart({
       className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm"
       role="figure"
       aria-label={`ガントチャート: ${ganttTasks.length}タスク`}
+      style={chartShellStyle}
     >
       <div className="flex">
         {/* Left: Task labels */}
         <div
-          className="shrink-0 border-r border-slate-200 bg-slate-50/80"
-          style={{ width: labelWidth }}
+          className="gantt-label-column shrink-0 border-r border-slate-200 bg-slate-50/80"
         >
           <div
             className="flex items-end border-b border-slate-200 px-3 py-2"
@@ -168,7 +171,7 @@ export function GanttChart({
         </div>
 
         {/* Right: Chart area */}
-        <div ref={scrollRef} className="flex-1 overflow-x-auto">
+        <div ref={scrollRef} className="mobile-scroll-x flex-1 overflow-x-auto">
           <div style={{ width: totalDays * dayWidth, minWidth: "100%" }} className="relative">
             {/* Date header */}
             <div className="flex border-b border-slate-200 relative" style={{ height: headerHeight }}>

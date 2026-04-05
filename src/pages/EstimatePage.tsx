@@ -90,7 +90,7 @@ function EstimatePageContent() {
   if (estimate) {
     return (
       <div className="mx-auto max-w-2xl px-4 pb-24">
-        <div className="mb-4 flex items-center justify-between">
+        <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <button
             onClick={() => setEstimate(null)}
             className="flex items-center gap-1 text-sm text-slate-500 hover:text-brand-600 transition-colors"
@@ -107,10 +107,10 @@ function EstimatePageContent() {
           </button>
         </div>
 
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <div className="responsive-card rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
           <div className="border-b border-slate-200 pb-4 mb-4">
             <h2 className="text-lg font-bold text-slate-900">御見積書</h2>
-            <div className="mt-2 grid grid-cols-2 gap-2 text-sm text-slate-600">
+            <div className="responsive-form-grid mt-2 gap-2 text-sm text-slate-600">
               <p>
                 <span className="text-slate-400">物件名: </span>
                 {estimate.propertyName}
@@ -137,7 +137,7 @@ function EstimatePageContent() {
                 <span className="h-1 w-1 rounded-full bg-brand-500" />
                 {section.categoryName}
               </h3>
-              <div className="overflow-x-auto">
+              <div className="responsive-table overflow-x-auto">
                 <table className="w-full text-xs">
                   <thead>
                     <tr className="border-b border-slate-200 text-slate-500">
@@ -224,7 +224,7 @@ function EstimatePageContent() {
       )}
 
       {/* Project info */}
-      <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm space-y-3">
+      <div className="responsive-card rounded-xl border border-slate-200 bg-white p-4 shadow-sm space-y-3">
         <div>
           <label htmlFor="estimate-property" className="block text-sm font-medium text-slate-700">
             物件名 <span className="text-red-500">*</span>
@@ -259,7 +259,7 @@ function EstimatePageContent() {
 
       {/* Selected items */}
       {selectedItems.length > 0 && (
-        <div className="rounded-xl border border-brand-200 bg-brand-50/30 p-4 shadow-sm">
+        <div className="responsive-card rounded-xl border border-brand-200 bg-brand-50/30 p-4 shadow-sm">
           <h3 className="text-sm font-bold text-slate-700 mb-2">
             選択済み品目 ({selectedItems.length}件)
           </h3>
@@ -267,7 +267,7 @@ function EstimatePageContent() {
             {selectedItems.map((item) => (
               <li
                 key={item.code}
-                className="flex items-center gap-2 rounded-lg bg-white p-2 border border-slate-100"
+                className="responsive-form-row flex items-center gap-2 rounded-lg border border-slate-100 bg-white p-2"
               >
                 <div className="min-w-0 flex-1">
                   <p className="text-xs font-semibold text-slate-800 truncate">
@@ -277,7 +277,7 @@ function EstimatePageContent() {
                     ¥{item.unitPrice.toLocaleString()} / {item.unit}
                   </p>
                 </div>
-                <div className="flex items-center gap-1.5">
+                <div className="estimate-quantity-controls flex items-center gap-1.5">
                   <button
                     onClick={() => handleQuantityChange(item.code, item.quantity - 1)}
                     className="h-9 w-9 rounded-lg bg-slate-100 text-sm font-bold text-slate-600 hover:bg-slate-200 active:bg-slate-300"
@@ -311,7 +311,7 @@ function EstimatePageContent() {
               </li>
             ))}
           </ul>
-          <div className="mt-3 flex justify-between items-center border-t border-brand-100 pt-3">
+          <div className="responsive-form-actions mt-3 flex items-center justify-between gap-3 border-t border-brand-100 pt-3">
             <span className="text-xs text-slate-500">
               仮計: ¥{selectedItems.reduce((s, i) => s + i.unitPrice * i.quantity, 0).toLocaleString()}
             </span>

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts.js";
 import { KeyboardShortcutHelp } from "./components/KeyboardShortcutHelp.js";
 import { ProjectListPage } from "./pages/ProjectListPage.js";
@@ -27,6 +27,7 @@ import { PersonaProvider, usePersona } from "./contexts/PersonaContext.js";
 import { useHashRoute, navigate } from "./hooks/useHashRouter.js";
 import { useTheme } from "./hooks/useTheme.js";
 import { ThemeToggle } from "./components/ThemeToggle.js";
+import { MobileNav } from "./components/MobileNav.js";
 
 function LogoIcon() {
   return (
@@ -50,6 +51,7 @@ type TabDef = {
   icon: string;
   matchRoute: (route: string) => boolean;
   path: string;
+  dataTour?: string;
 };
 
 const tabs: TabDef[] = [
@@ -94,6 +96,7 @@ const tabs: TabDef[] = [
     icon: "🏢",
     matchRoute: (r) => r === "/contractors",
     path: "/contractors",
+    dataTour: "nav-contractors",
   },
   {
     key: "notifications",
@@ -120,6 +123,11 @@ function AppShell() {
   const [tourDone, markTourDone] = useTourDone();
   const [showTour, setShowTour] = useState(false);
   const [showShortcutHelp, setShowShortcutHelp] = useState(false);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
+
+  useEffect(() => {
+    setMobileNavOpen(false);
+  }, [route]);
 
   useKeyboardShortcuts({
     onNewTask: () => navigate("/app"),
@@ -238,7 +246,7 @@ function AppShell() {
 
   return (
     <AuthGuard>
-      <div className="min-h-screen bg-[var(--app-bg)] text-[var(--app-text)] pb-20 sm:pb-0">
+      <div className="min-h-screen bg-[var(--app-bg)] text-[var(--app-text)]">
         {/* Skip navigation link for keyboard/screen reader users */}
         <a
           href="#main-content"
@@ -267,14 +275,35 @@ function AppShell() {
             </button>
             <div className="flex items-center gap-2">
               <ThemeToggle theme={theme} onToggle={cycleTheme} />
+              <MobileNav
+                open={mobileNavOpen}
+                onOpen={() => setMobileNavOpen(true)}
+                onClose={() => setMobileNavOpen(false)}
+                items={tabs.map((tab) => ({
+                  key: tab.key,
+                  label: tab.label,
+                  icon: tab.icon,
+                  path: tab.path,
+                  active: tab.matchRoute(route),
+                  dataTour: tab.dataTour,
+                }))}
+                onNavigate={navigate}
+                personaLabel={persona === "supervisor" ? "現場監督" : "経営層"}
+                onTogglePersona={() =>
+                  setPersona(persona === "supervisor" ? "executive" : "supervisor")
+                }
+                userLabel={user?.email ?? undefined}
+                onSignOut={user ? signOut : undefined}
+              />
               {/* Desktop nav */}
-              <nav className="hidden gap-1 sm:flex items-center" aria-label="メインナビゲーション">
+              <nav className="hidden items-center gap-1 md:flex" aria-label="メインナビゲーション">
                 {tabs.map((tab) => (
                   <NavButton
                     key={tab.key}
                     label={tab.label}
                     icon={tab.icon}
                     active={tab.matchRoute(route)}
+                    dataTour={tab.dataTour}
                     onClick={() => navigate(tab.path)}
                   />
                 ))}
@@ -309,46 +338,6 @@ function AppShell() {
         >
           {renderPage()}
         </main>
-
-        {/* Mobile bottom tab bar */}
-        <nav
-          className="fixed inset-x-0 bottom-0 z-50 border-t border-slate-200 bg-white/95 backdrop-blur-sm sm:hidden safe-bottom"
-          aria-label="モバイルナビゲーション"
-        >
-          <div className="flex">
-            {tabs.map((tab) => {
-              const isActive = tab.matchRoute(route);
-              return (
-                <button
-                  key={tab.key}
-                  data-tour={tab.key === "contractors" ? "nav-contractors" : undefined}
-                  onClick={() => navigate(tab.path)}
-                  aria-current={isActive ? "page" : undefined}
-                  aria-label={tab.label}
-                  className={`relative flex flex-1 flex-col items-center gap-0.5 py-2.5 transition-colors ${
-                    isActive
-                      ? "text-brand-600"
-                      : "text-slate-400 active:text-slate-600"
-                  }`}
-                >
-                  <span className="text-lg" aria-hidden="true">
-                    {tab.icon}
-                  </span>
-                  <span
-                    className={`text-[10px] font-semibold ${
-                      isActive ? "text-brand-600" : "text-slate-400"
-                    }`}
-                  >
-                    {tab.label}
-                  </span>
-                  {isActive && (
-                    <span className="absolute top-0 h-0.5 w-8 rounded-full bg-brand-500" />
-                  )}
-                </button>
-              );
-            })}
-          </div>
-        </nav>
 
         {/* Onboarding wizard (first-time only) */}
         {!onboardingDone && (
@@ -387,16 +376,19 @@ function NavButton({
   label,
   icon,
   active,
+  dataTour,
   onClick,
 }: {
   label: string;
   icon: string;
   active: boolean;
+  dataTour?: string;
   onClick: () => void;
 }) {
   return (
     <button
       onClick={onClick}
+      data-tour={dataTour}
       aria-current={active ? "page" : undefined}
       className={`flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition-all ${
         active
