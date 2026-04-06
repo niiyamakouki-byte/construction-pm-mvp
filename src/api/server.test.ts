@@ -903,12 +903,19 @@ describe("GenbaHub API", () => {
       status: "active",
     });
     const projectId = (createdProject.body as { project: { id: string } }).project.id;
+    const createdContractor = await request("POST", "/api/contractors", {
+      name: "内装班A",
+      trade: "内装",
+      phone: "03-1111-2222",
+      email: "naisou@example.com",
+    });
+    const contractorId = (createdContractor.body as { contractor: { id: string } }).contractor.id;
 
     await request("POST", `/api/projects/${projectId}/tasks`, {
       name: "墨出し",
       startDate: "2026-09-01",
       endDate: "2026-09-02",
-      contractor: "内装班A",
+      contractorId,
       progress: 100,
       description: "",
     });
@@ -916,23 +923,24 @@ describe("GenbaHub API", () => {
       name: "軽天",
       startDate: "2026-09-03",
       endDate: "2026-09-05",
-      contractor: "軽鉄工事",
+      contractorId,
       progress: 40,
       description: "",
     });
 
     const response = await requestRaw("GET", `/api/projects/${projectId}/schedule-pdf`);
+    const responseHtml = response.body as string;
 
     expect(response.status).toBe(200);
     expect(response.headers["Content-Type"]).toBe("text/html; charset=utf-8");
     expect(response.body).toEqual(expect.any(String));
-    expect(response.body).toContain("<html lang=\"ja\">");
-    expect(response.body).toContain("案件Schedule 工程表");
-    expect(response.body).toContain("工程一覧");
-    expect(response.body).toContain("墨出し");
-    expect(response.body).toContain("軽天");
-    expect(response.body).toContain("内装班A");
-    expect(response.body).toContain("40%");
+    expect(responseHtml).toContain("<html lang=\"ja\">");
+    expect(responseHtml).toContain("案件Schedule 工程表");
+    expect(responseHtml).toContain("工程一覧");
+    expect(responseHtml).toContain("墨出し");
+    expect(responseHtml).toContain("軽天");
+    expect(responseHtml).toContain("内装班A");
+    expect(responseHtml).toContain("40%");
   });
 
   it("GET /api/projects/:id/cost-report で日本語の印刷用原価レポートを返す", async () => {
@@ -978,21 +986,22 @@ describe("GenbaHub API", () => {
     });
 
     const response = await requestRaw("GET", `/api/projects/${projectId}/cost-report`);
+    const responseHtml = response.body as string;
 
     expect(response.status).toBe(200);
     expect(response.headers["Content-Type"]).toBe("text/html; charset=utf-8");
     expect(response.body).toEqual(expect.any(String));
-    expect(response.body).toContain("案件Report 原価集計レポート");
-    expect(response.body).toContain("タスク原価一覧");
-    expect(response.body).toContain("資材原価一覧");
-    expect(response.body).toContain("変更指示一覧");
-    expect(response.body).toContain("小計");
-    expect(response.body).toContain("消費税（10%）");
-    expect(response.body).toContain("総合計");
-    expect(response.body).toContain("￥410,000");
-    expect(response.body).toContain("￥41,000");
-    expect(response.body).toContain("￥451,000");
-    expect(response.body).toContain("小計には承認済みの変更指示のみ含めています。");
+    expect(responseHtml).toContain("案件Report 原価集計レポート");
+    expect(responseHtml).toContain("タスク原価一覧");
+    expect(responseHtml).toContain("資材原価一覧");
+    expect(responseHtml).toContain("変更指示一覧");
+    expect(responseHtml).toContain("小計");
+    expect(responseHtml).toContain("消費税（10%）");
+    expect(responseHtml).toContain("総合計");
+    expect(responseHtml).toContain("￥410,000");
+    expect(responseHtml).toContain("￥41,000");
+    expect(responseHtml).toContain("￥451,000");
+    expect(responseHtml).toContain("小計には承認済みの変更指示のみ含めています。");
   });
 
   it("PATCH /api/tasks/:id で projectId を変更して別プロジェクトへ移動できる", async () => {
