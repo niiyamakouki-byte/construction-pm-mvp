@@ -1,3 +1,4 @@
+export { requireApiKey } from "./api-key.js";
 import { ApiError } from "./types.js";
 import type {
   ApiContractorRecord,
@@ -37,39 +38,6 @@ export async function requireExistingContractor(
   }
 
   return contractor;
-}
-
-function readHeader(
-  headers: Record<string, string | string[] | undefined> | undefined,
-  name: string,
-): string | undefined {
-  if (!headers) {
-    return undefined;
-  }
-
-  const targetName = name.toLowerCase();
-  for (const [headerName, headerValue] of Object.entries(headers)) {
-    if (headerName.toLowerCase() !== targetName) {
-      continue;
-    }
-    return Array.isArray(headerValue) ? headerValue[0] : headerValue;
-  }
-
-  return undefined;
-}
-
-export function requireApiKey(
-  headers: Record<string, string | string[] | undefined> | undefined,
-): void {
-  const expectedApiKey = process.env.API_KEY;
-  if (!expectedApiKey) {
-    throw new ApiError(500, "API_KEYが設定されていません。");
-  }
-
-  const providedApiKey = readHeader(headers, "x-api-key");
-  if (providedApiKey !== expectedApiKey) {
-    throw new ApiError(401, "APIキーが未設定、または不正です。");
-  }
 }
 
 export async function resolveTaskContractor(

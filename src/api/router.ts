@@ -1,5 +1,6 @@
 import { handleChangesRoutes } from "./routes/changes.js";
 import { handleContractorsRoutes } from "./routes/contractors.js";
+import { buildHealthPayload } from "./health.js";
 import { handleMaterialsRoutes } from "./routes/materials.js";
 import { handleNotificationsRoutes } from "./routes/notifications.js";
 import { handleProjectsRoutes } from "./routes/projects.js";
@@ -26,7 +27,7 @@ export async function handleApiRequest(request: ApiRequest, store: ApiStore): Pr
   }
 
   if (request.method === "GET" && pathname === "/api/health") {
-    return ok({ status: "ok" });
+    return ok(await buildHealthPayload({ store }));
   }
 
   requireApiKey(request.headers);

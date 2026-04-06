@@ -75,10 +75,53 @@ describe("GenbaHub API", () => {
   it("GET /api/health はAPIキーなしで応答する", async () => {
     const response = await request("GET", "/api/health", undefined, {});
 
-    expect(response).toEqual({
-      status: 200,
-      body: { status: "ok" },
+    expect(response.status).toBe(200);
+    expect(response.body).toMatchObject({
+      status: "ok",
+      database: {
+        provider: "json-file",
+        connected: true,
+      },
     });
+    expect((response.body as { uptime: number }).uptime).toBeTypeOf("number");
+  });
+
+  it("GET /api/health はデータベース接続障害を degraded として返す", async () => {
+    const failingStore = new Proxy(new InMemoryApiStore(), {
+      get(target, property, receiver) {
+        if (property === "listProjects") {
+          return async () => {
+            throw new Error("database unavailable");
+          };
+        }
+
+        return Reflect.get(target, property, receiver);
+      },
+    }) as InMemoryApiStore;
+
+    try {
+      const response = await handleApiRequest(
+        {
+          method: "GET",
+          url: "/api/health",
+          headers: {},
+        },
+        failingStore,
+      );
+
+      expect(response.statusCode).toBe(200);
+      expect(response.body).toEqual({
+        status: "degraded",
+        uptime: expect.any(Number),
+        database: {
+          provider: "json-file",
+          connected: false,
+          error: "database unavailable",
+        },
+      });
+    } finally {
+      store = new InMemoryApiStore();
+    }
   });
 
   it("保護されたエンドポイントはAPIキーがないと401を返す", async () => {
