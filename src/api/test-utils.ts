@@ -2,11 +2,39 @@ import { Buffer } from "node:buffer";
 
 export function createMockXlsxBuffer(rows: Array<Array<string | number>>): Buffer {
   const worksheetXml = buildWorksheetXml(rows);
+  const contentTypesXml = [
+    '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>',
+    '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">',
+    '<Default Extension="xml" ContentType="application/xml"/>',
+    '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>',
+    '<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>',
+    '<Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>',
+    '</Types>',
+  ].join("");
+  const workbookXml = [
+    '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>',
+    '<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">',
+    '<sheets><sheet name="Sheet1" sheetId="1" r:id="rId1"/></sheets>',
+    '</workbook>',
+  ].join("");
+  const relsXml = [
+    '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>',
+    '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">',
+    '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/>',
+    '</Relationships>',
+  ].join("");
+  const workbookRelsXml = [
+    '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>',
+    '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">',
+    '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/>',
+    '</Relationships>',
+  ].join("");
   return createZipArchive([
-    {
-      name: "xl/worksheets/sheet1.xml",
-      data: Buffer.from(worksheetXml, "utf8"),
-    },
+    { name: "[Content_Types].xml", data: Buffer.from(contentTypesXml, "utf8") },
+    { name: "_rels/.rels", data: Buffer.from(relsXml, "utf8") },
+    { name: "xl/workbook.xml", data: Buffer.from(workbookXml, "utf8") },
+    { name: "xl/_rels/workbook.xml.rels", data: Buffer.from(workbookRelsXml, "utf8") },
+    { name: "xl/worksheets/sheet1.xml", data: Buffer.from(worksheetXml, "utf8") },
   ]);
 }
 

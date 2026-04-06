@@ -1,8 +1,8 @@
 /* @vitest-environment node */
 
 import { describe, expect, it } from "vitest";
-import { parseScheduleImportFile } from "./schedule-importer.js";
-import { createMockXlsxBuffer } from "./test-utils.js";
+import { parseScheduleImportFile } from "./schedule-importer";
+import { createMockXlsxBuffer } from "./test-utils";
 
 describe("schedule importer", () => {
   it("Japanese headers を自動検出して Excel を取り込める", () => {
