@@ -1701,6 +1701,7 @@ async function wouldCreateDependencyCycle(
   store: ApiStore,
   taskId: string,
   predecessorId: string,
+  taskMap?: Map<string, ApiTaskRecord>,
 ): Promise<boolean> {
   const queue = [predecessorId];
   const visited = new Set<string>();
@@ -1715,7 +1716,7 @@ async function wouldCreateDependencyCycle(
     }
 
     visited.add(currentId);
-    const currentTask = await store.getTask(currentId);
+    const currentTask = taskMap ? taskMap.get(currentId) : await store.getTask(currentId);
     if (!currentTask) {
       continue;
     }
@@ -2089,7 +2090,9 @@ export async function handleApiRequest(
     if (predecessor.projectId !== task.projectId) {
       throw new ApiError(400, "依存関係は同一プロジェクト内のタスクにのみ設定できます。");
     }
-    if (await wouldCreateDependencyCycle(store, taskId, dependency.predecessorId)) {
+    const projectTasks = await store.listTasks(task.projectId);
+    const taskMap = new Map(projectTasks.map((t) => [t.id, t]));
+    if (await wouldCreateDependencyCycle(store, taskId, dependency.predecessorId, taskMap)) {
       throw new ApiError(400, "依存関係が循環するため追加できません。");
     }
 
