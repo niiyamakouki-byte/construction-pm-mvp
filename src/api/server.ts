@@ -1,15 +1,18 @@
 #!/usr/bin/env -S node --experimental-strip-types
 
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http";
-import { resolve } from "node:path";
 import { readJsonBody, readMultipartBody } from "./http.js";
 import { handleApiRequest } from "./router.js";
 import { sendJson, sendResponse, setCorsHeaders } from "./responses.js";
+import { SupabaseStore, type SupabaseClientLike } from "./supabase-store.js";
+import { createApiStore } from "./store-factory.js";
 import { InMemoryApiStore, JsonFileApiStore } from "./store.js";
-import { ApiError, DEFAULT_PORT } from "./types.js";
+import { ApiError, DEFAULT_PORT, type ApiStore } from "./types.js";
 
 export { parseMultipartBody } from "./http.js";
 export { handleApiRequest } from "./router.js";
+export { SupabaseStore } from "./supabase-store.js";
+export { createApiStore } from "./store-factory.js";
 export { InMemoryApiStore, JsonFileApiStore } from "./store.js";
 export { ApiError } from "./types.js";
 export type * from "./types.js";
@@ -17,7 +20,7 @@ export type * from "./types.js";
 async function handleRequest(
   request: IncomingMessage,
   response: ServerResponse,
-  store: InMemoryApiStore | JsonFileApiStore,
+  store: ApiStore,
 ): Promise<void> {
   setCorsHeaders(response);
   const shouldReadBody = request.method === "POST" || request.method === "PATCH";
@@ -46,16 +49,12 @@ async function handleRequest(
 }
 
 export function createApiServer(options: {
-  store?: InMemoryApiStore | JsonFileApiStore;
+  store?: ApiStore;
   dataFilePath?: string;
+  env?: NodeJS.ProcessEnv;
+  supabaseClient?: SupabaseClientLike;
 } = {}): Server {
-  const store =
-    options.store ??
-    new JsonFileApiStore(
-      options.dataFilePath ??
-        process.env.GENBAHUB_API_DB_FILE ??
-        resolve(process.cwd(), ".genbahub-api-db.json"),
-    );
+  const store = options.store ?? createApiStore(options);
 
   return createServer(async (request, response) => {
     try {
@@ -75,7 +74,9 @@ export function createApiServer(options: {
 export function startApiServer(options: {
   port?: number;
   dataFilePath?: string;
-  store?: InMemoryApiStore | JsonFileApiStore;
+  store?: ApiStore;
+  env?: NodeJS.ProcessEnv;
+  supabaseClient?: SupabaseClientLike;
 } = {}): Server {
   const port = options.port ?? Number(process.env.PORT ?? DEFAULT_PORT);
   const server = createApiServer(options);
