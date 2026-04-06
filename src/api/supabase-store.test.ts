@@ -140,7 +140,7 @@ function createMockSupabaseClient(initialTables: Partial<Tables> = {}): Supabase
     from(table: string) {
       return new MockSupabaseQueryBuilder(tables, table);
     },
-  };
+  } as unknown as SupabaseClientLike;
 }
 
 describe("SupabaseStore", () => {
