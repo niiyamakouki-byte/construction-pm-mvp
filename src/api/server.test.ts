@@ -41,6 +41,31 @@ describe("GenbaHub API", () => {
     }
   }
 
+  async function requestRaw(
+    method: string,
+    url: string,
+    body?: unknown,
+    headers: Record<string, string> = { "x-api-key": TEST_API_KEY },
+  ): Promise<{ status: number; headers: Record<string, string>; body: unknown }> {
+    try {
+      const response = await handleApiRequest({ method, url, body, headers }, store);
+      return {
+        status: response.statusCode,
+        headers: response.headers ?? {},
+        body: response.body ?? null,
+      };
+    } catch (error) {
+      if (error instanceof ApiError) {
+        return {
+          status: error.statusCode,
+          headers: {},
+          body: { error: error.message },
+        };
+      }
+      throw error;
+    }
+  }
+
   it("GET /api/health はAPIキーなしで応答する", async () => {
     const response = await request("GET", "/api/health", undefined, {});
 
@@ -114,6 +139,22 @@ describe("GenbaHub API", () => {
     expect(response.status).toBe(400);
     expect(response.body).toEqual({
       error: "プロジェクト名は必須です。",
+    });
+  });
+
+  it("POST /api/projects は不正なステータスに候補付きの日本語エラーを返す", async () => {
+    const response = await request("POST", "/api/projects", {
+      name: "案件StatusError",
+      contractor: "フィールドクラブ",
+      address: "東京都中央区",
+      status: "started",
+    });
+
+    expect(response).toEqual({
+      status: 400,
+      body: {
+        error: "ステータスは「planning」、「active」、「completed」のいずれかを指定してください。",
+      },
     });
   });
 
@@ -603,6 +644,36 @@ describe("GenbaHub API", () => {
     });
   });
 
+  it("POST /api/tasks/:id/dependencies は不正な依存関係タイプに候補付きの日本語エラーを返す", async () => {
+    const createdProject = await request("POST", "/api/projects", {
+      name: "案件DependencyTypeValidation",
+      contractor: "元請DependencyTypeValidation",
+      address: "東京都",
+      status: "planning",
+    });
+    const projectId = (createdProject.body as { project: { id: string } }).project.id;
+    const successor = await request("POST", `/api/projects/${projectId}/tasks`, {
+      name: "後続",
+      startDate: "2026-06-10",
+      endDate: "2026-06-12",
+      description: "",
+    });
+    const successorId = (successor.body as { task: { id: string } }).task.id;
+
+    const response = await request("POST", `/api/tasks/${successorId}/dependencies`, {
+      predecessorId: "task-x",
+      type: "INVALID",
+      lagDays: 0,
+    });
+
+    expect(response).toEqual({
+      status: 400,
+      body: {
+        error: "依存関係タイプは「FS」、「SS」、「FF」、「SF」のいずれかを指定してください。",
+      },
+    });
+  });
+
   it("POST /api/projects/:id/tasks は未登録業者の contractorId を拒否する", async () => {
     const createdProject = await request("POST", "/api/projects", {
       name: "案件F-2",
@@ -822,6 +893,106 @@ describe("GenbaHub API", () => {
       rejectedChangeOrderCost: -20000,
       totalCost: 1040000,
     });
+  });
+
+  it("GET /api/projects/:id/schedule-pdf で印刷用HTML工程表を返す", async () => {
+    const createdProject = await request("POST", "/api/projects", {
+      name: "案件Schedule",
+      contractor: "元請Schedule",
+      address: "東京都港区",
+      status: "active",
+    });
+    const projectId = (createdProject.body as { project: { id: string } }).project.id;
+
+    await request("POST", `/api/projects/${projectId}/tasks`, {
+      name: "墨出し",
+      startDate: "2026-09-01",
+      endDate: "2026-09-02",
+      contractor: "内装班A",
+      progress: 100,
+      description: "",
+    });
+    await request("POST", `/api/projects/${projectId}/tasks`, {
+      name: "軽天",
+      startDate: "2026-09-03",
+      endDate: "2026-09-05",
+      contractor: "軽鉄工事",
+      progress: 40,
+      description: "",
+    });
+
+    const response = await requestRaw("GET", `/api/projects/${projectId}/schedule-pdf`);
+
+    expect(response.status).toBe(200);
+    expect(response.headers["Content-Type"]).toBe("text/html; charset=utf-8");
+    expect(response.body).toEqual(expect.any(String));
+    expect(response.body).toContain("<html lang=\"ja\">");
+    expect(response.body).toContain("案件Schedule 工程表");
+    expect(response.body).toContain("工程一覧");
+    expect(response.body).toContain("墨出し");
+    expect(response.body).toContain("軽天");
+    expect(response.body).toContain("内装班A");
+    expect(response.body).toContain("40%");
+  });
+
+  it("GET /api/projects/:id/cost-report で日本語の印刷用原価レポートを返す", async () => {
+    const createdProject = await request("POST", "/api/projects", {
+      name: "案件Report",
+      contractor: "元請Report",
+      address: "神奈川県横浜市",
+      status: "active",
+    });
+    const projectId = (createdProject.body as { project: { id: string } }).project.id;
+
+    await request("POST", `/api/projects/${projectId}/tasks`, {
+      name: "解体",
+      startDate: "2026-10-01",
+      endDate: "2026-10-02",
+      contractor: "解体チーム",
+      progress: 100,
+      cost: 300000,
+      description: "",
+    });
+    await request("POST", `/api/projects/${projectId}/materials`, {
+      name: "石膏ボード",
+      quantity: 50,
+      unit: "枚",
+      unitPrice: 1200,
+      supplier: "建材商社",
+      deliveryDate: "2026-10-03",
+      status: "delivered",
+    });
+    await request("POST", `/api/projects/${projectId}/changes`, {
+      description: "追加補強",
+      amount: 50000,
+      approvedBy: "工事部長",
+      date: "2026-10-04",
+      status: "approved",
+    });
+    await request("POST", `/api/projects/${projectId}/changes`, {
+      description: "未承認変更",
+      amount: 10000,
+      approvedBy: "工事部長",
+      date: "2026-10-05",
+      status: "pending",
+    });
+
+    const response = await requestRaw("GET", `/api/projects/${projectId}/cost-report`);
+
+    expect(response.status).toBe(200);
+    expect(response.headers["Content-Type"]).toBe("text/html; charset=utf-8");
+    expect(response.body).toEqual(expect.any(String));
+    expect(response.body).toContain("案件Report 原価集計レポート");
+    expect(response.body).toContain("タスク原価一覧");
+    expect(response.body).toContain("資材原価一覧");
+    expect(response.body).toContain("変更指示一覧");
+    expect(response.body).toContain("小計");
+    expect(response.body).toContain("消費税（10%）");
+    expect(response.body).toContain("総合計");
+    expect(response.body).toContain("￥410,000");
+    expect(response.body).toContain("￥41,000");
+    expect(response.body).toContain("￥451,000");
+    expect(response.body).toContain("小計には承認済みの変更指示のみ含めています。");
   });
 
   it("PATCH /api/tasks/:id で projectId を変更して別プロジェクトへ移動できる", async () => {
