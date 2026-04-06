@@ -10,19 +10,22 @@ import {
 import { createMockXlsxBuffer } from "./test-utils.js";
 
 describe("GenbaHub API", () => {
+  const TEST_API_KEY = "test-api-key";
   let store: InMemoryApiStore;
 
   beforeEach(() => {
     store = new InMemoryApiStore();
+    process.env.API_KEY = TEST_API_KEY;
   });
 
   async function request(
     method: string,
     url: string,
     body?: unknown,
+    headers: Record<string, string> = { "x-api-key": TEST_API_KEY },
   ): Promise<{ status: number; body: unknown }> {
     try {
-      const response = await handleApiRequest({ method, url, body }, store);
+      const response = await handleApiRequest({ method, url, body, headers }, store);
       return {
         status: response.statusCode,
         body: response.body ?? null,
@@ -38,12 +41,48 @@ describe("GenbaHub API", () => {
     }
   }
 
+  it("GET /api/health はAPIキーなしで応答する", async () => {
+    const response = await request("GET", "/api/health", undefined, {});
+
+    expect(response).toEqual({
+      status: 200,
+      body: { status: "ok" },
+    });
+  });
+
+  it("保護されたエンドポイントはAPIキーがないと401を返す", async () => {
+    const response = await request("GET", "/api/projects", undefined, {});
+
+    expect(response).toEqual({
+      status: 401,
+      body: { error: "APIキーが未設定、または不正です。" },
+    });
+  });
+
+  it("保護されたエンドポイントは不正なAPIキーで401を返す", async () => {
+    const response = await request("GET", "/api/projects", undefined, {
+      "x-api-key": "wrong-key",
+    });
+
+    expect(response).toEqual({
+      status: 401,
+      body: { error: "APIキーが未設定、または不正です。" },
+    });
+  });
+
   it("POST /api/projects でプロジェクトを作成できる", async () => {
     const response = await request("POST", "/api/projects", {
       name: "ゴディバ銀座店",
       contractor: "フィールドクラブ",
       address: "東京都中央区",
       status: "planning",
+      clientId: "client-001",
+      clientName: "株式会社サンプル",
+      contractAmount: 2500000,
+      contractDate: "2026-01-05",
+      inspectionDate: "2026-02-20",
+      handoverDate: "2026-02-28",
+      warrantyEndDate: "2027-02-28",
     });
 
     expect(response.status).toBe(201);
@@ -53,6 +92,13 @@ describe("GenbaHub API", () => {
         contractor: "フィールドクラブ",
         address: "東京都中央区",
         status: "planning",
+        clientId: "client-001",
+        clientName: "株式会社サンプル",
+        contractAmount: 2500000,
+        contractDate: "2026-01-05",
+        inspectionDate: "2026-02-20",
+        handoverDate: "2026-02-28",
+        warrantyEndDate: "2027-02-28",
       },
     });
   });
@@ -183,6 +229,9 @@ describe("GenbaHub API", () => {
       description: "夜間施工あり",
       startDate: "2026-03-01",
       endDate: "2026-03-31",
+      clientName: "株式会社更新先",
+      contractAmount: 3300000,
+      contractDate: "2026-02-01",
     });
 
     expect(response.status).toBe(200);
@@ -196,6 +245,30 @@ describe("GenbaHub API", () => {
         description: "夜間施工あり",
         startDate: "2026-03-01",
         endDate: "2026-03-31",
+        clientName: "株式会社更新先",
+        contractAmount: 3300000,
+        contractDate: "2026-02-01",
+      },
+    });
+  });
+
+  it("PATCH /api/projects/:id は planning から completed へのスキップ更新を拒否する", async () => {
+    const created = await request("POST", "/api/projects", {
+      name: "案件Lifecycle",
+      contractor: "元請Lifecycle",
+      address: "東京都",
+      status: "planning",
+    });
+    const projectId = (created.body as { project: { id: string } }).project.id;
+
+    const response = await request("PATCH", `/api/projects/${projectId}`, {
+      status: "completed",
+    });
+
+    expect(response).toEqual({
+      status: 400,
+      body: {
+        error: "プロジェクトステータスは planning → active → completed の順でのみ更新できます。",
       },
     });
   });
@@ -349,6 +422,68 @@ describe("GenbaHub API", () => {
     });
   });
 
+  it("POST /api/projects/:id/tasks はマイルストーン作成時に同日指定を要求する", async () => {
+    const createdProject = await request("POST", "/api/projects", {
+      name: "案件MilestoneValidation",
+      contractor: "元請MilestoneValidation",
+      address: "東京都",
+      status: "planning",
+    });
+    const projectId = (createdProject.body as { project: { id: string } }).project.id;
+
+    const response = await request("POST", `/api/projects/${projectId}/tasks`, {
+      name: "引渡し",
+      startDate: "2026-05-10",
+      endDate: "2026-05-12",
+      isMilestone: true,
+      description: "",
+    });
+
+    expect(response).toEqual({
+      status: 400,
+      body: { error: "マイルストーンは開始日と終了日を同日にしてください。" },
+    });
+  });
+
+  it("GET /api/projects/:id/milestones でマイルストーンだけを取得できる", async () => {
+    const createdProject = await request("POST", "/api/projects", {
+      name: "案件Milestones",
+      contractor: "元請Milestones",
+      address: "東京都",
+      status: "planning",
+    });
+    const projectId = (createdProject.body as { project: { id: string } }).project.id;
+
+    const milestoneResponse = await request("POST", `/api/projects/${projectId}/tasks`, {
+      name: "引渡し",
+      startDate: "2026-05-20",
+      endDate: "2026-05-20",
+      isMilestone: true,
+      description: "",
+    });
+    await request("POST", `/api/projects/${projectId}/tasks`, {
+      name: "内装工事",
+      startDate: "2026-05-10",
+      endDate: "2026-05-15",
+      description: "",
+    });
+
+    const response = await request("GET", `/api/projects/${projectId}/milestones`);
+
+    expect(milestoneResponse.status).toBe(201);
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual({
+      milestones: [
+        expect.objectContaining({
+          name: "引渡し",
+          startDate: "2026-05-20",
+          endDate: "2026-05-20",
+          isMilestone: true,
+        }),
+      ],
+    });
+  });
+
   it("PATCH /api/tasks/:id でステータスと日付を更新できる", async () => {
     const createdContractor = await request("POST", "/api/contractors", {
       name: "田中電気",
@@ -393,6 +528,78 @@ describe("GenbaHub API", () => {
         contractorId,
         contractor: "田中電気",
       },
+    });
+  });
+
+  it("POST /api/tasks/:id/dependencies で依存関係を追加できる", async () => {
+    const createdProject = await request("POST", "/api/projects", {
+      name: "案件Dependencies",
+      contractor: "元請Dependencies",
+      address: "東京都",
+      status: "planning",
+    });
+    const projectId = (createdProject.body as { project: { id: string } }).project.id;
+    const predecessor = await request("POST", `/api/projects/${projectId}/tasks`, {
+      name: "墨出し",
+      startDate: "2026-06-01",
+      endDate: "2026-06-02",
+      description: "",
+    });
+    const successor = await request("POST", `/api/projects/${projectId}/tasks`, {
+      name: "軽天",
+      startDate: "2026-06-03",
+      endDate: "2026-06-05",
+      description: "",
+    });
+    const predecessorId = (predecessor.body as { task: { id: string } }).task.id;
+    const successorId = (successor.body as { task: { id: string } }).task.id;
+
+    const response = await request("POST", `/api/tasks/${successorId}/dependencies`, {
+      predecessorId,
+      type: "FS",
+      lagDays: 2,
+    });
+
+    expect(response.status).toBe(201);
+    expect(response.body).toEqual({
+      task: expect.objectContaining({
+        id: successorId,
+        dependencies: [
+          {
+            predecessorId,
+            type: "FS",
+            lagDays: 2,
+          },
+        ],
+      }),
+    });
+  });
+
+  it("POST /api/tasks/:id/dependencies は存在しない依存先を拒否する", async () => {
+    const createdProject = await request("POST", "/api/projects", {
+      name: "案件DependencyValidation",
+      contractor: "元請DependencyValidation",
+      address: "東京都",
+      status: "planning",
+    });
+    const projectId = (createdProject.body as { project: { id: string } }).project.id;
+    const successor = await request("POST", `/api/projects/${projectId}/tasks`, {
+      name: "後続",
+      startDate: "2026-06-10",
+      endDate: "2026-06-12",
+      description: "",
+    });
+    const successorId = (successor.body as { task: { id: string } }).task.id;
+
+    const response = await request("POST", `/api/tasks/${successorId}/dependencies`, {
+      predecessorId: "missing-task",
+      type: "FS",
+      lagDays: 0,
+    });
+
+    expect(response).toEqual({
+      status: 404,
+      body: { error: "指定された依存先タスクが見つかりません。" },
     });
   });
 

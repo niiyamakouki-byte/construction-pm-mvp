@@ -5,16 +5,24 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { parseScheduleImportFile } from "./schedule-importer.js";
 
-const PROJECT_STATUSES = ["planning", "active", "completed", "on_hold"] as const;
+const PROJECT_STATUSES = ["planning", "active", "completed"] as const;
 const TASK_STATUSES = ["todo", "in_progress", "done"] as const;
 const MATERIAL_STATUSES = ["ordered", "delivered", "installed"] as const;
 const CHANGE_ORDER_STATUSES = ["pending", "approved", "rejected"] as const;
+const DEPENDENCY_TYPES = ["FS", "SS", "FF", "SF"] as const;
 const DEFAULT_PORT = 3001;
 
 export type ProjectStatus = (typeof PROJECT_STATUSES)[number];
 export type TaskStatus = (typeof TASK_STATUSES)[number];
 export type MaterialStatus = (typeof MATERIAL_STATUSES)[number];
 export type ChangeOrderStatus = (typeof CHANGE_ORDER_STATUSES)[number];
+export type DependencyType = (typeof DEPENDENCY_TYPES)[number];
+
+export type DependencyRecord = {
+  predecessorId: string;
+  type: DependencyType;
+  lagDays: number;
+};
 
 export type ApiProjectRecord = {
   id: string;
@@ -28,6 +36,13 @@ export type ApiProjectRecord = {
   startDate: string;
   endDate?: string;
   includeWeekends: boolean;
+  clientId?: string;
+  clientName?: string;
+  contractAmount?: number;
+  contractDate?: string;
+  inspectionDate?: string;
+  handoverDate?: string;
+  warrantyEndDate?: string;
 };
 
 export type ApiTaskRecord = {
@@ -42,9 +57,10 @@ export type ApiTaskRecord = {
   dueDate?: string;
   progress: number;
   cost: number;
-  dependencies: string[];
+  dependencies: DependencyRecord[];
   contractorId?: string;
   contractor?: string;
+  isMilestone: boolean;
 };
 
 export type ApiContractorRecord = {
@@ -91,7 +107,20 @@ type DatabaseState = {
   changeOrders: ApiChangeOrderRecord[];
 };
 
-type CreateProjectInput = Pick<ApiProjectRecord, "name" | "contractor" | "address" | "status">;
+type CreateProjectInput = Pick<
+  ApiProjectRecord,
+  | "name"
+  | "contractor"
+  | "address"
+  | "status"
+  | "clientId"
+  | "clientName"
+  | "contractAmount"
+  | "contractDate"
+  | "inspectionDate"
+  | "handoverDate"
+  | "warrantyEndDate"
+>;
 type CreateTaskInput = {
   name: string;
   startDate: string;
@@ -101,6 +130,7 @@ type CreateTaskInput = {
   contractorId?: string;
   contractor?: string;
   description: string;
+  isMilestone?: boolean;
 };
 type CreateContractorInput = Pick<ApiContractorRecord, "name" | "trade" | "phone" | "email">;
 type CreateMaterialInput = Pick<
@@ -119,6 +149,13 @@ type UpdateProjectInput = {
   description?: string;
   startDate?: string;
   endDate?: string | null;
+  clientId?: string | null;
+  clientName?: string | null;
+  contractAmount?: number | null;
+  contractDate?: string | null;
+  inspectionDate?: string | null;
+  handoverDate?: string | null;
+  warrantyEndDate?: string | null;
 };
 type UpdateTaskInput = {
   status?: TaskStatus;
@@ -129,6 +166,8 @@ type UpdateTaskInput = {
   contractor?: string | null;
   progress?: number;
   cost?: number;
+  dependencies?: DependencyRecord[];
+  isMilestone?: boolean;
 };
 
 type UploadedFile = {
@@ -374,12 +413,97 @@ function optionalUpdatedNumber(
   return parseNumericValue(input[fieldName], fieldLabel, options);
 }
 
+function optionalUpdatedNullableNumber(
+  input: Record<string, unknown>,
+  fieldName: string,
+  fieldLabel: string,
+  options: { min?: number; max?: number; integer?: boolean } = {},
+): number | null | undefined {
+  if (!(fieldName in input)) {
+    return undefined;
+  }
+
+  if (input[fieldName] === null) {
+    return null;
+  }
+
+  return parseNumericValue(input[fieldName], fieldLabel, options);
+}
+
+function optionalDateString(
+  input: Record<string, unknown>,
+  fieldName: string,
+  fieldLabel: string,
+): string | undefined {
+  const value = input[fieldName];
+  if (value === undefined || value === null || value === "") {
+    return undefined;
+  }
+  if (typeof value !== "string") {
+    throw new ApiError(400, `${fieldLabel}はYYYY-MM-DD形式で入力してください。`);
+  }
+
+  return parseDateString(value.trim(), fieldLabel);
+}
+
+function optionalUpdatedNullableDateString(
+  input: Record<string, unknown>,
+  fieldName: string,
+  fieldLabel: string,
+): string | null | undefined {
+  if (!(fieldName in input)) {
+    return undefined;
+  }
+
+  if (input[fieldName] === null) {
+    return null;
+  }
+  if (typeof input[fieldName] !== "string") {
+    throw new ApiError(400, `${fieldLabel}はYYYY-MM-DD形式で入力してください。`);
+  }
+
+  return parseDateString(input[fieldName].trim(), fieldLabel);
+}
+
+function optionalBoolean(
+  input: Record<string, unknown>,
+  fieldName: string,
+  fieldLabel: string,
+): boolean | undefined {
+  if (!(fieldName in input)) {
+    return undefined;
+  }
+  if (typeof input[fieldName] !== "boolean") {
+    throw new ApiError(400, `${fieldLabel}はtrueまたはfalseで入力してください。`);
+  }
+
+  return input[fieldName];
+}
+
 function validateEmail(value: string, fieldLabel: string): string {
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
     throw new ApiError(400, `${fieldLabel}の形式が不正です。`);
   }
 
   return value;
+}
+
+function assertProjectStatusTransition(
+  currentStatus: ProjectStatus,
+  nextStatus: ProjectStatus,
+): void {
+  if (currentStatus === nextStatus) {
+    return;
+  }
+
+  const currentIndex = PROJECT_STATUSES.indexOf(currentStatus);
+  const nextIndex = PROJECT_STATUSES.indexOf(nextStatus);
+  if (nextIndex - currentIndex !== 1) {
+    throw new ApiError(
+      400,
+      "プロジェクトステータスは planning → active → completed の順でのみ更新できます。",
+    );
+  }
 }
 
 function validateCreateProjectInput(payload: unknown): CreateProjectInput {
@@ -392,6 +516,16 @@ function validateCreateProjectInput(payload: unknown): CreateProjectInput {
     contractor: requireString(payload, "contractor", "元請会社名", 200),
     address: requireString(payload, "address", "住所", 500),
     status: validateEnum(payload.status, PROJECT_STATUSES, "ステータス"),
+    clientId: optionalTrimmedString(payload, "clientId", "顧客ID", 200),
+    clientName: optionalTrimmedString(payload, "clientName", "顧客名", 200),
+    contractAmount:
+      "contractAmount" in payload
+        ? parseNumericValue(payload.contractAmount, "契約金額", { min: 0 })
+        : undefined,
+    contractDate: optionalDateString(payload, "contractDate", "契約日"),
+    inspectionDate: optionalDateString(payload, "inspectionDate", "検査日"),
+    handoverDate: optionalDateString(payload, "handoverDate", "引渡日"),
+    warrantyEndDate: optionalDateString(payload, "warrantyEndDate", "保証終了日"),
   };
 }
 
@@ -434,6 +568,33 @@ function validateUpdateProjectInput(payload: unknown): UpdateProjectInput {
       throw new ApiError(400, "終了日はYYYY-MM-DD形式で入力してください。");
     }
   }
+  if ("clientId" in payload) {
+    update.clientId = optionalUpdatedNullableString(payload, "clientId", "顧客ID", 200);
+  }
+  if ("clientName" in payload) {
+    update.clientName = optionalUpdatedNullableString(payload, "clientName", "顧客名", 200);
+  }
+  if ("contractAmount" in payload) {
+    update.contractAmount = optionalUpdatedNullableNumber(payload, "contractAmount", "契約金額", {
+      min: 0,
+    });
+  }
+  if ("contractDate" in payload) {
+    update.contractDate = optionalUpdatedNullableDateString(payload, "contractDate", "契約日");
+  }
+  if ("inspectionDate" in payload) {
+    update.inspectionDate = optionalUpdatedNullableDateString(payload, "inspectionDate", "検査日");
+  }
+  if ("handoverDate" in payload) {
+    update.handoverDate = optionalUpdatedNullableDateString(payload, "handoverDate", "引渡日");
+  }
+  if ("warrantyEndDate" in payload) {
+    update.warrantyEndDate = optionalUpdatedNullableDateString(
+      payload,
+      "warrantyEndDate",
+      "保証終了日",
+    );
+  }
 
   if (Object.keys(update).length === 0) {
     throw new ApiError(400, "更新対象の項目を指定してください。");
@@ -456,6 +617,10 @@ function validateCreateTaskInput(payload: unknown): CreateTaskInput {
     "終了日",
   );
   assertDateOrder(startDate, endDate);
+  const isMilestone = optionalBoolean(payload, "isMilestone", "マイルストーン");
+  if (isMilestone && startDate !== endDate) {
+    throw new ApiError(400, "マイルストーンは開始日と終了日を同日にしてください。");
+  }
 
   return {
     name: requireString(payload, "name", "タスク名", 200),
@@ -472,6 +637,7 @@ function validateCreateTaskInput(payload: unknown): CreateTaskInput {
     contractorId: optionalTrimmedString(payload, "contractorId", "業者ID", 200),
     description:
       optionalTrimmedString(payload, "description", "説明", 2000) ?? "",
+    isMilestone,
   };
 }
 
@@ -567,12 +733,30 @@ function validateUpdateTaskInput(payload: unknown): UpdateTaskInput {
       min: 0,
     });
   }
+  if ("isMilestone" in payload) {
+    update.isMilestone = optionalBoolean(payload, "isMilestone", "マイルストーン");
+  }
 
   if (Object.keys(update).length === 0) {
     throw new ApiError(400, "更新対象の項目を指定してください。");
   }
 
   return update;
+}
+
+function validateCreateDependencyInput(payload: unknown): DependencyRecord {
+  if (!isObject(payload)) {
+    throw new ApiError(400, "リクエストボディはJSONオブジェクトで送信してください。");
+  }
+
+  return {
+    predecessorId: requireString(payload, "predecessorId", "先行タスクID", 200),
+    type: validateEnum(payload.type, DEPENDENCY_TYPES, "依存関係タイプ"),
+    lagDays:
+      "lagDays" in payload
+        ? parseNumericValue(payload.lagDays, "ラグ日数", { integer: true })
+        : 0,
+  };
 }
 
 function serializeProject(project: ApiProjectRecord, taskCount?: number) {
@@ -588,6 +772,13 @@ function serializeProject(project: ApiProjectRecord, taskCount?: number) {
     startDate: project.startDate,
     endDate: project.endDate ?? null,
     includeWeekends: project.includeWeekends,
+    clientId: project.clientId ?? null,
+    clientName: project.clientName ?? null,
+    contractAmount: project.contractAmount ?? null,
+    contractDate: project.contractDate ?? null,
+    inspectionDate: project.inspectionDate ?? null,
+    handoverDate: project.handoverDate ?? null,
+    warrantyEndDate: project.warrantyEndDate ?? null,
     ...(taskCount !== undefined ? { taskCount } : {}),
   };
 }
@@ -605,8 +796,10 @@ function serializeTask(task: ApiTaskRecord) {
     endDate: task.dueDate ?? null,
     progress: task.progress,
     cost: task.cost,
+    dependencies: task.dependencies,
     contractorId: task.contractorId ?? null,
     contractor: task.contractor ?? null,
+    isMilestone: task.isMilestone,
   };
 }
 
@@ -692,12 +885,45 @@ function calculateCostSummary(
   };
 }
 
+function normalizeDependencyRecord(value: unknown): DependencyRecord | null {
+  if (typeof value === "string" && value.trim()) {
+    return {
+      predecessorId: value.trim(),
+      type: "FS",
+      lagDays: 0,
+    };
+  }
+
+  if (!isObject(value) || !isNonEmptyString(value.predecessorId)) {
+    return null;
+  }
+
+  return {
+    predecessorId: value.predecessorId.trim(),
+    type:
+      typeof value.type === "string" && DEPENDENCY_TYPES.includes(value.type as DependencyType)
+        ? (value.type as DependencyType)
+        : "FS",
+    lagDays:
+      typeof value.lagDays === "number" && Number.isInteger(value.lagDays)
+        ? value.lagDays
+        : 0,
+  };
+}
+
 function normalizeProjectRecord(project: ApiProjectRecord): ApiProjectRecord {
   return {
     ...project,
     description: project.description ?? "",
     startDate: project.startDate ?? formatDate(new Date(project.createdAt ?? Date.now())),
     includeWeekends: project.includeWeekends ?? true,
+    clientId: project.clientId ?? undefined,
+    clientName: project.clientName ?? undefined,
+    contractAmount: typeof project.contractAmount === "number" ? project.contractAmount : undefined,
+    contractDate: project.contractDate ?? undefined,
+    inspectionDate: project.inspectionDate ?? undefined,
+    handoverDate: project.handoverDate ?? undefined,
+    warrantyEndDate: project.warrantyEndDate ?? undefined,
   };
 }
 
@@ -707,7 +933,12 @@ function normalizeTaskRecord(task: ApiTaskRecord): ApiTaskRecord {
     description: task.description ?? "",
     progress: typeof task.progress === "number" ? task.progress : 0,
     cost: typeof task.cost === "number" ? task.cost : 0,
-    dependencies: Array.isArray(task.dependencies) ? task.dependencies : [],
+    dependencies: Array.isArray(task.dependencies)
+      ? task.dependencies
+          .map((dependency) => normalizeDependencyRecord(dependency))
+          .filter((dependency): dependency is DependencyRecord => dependency !== null)
+      : [],
+    isMilestone: task.isMilestone ?? false,
   };
 }
 
@@ -756,6 +987,13 @@ export class InMemoryApiStore implements ApiStore {
       description: "",
       startDate: formatDate(now),
       includeWeekends: true,
+      clientId: input.clientId,
+      clientName: input.clientName,
+      contractAmount: input.contractAmount,
+      contractDate: input.contractDate,
+      inspectionDate: input.inspectionDate,
+      handoverDate: input.handoverDate,
+      warrantyEndDate: input.warrantyEndDate,
     };
     this.state.projects.push(project);
     return clone(project);
@@ -779,6 +1017,23 @@ export class InMemoryApiStore implements ApiStore {
       ...(input.startDate !== undefined ? { startDate: input.startDate } : {}),
       ...(input.endDate !== undefined
         ? { endDate: input.endDate ?? undefined }
+        : {}),
+      ...(input.clientId !== undefined ? { clientId: input.clientId ?? undefined } : {}),
+      ...(input.clientName !== undefined ? { clientName: input.clientName ?? undefined } : {}),
+      ...(input.contractAmount !== undefined
+        ? { contractAmount: input.contractAmount ?? undefined }
+        : {}),
+      ...(input.contractDate !== undefined
+        ? { contractDate: input.contractDate ?? undefined }
+        : {}),
+      ...(input.inspectionDate !== undefined
+        ? { inspectionDate: input.inspectionDate ?? undefined }
+        : {}),
+      ...(input.handoverDate !== undefined
+        ? { handoverDate: input.handoverDate ?? undefined }
+        : {}),
+      ...(input.warrantyEndDate !== undefined
+        ? { warrantyEndDate: input.warrantyEndDate ?? undefined }
         : {}),
     };
     this.state.projects[index] = updated;
@@ -847,6 +1102,7 @@ export class InMemoryApiStore implements ApiStore {
       dependencies: [],
       contractorId: input.contractorId,
       contractor: input.contractor,
+      isMilestone: input.isMilestone ?? false,
     };
     this.state.tasks.push(task);
     return clone(task);
@@ -878,6 +1134,8 @@ export class InMemoryApiStore implements ApiStore {
         : {}),
       ...(input.progress !== undefined ? { progress: input.progress } : {}),
       ...(input.cost !== undefined ? { cost: input.cost } : {}),
+      ...(input.dependencies !== undefined ? { dependencies: input.dependencies } : {}),
+      ...(input.isMilestone !== undefined ? { isMilestone: input.isMilestone } : {}),
     };
     this.state.tasks[index] = updated;
     return clone(updated);
@@ -886,6 +1144,12 @@ export class InMemoryApiStore implements ApiStore {
   async deleteTask(id: string): Promise<boolean> {
     const previousLength = this.state.tasks.length;
     this.state.tasks = this.state.tasks.filter((item) => item.id !== id);
+    if (this.state.tasks.length !== previousLength) {
+      this.state.tasks = this.state.tasks.map((task) => ({
+        ...task,
+        dependencies: task.dependencies.filter((dependency) => dependency.predecessorId !== id),
+      }));
+    }
     return this.state.tasks.length !== previousLength;
   }
 
@@ -995,6 +1259,13 @@ export class JsonFileApiStore implements ApiStore {
         description: "",
         startDate: formatDate(now),
         includeWeekends: true,
+        clientId: input.clientId,
+        clientName: input.clientName,
+        contractAmount: input.contractAmount,
+        contractDate: input.contractDate,
+        inspectionDate: input.inspectionDate,
+        handoverDate: input.handoverDate,
+        warrantyEndDate: input.warrantyEndDate,
       };
       state.projects.push(project);
       await this.writeState(state);
@@ -1022,6 +1293,23 @@ export class JsonFileApiStore implements ApiStore {
         ...(input.startDate !== undefined ? { startDate: input.startDate } : {}),
         ...(input.endDate !== undefined
           ? { endDate: input.endDate ?? undefined }
+          : {}),
+        ...(input.clientId !== undefined ? { clientId: input.clientId ?? undefined } : {}),
+        ...(input.clientName !== undefined ? { clientName: input.clientName ?? undefined } : {}),
+        ...(input.contractAmount !== undefined
+          ? { contractAmount: input.contractAmount ?? undefined }
+          : {}),
+        ...(input.contractDate !== undefined
+          ? { contractDate: input.contractDate ?? undefined }
+          : {}),
+        ...(input.inspectionDate !== undefined
+          ? { inspectionDate: input.inspectionDate ?? undefined }
+          : {}),
+        ...(input.handoverDate !== undefined
+          ? { handoverDate: input.handoverDate ?? undefined }
+          : {}),
+        ...(input.warrantyEndDate !== undefined
+          ? { warrantyEndDate: input.warrantyEndDate ?? undefined }
           : {}),
       };
       state.projects[index] = updated;
@@ -1108,6 +1396,7 @@ export class JsonFileApiStore implements ApiStore {
         dependencies: [],
         contractorId: input.contractorId,
         contractor: input.contractor,
+        isMilestone: input.isMilestone ?? false,
       };
       state.tasks.push(task);
       await this.writeState(state);
@@ -1143,6 +1432,8 @@ export class JsonFileApiStore implements ApiStore {
           : {}),
         ...(input.progress !== undefined ? { progress: input.progress } : {}),
         ...(input.cost !== undefined ? { cost: input.cost } : {}),
+        ...(input.dependencies !== undefined ? { dependencies: input.dependencies } : {}),
+        ...(input.isMilestone !== undefined ? { isMilestone: input.isMilestone } : {}),
       };
       state.tasks[index] = updated;
       await this.writeState(state);
@@ -1158,6 +1449,10 @@ export class JsonFileApiStore implements ApiStore {
       if (state.tasks.length === previousLength) {
         return false;
       }
+      state.tasks = state.tasks.map((task) => ({
+        ...task,
+        dependencies: task.dependencies.filter((dependency) => dependency.predecessorId !== id),
+      }));
       await this.writeState(state);
       return true;
     });
@@ -1385,6 +1680,39 @@ async function requireExistingProject(store: ApiStore, projectId: string): Promi
   return project;
 }
 
+function readHeader(
+  headers: Record<string, string | string[] | undefined> | undefined,
+  name: string,
+): string | undefined {
+  if (!headers) {
+    return undefined;
+  }
+
+  const targetName = name.toLowerCase();
+  for (const [headerName, headerValue] of Object.entries(headers)) {
+    if (headerName.toLowerCase() !== targetName) {
+      continue;
+    }
+    return Array.isArray(headerValue) ? headerValue[0] : headerValue;
+  }
+
+  return undefined;
+}
+
+function requireApiKey(
+  headers: Record<string, string | string[] | undefined> | undefined,
+): void {
+  const expectedApiKey = process.env.API_KEY;
+  if (!expectedApiKey) {
+    throw new ApiError(500, "API_KEYが設定されていません。");
+  }
+
+  const providedApiKey = readHeader(headers, "x-api-key");
+  if (providedApiKey !== expectedApiKey) {
+    throw new ApiError(401, "APIキーが未設定、または不正です。");
+  }
+}
+
 async function resolveTaskContractor(
   store: ApiStore,
   contractorId: string | undefined | null,
@@ -1415,7 +1743,7 @@ function sendJson(response: ServerResponse, statusCode: number, body: unknown): 
 
 function setCorsHeaders(response: ServerResponse): void {
   response.setHeader("Access-Control-Allow-Origin", "*");
-  response.setHeader("Access-Control-Allow-Headers", "Content-Type");
+  response.setHeader("Access-Control-Allow-Headers", "Content-Type, X-API-Key");
   response.setHeader("Access-Control-Allow-Methods", "GET,POST,PATCH,DELETE,OPTIONS");
 }
 
@@ -1424,6 +1752,7 @@ export async function handleApiRequest(
     method?: string;
     url?: string;
     body?: unknown;
+    headers?: Record<string, string | string[] | undefined>;
   },
   store: ApiStore,
 ): Promise<ApiResponse> {
@@ -1433,6 +1762,15 @@ export async function handleApiRequest(
   if (request.method === "OPTIONS") {
     return { statusCode: 204 };
   }
+
+  if (request.method === "GET" && pathname === "/api/health") {
+    return {
+      statusCode: 200,
+      body: { status: "ok" },
+    };
+  }
+
+  requireApiKey(request.headers);
 
   if (request.method === "GET" && pathname === "/api/projects") {
     const search = url.searchParams.get("search")?.trim();
@@ -1499,6 +1837,9 @@ export async function handleApiRequest(
       }
 
       const input = validateUpdateProjectInput(request.body ?? {});
+      if (input.status !== undefined) {
+        assertProjectStatusTransition(existing.status, input.status);
+      }
       const nextStartDate = input.startDate ?? existing.startDate;
       const nextEndDate =
         input.endDate === undefined ? existing.endDate : (input.endDate ?? undefined);
@@ -1554,6 +1895,19 @@ export async function handleApiRequest(
         body: { task: serializeTask(task) },
       };
     }
+  }
+
+  const projectMilestonesMatch = pathname.match(/^\/api\/projects\/([^/]+)\/milestones$/);
+  if (request.method === "GET" && projectMilestonesMatch) {
+    const projectId = decodeURIComponent(projectMilestonesMatch[1]);
+    await requireExistingProject(store, projectId);
+    const milestones = (await store.listTasks(projectId))
+      .filter((task) => task.isMilestone)
+      .map(serializeTask);
+    return {
+      statusCode: 200,
+      body: { milestones },
+    };
   }
 
   const projectMaterialsMatch = pathname.match(/^\/api\/projects\/([^/]+)\/materials$/);
@@ -1665,6 +2019,40 @@ export async function handleApiRequest(
   }
 
   const taskMatch = pathname.match(/^\/api\/tasks\/([^/]+)$/);
+  const taskDependenciesMatch = pathname.match(/^\/api\/tasks\/([^/]+)\/dependencies$/);
+  if (request.method === "POST" && taskDependenciesMatch) {
+    const taskId = decodeURIComponent(taskDependenciesMatch[1]);
+    const task = await store.getTask(taskId);
+    if (!task) {
+      throw new ApiError(404, "指定されたタスクが見つかりません。");
+    }
+
+    const dependency = validateCreateDependencyInput(request.body ?? {});
+    if (dependency.predecessorId === taskId) {
+      throw new ApiError(400, "タスク自身を依存先には設定できません。");
+    }
+
+    const predecessor = await store.getTask(dependency.predecessorId);
+    if (!predecessor) {
+      throw new ApiError(404, "指定された依存先タスクが見つかりません。");
+    }
+    if (predecessor.projectId !== task.projectId) {
+      throw new ApiError(400, "依存関係は同一プロジェクト内のタスクにのみ設定できます。");
+    }
+
+    const updatedTask = await store.updateTask(taskId, {
+      dependencies: [...task.dependencies, dependency],
+    });
+    if (!updatedTask) {
+      throw new ApiError(404, "指定されたタスクが見つかりません。");
+    }
+
+    return {
+      statusCode: 201,
+      body: { task: serializeTask(updatedTask) },
+    };
+  }
+
   if (taskMatch) {
     const taskId = decodeURIComponent(taskMatch[1]);
 
@@ -1689,9 +2077,13 @@ export async function handleApiRequest(
         input.endDate === undefined
           ? existing.dueDate
           : (input.endDate ?? undefined);
+      const nextIsMilestone = input.isMilestone ?? existing.isMilestone;
 
       if (nextStartDate && nextEndDate) {
         assertDateOrder(nextStartDate, nextEndDate);
+        if (nextIsMilestone && nextStartDate !== nextEndDate) {
+          throw new ApiError(400, "マイルストーンは開始日と終了日を同日にしてください。");
+        }
       }
 
       const task = await store.updateTask(taskId, input);
@@ -1728,6 +2120,7 @@ async function handleRequest(
     {
       method: request.method,
       url: request.url,
+      headers: request.headers,
       body: shouldReadBody
         ? contentType.startsWith("multipart/form-data")
           ? await readMultipartBody(request, contentType)
