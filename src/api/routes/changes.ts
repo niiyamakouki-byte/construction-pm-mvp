@@ -1,3 +1,4 @@
+import { createChangeOrderCreatedNotification } from "../notifications.js";
 import { requireExistingProject } from "../route-helpers.js";
 import { serializeChangeOrder } from "../serialization.js";
 import { created, ok } from "../responses.js";
@@ -22,6 +23,7 @@ export const handleChangesRoutes: ApiRouteHandler = async ({ pathname, request, 
   if (request.method === "POST") {
     const input = validateCreateChangeOrderInput(request.body ?? {});
     const changeOrder = await store.createChangeOrder(projectId, input);
+    await createChangeOrderCreatedNotification(store, changeOrder);
     return created({
       change: serializeChangeOrder(changeOrder),
     });

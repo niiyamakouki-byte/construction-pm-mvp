@@ -6,12 +6,14 @@ import {
   type ApiChangeOrderRecord,
   type ApiContractorRecord,
   type ApiMaterialRecord,
+  type ApiNotificationRecord,
   type ApiProjectRecord,
   type ApiStore,
   type ApiTaskRecord,
   type CreateChangeOrderInput,
   type CreateContractorInput,
   type CreateMaterialInput,
+  type CreateNotificationInput,
   type CreateProjectInput,
   type CreateTaskInput,
   type DatabaseState,
@@ -29,6 +31,7 @@ function createEmptyState(): DatabaseState {
     contractors: [],
     materials: [],
     changeOrders: [],
+    notifications: [],
   };
 }
 
@@ -106,6 +109,17 @@ function normalizeState(parsed: Partial<DatabaseState>): DatabaseState {
     changeOrders: Array.isArray(parsed.changeOrders)
       ? parsed.changeOrders.map((changeOrder) => changeOrder as ApiChangeOrderRecord)
       : [],
+    notifications: Array.isArray(parsed.notifications)
+      ? parsed.notifications.map((notification) => normalizeNotificationRecord(notification as ApiNotificationRecord))
+      : [],
+  };
+}
+
+function normalizeNotificationRecord(notification: ApiNotificationRecord): ApiNotificationRecord {
+  return {
+    ...notification,
+    read: notification.read ?? false,
+    readAt: notification.readAt ?? undefined,
   };
 }
 
@@ -248,6 +262,36 @@ function createChangeOrderRecord(
   };
 }
 
+function createNotificationRecord(input: CreateNotificationInput): ApiNotificationRecord {
+  const now = new Date().toISOString();
+
+  return {
+    id: crypto.randomUUID(),
+    createdAt: now,
+    updatedAt: now,
+    type: input.type,
+    message: input.message,
+    projectId: input.projectId,
+    recipientId: input.recipientId,
+    priority: input.priority,
+    read: false,
+  };
+}
+
+function markNotificationRecordAsRead(existing: ApiNotificationRecord): ApiNotificationRecord {
+  if (existing.read) {
+    return existing;
+  }
+
+  const now = new Date().toISOString();
+  return {
+    ...existing,
+    updatedAt: now,
+    read: true,
+    readAt: now,
+  };
+}
+
 function deleteProjectFromState(state: DatabaseState, id: string): boolean {
   const previousLength = state.projects.length;
   state.projects = state.projects.filter((item) => item.id !== id);
@@ -258,6 +302,7 @@ function deleteProjectFromState(state: DatabaseState, id: string): boolean {
   state.tasks = state.tasks.filter((task) => task.projectId !== id);
   state.materials = state.materials.filter((material) => material.projectId !== id);
   state.changeOrders = state.changeOrders.filter((changeOrder) => changeOrder.projectId !== id);
+  state.notifications = state.notifications.filter((notification) => notification.projectId !== id);
   return true;
 }
 
@@ -378,6 +423,41 @@ export class InMemoryApiStore implements ApiStore {
     const changeOrder = createChangeOrderRecord(projectId, input);
     this.state.changeOrders.push(changeOrder);
     return clone(changeOrder);
+  }
+
+  async listNotifications(filter?: { read?: boolean }): Promise<ApiNotificationRecord[]> {
+    const notifications =
+      filter?.read === undefined
+        ? this.state.notifications
+        : this.state.notifications.filter((notification) => notification.read === filter.read);
+
+    return clone(notifications);
+  }
+
+  async getNotification(id: string): Promise<ApiNotificationRecord | null> {
+    const notification = this.state.notifications.find((item) => item.id === id);
+    return notification ? clone(notification) : null;
+  }
+
+  async createNotification(input: CreateNotificationInput): Promise<ApiNotificationRecord> {
+    const notification = createNotificationRecord(input);
+    this.state.notifications.push(notification);
+    return clone(notification);
+  }
+
+  async markNotificationRead(id: string): Promise<ApiNotificationRecord | null> {
+    const index = this.state.notifications.findIndex((item) => item.id === id);
+    if (index === -1) {
+      return null;
+    }
+
+    const updated = markNotificationRecordAsRead(this.state.notifications[index]);
+    this.state.notifications[index] = updated;
+    return clone(updated);
+  }
+
+  async countUnreadNotifications(): Promise<number> {
+    return this.state.notifications.filter((notification) => !notification.read).length;
   }
 }
 
@@ -588,5 +668,54 @@ export class JsonFileApiStore implements ApiStore {
       await this.writeState(state);
       return clone(changeOrder);
     });
+  }
+
+  async listNotifications(filter?: { read?: boolean }): Promise<ApiNotificationRecord[]> {
+    return this.enqueue(async () => {
+      const notifications = (await this.readState()).notifications;
+      return clone(
+        filter?.read === undefined
+          ? notifications
+          : notifications.filter((notification) => notification.read === filter.read),
+      );
+    });
+  }
+
+  async getNotification(id: string): Promise<ApiNotificationRecord | null> {
+    return this.enqueue(async () => {
+      const notification = (await this.readState()).notifications.find((item) => item.id === id);
+      return notification ? clone(notification) : null;
+    });
+  }
+
+  async createNotification(input: CreateNotificationInput): Promise<ApiNotificationRecord> {
+    return this.enqueue(async () => {
+      const state = await this.readState();
+      const notification = createNotificationRecord(input);
+      state.notifications.push(notification);
+      await this.writeState(state);
+      return clone(notification);
+    });
+  }
+
+  async markNotificationRead(id: string): Promise<ApiNotificationRecord | null> {
+    return this.enqueue(async () => {
+      const state = await this.readState();
+      const index = state.notifications.findIndex((item) => item.id === id);
+      if (index === -1) {
+        return null;
+      }
+
+      const updated = markNotificationRecordAsRead(state.notifications[index]);
+      state.notifications[index] = updated;
+      await this.writeState(state);
+      return clone(updated);
+    });
+  }
+
+  async countUnreadNotifications(): Promise<number> {
+    return this.enqueue(async () =>
+      (await this.readState()).notifications.filter((notification) => !notification.read).length,
+    );
   }
 }

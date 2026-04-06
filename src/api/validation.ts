@@ -3,11 +3,13 @@ import {
   CHANGE_ORDER_STATUSES,
   DEPENDENCY_TYPES,
   MATERIAL_STATUSES,
+  NOTIFICATION_PRIORITIES,
   PROJECT_STATUSES,
   TASK_STATUSES,
   type CreateChangeOrderInput,
   type CreateContractorInput,
   type CreateMaterialInput,
+  type CreateNotificationInput,
   type CreateProjectInput,
   type CreateTaskInput,
   type DependencyRecord,
@@ -455,6 +457,20 @@ export function validateCreateChangeOrderInput(payload: unknown): CreateChangeOr
     approvedBy: requireString(payload, "approvedBy", "承認者", 200),
     date: parseDateString(requireString(payload, "date", "日付", 10), "日付"),
     status: validateEnum(payload.status, CHANGE_ORDER_STATUSES, "変更指示ステータス"),
+  };
+}
+
+export function validateCreateNotificationInput(payload: unknown): CreateNotificationInput {
+  if (!isObject(payload)) {
+    throw new ApiError(400, "リクエストボディはJSONオブジェクトで送信してください。");
+  }
+
+  return {
+    type: requireString(payload, "type", "通知種別", 100),
+    message: requireString(payload, "message", "通知メッセージ", 2000),
+    projectId: requireString(payload, "projectId", "プロジェクトID", 200),
+    recipientId: requireString(payload, "recipientId", "受信者ID", 200),
+    priority: validateEnum(payload.priority, NOTIFICATION_PRIORITIES, "通知優先度"),
   };
 }
 

@@ -1,3 +1,4 @@
+import { ensureUpcomingMaterialDeliveryNotifications } from "../notifications.js";
 import { requireExistingProject } from "../route-helpers.js";
 import { serializeMaterial } from "../serialization.js";
 import { created, ok } from "../responses.js";
@@ -22,6 +23,7 @@ export const handleMaterialsRoutes: ApiRouteHandler = async ({ pathname, request
   if (request.method === "POST") {
     const input = validateCreateMaterialInput(request.body ?? {});
     const material = await store.createMaterial(projectId, input);
+    await ensureUpcomingMaterialDeliveryNotifications(store, projectId);
     return created({
       material: serializeMaterial(material),
     });

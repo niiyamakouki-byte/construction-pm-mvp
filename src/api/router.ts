@@ -1,6 +1,7 @@
 import { handleChangesRoutes } from "./routes/changes.js";
 import { handleContractorsRoutes } from "./routes/contractors.js";
 import { handleMaterialsRoutes } from "./routes/materials.js";
+import { handleNotificationsRoutes } from "./routes/notifications.js";
 import { handleProjectsRoutes } from "./routes/projects.js";
 import { handleTasksRoutes } from "./routes/tasks.js";
 import { requireApiKey } from "./route-helpers.js";
@@ -8,6 +9,7 @@ import { noContent, ok } from "./responses.js";
 import { ApiError, type ApiRequest, type ApiResponse, type ApiStore } from "./types.js";
 
 const routeHandlers = [
+  handleNotificationsRoutes,
   handleContractorsRoutes,
   handleMaterialsRoutes,
   handleChangesRoutes,

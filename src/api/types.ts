@@ -2,6 +2,7 @@ export const PROJECT_STATUSES = ["planning", "active", "completed"] as const;
 export const TASK_STATUSES = ["todo", "in_progress", "done"] as const;
 export const MATERIAL_STATUSES = ["ordered", "delivered", "installed"] as const;
 export const CHANGE_ORDER_STATUSES = ["pending", "approved", "rejected"] as const;
+export const NOTIFICATION_PRIORITIES = ["low", "medium", "high"] as const;
 export const DEPENDENCY_TYPES = ["FS", "SS", "FF", "SF"] as const;
 export const DEFAULT_PORT = 3001;
 
@@ -9,6 +10,7 @@ export type ProjectStatus = (typeof PROJECT_STATUSES)[number];
 export type TaskStatus = (typeof TASK_STATUSES)[number];
 export type MaterialStatus = (typeof MATERIAL_STATUSES)[number];
 export type ChangeOrderStatus = (typeof CHANGE_ORDER_STATUSES)[number];
+export type NotificationPriority = (typeof NOTIFICATION_PRIORITIES)[number];
 export type DependencyType = (typeof DEPENDENCY_TYPES)[number];
 
 export type DependencyRecord = {
@@ -92,12 +94,26 @@ export type ApiChangeOrderRecord = {
   status: ChangeOrderStatus;
 };
 
+export type ApiNotificationRecord = {
+  id: string;
+  createdAt: string;
+  updatedAt: string;
+  type: string;
+  message: string;
+  projectId: string;
+  recipientId: string;
+  priority: NotificationPriority;
+  read: boolean;
+  readAt?: string;
+};
+
 export type DatabaseState = {
   projects: ApiProjectRecord[];
   tasks: ApiTaskRecord[];
   contractors: ApiContractorRecord[];
   materials: ApiMaterialRecord[];
   changeOrders: ApiChangeOrderRecord[];
+  notifications: ApiNotificationRecord[];
 };
 
 export type CreateProjectInput = Pick<
@@ -137,6 +153,11 @@ export type CreateMaterialInput = Pick<
 export type CreateChangeOrderInput = Pick<
   ApiChangeOrderRecord,
   "description" | "amount" | "approvedBy" | "date" | "status"
+>;
+
+export type CreateNotificationInput = Pick<
+  ApiNotificationRecord,
+  "type" | "message" | "projectId" | "recipientId" | "priority"
 >;
 
 export type UpdateProjectInput = {
@@ -200,6 +221,11 @@ export interface ApiStore {
   createMaterial(projectId: string, input: CreateMaterialInput): Promise<ApiMaterialRecord>;
   listChangeOrders(projectId: string): Promise<ApiChangeOrderRecord[]>;
   createChangeOrder(projectId: string, input: CreateChangeOrderInput): Promise<ApiChangeOrderRecord>;
+  listNotifications(filter?: { read?: boolean }): Promise<ApiNotificationRecord[]>;
+  getNotification(id: string): Promise<ApiNotificationRecord | null>;
+  createNotification(input: CreateNotificationInput): Promise<ApiNotificationRecord>;
+  markNotificationRead(id: string): Promise<ApiNotificationRecord | null>;
+  countUnreadNotifications(): Promise<number>;
 }
 
 export type ApiRequest = {

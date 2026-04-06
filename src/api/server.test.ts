@@ -66,6 +66,12 @@ describe("GenbaHub API", () => {
     }
   }
 
+  function formatRelativeDate(offsetDays: number): string {
+    const date = new Date();
+    date.setUTCDate(date.getUTCDate() + offsetDays);
+    return date.toISOString().slice(0, 10);
+  }
+
   it("GET /api/health はAPIキーなしで応答する", async () => {
     const response = await request("GET", "/api/health", undefined, {});
 
@@ -1045,6 +1051,214 @@ describe("GenbaHub API", () => {
     expect(toTasksResponse.body).toMatchObject({
       tasks: [{ id: taskId, name: "移動タスク" }],
     });
+  });
+
+  it("POST/GET/PATCH /api/notifications で通知を作成・既読化・絞り込みできる", async () => {
+    const createdProject = await request("POST", "/api/projects", {
+      name: "通知案件",
+      contractor: "元請通知",
+      address: "東京都",
+      status: "active",
+    });
+    const projectId = (createdProject.body as { project: { id: string } }).project.id;
+
+    const createResponse = await request("POST", "/api/notifications", {
+      type: "manual_alert",
+      message: "現場確認をお願いします。",
+      projectId,
+      recipientId: "user-001",
+      priority: "medium",
+    });
+    const notificationId = (createResponse.body as { notification: { id: string } }).notification.id;
+    const unreadResponse = await request("GET", "/api/notifications?read=false");
+    const markReadResponse = await request("PATCH", `/api/notifications/${notificationId}/read`);
+    const readResponse = await request("GET", "/api/notifications?read=true");
+    const unreadCountResponse = await request("GET", "/api/notifications/unread-count");
+
+    expect(createResponse.status).toBe(201);
+    expect(createResponse.body).toMatchObject({
+      notification: {
+        id: notificationId,
+        type: "manual_alert",
+        message: "現場確認をお願いします。",
+        projectId,
+        recipientId: "user-001",
+        priority: "medium",
+        read: false,
+      },
+    });
+    expect(unreadResponse.body).toEqual({
+      notifications: [
+        expect.objectContaining({
+          id: notificationId,
+          read: false,
+        }),
+      ],
+    });
+    expect(markReadResponse.body).toMatchObject({
+      notification: {
+        id: notificationId,
+        read: true,
+        readAt: expect.any(String),
+      },
+    });
+    expect(readResponse.body).toEqual({
+      notifications: [
+        expect.objectContaining({
+          id: notificationId,
+          read: true,
+        }),
+      ],
+    });
+    expect(unreadCountResponse.body).toEqual({
+      unreadCount: 0,
+    });
+  });
+
+  it("GET /api/notifications/digest で日本語の日次サマリーを返す", async () => {
+    const createdProject = await request("POST", "/api/projects", {
+      name: "通知集計案件",
+      contractor: "元請集計",
+      address: "埼玉県",
+      status: "planning",
+    });
+    const projectId = (createdProject.body as { project: { id: string } }).project.id;
+
+    await request("POST", "/api/notifications", {
+      type: "manual_alert",
+      message: "本日の巡回があります。",
+      projectId,
+      recipientId: "user-002",
+      priority: "high",
+    });
+
+    const response = await request("GET", "/api/notifications/digest");
+    const today = formatRelativeDate(0);
+
+    expect(response.status).toBe(200);
+    expect(response.body).toMatchObject({
+      date: today,
+      totals: {
+        today: 1,
+        unreadToday: 1,
+        unreadAll: 1,
+        highPriorityToday: 1,
+      },
+    });
+    expect(response.body).toMatchObject({
+      summary: expect.stringContaining(`本日（${today}）の通知は1件です。`),
+    });
+    expect(response.body).toMatchObject({
+      summary: expect.stringContaining("その他1件"),
+    });
+  });
+
+  it("タスクのステータス変更で通知を自動生成する", async () => {
+    const createdProject = await request("POST", "/api/projects", {
+      name: "タスク通知案件",
+      contractor: "元請タスク",
+      address: "千葉県",
+      status: "active",
+    });
+    const projectId = (createdProject.body as { project: { id: string } }).project.id;
+    const createdTask = await request("POST", `/api/projects/${projectId}/tasks`, {
+      name: "墨出し",
+      startDate: "2026-01-10",
+      endDate: "2026-01-11",
+      description: "",
+    });
+    const taskId = (createdTask.body as { task: { id: string } }).task.id;
+
+    const updateResponse = await request("PATCH", `/api/tasks/${taskId}`, {
+      status: "in_progress",
+    });
+    const notificationsResponse = await request("GET", "/api/notifications");
+    const notifications = (notificationsResponse.body as { notifications: Array<{ type: string; message: string }> })
+      .notifications;
+
+    expect(updateResponse.status).toBe(200);
+    expect(notifications).toEqual([
+      expect.objectContaining({
+        type: "task_status_changed",
+        message: "タスク「墨出し」のステータスが「未着手」から「進行中」に更新されました。",
+      }),
+    ]);
+  });
+
+  it("納品日が3日以内の資材で通知を生成し、タスク作成時の再チェックでも重複しない", async () => {
+    const createdProject = await request("POST", "/api/projects", {
+      name: "資材通知案件",
+      contractor: "元請資材",
+      address: "神奈川県",
+      status: "active",
+    });
+    const projectId = (createdProject.body as { project: { id: string } }).project.id;
+
+    const createMaterialResponse = await request("POST", `/api/projects/${projectId}/materials`, {
+      name: "石膏ボード",
+      quantity: 20,
+      unit: "枚",
+      unitPrice: 1200,
+      supplier: "建材商社",
+      deliveryDate: formatRelativeDate(2),
+      status: "ordered",
+    });
+
+    expect(createMaterialResponse.status).toBe(201);
+
+    await request("POST", `/api/projects/${projectId}/tasks`, {
+      name: "搬入段取り",
+      startDate: "2026-02-01",
+      endDate: "2026-02-01",
+      description: "",
+    });
+
+    const notificationsResponse = await request("GET", "/api/notifications");
+    const materialNotifications = (
+      notificationsResponse.body as {
+        notifications: Array<{ type: string; message: string; priority: string }>;
+      }
+    ).notifications.filter((notification) => notification.type === "material_delivery_due");
+
+    expect(materialNotifications).toHaveLength(1);
+    expect(materialNotifications[0]).toMatchObject({
+      type: "material_delivery_due",
+      message: expect.stringContaining("資材「石膏ボード」の納品予定日"),
+      priority: "medium",
+    });
+  });
+
+  it("変更指示の作成で通知を自動生成する", async () => {
+    const createdProject = await request("POST", "/api/projects", {
+      name: "変更通知案件",
+      contractor: "元請変更",
+      address: "東京都",
+      status: "planning",
+    });
+    const projectId = (createdProject.body as { project: { id: string } }).project.id;
+
+    const createChangeResponse = await request("POST", `/api/projects/${projectId}/changes`, {
+      description: "追加下地補強",
+      amount: 80000,
+      approvedBy: "工事部長",
+      date: formatRelativeDate(0),
+      status: "pending",
+    });
+    const notificationsResponse = await request("GET", "/api/notifications");
+    const notifications = (
+      notificationsResponse.body as {
+        notifications: Array<{ type: string; message: string; priority: string }>;
+      }
+    ).notifications;
+
+    expect(createChangeResponse.status).toBe(201);
+    expect(notifications).toEqual([
+      expect.objectContaining({
+        type: "change_order_created",
+        message: "変更指示が作成されました。内容: 追加下地補強",
+        priority: "high",
+      }),
+    ]);
   });
 
   it("multipart/form-data のファイルを解析できる", () => {

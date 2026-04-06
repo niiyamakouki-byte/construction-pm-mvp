@@ -1,4 +1,8 @@
 import {
+  createTaskStatusChangedNotification,
+  ensureUpcomingMaterialDeliveryNotifications,
+} from "../notifications.js";
+import {
   requireExistingProject,
   requireExistingTask,
   resolveTaskContractor,
@@ -60,6 +64,7 @@ export const handleTasksRoutes: ApiRouteHandler = async ({ pathname, request, st
         contractorId: contractorLink.contractorId ?? input.contractorId,
         contractor: contractorLink.contractor ?? input.contractor,
       });
+      await ensureUpcomingMaterialDeliveryNotifications(store, projectId);
 
       return created({
         task: serializeTask(task),
@@ -135,6 +140,9 @@ export const handleTasksRoutes: ApiRouteHandler = async ({ pathname, request, st
     const task = await store.updateTask(taskId, input);
     if (!task) {
       throw new ApiError(404, "指定されたタスクが見つかりません。");
+    }
+    if (input.status !== undefined && input.status !== existing.status) {
+      await createTaskStatusChangedNotification(store, task, existing.status);
     }
 
     return ok({

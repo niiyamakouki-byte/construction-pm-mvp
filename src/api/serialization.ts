@@ -2,6 +2,7 @@ import type {
   ApiChangeOrderRecord,
   ApiContractorRecord,
   ApiMaterialRecord,
+  ApiNotificationRecord,
   ApiProjectRecord,
   ApiTaskRecord,
 } from "./types.js";
@@ -90,6 +91,21 @@ export function serializeChangeOrder(changeOrder: ApiChangeOrderRecord) {
     approvedBy: changeOrder.approvedBy,
     date: changeOrder.date,
     status: changeOrder.status,
+  };
+}
+
+export function serializeNotification(notification: ApiNotificationRecord) {
+  return {
+    id: notification.id,
+    createdAt: notification.createdAt,
+    updatedAt: notification.updatedAt,
+    type: notification.type,
+    message: notification.message,
+    projectId: notification.projectId,
+    recipientId: notification.recipientId,
+    priority: notification.priority,
+    read: notification.read,
+    readAt: notification.readAt ?? null,
   };
 }
 
