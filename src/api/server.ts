@@ -7,10 +7,14 @@ import { parseScheduleImportFile } from "./schedule-importer.js";
 
 const PROJECT_STATUSES = ["planning", "active", "completed", "on_hold"] as const;
 const TASK_STATUSES = ["todo", "in_progress", "done"] as const;
+const MATERIAL_STATUSES = ["ordered", "delivered", "installed"] as const;
+const CHANGE_ORDER_STATUSES = ["pending", "approved", "rejected"] as const;
 const DEFAULT_PORT = 3001;
 
 export type ProjectStatus = (typeof PROJECT_STATUSES)[number];
 export type TaskStatus = (typeof TASK_STATUSES)[number];
+export type MaterialStatus = (typeof MATERIAL_STATUSES)[number];
+export type ChangeOrderStatus = (typeof CHANGE_ORDER_STATUSES)[number];
 
 export type ApiProjectRecord = {
   id: string;
@@ -37,14 +41,54 @@ export type ApiTaskRecord = {
   startDate?: string;
   dueDate?: string;
   progress: number;
+  cost: number;
   dependencies: string[];
   contractorId?: string;
   contractor?: string;
 };
 
+export type ApiContractorRecord = {
+  id: string;
+  createdAt: string;
+  updatedAt: string;
+  name: string;
+  trade: string;
+  phone: string;
+  email: string;
+};
+
+export type ApiMaterialRecord = {
+  id: string;
+  createdAt: string;
+  updatedAt: string;
+  projectId: string;
+  name: string;
+  quantity: number;
+  unit: string;
+  unitPrice: number;
+  supplier: string;
+  deliveryDate: string;
+  status: MaterialStatus;
+};
+
+export type ApiChangeOrderRecord = {
+  id: string;
+  createdAt: string;
+  updatedAt: string;
+  projectId: string;
+  description: string;
+  amount: number;
+  approvedBy: string;
+  date: string;
+  status: ChangeOrderStatus;
+};
+
 type DatabaseState = {
   projects: ApiProjectRecord[];
   tasks: ApiTaskRecord[];
+  contractors: ApiContractorRecord[];
+  materials: ApiMaterialRecord[];
+  changeOrders: ApiChangeOrderRecord[];
 };
 
 type CreateProjectInput = Pick<ApiProjectRecord, "name" | "contractor" | "address" | "status">;
@@ -52,10 +96,21 @@ type CreateTaskInput = {
   name: string;
   startDate: string;
   endDate: string;
+  progress?: number;
+  cost?: number;
   contractorId?: string;
   contractor?: string;
   description: string;
 };
+type CreateContractorInput = Pick<ApiContractorRecord, "name" | "trade" | "phone" | "email">;
+type CreateMaterialInput = Pick<
+  ApiMaterialRecord,
+  "name" | "quantity" | "unit" | "unitPrice" | "supplier" | "deliveryDate" | "status"
+>;
+type CreateChangeOrderInput = Pick<
+  ApiChangeOrderRecord,
+  "description" | "amount" | "approvedBy" | "date" | "status"
+>;
 type UpdateProjectInput = {
   name?: string;
   contractor?: string;
@@ -70,6 +125,10 @@ type UpdateTaskInput = {
   startDate?: string | null;
   endDate?: string | null;
   projectId?: string;
+  contractorId?: string | null;
+  contractor?: string | null;
+  progress?: number;
+  cost?: number;
 };
 
 type UploadedFile = {
@@ -90,11 +149,18 @@ export interface ApiStore {
   createProject(input: CreateProjectInput): Promise<ApiProjectRecord>;
   updateProject(id: string, input: UpdateProjectInput): Promise<ApiProjectRecord | null>;
   deleteProject(id: string): Promise<boolean>;
+  listContractors(): Promise<ApiContractorRecord[]>;
+  getContractor(id: string): Promise<ApiContractorRecord | null>;
+  createContractor(input: CreateContractorInput): Promise<ApiContractorRecord>;
   listTasks(projectId: string): Promise<ApiTaskRecord[]>;
   getTask(id: string): Promise<ApiTaskRecord | null>;
   createTask(projectId: string, input: CreateTaskInput): Promise<ApiTaskRecord>;
   updateTask(id: string, input: UpdateTaskInput): Promise<ApiTaskRecord | null>;
   deleteTask(id: string): Promise<boolean>;
+  listMaterials(projectId: string): Promise<ApiMaterialRecord[]>;
+  createMaterial(projectId: string, input: CreateMaterialInput): Promise<ApiMaterialRecord>;
+  listChangeOrders(projectId: string): Promise<ApiChangeOrderRecord[]>;
+  createChangeOrder(projectId: string, input: CreateChangeOrderInput): Promise<ApiChangeOrderRecord>;
 }
 
 export type ApiResponse = {
@@ -113,7 +179,13 @@ export class ApiError extends Error {
 }
 
 function createEmptyState(): DatabaseState {
-  return { projects: [], tasks: [] };
+  return {
+    projects: [],
+    tasks: [],
+    contractors: [],
+    materials: [],
+    changeOrders: [],
+  };
 }
 
 function clone<T>(value: T): T {
@@ -229,6 +301,87 @@ function optionalUpdatedString(
   return normalized;
 }
 
+function requireStringFromAliases(
+  input: Record<string, unknown>,
+  fieldNames: string[],
+  fieldLabel: string,
+  maxLength: number,
+): string {
+  for (const fieldName of fieldNames) {
+    if (fieldName in input) {
+      return requireString(input, fieldName, fieldLabel, maxLength);
+    }
+  }
+
+  throw new ApiError(400, `${fieldLabel}は必須です。`);
+}
+
+function parseNumericValue(
+  value: unknown,
+  fieldLabel: string,
+  options: { min?: number; max?: number; integer?: boolean } = {},
+): number {
+  const parsed =
+    typeof value === "number"
+      ? value
+      : typeof value === "string" && value.trim() !== ""
+        ? Number(value)
+        : Number.NaN;
+
+  if (!Number.isFinite(parsed)) {
+    throw new ApiError(400, `${fieldLabel}は数値で入力してください。`);
+  }
+  if (options.integer && !Number.isInteger(parsed)) {
+    throw new ApiError(400, `${fieldLabel}は整数で入力してください。`);
+  }
+  if (options.min !== undefined && parsed < options.min) {
+    throw new ApiError(400, `${fieldLabel}は${options.min}以上で入力してください。`);
+  }
+  if (options.max !== undefined && parsed > options.max) {
+    throw new ApiError(400, `${fieldLabel}は${options.max}以下で入力してください。`);
+  }
+
+  return parsed;
+}
+
+function optionalUpdatedNullableString(
+  input: Record<string, unknown>,
+  fieldName: string,
+  fieldLabel: string,
+  maxLength: number,
+): string | null | undefined {
+  if (!(fieldName in input)) {
+    return undefined;
+  }
+
+  if (input[fieldName] === null) {
+    return null;
+  }
+
+  return optionalUpdatedString(input, fieldName, fieldLabel, maxLength);
+}
+
+function optionalUpdatedNumber(
+  input: Record<string, unknown>,
+  fieldName: string,
+  fieldLabel: string,
+  options: { min?: number; max?: number; integer?: boolean } = {},
+): number | undefined {
+  if (!(fieldName in input)) {
+    return undefined;
+  }
+
+  return parseNumericValue(input[fieldName], fieldLabel, options);
+}
+
+function validateEmail(value: string, fieldLabel: string): string {
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+    throw new ApiError(400, `${fieldLabel}の形式が不正です。`);
+  }
+
+  return value;
+}
+
 function validateCreateProjectInput(payload: unknown): CreateProjectInput {
   if (!isObject(payload)) {
     throw new ApiError(400, "リクエストボディはJSONオブジェクトで送信してください。");
@@ -308,9 +461,63 @@ function validateCreateTaskInput(payload: unknown): CreateTaskInput {
     name: requireString(payload, "name", "タスク名", 200),
     startDate,
     endDate,
+    progress:
+      "progress" in payload
+        ? parseNumericValue(payload.progress, "進捗率", { min: 0, max: 100, integer: true })
+        : undefined,
+    cost:
+      "cost" in payload
+        ? parseNumericValue(payload.cost, "タスク原価", { min: 0 })
+        : undefined,
     contractorId: optionalTrimmedString(payload, "contractorId", "業者ID", 200),
     description:
       optionalTrimmedString(payload, "description", "説明", 2000) ?? "",
+  };
+}
+
+function validateCreateContractorInput(payload: unknown): CreateContractorInput {
+  if (!isObject(payload)) {
+    throw new ApiError(400, "リクエストボディはJSONオブジェクトで送信してください。");
+  }
+
+  return {
+    name: requireString(payload, "name", "業者名", 200),
+    trade: requireStringFromAliases(payload, ["trade", "職種"], "職種", 100),
+    phone: requireString(payload, "phone", "電話番号", 50),
+    email: validateEmail(requireString(payload, "email", "メールアドレス", 200), "メールアドレス"),
+  };
+}
+
+function validateCreateMaterialInput(payload: unknown): CreateMaterialInput {
+  if (!isObject(payload)) {
+    throw new ApiError(400, "リクエストボディはJSONオブジェクトで送信してください。");
+  }
+
+  return {
+    name: requireString(payload, "name", "資材名", 200),
+    quantity: parseNumericValue(payload.quantity, "数量", { min: 0 }),
+    unit: requireString(payload, "unit", "単位", 50),
+    unitPrice: parseNumericValue(payload.unitPrice, "単価", { min: 0 }),
+    supplier: requireString(payload, "supplier", "仕入先", 200),
+    deliveryDate: parseDateString(
+      requireString(payload, "deliveryDate", "納品日", 10),
+      "納品日",
+    ),
+    status: validateEnum(payload.status, MATERIAL_STATUSES, "資材ステータス"),
+  };
+}
+
+function validateCreateChangeOrderInput(payload: unknown): CreateChangeOrderInput {
+  if (!isObject(payload)) {
+    throw new ApiError(400, "リクエストボディはJSONオブジェクトで送信してください。");
+  }
+
+  return {
+    description: requireString(payload, "description", "変更内容", 2000),
+    amount: parseNumericValue(payload.amount, "金額"),
+    approvedBy: requireString(payload, "approvedBy", "承認者", 200),
+    date: parseDateString(requireString(payload, "date", "日付", 10), "日付"),
+    status: validateEnum(payload.status, CHANGE_ORDER_STATUSES, "変更指示ステータス"),
   };
 }
 
@@ -344,6 +551,21 @@ function validateUpdateTaskInput(payload: unknown): UpdateTaskInput {
   }
   if ("projectId" in payload) {
     update.projectId = optionalUpdatedString(payload, "projectId", "プロジェクトID", 200);
+  }
+  if ("contractorId" in payload) {
+    update.contractorId = optionalUpdatedNullableString(payload, "contractorId", "業者ID", 200);
+  }
+  if ("progress" in payload) {
+    update.progress = optionalUpdatedNumber(payload, "progress", "進捗率", {
+      min: 0,
+      max: 100,
+      integer: true,
+    });
+  }
+  if ("cost" in payload) {
+    update.cost = optionalUpdatedNumber(payload, "cost", "タスク原価", {
+      min: 0,
+    });
   }
 
   if (Object.keys(update).length === 0) {
@@ -381,8 +603,131 @@ function serializeTask(task: ApiTaskRecord) {
     status: task.status,
     startDate: task.startDate ?? null,
     endDate: task.dueDate ?? null,
+    progress: task.progress,
+    cost: task.cost,
     contractorId: task.contractorId ?? null,
     contractor: task.contractor ?? null,
+  };
+}
+
+function serializeContractor(contractor: ApiContractorRecord) {
+  return {
+    id: contractor.id,
+    createdAt: contractor.createdAt,
+    updatedAt: contractor.updatedAt,
+    name: contractor.name,
+    trade: contractor.trade,
+    phone: contractor.phone,
+    email: contractor.email,
+  };
+}
+
+function serializeMaterial(material: ApiMaterialRecord) {
+  return {
+    id: material.id,
+    createdAt: material.createdAt,
+    updatedAt: material.updatedAt,
+    projectId: material.projectId,
+    name: material.name,
+    quantity: material.quantity,
+    unit: material.unit,
+    unitPrice: material.unitPrice,
+    supplier: material.supplier,
+    deliveryDate: material.deliveryDate,
+    status: material.status,
+    totalCost: material.quantity * material.unitPrice,
+  };
+}
+
+function serializeChangeOrder(changeOrder: ApiChangeOrderRecord) {
+  return {
+    id: changeOrder.id,
+    createdAt: changeOrder.createdAt,
+    updatedAt: changeOrder.updatedAt,
+    projectId: changeOrder.projectId,
+    description: changeOrder.description,
+    amount: changeOrder.amount,
+    approvedBy: changeOrder.approvedBy,
+    date: changeOrder.date,
+    status: changeOrder.status,
+  };
+}
+
+function calculateProjectProgress(tasks: ApiTaskRecord[]): number {
+  if (tasks.length === 0) {
+    return 0;
+  }
+
+  const totalProgress = tasks.reduce((sum, task) => sum + task.progress, 0);
+  return Math.round(totalProgress / tasks.length);
+}
+
+function calculateCostSummary(
+  tasks: ApiTaskRecord[],
+  materials: ApiMaterialRecord[],
+  changeOrders: ApiChangeOrderRecord[],
+) {
+  const taskCost = tasks.reduce((sum, task) => sum + task.cost, 0);
+  const materialCost = materials.reduce(
+    (sum, material) => sum + material.quantity * material.unitPrice,
+    0,
+  );
+  const approvedChangeOrderCost = changeOrders
+    .filter((changeOrder) => changeOrder.status === "approved")
+    .reduce((sum, changeOrder) => sum + changeOrder.amount, 0);
+  const pendingChangeOrderCost = changeOrders
+    .filter((changeOrder) => changeOrder.status === "pending")
+    .reduce((sum, changeOrder) => sum + changeOrder.amount, 0);
+  const rejectedChangeOrderCost = changeOrders
+    .filter((changeOrder) => changeOrder.status === "rejected")
+    .reduce((sum, changeOrder) => sum + changeOrder.amount, 0);
+
+  return {
+    taskCost,
+    materialCost,
+    approvedChangeOrderCost,
+    pendingChangeOrderCost,
+    rejectedChangeOrderCost,
+    totalCost: taskCost + materialCost + approvedChangeOrderCost,
+  };
+}
+
+function normalizeProjectRecord(project: ApiProjectRecord): ApiProjectRecord {
+  return {
+    ...project,
+    description: project.description ?? "",
+    startDate: project.startDate ?? formatDate(new Date(project.createdAt ?? Date.now())),
+    includeWeekends: project.includeWeekends ?? true,
+  };
+}
+
+function normalizeTaskRecord(task: ApiTaskRecord): ApiTaskRecord {
+  return {
+    ...task,
+    description: task.description ?? "",
+    progress: typeof task.progress === "number" ? task.progress : 0,
+    cost: typeof task.cost === "number" ? task.cost : 0,
+    dependencies: Array.isArray(task.dependencies) ? task.dependencies : [],
+  };
+}
+
+function normalizeState(parsed: Partial<DatabaseState>): DatabaseState {
+  return {
+    projects: Array.isArray(parsed.projects)
+      ? parsed.projects.map((project) => normalizeProjectRecord(project as ApiProjectRecord))
+      : [],
+    tasks: Array.isArray(parsed.tasks)
+      ? parsed.tasks.map((task) => normalizeTaskRecord(task as ApiTaskRecord))
+      : [],
+    contractors: Array.isArray(parsed.contractors)
+      ? parsed.contractors.map((contractor) => contractor as ApiContractorRecord)
+      : [],
+    materials: Array.isArray(parsed.materials)
+      ? parsed.materials.map((material) => material as ApiMaterialRecord)
+      : [],
+    changeOrders: Array.isArray(parsed.changeOrders)
+      ? parsed.changeOrders.map((changeOrder) => changeOrder as ApiChangeOrderRecord)
+      : [],
   };
 }
 
@@ -447,7 +792,33 @@ export class InMemoryApiStore implements ApiStore {
       return false;
     }
     this.state.tasks = this.state.tasks.filter((task) => task.projectId !== id);
+    this.state.materials = this.state.materials.filter((material) => material.projectId !== id);
+    this.state.changeOrders = this.state.changeOrders.filter((changeOrder) => changeOrder.projectId !== id);
     return true;
+  }
+
+  async listContractors(): Promise<ApiContractorRecord[]> {
+    return clone(this.state.contractors);
+  }
+
+  async getContractor(id: string): Promise<ApiContractorRecord | null> {
+    const contractor = this.state.contractors.find((item) => item.id === id);
+    return contractor ? clone(contractor) : null;
+  }
+
+  async createContractor(input: CreateContractorInput): Promise<ApiContractorRecord> {
+    const now = new Date();
+    const contractor: ApiContractorRecord = {
+      id: crypto.randomUUID(),
+      createdAt: now.toISOString(),
+      updatedAt: now.toISOString(),
+      name: input.name,
+      trade: input.trade,
+      phone: input.phone,
+      email: input.email,
+    };
+    this.state.contractors.push(contractor);
+    return clone(contractor);
   }
 
   async listTasks(projectId: string): Promise<ApiTaskRecord[]> {
@@ -471,7 +842,8 @@ export class InMemoryApiStore implements ApiStore {
       status: "todo",
       startDate: input.startDate,
       dueDate: input.endDate,
-      progress: 0,
+      progress: input.progress ?? 0,
+      cost: input.cost ?? 0,
       dependencies: [],
       contractorId: input.contractorId,
       contractor: input.contractor,
@@ -498,6 +870,14 @@ export class InMemoryApiStore implements ApiStore {
         ? { dueDate: input.endDate ?? undefined }
         : {}),
       ...(input.projectId !== undefined ? { projectId: input.projectId } : {}),
+      ...(input.contractorId !== undefined
+        ? { contractorId: input.contractorId ?? undefined }
+        : {}),
+      ...(input.contractor !== undefined
+        ? { contractor: input.contractor ?? undefined }
+        : {}),
+      ...(input.progress !== undefined ? { progress: input.progress } : {}),
+      ...(input.cost !== undefined ? { cost: input.cost } : {}),
     };
     this.state.tasks[index] = updated;
     return clone(updated);
@@ -507,6 +887,53 @@ export class InMemoryApiStore implements ApiStore {
     const previousLength = this.state.tasks.length;
     this.state.tasks = this.state.tasks.filter((item) => item.id !== id);
     return this.state.tasks.length !== previousLength;
+  }
+
+  async listMaterials(projectId: string): Promise<ApiMaterialRecord[]> {
+    return clone(this.state.materials.filter((material) => material.projectId === projectId));
+  }
+
+  async createMaterial(projectId: string, input: CreateMaterialInput): Promise<ApiMaterialRecord> {
+    const now = new Date();
+    const material: ApiMaterialRecord = {
+      id: crypto.randomUUID(),
+      createdAt: now.toISOString(),
+      updatedAt: now.toISOString(),
+      projectId,
+      name: input.name,
+      quantity: input.quantity,
+      unit: input.unit,
+      unitPrice: input.unitPrice,
+      supplier: input.supplier,
+      deliveryDate: input.deliveryDate,
+      status: input.status,
+    };
+    this.state.materials.push(material);
+    return clone(material);
+  }
+
+  async listChangeOrders(projectId: string): Promise<ApiChangeOrderRecord[]> {
+    return clone(this.state.changeOrders.filter((changeOrder) => changeOrder.projectId === projectId));
+  }
+
+  async createChangeOrder(
+    projectId: string,
+    input: CreateChangeOrderInput,
+  ): Promise<ApiChangeOrderRecord> {
+    const now = new Date();
+    const changeOrder: ApiChangeOrderRecord = {
+      id: crypto.randomUUID(),
+      createdAt: now.toISOString(),
+      updatedAt: now.toISOString(),
+      projectId,
+      description: input.description,
+      amount: input.amount,
+      approvedBy: input.approvedBy,
+      date: input.date,
+      status: input.status,
+    };
+    this.state.changeOrders.push(changeOrder);
+    return clone(changeOrder);
   }
 }
 
@@ -528,10 +955,7 @@ export class JsonFileApiStore implements ApiStore {
     try {
       const raw = await readFile(this.filePath, "utf8");
       const parsed = JSON.parse(raw) as Partial<DatabaseState>;
-      return {
-        projects: Array.isArray(parsed.projects) ? parsed.projects : [],
-        tasks: Array.isArray(parsed.tasks) ? parsed.tasks : [],
-      };
+      return normalizeState(parsed);
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code === "ENOENT") {
         return createEmptyState();
@@ -615,8 +1039,40 @@ export class JsonFileApiStore implements ApiStore {
         return false;
       }
       state.tasks = state.tasks.filter((task) => task.projectId !== id);
+      state.materials = state.materials.filter((material) => material.projectId !== id);
+      state.changeOrders = state.changeOrders.filter((changeOrder) => changeOrder.projectId !== id);
       await this.writeState(state);
       return true;
+    });
+  }
+
+  async listContractors(): Promise<ApiContractorRecord[]> {
+    return this.enqueue(async () => clone((await this.readState()).contractors));
+  }
+
+  async getContractor(id: string): Promise<ApiContractorRecord | null> {
+    return this.enqueue(async () => {
+      const contractor = (await this.readState()).contractors.find((item) => item.id === id);
+      return contractor ? clone(contractor) : null;
+    });
+  }
+
+  async createContractor(input: CreateContractorInput): Promise<ApiContractorRecord> {
+    return this.enqueue(async () => {
+      const state = await this.readState();
+      const now = new Date();
+      const contractor: ApiContractorRecord = {
+        id: crypto.randomUUID(),
+        createdAt: now.toISOString(),
+        updatedAt: now.toISOString(),
+        name: input.name,
+        trade: input.trade,
+        phone: input.phone,
+        email: input.email,
+      };
+      state.contractors.push(contractor);
+      await this.writeState(state);
+      return clone(contractor);
     });
   }
 
@@ -647,7 +1103,8 @@ export class JsonFileApiStore implements ApiStore {
         status: "todo",
         startDate: input.startDate,
         dueDate: input.endDate,
-        progress: 0,
+        progress: input.progress ?? 0,
+        cost: input.cost ?? 0,
         dependencies: [],
         contractorId: input.contractorId,
         contractor: input.contractor,
@@ -678,6 +1135,14 @@ export class JsonFileApiStore implements ApiStore {
           ? { dueDate: input.endDate ?? undefined }
           : {}),
         ...(input.projectId !== undefined ? { projectId: input.projectId } : {}),
+        ...(input.contractorId !== undefined
+          ? { contractorId: input.contractorId ?? undefined }
+          : {}),
+        ...(input.contractor !== undefined
+          ? { contractor: input.contractor ?? undefined }
+          : {}),
+        ...(input.progress !== undefined ? { progress: input.progress } : {}),
+        ...(input.cost !== undefined ? { cost: input.cost } : {}),
       };
       state.tasks[index] = updated;
       await this.writeState(state);
@@ -695,6 +1160,65 @@ export class JsonFileApiStore implements ApiStore {
       }
       await this.writeState(state);
       return true;
+    });
+  }
+
+  async listMaterials(projectId: string): Promise<ApiMaterialRecord[]> {
+    return this.enqueue(async () =>
+      clone((await this.readState()).materials.filter((item) => item.projectId === projectId)),
+    );
+  }
+
+  async createMaterial(projectId: string, input: CreateMaterialInput): Promise<ApiMaterialRecord> {
+    return this.enqueue(async () => {
+      const state = await this.readState();
+      const now = new Date();
+      const material: ApiMaterialRecord = {
+        id: crypto.randomUUID(),
+        createdAt: now.toISOString(),
+        updatedAt: now.toISOString(),
+        projectId,
+        name: input.name,
+        quantity: input.quantity,
+        unit: input.unit,
+        unitPrice: input.unitPrice,
+        supplier: input.supplier,
+        deliveryDate: input.deliveryDate,
+        status: input.status,
+      };
+      state.materials.push(material);
+      await this.writeState(state);
+      return clone(material);
+    });
+  }
+
+  async listChangeOrders(projectId: string): Promise<ApiChangeOrderRecord[]> {
+    return this.enqueue(async () =>
+      clone((await this.readState()).changeOrders.filter((item) => item.projectId === projectId)),
+    );
+  }
+
+  async createChangeOrder(
+    projectId: string,
+    input: CreateChangeOrderInput,
+  ): Promise<ApiChangeOrderRecord> {
+    return this.enqueue(async () => {
+      const state = await this.readState();
+      const now = new Date();
+      const changeOrder: ApiChangeOrderRecord = {
+        id: crypto.randomUUID(),
+        createdAt: now.toISOString(),
+        updatedAt: now.toISOString(),
+        projectId,
+        description: input.description,
+        amount: input.amount,
+        approvedBy: input.approvedBy,
+        date: input.date,
+        status: input.status,
+      };
+      state.changeOrders.push(changeOrder);
+      await this.writeState(state);
+      return clone(changeOrder);
     });
   }
 }
@@ -852,6 +1376,37 @@ function requireMultipartFile(payload: unknown): UploadedFile {
   return file;
 }
 
+async function requireExistingProject(store: ApiStore, projectId: string): Promise<ApiProjectRecord> {
+  const project = await store.getProject(projectId);
+  if (!project) {
+    throw new ApiError(404, "指定されたプロジェクトが見つかりません。");
+  }
+
+  return project;
+}
+
+async function resolveTaskContractor(
+  store: ApiStore,
+  contractorId: string | undefined | null,
+): Promise<{ contractorId?: string | null; contractor?: string | null }> {
+  if (contractorId === undefined) {
+    return {};
+  }
+  if (contractorId === null) {
+    return { contractorId: null, contractor: null };
+  }
+
+  const contractor = await store.getContractor(contractorId);
+  if (!contractor) {
+    throw new ApiError(404, "指定された業者が見つかりません。");
+  }
+
+  return {
+    contractorId: contractor.id,
+    contractor: contractor.name,
+  };
+}
+
 function sendJson(response: ServerResponse, statusCode: number, body: unknown): void {
   response.statusCode = statusCode;
   response.setHeader("Content-Type", "application/json; charset=utf-8");
@@ -902,6 +1457,24 @@ export async function handleApiRequest(
       statusCode: 201,
       body: { project: serializeProject(project) },
     };
+  }
+
+  if (pathname === "/api/contractors") {
+    if (request.method === "GET") {
+      return {
+        statusCode: 200,
+        body: { contractors: (await store.listContractors()).map(serializeContractor) },
+      };
+    }
+
+    if (request.method === "POST") {
+      const input = validateCreateContractorInput(request.body ?? {});
+      const contractor = await store.createContractor(input);
+      return {
+        statusCode: 201,
+        body: { contractor: serializeContractor(contractor) },
+      };
+    }
   }
 
   const projectMatch = pathname.match(/^\/api\/projects\/([^/]+)$/);
@@ -956,10 +1529,7 @@ export async function handleApiRequest(
   const projectTasksMatch = pathname.match(/^\/api\/projects\/([^/]+)\/tasks$/);
   if (projectTasksMatch) {
     const projectId = decodeURIComponent(projectTasksMatch[1]);
-    const project = await store.getProject(projectId);
-    if (!project) {
-      throw new ApiError(404, "指定されたプロジェクトが見つかりません。");
-    }
+    await requireExistingProject(store, projectId);
 
     if (request.method === "GET") {
       return {
@@ -970,7 +1540,15 @@ export async function handleApiRequest(
 
     if (request.method === "POST") {
       const input = validateCreateTaskInput(request.body ?? {});
-      const task = await store.createTask(projectId, input);
+      const contractorLink =
+        input.contractorId !== undefined
+          ? await resolveTaskContractor(store, input.contractorId)
+          : {};
+      const task = await store.createTask(projectId, {
+        ...input,
+        contractorId: contractorLink.contractorId ?? input.contractorId,
+        contractor: contractorLink.contractor ?? input.contractor,
+      });
       return {
         statusCode: 201,
         body: { task: serializeTask(task) },
@@ -978,13 +1556,87 @@ export async function handleApiRequest(
     }
   }
 
+  const projectMaterialsMatch = pathname.match(/^\/api\/projects\/([^/]+)\/materials$/);
+  if (projectMaterialsMatch) {
+    const projectId = decodeURIComponent(projectMaterialsMatch[1]);
+    await requireExistingProject(store, projectId);
+
+    if (request.method === "GET") {
+      return {
+        statusCode: 200,
+        body: { materials: (await store.listMaterials(projectId)).map(serializeMaterial) },
+      };
+    }
+
+    if (request.method === "POST") {
+      const input = validateCreateMaterialInput(request.body ?? {});
+      const material = await store.createMaterial(projectId, input);
+      return {
+        statusCode: 201,
+        body: { material: serializeMaterial(material) },
+      };
+    }
+  }
+
+  const projectChangesMatch = pathname.match(/^\/api\/projects\/([^/]+)\/changes$/);
+  if (projectChangesMatch) {
+    const projectId = decodeURIComponent(projectChangesMatch[1]);
+    await requireExistingProject(store, projectId);
+
+    if (request.method === "GET") {
+      return {
+        statusCode: 200,
+        body: { changes: (await store.listChangeOrders(projectId)).map(serializeChangeOrder) },
+      };
+    }
+
+    if (request.method === "POST") {
+      const input = validateCreateChangeOrderInput(request.body ?? {});
+      const changeOrder = await store.createChangeOrder(projectId, input);
+      return {
+        statusCode: 201,
+        body: { change: serializeChangeOrder(changeOrder) },
+      };
+    }
+  }
+
+  const projectProgressMatch = pathname.match(/^\/api\/projects\/([^/]+)\/progress$/);
+  if (request.method === "GET" && projectProgressMatch) {
+    const projectId = decodeURIComponent(projectProgressMatch[1]);
+    await requireExistingProject(store, projectId);
+    const tasks = await store.listTasks(projectId);
+    return {
+      statusCode: 200,
+      body: {
+        projectId,
+        overallProgress: calculateProjectProgress(tasks),
+        taskCount: tasks.length,
+      },
+    };
+  }
+
+  const projectCostSummaryMatch = pathname.match(/^\/api\/projects\/([^/]+)\/cost-summary$/);
+  if (request.method === "GET" && projectCostSummaryMatch) {
+    const projectId = decodeURIComponent(projectCostSummaryMatch[1]);
+    await requireExistingProject(store, projectId);
+    const [tasks, materials, changeOrders] = await Promise.all([
+      store.listTasks(projectId),
+      store.listMaterials(projectId),
+      store.listChangeOrders(projectId),
+    ]);
+    return {
+      statusCode: 200,
+      body: {
+        projectId,
+        ...calculateCostSummary(tasks, materials, changeOrders),
+      },
+    };
+  }
+
   const projectImportMatch = pathname.match(/^\/api\/projects\/([^/]+)\/import$/);
   if (request.method === "POST" && projectImportMatch) {
     const projectId = decodeURIComponent(projectImportMatch[1]);
-    const project = await store.getProject(projectId);
-    if (!project) {
-      throw new ApiError(404, "指定されたプロジェクトが見つかりません。");
-    }
+    await requireExistingProject(store, projectId);
 
     const uploadedFile = requireMultipartFile(request.body ?? {});
     const importedTasks = parseScheduleImportFile({
@@ -1025,6 +1677,9 @@ export async function handleApiRequest(
       const input = validateUpdateTaskInput(request.body ?? {});
       if (input.projectId !== undefined && !(await store.getProject(input.projectId))) {
         throw new ApiError(404, "指定されたプロジェクトが見つかりません。");
+      }
+      if (input.contractorId !== undefined) {
+        Object.assign(input, await resolveTaskContractor(store, input.contractorId));
       }
       const nextStartDate =
         input.startDate === undefined

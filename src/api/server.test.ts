@@ -249,7 +249,43 @@ describe("GenbaHub API", () => {
     });
   });
 
+  it("POST/GET /api/contractors で業者台帳を登録・取得できる", async () => {
+    const created = await request("POST", "/api/contractors", {
+      name: "山田内装",
+      trade: "軽天・ボード",
+      phone: "03-1234-5678",
+      email: "yamada@example.com",
+    });
+    const list = await request("GET", "/api/contractors");
+
+    expect(created.status).toBe(201);
+    expect(created.body).toMatchObject({
+      contractor: {
+        name: "山田内装",
+        trade: "軽天・ボード",
+        phone: "03-1234-5678",
+        email: "yamada@example.com",
+      },
+    });
+    expect(list.status).toBe(200);
+    expect(list.body).toMatchObject({
+      contractors: [
+        {
+          name: "山田内装",
+          trade: "軽天・ボード",
+        },
+      ],
+    });
+  });
+
   it("POST /api/projects/:id/tasks でタスクを作成できる", async () => {
+    const createdContractor = await request("POST", "/api/contractors", {
+      name: "鈴木設備",
+      trade: "設備",
+      phone: "03-9999-0000",
+      email: "suzuki@example.com",
+    });
+    const contractorId = (createdContractor.body as { contractor: { id: string } }).contractor.id;
     const createdProject = await request("POST", "/api/projects", {
       name: "案件D",
       contractor: "元請D",
@@ -262,7 +298,9 @@ describe("GenbaHub API", () => {
       name: "LGS工事",
       startDate: "2026-04-10",
       endDate: "2026-04-15",
-      contractorId: "contractor-1",
+      contractorId,
+      progress: 15,
+      cost: 120000,
       description: "軽量下地の先行施工",
     });
 
@@ -273,8 +311,10 @@ describe("GenbaHub API", () => {
         name: "LGS工事",
         startDate: "2026-04-10",
         endDate: "2026-04-15",
-        contractorId: "contractor-1",
-        contractor: null,
+        progress: 15,
+        cost: 120000,
+        contractorId,
+        contractor: "鈴木設備",
       },
     });
   });
@@ -310,6 +350,13 @@ describe("GenbaHub API", () => {
   });
 
   it("PATCH /api/tasks/:id でステータスと日付を更新できる", async () => {
+    const createdContractor = await request("POST", "/api/contractors", {
+      name: "田中電気",
+      trade: "電気",
+      phone: "045-123-4567",
+      email: "tanaka@example.com",
+    });
+    const contractorId = (createdContractor.body as { contractor: { id: string } }).contractor.id;
     const createdProject = await request("POST", "/api/projects", {
       name: "案件F",
       contractor: "元請F",
@@ -329,6 +376,9 @@ describe("GenbaHub API", () => {
       status: "in_progress",
       startDate: "2026-06-02",
       endDate: "2026-06-04",
+      progress: 45,
+      cost: 180000,
+      contractorId,
     });
 
     expect(response.status).toBe(200);
@@ -338,8 +388,232 @@ describe("GenbaHub API", () => {
         status: "in_progress",
         startDate: "2026-06-02",
         endDate: "2026-06-04",
-        contractor: null,
+        progress: 45,
+        cost: 180000,
+        contractorId,
+        contractor: "田中電気",
       },
+    });
+  });
+
+  it("POST /api/projects/:id/tasks は未登録業者の contractorId を拒否する", async () => {
+    const createdProject = await request("POST", "/api/projects", {
+      name: "案件F-2",
+      contractor: "元請F-2",
+      address: "群馬県",
+      status: "planning",
+    });
+    const projectId = (createdProject.body as { project: { id: string } }).project.id;
+
+    const response = await request("POST", `/api/projects/${projectId}/tasks`, {
+      name: "配線",
+      startDate: "2026-06-05",
+      endDate: "2026-06-06",
+      contractorId: "missing-contractor",
+      description: "",
+    });
+
+    expect(response.status).toBe(404);
+    expect(response.body).toEqual({
+      error: "指定された業者が見つかりません。",
+    });
+  });
+
+  it("POST/GET /api/projects/:id/materials で資材を管理できる", async () => {
+    const createdProject = await request("POST", "/api/projects", {
+      name: "案件Materials",
+      contractor: "元請Materials",
+      address: "東京都",
+      status: "active",
+    });
+    const projectId = (createdProject.body as { project: { id: string } }).project.id;
+
+    const createdMaterial = await request("POST", `/api/projects/${projectId}/materials`, {
+      name: "石膏ボード",
+      quantity: 120,
+      unit: "枚",
+      unitPrice: 980,
+      supplier: "建材商事",
+      deliveryDate: "2026-06-20",
+      status: "ordered",
+    });
+    const list = await request("GET", `/api/projects/${projectId}/materials`);
+
+    expect(createdMaterial.status).toBe(201);
+    expect(createdMaterial.body).toMatchObject({
+      material: {
+        projectId,
+        name: "石膏ボード",
+        quantity: 120,
+        unit: "枚",
+        unitPrice: 980,
+        supplier: "建材商事",
+        deliveryDate: "2026-06-20",
+        status: "ordered",
+        totalCost: 117600,
+      },
+    });
+    expect(list.status).toBe(200);
+    expect(list.body).toMatchObject({
+      materials: [
+        {
+          name: "石膏ボード",
+          totalCost: 117600,
+        },
+      ],
+    });
+  });
+
+  it("POST/GET /api/projects/:id/changes で変更指示を管理できる", async () => {
+    const createdProject = await request("POST", "/api/projects", {
+      name: "案件Changes",
+      contractor: "元請Changes",
+      address: "東京都",
+      status: "active",
+    });
+    const projectId = (createdProject.body as { project: { id: string } }).project.id;
+
+    const createdChange = await request("POST", `/api/projects/${projectId}/changes`, {
+      description: "厨房区画の追加下地",
+      amount: 250000,
+      approvedBy: "現場代理人 佐藤",
+      date: "2026-06-18",
+      status: "approved",
+    });
+    const list = await request("GET", `/api/projects/${projectId}/changes`);
+
+    expect(createdChange.status).toBe(201);
+    expect(createdChange.body).toMatchObject({
+      change: {
+        projectId,
+        description: "厨房区画の追加下地",
+        amount: 250000,
+        approvedBy: "現場代理人 佐藤",
+        date: "2026-06-18",
+        status: "approved",
+      },
+    });
+    expect(list.status).toBe(200);
+    expect(list.body).toMatchObject({
+      changes: [
+        {
+          description: "厨房区画の追加下地",
+          amount: 250000,
+        },
+      ],
+    });
+  });
+
+  it("GET /api/projects/:id/progress でタスク進捗から全体進捗を返す", async () => {
+    const createdProject = await request("POST", "/api/projects", {
+      name: "案件Progress",
+      contractor: "元請Progress",
+      address: "千葉県",
+      status: "active",
+    });
+    const projectId = (createdProject.body as { project: { id: string } }).project.id;
+
+    const taskA = await request("POST", `/api/projects/${projectId}/tasks`, {
+      name: "墨出し",
+      startDate: "2026-07-01",
+      endDate: "2026-07-02",
+      progress: 0,
+      description: "",
+    });
+    const taskB = await request("POST", `/api/projects/${projectId}/tasks`, {
+      name: "軽天",
+      startDate: "2026-07-03",
+      endDate: "2026-07-04",
+      progress: 60,
+      description: "",
+    });
+    const taskC = await request("POST", `/api/projects/${projectId}/tasks`, {
+      name: "ボード",
+      startDate: "2026-07-05",
+      endDate: "2026-07-06",
+      progress: 100,
+      description: "",
+    });
+
+    expect(taskA.status).toBe(201);
+    expect(taskB.status).toBe(201);
+    expect(taskC.status).toBe(201);
+
+    const response = await request("GET", `/api/projects/${projectId}/progress`);
+
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual({
+      projectId,
+      overallProgress: 53,
+      taskCount: 3,
+    });
+  });
+
+  it("GET /api/projects/:id/cost-summary でタスク・資材・変更指示の原価を集計できる", async () => {
+    const createdProject = await request("POST", "/api/projects", {
+      name: "案件Cost",
+      contractor: "元請Cost",
+      address: "埼玉県",
+      status: "active",
+    });
+    const projectId = (createdProject.body as { project: { id: string } }).project.id;
+
+    await request("POST", `/api/projects/${projectId}/tasks`, {
+      name: "解体",
+      startDate: "2026-08-01",
+      endDate: "2026-08-02",
+      cost: 300000,
+      description: "",
+    });
+    await request("POST", `/api/projects/${projectId}/tasks`, {
+      name: "LGS",
+      startDate: "2026-08-03",
+      endDate: "2026-08-05",
+      cost: 450000,
+      description: "",
+    });
+    await request("POST", `/api/projects/${projectId}/materials`, {
+      name: "スタッド",
+      quantity: 200,
+      unit: "本",
+      unitPrice: 850,
+      supplier: "建材センター",
+      deliveryDate: "2026-08-02",
+      status: "delivered",
+    });
+    await request("POST", `/api/projects/${projectId}/changes`, {
+      description: "追加下地補強",
+      amount: 120000,
+      approvedBy: "工事部長",
+      date: "2026-08-04",
+      status: "approved",
+    });
+    await request("POST", `/api/projects/${projectId}/changes`, {
+      description: "見切り変更",
+      amount: 50000,
+      approvedBy: "工事部長",
+      date: "2026-08-05",
+      status: "pending",
+    });
+    await request("POST", `/api/projects/${projectId}/changes`, {
+      description: "減額調整",
+      amount: -20000,
+      approvedBy: "工事部長",
+      date: "2026-08-06",
+      status: "rejected",
+    });
+
+    const response = await request("GET", `/api/projects/${projectId}/cost-summary`);
+
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual({
+      projectId,
+      taskCost: 750000,
+      materialCost: 170000,
+      approvedChangeOrderCost: 120000,
+      pendingChangeOrderCost: 50000,
+      rejectedChangeOrderCost: -20000,
+      totalCost: 1040000,
     });
   });
 
