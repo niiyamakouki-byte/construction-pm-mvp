@@ -31,6 +31,24 @@ begin
 end;
 $$;
 
+create table if not exists public.organizations (
+  id text primary key,
+  created_at timestamptz not null default timezone('utc', now()),
+  updated_at timestamptz not null default timezone('utc', now()),
+  name text not null
+);
+
+create table if not exists public.user_organizations (
+  user_id uuid not null references auth.users(id) on delete cascade,
+  org_id text not null references public.organizations(id) on delete cascade,
+  role text not null default 'member' check (role in ('owner', 'admin', 'member')),
+  created_at timestamptz not null default timezone('utc', now()),
+  primary key (user_id, org_id)
+);
+
+create index if not exists user_organizations_user_id_idx on public.user_organizations (user_id);
+create index if not exists user_organizations_org_id_idx on public.user_organizations (org_id);
+
 create table if not exists public.projects (
   id text primary key,
   created_at timestamptz not null default timezone('utc', now()),
@@ -49,7 +67,8 @@ create table if not exists public.projects (
   contract_date date,
   inspection_date date,
   handover_date date,
-  warranty_end_date date
+  warranty_end_date date,
+  organization_id text references public.organizations(id) on delete cascade
 );
 
 create table if not exists public.contractors (
@@ -59,7 +78,8 @@ create table if not exists public.contractors (
   name text not null,
   trade text not null,
   phone text not null,
-  email text not null
+  email text not null,
+  organization_id text references public.organizations(id) on delete cascade
 );
 
 create table if not exists public.tasks (
@@ -77,7 +97,8 @@ create table if not exists public.tasks (
   dependencies jsonb not null default '[]'::jsonb check (jsonb_typeof(dependencies) = 'array'),
   contractor_id text references public.contractors(id) on delete set null,
   contractor text,
-  is_milestone boolean not null default false
+  is_milestone boolean not null default false,
+  assignee_id uuid references auth.users(id) on delete set null
 );
 
 create table if not exists public.materials (
@@ -178,6 +199,8 @@ create trigger remove_deleted_task_dependencies_trigger
 after delete on public.tasks
 for each row execute function public.remove_deleted_task_dependencies();
 
+alter table public.organizations enable row level security;
+alter table public.user_organizations enable row level security;
 alter table public.projects enable row level security;
 alter table public.contractors enable row level security;
 alter table public.tasks enable row level security;
@@ -185,98 +208,411 @@ alter table public.materials enable row level security;
 alter table public.change_orders enable row level security;
 alter table public.notifications enable row level security;
 
+-- organizations: authenticated users can read orgs they belong to
+drop policy if exists "org members can read org" on public.organizations;
+create policy "org members can read org"
+on public.organizations
+for select
+to authenticated
+using (
+  id in (
+    select org_id from public.user_organizations where user_id = auth.uid()
+  )
+);
+
+drop policy if exists "org members can manage org" on public.organizations;
+create policy "org members can manage org"
+on public.organizations
+for insert
+to authenticated
+with check (true);
+
+-- user_organizations: users can only see their own memberships
+drop policy if exists "users can read own org memberships" on public.user_organizations;
+create policy "users can read own org memberships"
+on public.user_organizations
+for select
+to authenticated
+using (user_id = auth.uid());
+
+drop policy if exists "users can manage own org memberships" on public.user_organizations;
+create policy "users can manage own org memberships"
+on public.user_organizations
+for all
+to authenticated
+using (user_id = auth.uid())
+with check (user_id = auth.uid());
+
+-- projects: users can only access projects in their organizations
 drop policy if exists "anon full access projects" on public.projects;
-create policy "anon full access projects"
-on public.projects
-for all
-to anon
-using (true)
-with check (true);
-
 drop policy if exists "authenticated full access projects" on public.projects;
-create policy "authenticated full access projects"
+drop policy if exists "org members can access projects" on public.projects;
+create policy "org members can access projects"
 on public.projects
-for all
+for select
 to authenticated
-using (true)
-with check (true);
+using (
+  organization_id in (
+    select org_id from public.user_organizations where user_id = auth.uid()
+  )
+);
 
+drop policy if exists "org members can insert projects" on public.projects;
+create policy "org members can insert projects"
+on public.projects
+for insert
+to authenticated
+with check (
+  organization_id in (
+    select org_id from public.user_organizations where user_id = auth.uid()
+  )
+);
+
+drop policy if exists "org members can update projects" on public.projects;
+create policy "org members can update projects"
+on public.projects
+for update
+to authenticated
+using (
+  organization_id in (
+    select org_id from public.user_organizations where user_id = auth.uid()
+  )
+)
+with check (
+  organization_id in (
+    select org_id from public.user_organizations where user_id = auth.uid()
+  )
+);
+
+drop policy if exists "org members can delete projects" on public.projects;
+create policy "org members can delete projects"
+on public.projects
+for delete
+to authenticated
+using (
+  organization_id in (
+    select org_id from public.user_organizations where user_id = auth.uid()
+  )
+);
+
+-- contractors: users can only access contractors in their organizations
 drop policy if exists "anon full access contractors" on public.contractors;
-create policy "anon full access contractors"
-on public.contractors
-for all
-to anon
-using (true)
-with check (true);
-
 drop policy if exists "authenticated full access contractors" on public.contractors;
-create policy "authenticated full access contractors"
+drop policy if exists "org members can access contractors" on public.contractors;
+create policy "org members can access contractors"
 on public.contractors
-for all
+for select
 to authenticated
-using (true)
-with check (true);
+using (
+  organization_id in (
+    select org_id from public.user_organizations where user_id = auth.uid()
+  )
+);
 
+drop policy if exists "org members can insert contractors" on public.contractors;
+create policy "org members can insert contractors"
+on public.contractors
+for insert
+to authenticated
+with check (
+  organization_id in (
+    select org_id from public.user_organizations where user_id = auth.uid()
+  )
+);
+
+drop policy if exists "org members can update contractors" on public.contractors;
+create policy "org members can update contractors"
+on public.contractors
+for update
+to authenticated
+using (
+  organization_id in (
+    select org_id from public.user_organizations where user_id = auth.uid()
+  )
+)
+with check (
+  organization_id in (
+    select org_id from public.user_organizations where user_id = auth.uid()
+  )
+);
+
+drop policy if exists "org members can delete contractors" on public.contractors;
+create policy "org members can delete contractors"
+on public.contractors
+for delete
+to authenticated
+using (
+  organization_id in (
+    select org_id from public.user_organizations where user_id = auth.uid()
+  )
+);
+
+-- tasks: access via project's organization
 drop policy if exists "anon full access tasks" on public.tasks;
-create policy "anon full access tasks"
-on public.tasks
-for all
-to anon
-using (true)
-with check (true);
-
 drop policy if exists "authenticated full access tasks" on public.tasks;
-create policy "authenticated full access tasks"
+drop policy if exists "org members can access tasks" on public.tasks;
+create policy "org members can access tasks"
 on public.tasks
-for all
+for select
 to authenticated
-using (true)
-with check (true);
+using (
+  project_id in (
+    select id from public.projects
+    where organization_id in (
+      select org_id from public.user_organizations where user_id = auth.uid()
+    )
+  )
+);
 
+drop policy if exists "org members can insert tasks" on public.tasks;
+create policy "org members can insert tasks"
+on public.tasks
+for insert
+to authenticated
+with check (
+  project_id in (
+    select id from public.projects
+    where organization_id in (
+      select org_id from public.user_organizations where user_id = auth.uid()
+    )
+  )
+);
+
+drop policy if exists "org members can update tasks" on public.tasks;
+create policy "org members can update tasks"
+on public.tasks
+for update
+to authenticated
+using (
+  project_id in (
+    select id from public.projects
+    where organization_id in (
+      select org_id from public.user_organizations where user_id = auth.uid()
+    )
+  )
+)
+with check (
+  project_id in (
+    select id from public.projects
+    where organization_id in (
+      select org_id from public.user_organizations where user_id = auth.uid()
+    )
+  )
+);
+
+drop policy if exists "org members can delete tasks" on public.tasks;
+create policy "org members can delete tasks"
+on public.tasks
+for delete
+to authenticated
+using (
+  project_id in (
+    select id from public.projects
+    where organization_id in (
+      select org_id from public.user_organizations where user_id = auth.uid()
+    )
+  )
+);
+
+-- materials: access via project's organization
 drop policy if exists "anon full access materials" on public.materials;
-create policy "anon full access materials"
-on public.materials
-for all
-to anon
-using (true)
-with check (true);
-
 drop policy if exists "authenticated full access materials" on public.materials;
-create policy "authenticated full access materials"
+drop policy if exists "org members can access materials" on public.materials;
+create policy "org members can access materials"
 on public.materials
-for all
+for select
 to authenticated
-using (true)
-with check (true);
+using (
+  project_id in (
+    select id from public.projects
+    where organization_id in (
+      select org_id from public.user_organizations where user_id = auth.uid()
+    )
+  )
+);
 
+drop policy if exists "org members can insert materials" on public.materials;
+create policy "org members can insert materials"
+on public.materials
+for insert
+to authenticated
+with check (
+  project_id in (
+    select id from public.projects
+    where organization_id in (
+      select org_id from public.user_organizations where user_id = auth.uid()
+    )
+  )
+);
+
+drop policy if exists "org members can update materials" on public.materials;
+create policy "org members can update materials"
+on public.materials
+for update
+to authenticated
+using (
+  project_id in (
+    select id from public.projects
+    where organization_id in (
+      select org_id from public.user_organizations where user_id = auth.uid()
+    )
+  )
+)
+with check (
+  project_id in (
+    select id from public.projects
+    where organization_id in (
+      select org_id from public.user_organizations where user_id = auth.uid()
+    )
+  )
+);
+
+drop policy if exists "org members can delete materials" on public.materials;
+create policy "org members can delete materials"
+on public.materials
+for delete
+to authenticated
+using (
+  project_id in (
+    select id from public.projects
+    where organization_id in (
+      select org_id from public.user_organizations where user_id = auth.uid()
+    )
+  )
+);
+
+-- change_orders: access via project's organization
 drop policy if exists "anon full access change_orders" on public.change_orders;
-create policy "anon full access change_orders"
-on public.change_orders
-for all
-to anon
-using (true)
-with check (true);
-
 drop policy if exists "authenticated full access change_orders" on public.change_orders;
-create policy "authenticated full access change_orders"
+drop policy if exists "org members can access change_orders" on public.change_orders;
+create policy "org members can access change_orders"
 on public.change_orders
-for all
+for select
 to authenticated
-using (true)
-with check (true);
+using (
+  project_id in (
+    select id from public.projects
+    where organization_id in (
+      select org_id from public.user_organizations where user_id = auth.uid()
+    )
+  )
+);
 
+drop policy if exists "org members can insert change_orders" on public.change_orders;
+create policy "org members can insert change_orders"
+on public.change_orders
+for insert
+to authenticated
+with check (
+  project_id in (
+    select id from public.projects
+    where organization_id in (
+      select org_id from public.user_organizations where user_id = auth.uid()
+    )
+  )
+);
+
+drop policy if exists "org members can update change_orders" on public.change_orders;
+create policy "org members can update change_orders"
+on public.change_orders
+for update
+to authenticated
+using (
+  project_id in (
+    select id from public.projects
+    where organization_id in (
+      select org_id from public.user_organizations where user_id = auth.uid()
+    )
+  )
+)
+with check (
+  project_id in (
+    select id from public.projects
+    where organization_id in (
+      select org_id from public.user_organizations where user_id = auth.uid()
+    )
+  )
+);
+
+drop policy if exists "org members can delete change_orders" on public.change_orders;
+create policy "org members can delete change_orders"
+on public.change_orders
+for delete
+to authenticated
+using (
+  project_id in (
+    select id from public.projects
+    where organization_id in (
+      select org_id from public.user_organizations where user_id = auth.uid()
+    )
+  )
+);
+
+-- notifications: access via project's organization or direct recipient
 drop policy if exists "anon full access notifications" on public.notifications;
-create policy "anon full access notifications"
-on public.notifications
-for all
-to anon
-using (true)
-with check (true);
-
 drop policy if exists "authenticated full access notifications" on public.notifications;
-create policy "authenticated full access notifications"
+drop policy if exists "org members can access notifications" on public.notifications;
+create policy "org members can access notifications"
 on public.notifications
-for all
+for select
 to authenticated
-using (true)
-with check (true);
+using (
+  recipient_id = auth.uid()::text
+  or project_id in (
+    select id from public.projects
+    where organization_id in (
+      select org_id from public.user_organizations where user_id = auth.uid()
+    )
+  )
+);
+
+drop policy if exists "org members can insert notifications" on public.notifications;
+create policy "org members can insert notifications"
+on public.notifications
+for insert
+to authenticated
+with check (
+  project_id in (
+    select id from public.projects
+    where organization_id in (
+      select org_id from public.user_organizations where user_id = auth.uid()
+    )
+  )
+);
+
+drop policy if exists "org members can update notifications" on public.notifications;
+create policy "org members can update notifications"
+on public.notifications
+for update
+to authenticated
+using (
+  recipient_id = auth.uid()::text
+  or project_id in (
+    select id from public.projects
+    where organization_id in (
+      select org_id from public.user_organizations where user_id = auth.uid()
+    )
+  )
+)
+with check (
+  project_id in (
+    select id from public.projects
+    where organization_id in (
+      select org_id from public.user_organizations where user_id = auth.uid()
+    )
+  )
+);
+
+drop policy if exists "org members can delete notifications" on public.notifications;
+create policy "org members can delete notifications"
+on public.notifications
+for delete
+to authenticated
+using (
+  project_id in (
+    select id from public.projects
+    where organization_id in (
+      select org_id from public.user_organizations where user_id = auth.uid()
+    )
+  )
+);
