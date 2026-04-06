@@ -1,0 +1,82 @@
+{
+  "projects": [
+    {
+      "id": "61101ff2-d487-4195-b7b2-6cf61db7d423",
+      "createdAt": "2026-04-06T08:32:41.627Z",
+      "updatedAt": "2026-04-06T08:32:41.627Z",
+      "name": "池袋サンシャインシティ",
+      "contractor": "日本板硝子S&S",
+      "address": "東京都豊島区 東池袋3-1-2",
+      "status": "active",
+      "description": "",
+      "startDate": "2026-04-06",
+      "includeWeekends": true
+    },
+    {
+      "id": "c656ceaa-89d2-4b28-960b-2e02cd2873d3",
+      "createdAt": "2026-04-06T08:32:41.636Z",
+      "updatedAt": "2026-04-06T08:32:41.636Z",
+      "name": "ゴディバ",
+      "contractor": "フィールドクラブ",
+      "address": "東京都",
+      "status": "active",
+      "description": "",
+      "startDate": "2026-04-06",
+      "includeWeekends": true
+    }
+  ],
+  "tasks": [
+    {
+      "id": "0aab6260-dd6d-4f34-b927-fd1597e3d02c",
+      "createdAt": "2026-04-06T08:32:49.505Z",
+      "updatedAt": "2026-04-06T08:36:21.887Z",
+      "projectId": "61101ff2-d487-4195-b7b2-6cf61db7d423",
+      "name": "FL10透明飛散防止フィルム貼り 805×2324 4枚",
+      "description": "単価61,370円 金額245,480円",
+      "status": "in_progress",
+      "startDate": "2026-04-14",
+      "dueDate": "2026-04-14",
+      "progress": 0,
+      "dependencies": []
+    },
+    {
+      "id": "4cc0ca3a-c0e9-4916-942e-41b0d3cbef17",
+      "createdAt": "2026-04-06T08:32:49.512Z",
+      "updatedAt": "2026-04-06T08:32:49.512Z",
+      "projectId": "61101ff2-d487-4195-b7b2-6cf61db7d423",
+      "name": "FL10透明飛散防止フィルム貼り 747×2324 4枚",
+      "description": "単価56,950円 金額227,800円",
+      "status": "todo",
+      "startDate": "2026-04-14",
+      "dueDate": "2026-04-14",
+      "progress": 0,
+      "dependencies": []
+    },
+    {
+      "id": "a1708394-288c-446d-8662-c0ffe9fd1a4b",
+      "createdAt": "2026-04-06T08:32:49.519Z",
+      "updatedAt": "2026-04-06T08:32:49.519Z",
+      "projectId": "61101ff2-d487-4195-b7b2-6cf61db7d423",
+      "name": "現場配送 2t夜間",
+      "description": "60,000円",
+      "status": "todo",
+      "startDate": "2026-04-14",
+      "dueDate": "2026-04-14",
+      "progress": 0,
+      "dependencies": []
+    },
+    {
+      "id": "216b2c84-729c-4a1b-8b32-58e0c46501ec",
+      "createdAt": "2026-04-06T08:36:21.903Z",
+      "updatedAt": "2026-04-06T08:36:21.903Z",
+      "projectId": "c656ceaa-89d2-4b28-960b-2e02cd2873d3",
+      "name": "ガラスフィルム施工",
+      "description": "FL10飛散防止フィルム 合計708,048円（税込）",
+      "status": "todo",
+      "startDate": "2026-04-14",
+      "dueDate": "2026-04-15",
+      "progress": 0,
+      "dependencies": []
+    }
+  ]
+}

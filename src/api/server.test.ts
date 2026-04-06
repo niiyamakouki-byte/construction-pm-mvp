@@ -90,8 +90,57 @@ describe("GenbaHub API", () => {
     expect(response.status).toBe(200);
     expect(response.body).toMatchObject({
       projects: [
-        { name: "案件A" },
-        { name: "案件B" },
+        { name: "案件A", taskCount: 0 },
+        { name: "案件B", taskCount: 0 },
+      ],
+    });
+  });
+
+  it("GET /api/projects?search=... でプロジェクト名の部分一致検索と taskCount を返す", async () => {
+    const godivaProject = await request("POST", "/api/projects", {
+      name: "ゴディバ銀座店",
+      contractor: "元請A",
+      address: "東京都",
+      status: "planning",
+    });
+    const otherProject = await request("POST", "/api/projects", {
+      name: "渋谷改修",
+      contractor: "元請B",
+      address: "東京都",
+      status: "active",
+    });
+    const godivaProjectId = (godivaProject.body as { project: { id: string } }).project.id;
+    const otherProjectId = (otherProject.body as { project: { id: string } }).project.id;
+
+    await request("POST", `/api/projects/${godivaProjectId}/tasks`, {
+      name: "墨出し",
+      startDate: "2026-01-10",
+      endDate: "2026-01-11",
+      description: "",
+    });
+    await request("POST", `/api/projects/${godivaProjectId}/tasks`, {
+      name: "LGS",
+      startDate: "2026-01-12",
+      endDate: "2026-01-13",
+      description: "",
+    });
+    await request("POST", `/api/projects/${otherProjectId}/tasks`, {
+      name: "解体",
+      startDate: "2026-01-14",
+      endDate: "2026-01-15",
+      description: "",
+    });
+
+    const response = await request("GET", "/api/projects?search=ゴディバ");
+
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual({
+      projects: [
+        expect.objectContaining({
+          id: godivaProjectId,
+          name: "ゴディバ銀座店",
+          taskCount: 2,
+        }),
       ],
     });
   });
@@ -114,6 +163,89 @@ describe("GenbaHub API", () => {
         name: "案件C",
         contractor: "元請C",
       },
+    });
+  });
+
+  it("PATCH /api/projects/:id でプロジェクトを更新できる", async () => {
+    const created = await request("POST", "/api/projects", {
+      name: "案件C",
+      contractor: "元請C",
+      address: "埼玉県",
+      status: "planning",
+    });
+    const projectId = (created.body as { project: { id: string } }).project.id;
+
+    const response = await request("PATCH", `/api/projects/${projectId}`, {
+      name: "案件C改",
+      contractor: "元請C改",
+      address: "東京都港区",
+      status: "active",
+      description: "夜間施工あり",
+      startDate: "2026-03-01",
+      endDate: "2026-03-31",
+    });
+
+    expect(response.status).toBe(200);
+    expect(response.body).toMatchObject({
+      project: {
+        id: projectId,
+        name: "案件C改",
+        contractor: "元請C改",
+        address: "東京都港区",
+        status: "active",
+        description: "夜間施工あり",
+        startDate: "2026-03-01",
+        endDate: "2026-03-31",
+      },
+    });
+  });
+
+  it("DELETE /api/projects/:id で関連タスクごとプロジェクトを削除できる", async () => {
+    const createdProject = await request("POST", "/api/projects", {
+      name: "削除対象案件",
+      contractor: "元請削除",
+      address: "東京都",
+      status: "planning",
+    });
+    const keptProject = await request("POST", "/api/projects", {
+      name: "継続案件",
+      contractor: "元請継続",
+      address: "神奈川県",
+      status: "active",
+    });
+    const projectId = (createdProject.body as { project: { id: string } }).project.id;
+    const keptProjectId = (keptProject.body as { project: { id: string } }).project.id;
+
+    await request("POST", `/api/projects/${projectId}/tasks`, {
+      name: "削除されるタスク",
+      startDate: "2026-04-01",
+      endDate: "2026-04-02",
+      description: "",
+    });
+    await request("POST", `/api/projects/${keptProjectId}/tasks`, {
+      name: "残るタスク",
+      startDate: "2026-04-03",
+      endDate: "2026-04-04",
+      description: "",
+    });
+
+    const deleteResponse = await request("DELETE", `/api/projects/${projectId}`);
+    const deletedProjectResponse = await request("GET", `/api/projects/${projectId}`);
+    const deletedProjectTasksResponse = await request("GET", `/api/projects/${projectId}/tasks`);
+    const keptProjectTasksResponse = await request("GET", `/api/projects/${keptProjectId}/tasks`);
+
+    expect(deleteResponse.status).toBe(204);
+    expect(deleteResponse.body).toBeNull();
+    expect(deletedProjectResponse).toEqual({
+      status: 404,
+      body: { error: "指定されたプロジェクトが見つかりません。" },
+    });
+    expect(deletedProjectTasksResponse).toEqual({
+      status: 404,
+      body: { error: "指定されたプロジェクトが見つかりません。" },
+    });
+    expect(keptProjectTasksResponse.body).toMatchObject({
+      tasks: [{ name: "残るタスク" }],
     });
   });
 
@@ -208,6 +340,49 @@ describe("GenbaHub API", () => {
         endDate: "2026-06-04",
         contractor: null,
       },
+    });
+  });
+
+  it("PATCH /api/tasks/:id で projectId を変更して別プロジェクトへ移動できる", async () => {
+    const fromProject = await request("POST", "/api/projects", {
+      name: "移動元案件",
+      contractor: "元請元",
+      address: "東京都",
+      status: "planning",
+    });
+    const toProject = await request("POST", "/api/projects", {
+      name: "移動先案件",
+      contractor: "元請先",
+      address: "神奈川県",
+      status: "active",
+    });
+    const fromProjectId = (fromProject.body as { project: { id: string } }).project.id;
+    const toProjectId = (toProject.body as { project: { id: string } }).project.id;
+    const createdTask = await request("POST", `/api/projects/${fromProjectId}/tasks`, {
+      name: "移動タスク",
+      startDate: "2026-06-10",
+      endDate: "2026-06-12",
+      description: "",
+    });
+    const taskId = (createdTask.body as { task: { id: string } }).task.id;
+
+    const response = await request("PATCH", `/api/tasks/${taskId}`, {
+      projectId: toProjectId,
+    });
+    const fromTasksResponse = await request("GET", `/api/projects/${fromProjectId}/tasks`);
+    const toTasksResponse = await request("GET", `/api/projects/${toProjectId}/tasks`);
+
+    expect(response.status).toBe(200);
+    expect(response.body).toMatchObject({
+      task: {
+        id: taskId,
+        projectId: toProjectId,
+        name: "移動タスク",
+      },
+    });
+    expect(fromTasksResponse.body).toEqual({ tasks: [] });
+    expect(toTasksResponse.body).toMatchObject({
+      tasks: [{ id: taskId, name: "移動タスク" }],
     });
   });
 

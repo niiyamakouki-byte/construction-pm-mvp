@@ -56,10 +56,20 @@ type CreateTaskInput = {
   contractor?: string;
   description: string;
 };
+type UpdateProjectInput = {
+  name?: string;
+  contractor?: string;
+  address?: string;
+  status?: ProjectStatus;
+  description?: string;
+  startDate?: string;
+  endDate?: string | null;
+};
 type UpdateTaskInput = {
   status?: TaskStatus;
   startDate?: string | null;
   endDate?: string | null;
+  projectId?: string;
 };
 
 type UploadedFile = {
@@ -78,6 +88,8 @@ export interface ApiStore {
   listProjects(): Promise<ApiProjectRecord[]>;
   getProject(id: string): Promise<ApiProjectRecord | null>;
   createProject(input: CreateProjectInput): Promise<ApiProjectRecord>;
+  updateProject(id: string, input: UpdateProjectInput): Promise<ApiProjectRecord | null>;
+  deleteProject(id: string): Promise<boolean>;
   listTasks(projectId: string): Promise<ApiTaskRecord[]>;
   getTask(id: string): Promise<ApiTaskRecord | null>;
   createTask(projectId: string, input: CreateTaskInput): Promise<ApiTaskRecord>;
@@ -191,6 +203,32 @@ function optionalTrimmedString(
   return normalized;
 }
 
+function optionalUpdatedString(
+  input: Record<string, unknown>,
+  fieldName: string,
+  fieldLabel: string,
+  maxLength: number,
+  options: { allowEmpty?: boolean } = {},
+): string | undefined {
+  if (!(fieldName in input)) {
+    return undefined;
+  }
+
+  const value = input[fieldName];
+  if (typeof value !== "string") {
+    throw new ApiError(400, `${fieldLabel}は文字列で入力してください。`);
+  }
+
+  const normalized = value.trim();
+  if (!options.allowEmpty && !normalized) {
+    throw new ApiError(400, `${fieldLabel}を空文字にはできません。`);
+  }
+  if (normalized.length > maxLength) {
+    throw new ApiError(400, `${fieldLabel}は${maxLength}文字以内で入力してください。`);
+  }
+  return normalized;
+}
+
 function validateCreateProjectInput(payload: unknown): CreateProjectInput {
   if (!isObject(payload)) {
     throw new ApiError(400, "リクエストボディはJSONオブジェクトで送信してください。");
@@ -202,6 +240,53 @@ function validateCreateProjectInput(payload: unknown): CreateProjectInput {
     address: requireString(payload, "address", "住所", 500),
     status: validateEnum(payload.status, PROJECT_STATUSES, "ステータス"),
   };
+}
+
+function validateUpdateProjectInput(payload: unknown): UpdateProjectInput {
+  if (!isObject(payload)) {
+    throw new ApiError(400, "リクエストボディはJSONオブジェクトで送信してください。");
+  }
+
+  const update: UpdateProjectInput = {};
+
+  if ("name" in payload) {
+    update.name = optionalUpdatedString(payload, "name", "プロジェクト名", 200);
+  }
+  if ("contractor" in payload) {
+    update.contractor = optionalUpdatedString(payload, "contractor", "元請会社名", 200);
+  }
+  if ("address" in payload) {
+    update.address = optionalUpdatedString(payload, "address", "住所", 500);
+  }
+  if ("status" in payload) {
+    update.status = validateEnum(payload.status, PROJECT_STATUSES, "ステータス");
+  }
+  if ("description" in payload) {
+    update.description = optionalUpdatedString(payload, "description", "説明", 2000, {
+      allowEmpty: true,
+    });
+  }
+  if ("startDate" in payload) {
+    if (typeof payload.startDate !== "string") {
+      throw new ApiError(400, "開始日はYYYY-MM-DD形式で入力してください。");
+    }
+    update.startDate = parseDateString(payload.startDate.trim(), "開始日");
+  }
+  if ("endDate" in payload) {
+    if (payload.endDate === null) {
+      update.endDate = null;
+    } else if (typeof payload.endDate === "string") {
+      update.endDate = parseDateString(payload.endDate.trim(), "終了日");
+    } else {
+      throw new ApiError(400, "終了日はYYYY-MM-DD形式で入力してください。");
+    }
+  }
+
+  if (Object.keys(update).length === 0) {
+    throw new ApiError(400, "更新対象の項目を指定してください。");
+  }
+
+  return update;
 }
 
 function validateCreateTaskInput(payload: unknown): CreateTaskInput {
@@ -257,6 +342,9 @@ function validateUpdateTaskInput(payload: unknown): UpdateTaskInput {
       throw new ApiError(400, "終了日はYYYY-MM-DD形式で入力してください。");
     }
   }
+  if ("projectId" in payload) {
+    update.projectId = optionalUpdatedString(payload, "projectId", "プロジェクトID", 200);
+  }
 
   if (Object.keys(update).length === 0) {
     throw new ApiError(400, "更新対象の項目を指定してください。");
@@ -265,7 +353,7 @@ function validateUpdateTaskInput(payload: unknown): UpdateTaskInput {
   return update;
 }
 
-function serializeProject(project: ApiProjectRecord) {
+function serializeProject(project: ApiProjectRecord, taskCount?: number) {
   return {
     id: project.id,
     createdAt: project.createdAt,
@@ -278,6 +366,7 @@ function serializeProject(project: ApiProjectRecord) {
     startDate: project.startDate,
     endDate: project.endDate ?? null,
     includeWeekends: project.includeWeekends,
+    ...(taskCount !== undefined ? { taskCount } : {}),
   };
 }
 
@@ -327,6 +416,40 @@ export class InMemoryApiStore implements ApiStore {
     return clone(project);
   }
 
+  async updateProject(id: string, input: UpdateProjectInput): Promise<ApiProjectRecord | null> {
+    const index = this.state.projects.findIndex((item) => item.id === id);
+    if (index === -1) {
+      return null;
+    }
+
+    const existing = this.state.projects[index];
+    const updated: ApiProjectRecord = {
+      ...existing,
+      updatedAt: new Date().toISOString(),
+      ...(input.name !== undefined ? { name: input.name } : {}),
+      ...(input.contractor !== undefined ? { contractor: input.contractor } : {}),
+      ...(input.address !== undefined ? { address: input.address } : {}),
+      ...(input.status !== undefined ? { status: input.status } : {}),
+      ...(input.description !== undefined ? { description: input.description } : {}),
+      ...(input.startDate !== undefined ? { startDate: input.startDate } : {}),
+      ...(input.endDate !== undefined
+        ? { endDate: input.endDate ?? undefined }
+        : {}),
+    };
+    this.state.projects[index] = updated;
+    return clone(updated);
+  }
+
+  async deleteProject(id: string): Promise<boolean> {
+    const previousLength = this.state.projects.length;
+    this.state.projects = this.state.projects.filter((item) => item.id !== id);
+    if (this.state.projects.length === previousLength) {
+      return false;
+    }
+    this.state.tasks = this.state.tasks.filter((task) => task.projectId !== id);
+    return true;
+  }
+
   async listTasks(projectId: string): Promise<ApiTaskRecord[]> {
     return clone(this.state.tasks.filter((task) => task.projectId === projectId));
   }
@@ -374,6 +497,7 @@ export class InMemoryApiStore implements ApiStore {
       ...(input.endDate !== undefined
         ? { dueDate: input.endDate ?? undefined }
         : {}),
+      ...(input.projectId !== undefined ? { projectId: input.projectId } : {}),
     };
     this.state.tasks[index] = updated;
     return clone(updated);
@@ -454,6 +578,48 @@ export class JsonFileApiStore implements ApiStore {
     });
   }
 
+  async updateProject(id: string, input: UpdateProjectInput): Promise<ApiProjectRecord | null> {
+    return this.enqueue(async () => {
+      const state = await this.readState();
+      const index = state.projects.findIndex((item) => item.id === id);
+      if (index === -1) {
+        return null;
+      }
+
+      const existing = state.projects[index];
+      const updated: ApiProjectRecord = {
+        ...existing,
+        updatedAt: new Date().toISOString(),
+        ...(input.name !== undefined ? { name: input.name } : {}),
+        ...(input.contractor !== undefined ? { contractor: input.contractor } : {}),
+        ...(input.address !== undefined ? { address: input.address } : {}),
+        ...(input.status !== undefined ? { status: input.status } : {}),
+        ...(input.description !== undefined ? { description: input.description } : {}),
+        ...(input.startDate !== undefined ? { startDate: input.startDate } : {}),
+        ...(input.endDate !== undefined
+          ? { endDate: input.endDate ?? undefined }
+          : {}),
+      };
+      state.projects[index] = updated;
+      await this.writeState(state);
+      return clone(updated);
+    });
+  }
+
+  async deleteProject(id: string): Promise<boolean> {
+    return this.enqueue(async () => {
+      const state = await this.readState();
+      const previousLength = state.projects.length;
+      state.projects = state.projects.filter((item) => item.id !== id);
+      if (state.projects.length === previousLength) {
+        return false;
+      }
+      state.tasks = state.tasks.filter((task) => task.projectId !== id);
+      await this.writeState(state);
+      return true;
+    });
+  }
+
   async listTasks(projectId: string): Promise<ApiTaskRecord[]> {
     return this.enqueue(async () =>
       clone((await this.readState()).tasks.filter((item) => item.projectId === projectId)),
@@ -481,11 +647,11 @@ export class JsonFileApiStore implements ApiStore {
         status: "todo",
         startDate: input.startDate,
         dueDate: input.endDate,
-      progress: 0,
-      dependencies: [],
-      contractorId: input.contractorId,
-      contractor: input.contractor,
-    };
+        progress: 0,
+        dependencies: [],
+        contractorId: input.contractorId,
+        contractor: input.contractor,
+      };
       state.tasks.push(task);
       await this.writeState(state);
       return clone(task);
@@ -511,6 +677,7 @@ export class JsonFileApiStore implements ApiStore {
         ...(input.endDate !== undefined
           ? { dueDate: input.endDate ?? undefined }
           : {}),
+        ...(input.projectId !== undefined ? { projectId: input.projectId } : {}),
       };
       state.tasks[index] = updated;
       await this.writeState(state);
@@ -713,9 +880,18 @@ export async function handleApiRequest(
   }
 
   if (request.method === "GET" && pathname === "/api/projects") {
+    const search = url.searchParams.get("search")?.trim();
+    const projects = (await store.listProjects()).filter((project) =>
+      search ? project.name.includes(search) : true,
+    );
+    const serializedProjects = await Promise.all(
+      projects.map(async (project) =>
+        serializeProject(project, (await store.listTasks(project.id)).length),
+      ),
+    );
     return {
       statusCode: 200,
-      body: { projects: (await store.listProjects()).map(serializeProject) },
+      body: { projects: serializedProjects },
     };
   }
 
@@ -729,15 +905,52 @@ export async function handleApiRequest(
   }
 
   const projectMatch = pathname.match(/^\/api\/projects\/([^/]+)$/);
-  if (request.method === "GET" && projectMatch) {
-    const project = await store.getProject(decodeURIComponent(projectMatch[1]));
-    if (!project) {
-      throw new ApiError(404, "指定されたプロジェクトが見つかりません。");
+  if (projectMatch) {
+    const projectId = decodeURIComponent(projectMatch[1]);
+
+    if (request.method === "GET") {
+      const project = await store.getProject(projectId);
+      if (!project) {
+        throw new ApiError(404, "指定されたプロジェクトが見つかりません。");
+      }
+      return {
+        statusCode: 200,
+        body: { project: serializeProject(project) },
+      };
     }
-    return {
-      statusCode: 200,
-      body: { project: serializeProject(project) },
-    };
+
+    if (request.method === "PATCH") {
+      const existing = await store.getProject(projectId);
+      if (!existing) {
+        throw new ApiError(404, "指定されたプロジェクトが見つかりません。");
+      }
+
+      const input = validateUpdateProjectInput(request.body ?? {});
+      const nextStartDate = input.startDate ?? existing.startDate;
+      const nextEndDate =
+        input.endDate === undefined ? existing.endDate : (input.endDate ?? undefined);
+
+      if (nextEndDate) {
+        assertDateOrder(nextStartDate, nextEndDate);
+      }
+
+      const project = await store.updateProject(projectId, input);
+      if (!project) {
+        throw new ApiError(404, "指定されたプロジェクトが見つかりません。");
+      }
+      return {
+        statusCode: 200,
+        body: { project: serializeProject(project) },
+      };
+    }
+
+    if (request.method === "DELETE") {
+      const deleted = await store.deleteProject(projectId);
+      if (!deleted) {
+        throw new ApiError(404, "指定されたプロジェクトが見つかりません。");
+      }
+      return { statusCode: 204 };
+    }
   }
 
   const projectTasksMatch = pathname.match(/^\/api\/projects\/([^/]+)\/tasks$/);
@@ -810,6 +1023,9 @@ export async function handleApiRequest(
       }
 
       const input = validateUpdateTaskInput(request.body ?? {});
+      if (input.projectId !== undefined && !(await store.getProject(input.projectId))) {
+        throw new ApiError(404, "指定されたプロジェクトが見つかりません。");
+      }
       const nextStartDate =
         input.startDate === undefined
           ? existing.startDate
