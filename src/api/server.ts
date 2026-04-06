@@ -1218,19 +1218,36 @@ export class JsonFileApiStore implements ApiStore {
   private async readState(): Promise<DatabaseState> {
     try {
       const raw = await readFile(this.filePath, "utf8");
-      const parsed = JSON.parse(raw) as Partial<DatabaseState>;
+      if (!raw.trim()) {
+        throw new ApiError(500, "データベースファイルが空のため読み込めません。");
+      }
+
+      let parsed: Partial<DatabaseState>;
+      try {
+        parsed = JSON.parse(raw) as Partial<DatabaseState>;
+      } catch {
+        throw new ApiError(500, "データベースファイルが破損しているため読み込めません。");
+      }
+
       return normalizeState(parsed);
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code === "ENOENT") {
         return createEmptyState();
       }
-      throw error;
+      if (error instanceof ApiError) {
+        throw error;
+      }
+      throw new ApiError(500, "データベースファイルの読み込みに失敗しました。");
     }
   }
 
   private async writeState(state: DatabaseState): Promise<void> {
-    await mkdir(dirname(this.filePath), { recursive: true });
-    await writeFile(this.filePath, JSON.stringify(state, null, 2), "utf8");
+    try {
+      await mkdir(dirname(this.filePath), { recursive: true });
+      await writeFile(this.filePath, JSON.stringify(state, null, 2), "utf8");
+    } catch {
+      throw new ApiError(500, "データベースファイルの書き込みに失敗しました。");
+    }
   }
 
   async listProjects(): Promise<ApiProjectRecord[]> {
@@ -1680,6 +1697,39 @@ async function requireExistingProject(store: ApiStore, projectId: string): Promi
   return project;
 }
 
+async function wouldCreateDependencyCycle(
+  store: ApiStore,
+  taskId: string,
+  predecessorId: string,
+): Promise<boolean> {
+  const queue = [predecessorId];
+  const visited = new Set<string>();
+
+  while (queue.length > 0) {
+    const currentId = queue.shift();
+    if (!currentId || visited.has(currentId)) {
+      continue;
+    }
+    if (currentId === taskId) {
+      return true;
+    }
+
+    visited.add(currentId);
+    const currentTask = await store.getTask(currentId);
+    if (!currentTask) {
+      continue;
+    }
+
+    for (const dependency of currentTask.dependencies) {
+      if (!visited.has(dependency.predecessorId)) {
+        queue.push(dependency.predecessorId);
+      }
+    }
+  }
+
+  return false;
+}
+
 function readHeader(
   headers: Record<string, string | string[] | undefined> | undefined,
   name: string,
@@ -2038,6 +2088,9 @@ export async function handleApiRequest(
     }
     if (predecessor.projectId !== task.projectId) {
       throw new ApiError(400, "依存関係は同一プロジェクト内のタスクにのみ設定できます。");
+    }
+    if (await wouldCreateDependencyCycle(store, taskId, dependency.predecessorId)) {
+      throw new ApiError(400, "依存関係が循環するため追加できません。");
     }
 
     const updatedTask = await store.updateTask(taskId, {
