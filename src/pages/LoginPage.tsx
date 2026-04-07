@@ -64,10 +64,17 @@ export function LoginPage() {
         <div className="mb-8 text-center">
           <button
             onClick={() => navigate("/")}
-            className="inline-flex flex-col items-center gap-1 hover:opacity-90"
+            className="inline-flex flex-col items-center gap-2 hover:opacity-90"
           >
+            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-white/10 backdrop-blur-sm shadow-lg">
+              <svg width="36" height="36" viewBox="0 0 100 100" aria-hidden="true">
+                <rect x="10" y="60" width="80" height="35" rx="3" fill="#fff" opacity="0.9" />
+                <rect x="20" y="30" width="60" height="35" rx="3" fill="#93c5fd" opacity="0.8" />
+                <polygon points="50,5 15,35 85,35" fill="#fbbf24" />
+              </svg>
+            </div>
             <span className="text-3xl font-bold text-white tracking-tight">GenbaHub</span>
-            <span className="text-sm text-brand-300">現場ハブ — 建設プロジェクト管理</span>
+            <span className="text-sm text-brand-200">建設・内装工事の現場管理プラットフォーム</span>
           </button>
         </div>
 

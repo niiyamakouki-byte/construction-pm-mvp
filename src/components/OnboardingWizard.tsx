@@ -63,6 +63,8 @@ type Props = {
 export function OnboardingWizard({ onComplete }: Props) {
   const { organizationId } = useOrganizationContext();
   const [step, setStep] = useState<Step>(1);
+  const [companyName, setCompanyName] = useState("");
+  const [teamSize, setTeamSize] = useState("");
   const [projectName, setProjectName] = useState("");
   const [projectAddress, setProjectAddress] = useState("");
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
@@ -171,6 +173,10 @@ export function OnboardingWizard({ onComplete }: Props) {
           {step === 1 && <Step1 />}
           {step === 2 && (
             <Step2
+              companyName={companyName}
+              setCompanyName={setCompanyName}
+              teamSize={teamSize}
+              setTeamSize={setTeamSize}
               projectName={projectName}
               setProjectName={setProjectName}
               projectAddress={projectAddress}
@@ -295,6 +301,10 @@ function FeatureBadge({ icon, label }: { icon: string; label: string }) {
 }
 
 type Step2Props = {
+  companyName: string;
+  setCompanyName: (v: string) => void;
+  teamSize: string;
+  setTeamSize: (v: string) => void;
   projectName: string;
   setProjectName: (v: string) => void;
   projectAddress: string;
@@ -304,6 +314,10 @@ type Step2Props = {
 };
 
 function Step2({
+  companyName,
+  setCompanyName,
+  teamSize,
+  setTeamSize,
   projectName,
   setProjectName,
   projectAddress,
@@ -316,13 +330,49 @@ function Step2({
       <div className="mb-6 flex items-center gap-3">
         <span className="text-4xl">📝</span>
         <div>
-          <h2 className="text-xl font-bold text-slate-900">最初のプロジェクトを作ろう</h2>
+          <h2 className="text-xl font-bold text-slate-900">会社情報と最初のプロジェクト</h2>
           <p className="mt-1 text-sm text-slate-500">
-            現在進行中の工事を1つ登録してください
+            基本情報を入力してください
           </p>
         </div>
       </div>
       <div className="space-y-4">
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label htmlFor="onboarding-company-name" className="block text-sm font-semibold text-slate-700">
+              会社名
+              <span className="ml-1 text-xs font-normal text-slate-400">（任意）</span>
+            </label>
+            <input
+              id="onboarding-company-name"
+              type="text"
+              value={companyName}
+              onChange={(e) => setCompanyName(e.target.value)}
+              maxLength={100}
+              autoComplete="organization"
+              placeholder="例: 株式会社ラポルタ"
+              className="mt-1.5 block w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm shadow-sm transition-colors focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 focus:outline-none"
+            />
+          </div>
+          <div>
+            <label htmlFor="onboarding-team-size" className="block text-sm font-semibold text-slate-700">
+              チーム規模
+              <span className="ml-1 text-xs font-normal text-slate-400">（任意）</span>
+            </label>
+            <select
+              id="onboarding-team-size"
+              value={teamSize}
+              onChange={(e) => setTeamSize(e.target.value)}
+              className="mt-1.5 block w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm shadow-sm transition-colors focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 focus:outline-none"
+            >
+              <option value="">選択してください</option>
+              <option value="1-5">1〜5名</option>
+              <option value="6-20">6〜20名</option>
+              <option value="21-50">21〜50名</option>
+              <option value="51+">51名以上</option>
+            </select>
+          </div>
+        </div>
         <div>
           <label htmlFor="onboarding-project-name" className="block text-sm font-semibold text-slate-700">
             工事名 <span className="text-red-500">*</span>

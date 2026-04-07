@@ -251,7 +251,7 @@ function TodayDashboardPageContent() {
     } finally {
       setLoading(false);
     }
-  }, [today]);
+  }, [today, taskRepository, projectRepository]);
 
   useEffect(() => {
     void loadData();
@@ -279,6 +279,31 @@ function TodayDashboardPageContent() {
   const inProgressTasks = allTasks.filter(
     (t) => t.status === "in_progress",
   ).length;
+  const activeProjectsCount = allProjects.filter(
+    (p) => p.status === "active" || p.status === "planning",
+  ).length;
+
+  // Upcoming milestones: tasks due within next 7 days (not overdue, not done)
+  const upcomingMilestones = useMemo(() => {
+    const in7Days = new Date();
+    in7Days.setDate(in7Days.getDate() + 7);
+    const in7DaysStr = toLocalDateString(in7Days);
+    const projectMap = new Map<string, Project>();
+    for (const p of allProjects) projectMap.set(p.id, p);
+    return allTasks
+      .filter(
+        (t) =>
+          t.status !== "done" &&
+          t.dueDate &&
+          t.dueDate > today &&
+          t.dueDate <= in7DaysStr,
+      )
+      .slice(0, 5)
+      .map((t) => ({
+        ...t,
+        projectName: projectMap.get(t.projectId)?.name ?? "不明",
+      }));
+  }, [allTasks, allProjects, today]);
 
   // Project completion stats for executive mode
   const projectStats = useMemo(() => {
@@ -367,12 +392,35 @@ function TodayDashboardPageContent() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-4 gap-2">
-        <StatCard label="全タスク" value={totalTasks} color="text-slate-900" bgColor="bg-white" />
-        <StatCard label="進行中" value={inProgressTasks} color="text-blue-600" bgColor="bg-blue-50" />
-        <StatCard label="完了" value={completedTasks} color="text-emerald-600" bgColor="bg-emerald-50" />
-        <StatCard label="遅延" value={overdueTasks} color="text-red-600" bgColor={overdueTasks > 0 ? "bg-red-50" : "bg-white"} />
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+        <StatCard label="進行中案件" value={activeProjectsCount} color="text-brand-700" bgColor="bg-brand-50" />
+        <StatCard label="進行中タスク" value={inProgressTasks} color="text-blue-600" bgColor="bg-blue-50" />
+        <StatCard label="完了タスク" value={completedTasks} color="text-emerald-600" bgColor="bg-emerald-50" />
+        <StatCard label="期限超過" value={overdueTasks} color="text-red-600" bgColor={overdueTasks > 0 ? "bg-red-50" : "bg-white"} />
       </div>
+
+      {/* Upcoming milestones */}
+      {upcomingMilestones.length > 0 && (
+        <section>
+          <h2 className="mb-3 flex items-center gap-2 text-base font-bold text-slate-800">
+            今後7日間の期限
+            <span className="inline-flex items-center justify-center rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700">
+              {upcomingMilestones.length}件
+            </span>
+          </h2>
+          <ul className="space-y-2">
+            {upcomingMilestones.map((t) => (
+              <li key={t.id} className="flex items-center justify-between rounded-xl border border-amber-100 bg-amber-50/60 px-4 py-2.5">
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-semibold text-slate-800">{t.name}</p>
+                  <p className="text-xs text-slate-500">{t.projectName}</p>
+                </div>
+                <span className="ml-3 shrink-0 text-xs font-semibold text-amber-700">{t.dueDate}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       {/* Executive mode: project overview */}
       {persona === "executive" && (

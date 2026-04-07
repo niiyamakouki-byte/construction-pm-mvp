@@ -110,12 +110,12 @@ describe("TodayDashboardPage", () => {
   it("完了済みタスクはフィルタリングされて表示されない", async () => {
     const today = new Date().toISOString().slice(0, 10);
     mockTasks = [
-      makeTask({ name: "完了タスク", dueDate: today, status: "done" }),
+      makeTask({ name: "完了済みのタスク名", dueDate: today, status: "done" }),
       makeTask({ id: "t-2", name: "未着手タスク", dueDate: today, status: "todo" }),
     ];
     render(<TodayDashboardPage />);
     await waitFor(() => expect(screen.getByText("未着手タスク")).toBeDefined());
-    expect(screen.queryByText("完了タスク")).toBeNull();
+    expect(screen.queryByText("完了済みのタスク名")).toBeNull();
   });
 
   it("データ読み込みエラー時にエラーバナーが表示される", async () => {
@@ -127,17 +127,17 @@ describe("TodayDashboardPage", () => {
     });
   });
 
-  it("stat カード（全タスク・進行中・完了・遅延）が表示される", async () => {
+  it("stat カード（進行中案件・進行中タスク・完了タスク・期限超過）が表示される", async () => {
     mockTasks = [
       makeTask({ status: "in_progress", dueDate: undefined }),
       makeTask({ id: "t-2", status: "done" }),
     ];
     render(<TodayDashboardPage />);
     await waitFor(() => {
-      expect(screen.getByText("全タスク")).toBeDefined();
-      expect(screen.getByText("進行中")).toBeDefined();
-      expect(screen.getByText("完了")).toBeDefined();
-      expect(screen.getByText("遅延")).toBeDefined();
+      expect(screen.getByText("進行中案件")).toBeDefined();
+      expect(screen.getByText("進行中タスク")).toBeDefined();
+      expect(screen.getByText("完了タスク")).toBeDefined();
+      expect(screen.getByText("期限超過")).toBeDefined();
     });
   });
 
