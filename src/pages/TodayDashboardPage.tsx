@@ -271,7 +271,7 @@ function TodayDashboardPageContent() {
 
   // ── Stats ────────────────────────────────────────────
   const { persona } = usePersona();
-  const totalTasks = allTasks.length;
+  const _totalTasks = allTasks.length;
   const completedTasks = allTasks.filter((t) => t.status === "done").length;
   const overdueTasks = allTasks.filter(
     (t) => t.status !== "done" && t.dueDate && t.dueDate < today,
