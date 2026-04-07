@@ -4,9 +4,8 @@ import { createServer, type IncomingMessage, type Server, type ServerResponse } 
 import { readJsonBody, readMultipartBody } from "./http.js";
 import { handleApiRequest } from "./router.js";
 import { sendJson, sendResponse, setCorsHeaders } from "./responses.js";
-import { SupabaseStore, type SupabaseClientLike } from "./supabase-store.js";
+import { type SupabaseClientLike } from "./supabase-store.js";
 import { createApiStore } from "./store-factory.js";
-import { InMemoryApiStore, JsonFileApiStore } from "./store.js";
 import { ApiError, DEFAULT_PORT, type ApiStore } from "./types.js";
 
 export { parseMultipartBody } from "./http.js";

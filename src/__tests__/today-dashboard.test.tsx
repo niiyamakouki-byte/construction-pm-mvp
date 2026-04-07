@@ -60,20 +60,6 @@ function makeTask(overrides: Partial<Task> = {}): Task {
   };
 }
 
-function makeProject(overrides: Partial<Project> = {}): Project {
-  const now = new Date().toISOString();
-  return {
-    id: "p-1",
-    name: "テストプロジェクト",
-    description: "",
-    status: "active",
-    startDate: now.slice(0, 10),
-    includeWeekends: false,
-    createdAt: now,
-    updatedAt: now,
-    ...overrides,
-  };
-}
 
 describe("TodayDashboardPage", () => {
   beforeEach(() => {

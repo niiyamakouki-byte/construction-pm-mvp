@@ -232,7 +232,7 @@ export function GanttChart({
             />
 
             {/* Rows */}
-            {visibleRows.map((row, rowIndex) => {
+            {visibleRows.map((row, _rowIndex) => {
               if (row.type === "phase") {
                 const { group } = row;
                 return (

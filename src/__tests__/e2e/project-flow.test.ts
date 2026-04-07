@@ -4,7 +4,7 @@
  */
 import { describe, expect, it, beforeEach } from "vitest";
 import { InMemoryRepository } from "../../infra/in-memory-repository.js";
-import type { Project, Task, Contractor } from "../../domain/types.js";
+import type { Project, Task } from "../../domain/types.js";
 
 // ── テストデータファクトリ ────────────────────────────────────
 
