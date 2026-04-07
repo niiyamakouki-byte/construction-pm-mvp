@@ -3,11 +3,20 @@ import { ApiError } from "./types.js";
 import type { MultipartBody, UploadedFile } from "./types.js";
 import { isObject } from "./utils.js";
 
+const MAX_BODY_BYTES = 1 * 1024 * 1024; // 1 MB
+
 async function readRawBody(request: IncomingMessage): Promise<Buffer> {
   const chunks: Uint8Array[] = [];
+  let totalBytes = 0;
 
   for await (const chunk of request) {
-    chunks.push(typeof chunk === "string" ? Buffer.from(chunk) : chunk);
+    const buf = typeof chunk === "string" ? Buffer.from(chunk) : chunk;
+    totalBytes += buf.length;
+    if (totalBytes > MAX_BODY_BYTES) {
+      request.destroy();
+      throw new ApiError(413, "リクエストボディが大きすぎます（上限1MB）。");
+    }
+    chunks.push(buf);
   }
 
   if (chunks.length === 0) {
