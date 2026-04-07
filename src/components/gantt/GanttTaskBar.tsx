@@ -86,10 +86,13 @@ export function GanttTaskBar({
           aria-label={`マイルストーン: ${task.name}: ${task.startDate}${task.isDateEstimated ? " (推定)" : ""}`}
           className="absolute cursor-pointer focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-1"
           style={{
-            left: left + dayWidth / 2 - 10,
-            top: rowHeight / 2 - 10,
-            width: 20,
-            height: 20,
+            left: left + dayWidth / 2 - 22,
+            top: rowHeight / 2 - 22,
+            width: 44,
+            height: 44,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
           }}
           title={`${task.name}: ${task.startDate}${task.isDateEstimated ? " (推定)" : ""} — クリックで編集`}
           onClick={() => {
@@ -210,13 +213,13 @@ export function GanttTaskBar({
           {connectMode && (
             <>
               <div
-                className={`absolute left-0 top-1/2 -translate-x-1/2 -translate-y-1/2 h-3 w-3 rounded-full border-2 z-30 ${
+                className={`absolute left-0 top-1/2 -translate-x-1/2 -translate-y-1/2 h-6 w-6 rounded-full border-2 z-30 ${
                   connectState ? "border-violet-400 bg-violet-200 cursor-pointer" : "border-slate-300 bg-white"
                 }`}
                 title="接続先（この点をクリック）"
               />
               <div
-                className={`absolute right-0 top-1/2 translate-x-1/2 -translate-y-1/2 h-3 w-3 rounded-full border-2 z-30 cursor-pointer ${
+                className={`absolute right-0 top-1/2 translate-x-1/2 -translate-y-1/2 h-6 w-6 rounded-full border-2 z-30 cursor-pointer ${
                   isConnectFrom ? "border-violet-600 bg-violet-400" : "border-violet-400 bg-violet-200 hover:bg-violet-300"
                 }`}
                 title="接続元としてこのタスクを選択"

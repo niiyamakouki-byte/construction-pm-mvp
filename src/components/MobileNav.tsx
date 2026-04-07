@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 
 type MobileNavItem = {
   key: string;
@@ -32,6 +32,8 @@ export function MobileNav({
   userLabel,
   onSignOut,
 }: MobileNavProps) {
+  const touchStartX = useRef<number | null>(null);
+
   useEffect(() => {
     if (!open) return;
 
@@ -50,6 +52,18 @@ export function MobileNav({
       window.removeEventListener("keydown", handleKeyDown);
     };
   }, [open, onClose]);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartX.current === null) return;
+    const dx = e.changedTouches[0].clientX - touchStartX.current;
+    touchStartX.current = null;
+    // Swipe right >= 60px to close (drawer is on the right side)
+    if (dx > 60) onClose();
+  };
 
   const handleNavigate = (path: string) => {
     onNavigate(path);
@@ -97,6 +111,8 @@ export function MobileNav({
           role="dialog"
           aria-modal="true"
           aria-label="モバイルナビゲーション"
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
         >
           <div className="flex items-center justify-between border-b border-slate-200 px-4 py-4">
             <div>

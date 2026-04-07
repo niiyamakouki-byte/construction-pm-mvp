@@ -186,6 +186,21 @@ textarea::placeholder {
   width: var(--gantt-label-width, 240px);
 }
 
+/* Mobile: ensure modals are scrollable and don't overflow viewport */
+.modal-scroll {
+  overflow-y: auto;
+  max-height: 80dvh;
+  overscroll-behavior: contain;
+}
+
+/* Mobile: minimum font size for readability */
+@media (max-width: 767px) {
+  .text-xs {
+    font-size: 0.875rem !important; /* 14px minimum */
+    line-height: 1.25rem !important;
+  }
+}
+
 @media (max-width: 767px) {
   .responsive-card {
     padding: 1rem !important;

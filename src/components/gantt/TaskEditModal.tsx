@@ -26,7 +26,7 @@ export function TaskEditModal({ taskDetail, contractors, onClose, onSubmit, onCh
       onClick={onClose}
     >
       <div
-        className="mx-4 w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl"
+        className="modal-scroll mx-4 w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
         <h3 className="mb-4 text-lg font-bold text-slate-900">タスク編集</h3>
@@ -112,6 +112,7 @@ export function TaskEditModal({ taskDetail, contractors, onClose, onSubmit, onCh
             </label>
             <input
               type="number"
+              inputMode="numeric"
               min={0}
               max={365}
               value={taskDetail.editLeadTimeDays}

@@ -280,12 +280,13 @@ function EstimatePageContent() {
                 <div className="estimate-quantity-controls flex items-center gap-1.5">
                   <button
                     onClick={() => handleQuantityChange(item.code, item.quantity - 1)}
-                    className="h-9 w-9 rounded-lg bg-slate-100 text-sm font-bold text-slate-600 hover:bg-slate-200 active:bg-slate-300"
+                    className="h-11 w-11 rounded-lg bg-slate-100 text-sm font-bold text-slate-600 hover:bg-slate-200 active:bg-slate-300"
                   >
                     -
                   </button>
                   <input
                     type="number"
+                    inputMode="numeric"
                     value={item.quantity}
                     onChange={(e) =>
                       handleQuantityChange(item.code, Math.max(0, Number(e.target.value)))
@@ -295,14 +296,14 @@ function EstimatePageContent() {
                   />
                   <button
                     onClick={() => handleQuantityChange(item.code, item.quantity + 1)}
-                    className="h-9 w-9 rounded-lg bg-slate-100 text-sm font-bold text-slate-600 hover:bg-slate-200 active:bg-slate-300"
+                    className="h-11 w-11 rounded-lg bg-slate-100 text-sm font-bold text-slate-600 hover:bg-slate-200 active:bg-slate-300"
                   >
                     +
                   </button>
                 </div>
                 <button
                   onClick={() => handleRemoveItem(item.code)}
-                  className="ml-1 rounded p-1 text-slate-300 hover:text-red-500 hover:bg-red-50"
+                  className="ml-1 flex h-11 w-11 items-center justify-center rounded text-slate-300 hover:text-red-500 hover:bg-red-50"
                 >
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M18 6L6 18M6 6l12 12" />

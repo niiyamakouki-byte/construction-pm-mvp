@@ -145,7 +145,7 @@ export function GanttChart({
                     </span>
                   </button>
                   <button
-                    className="ml-1 flex h-6 w-6 shrink-0 items-center justify-center rounded text-slate-400 hover:bg-brand-100 hover:text-brand-600 transition-colors"
+                    className="ml-1 flex h-11 w-11 shrink-0 items-center justify-center rounded text-slate-400 hover:bg-brand-100 hover:text-brand-600 transition-colors"
                     onClick={(e) => { e.stopPropagation(); onOpenQuickAdd(group.projectId, group.projectName); }}
                     aria-label={`${group.projectName}にタスクを追加`}
                     title="タスクを追加"

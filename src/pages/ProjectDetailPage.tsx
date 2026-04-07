@@ -414,7 +414,7 @@ export function ProjectDetailPage({ projectId }: { projectId: string }) {
       {/* Delete confirmation dialog */}
       {deletingTaskId && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={() => setDeletingTaskId(null)}>
-          <div className="mx-4 w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
+          <div className="modal-scroll mx-4 w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
             <h3 className="text-base font-bold text-slate-900">タスクを削除</h3>
             <p className="mt-2 text-sm text-slate-600">
               このタスクを削除してもよろしいですか？この操作は取り消せません。
