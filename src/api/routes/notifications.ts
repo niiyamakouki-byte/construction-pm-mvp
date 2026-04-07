@@ -2,7 +2,7 @@ import {
   buildJapaneseDailyDigest,
   serializeNotificationsDescending,
 } from "../notifications.js";
-import { requireExistingProject } from "../route-helpers.js";
+import { decodePathParam, requireExistingProject } from "../route-helpers.js";
 import { serializeNotification } from "../serialization.js";
 import { created, ok } from "../responses.js";
 import { ApiError, type ApiRouteHandler } from "../types.js";
@@ -60,7 +60,7 @@ export const handleNotificationsRoutes: ApiRouteHandler = async ({
 
   const markReadMatch = pathname.match(/^\/api\/notifications\/([^/]+)\/read$/);
   if (request.method === "PATCH" && markReadMatch) {
-    const notificationId = decodeURIComponent(markReadMatch[1]);
+    const notificationId = decodePathParam(markReadMatch[1], "通知ID");
     const notification = await store.markNotificationRead(notificationId);
     if (!notification) {
       throw new ApiError(404, "指定された通知が見つかりません。");

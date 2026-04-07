@@ -142,7 +142,7 @@ function GanttPageContent() {
     } finally {
       setLoading(false);
     }
-  }, [today]);
+  }, [contractorRepository, projectRepository, taskRepository, today]);
 
   useEffect(() => {
     void loadData();

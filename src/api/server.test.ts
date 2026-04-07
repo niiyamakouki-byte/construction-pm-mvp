@@ -207,6 +207,15 @@ describe("GenbaHub API", () => {
     });
   });
 
+  it("不正なURLエンコードのIDは400を返す", async () => {
+    const response = await request("GET", "/api/projects/%E0%A4%A");
+
+    expect(response).toEqual({
+      status: 400,
+      body: { error: "プロジェクトIDが不正です。" },
+    });
+  });
+
   it("GET /api/projects で一覧を取得できる", async () => {
     await request("POST", "/api/projects", {
       name: "案件A",
@@ -278,6 +287,32 @@ describe("GenbaHub API", () => {
           taskCount: 2,
         }),
       ],
+    });
+  });
+
+  it("POST /api/projects/:id/import は解析できない工程表を400で返す", async () => {
+    const created = await request("POST", "/api/projects", {
+      name: "インポート検証案件",
+      contractor: "元請A",
+      address: "東京都",
+      status: "planning",
+    });
+    const projectId = (created.body as { project: { id: string } }).project.id;
+
+    const response = await request("POST", `/api/projects/${projectId}/import`, {
+      files: [
+        {
+          fieldName: "file",
+          filename: "broken.csv",
+          contentType: "text/csv",
+          buffer: Buffer.from("Task Name,Start Date,End Date\nBoard work,2026-04-14,平成31年5月1日"),
+        },
+      ],
+    });
+
+    expect(response).toEqual({
+      status: 400,
+      body: { error: "日付が不正です。" },
     });
   });
 

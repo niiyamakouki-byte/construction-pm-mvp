@@ -1,6 +1,6 @@
 import { parseScheduleImportFile } from "../schedule-importer.js";
 import { requireMultipartFile } from "../http.js";
-import { requireExistingProject } from "../route-helpers.js";
+import { decodePathParam, requireExistingProject } from "../route-helpers.js";
 import {
   calculateCostSummary,
   calculateProjectProgress,
@@ -312,7 +312,7 @@ export const handleProjectsRoutes: ApiRouteHandler = async ({ pathname, request,
 
   const projectMatch = pathname.match(/^\/api\/projects\/([^/]+)$/);
   if (projectMatch) {
-    const projectId = decodeURIComponent(projectMatch[1]);
+    const projectId = decodePathParam(projectMatch[1], "プロジェクトID");
 
     if (request.method === "GET") {
       const project = await requireExistingProject(store, projectId);
@@ -357,7 +357,7 @@ export const handleProjectsRoutes: ApiRouteHandler = async ({ pathname, request,
 
   const projectProgressMatch = pathname.match(/^\/api\/projects\/([^/]+)\/progress$/);
   if (request.method === "GET" && projectProgressMatch) {
-    const projectId = decodeURIComponent(projectProgressMatch[1]);
+    const projectId = decodePathParam(projectProgressMatch[1], "プロジェクトID");
     await requireExistingProject(store, projectId);
     const tasks = await store.listTasks(projectId);
     return ok({
@@ -369,7 +369,7 @@ export const handleProjectsRoutes: ApiRouteHandler = async ({ pathname, request,
 
   const projectSchedulePdfMatch = pathname.match(/^\/api\/projects\/([^/]+)\/schedule-pdf$/);
   if (request.method === "GET" && projectSchedulePdfMatch) {
-    const projectId = decodeURIComponent(projectSchedulePdfMatch[1]);
+    const projectId = decodePathParam(projectSchedulePdfMatch[1], "プロジェクトID");
     const project = await requireExistingProject(store, projectId);
     const tasks = await store.listTasks(projectId);
     return html(renderScheduleHtml(project, tasks));
@@ -377,7 +377,7 @@ export const handleProjectsRoutes: ApiRouteHandler = async ({ pathname, request,
 
   const projectCostSummaryMatch = pathname.match(/^\/api\/projects\/([^/]+)\/cost-summary$/);
   if (request.method === "GET" && projectCostSummaryMatch) {
-    const projectId = decodeURIComponent(projectCostSummaryMatch[1]);
+    const projectId = decodePathParam(projectCostSummaryMatch[1], "プロジェクトID");
     await requireExistingProject(store, projectId);
     const [tasks, materials, changeOrders] = await Promise.all([
       store.listTasks(projectId),
@@ -393,7 +393,7 @@ export const handleProjectsRoutes: ApiRouteHandler = async ({ pathname, request,
 
   const projectCostReportMatch = pathname.match(/^\/api\/projects\/([^/]+)\/cost-report$/);
   if (request.method === "GET" && projectCostReportMatch) {
-    const projectId = decodeURIComponent(projectCostReportMatch[1]);
+    const projectId = decodePathParam(projectCostReportMatch[1], "プロジェクトID");
     const project = await requireExistingProject(store, projectId);
     const [tasks, materials, changeOrders] = await Promise.all([
       store.listTasks(projectId),
@@ -405,14 +405,22 @@ export const handleProjectsRoutes: ApiRouteHandler = async ({ pathname, request,
 
   const projectImportMatch = pathname.match(/^\/api\/projects\/([^/]+)\/import$/);
   if (request.method === "POST" && projectImportMatch) {
-    const projectId = decodeURIComponent(projectImportMatch[1]);
+    const projectId = decodePathParam(projectImportMatch[1], "プロジェクトID");
     await requireExistingProject(store, projectId);
 
     const uploadedFile = requireMultipartFile(request.body ?? {});
-    const importedTasks = parseScheduleImportFile({
-      buffer: uploadedFile.buffer,
-      filename: uploadedFile.filename,
-    });
+    let importedTasks: ReturnType<typeof parseScheduleImportFile>;
+    try {
+      importedTasks = parseScheduleImportFile({
+        buffer: uploadedFile.buffer,
+        filename: uploadedFile.filename,
+      });
+    } catch (error) {
+      throw new ApiError(
+        400,
+        error instanceof Error ? error.message : "工程表ファイルの解析に失敗しました。",
+      );
+    }
 
     const createdTasks = await Promise.all(
       importedTasks.map((task) =>

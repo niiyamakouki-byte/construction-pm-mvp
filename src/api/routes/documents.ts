@@ -1,4 +1,8 @@
-import { requireExistingDocument, requireExistingProject } from "../route-helpers.js";
+import {
+  decodePathParam,
+  requireExistingDocument,
+  requireExistingProject,
+} from "../route-helpers.js";
 import { serializeDocument, serializeDocumentVersion } from "../serialization.js";
 import { created, noContent, ok } from "../responses.js";
 import { ApiError, DOCUMENT_TYPES, type ApiRouteHandler, type DocumentType } from "../types.js";
@@ -20,7 +24,7 @@ function parseDocumentTypeFilter(value: string | null): DocumentType | undefined
 export const handleDocumentsRoutes: ApiRouteHandler = async ({ pathname, request, store, url }) => {
   const projectDocumentsMatch = pathname.match(/^\/api\/projects\/([^/]+)\/documents$/);
   if (projectDocumentsMatch) {
-    const projectId = decodeURIComponent(projectDocumentsMatch[1]);
+    const projectId = decodePathParam(projectDocumentsMatch[1], "プロジェクトID");
     await requireExistingProject(store, projectId);
 
     if (request.method === "GET") {
@@ -41,7 +45,7 @@ export const handleDocumentsRoutes: ApiRouteHandler = async ({ pathname, request
 
   const documentVersionsMatch = pathname.match(/^\/api\/documents\/([^/]+)\/versions$/);
   if (request.method === "GET" && documentVersionsMatch) {
-    const documentId = decodeURIComponent(documentVersionsMatch[1]);
+    const documentId = decodePathParam(documentVersionsMatch[1], "ドキュメントID");
     await requireExistingDocument(store, documentId);
     return ok({
       versions: (await store.listDocumentVersions(documentId)).map(serializeDocumentVersion),
@@ -53,7 +57,7 @@ export const handleDocumentsRoutes: ApiRouteHandler = async ({ pathname, request
     return null;
   }
 
-  const documentId = decodeURIComponent(documentMatch[1]);
+  const documentId = decodePathParam(documentMatch[1], "ドキュメントID");
 
   if (request.method === "GET") {
     const document = await requireExistingDocument(store, documentId);

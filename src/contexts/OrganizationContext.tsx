@@ -80,22 +80,33 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
       return;
     }
 
+    let disposed = false;
     setLoading(true);
     const companyName =
       (user.user_metadata?.company_name as string | undefined) ?? "";
 
-    ensureOrganization(user.id, companyName)
+    void ensureOrganization(user.id, companyName)
       .then((org) => {
-        setOrganization(org);
+        if (!disposed) {
+          setOrganization(org);
+        }
       })
       .catch((err) => {
-        console.error("Organization setup failed:", err);
-        setOrganization(null);
+        if (!disposed) {
+          console.error("Organization setup failed:", err);
+          setOrganization(null);
+        }
       })
       .finally(() => {
-        setLoading(false);
+        if (!disposed) {
+          setLoading(false);
+        }
       });
-  }, [user?.id]);
+
+    return () => {
+      disposed = true;
+    };
+  }, [user, user?.id]);
 
   return (
     <OrganizationContext.Provider

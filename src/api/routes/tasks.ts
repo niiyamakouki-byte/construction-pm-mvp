@@ -3,6 +3,7 @@ import {
   ensureUpcomingMaterialDeliveryNotifications,
 } from "../notifications.js";
 import {
+  decodePathParam,
   requireExistingProject,
   requireExistingTask,
   resolveTaskContractor,
@@ -44,7 +45,7 @@ function resolveNextTaskSchedule(existing: ApiTaskRecord, input: UpdateTaskInput
 export const handleTasksRoutes: ApiRouteHandler = async ({ pathname, request, store }) => {
   const projectTasksMatch = pathname.match(/^\/api\/projects\/([^/]+)\/tasks$/);
   if (projectTasksMatch) {
-    const projectId = decodeURIComponent(projectTasksMatch[1]);
+    const projectId = decodePathParam(projectTasksMatch[1], "プロジェクトID");
     await requireExistingProject(store, projectId);
 
     if (request.method === "GET") {
@@ -74,7 +75,7 @@ export const handleTasksRoutes: ApiRouteHandler = async ({ pathname, request, st
 
   const projectMilestonesMatch = pathname.match(/^\/api\/projects\/([^/]+)\/milestones$/);
   if (request.method === "GET" && projectMilestonesMatch) {
-    const projectId = decodeURIComponent(projectMilestonesMatch[1]);
+    const projectId = decodePathParam(projectMilestonesMatch[1], "プロジェクトID");
     await requireExistingProject(store, projectId);
     const milestones = (await store.listTasks(projectId))
       .filter((task) => task.isMilestone)
@@ -85,7 +86,7 @@ export const handleTasksRoutes: ApiRouteHandler = async ({ pathname, request, st
 
   const taskDependenciesMatch = pathname.match(/^\/api\/tasks\/([^/]+)\/dependencies$/);
   if (request.method === "POST" && taskDependenciesMatch) {
-    const taskId = decodeURIComponent(taskDependenciesMatch[1]);
+    const taskId = decodePathParam(taskDependenciesMatch[1], "タスクID");
     const task = await requireExistingTask(store, taskId);
     const dependency = validateCreateDependencyInput(request.body ?? {});
 
@@ -121,7 +122,7 @@ export const handleTasksRoutes: ApiRouteHandler = async ({ pathname, request, st
     return null;
   }
 
-  const taskId = decodeURIComponent(taskMatch[1]);
+  const taskId = decodePathParam(taskMatch[1], "タスクID");
 
   if (request.method === "PATCH") {
     const existing = await requireExistingTask(store, taskId);

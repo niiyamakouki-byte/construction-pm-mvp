@@ -1,5 +1,5 @@
 import { createChangeOrderCreatedNotification } from "../notifications.js";
-import { requireExistingProject } from "../route-helpers.js";
+import { decodePathParam, requireExistingProject } from "../route-helpers.js";
 import { serializeChangeOrder } from "../serialization.js";
 import { created, ok } from "../responses.js";
 import type { ApiRouteHandler } from "../types.js";
@@ -11,7 +11,7 @@ export const handleChangesRoutes: ApiRouteHandler = async ({ pathname, request, 
     return null;
   }
 
-  const projectId = decodeURIComponent(projectChangesMatch[1]);
+  const projectId = decodePathParam(projectChangesMatch[1], "プロジェクトID");
   await requireExistingProject(store, projectId);
 
   if (request.method === "GET") {

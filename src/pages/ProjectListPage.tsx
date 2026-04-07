@@ -52,7 +52,7 @@ export function ProjectListPage() {
 
   const loadProjects = useCallback(async () => {
     setProjects(await projectRepository.findAll());
-  }, []);
+  }, [projectRepository]);
 
   useEffect(() => {
     void loadProjects();

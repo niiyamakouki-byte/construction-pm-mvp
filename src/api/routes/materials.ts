@@ -1,5 +1,5 @@
 import { ensureUpcomingMaterialDeliveryNotifications } from "../notifications.js";
-import { requireExistingProject } from "../route-helpers.js";
+import { decodePathParam, requireExistingProject } from "../route-helpers.js";
 import { serializeMaterial } from "../serialization.js";
 import { created, ok } from "../responses.js";
 import type { ApiRouteHandler } from "../types.js";
@@ -11,7 +11,7 @@ export const handleMaterialsRoutes: ApiRouteHandler = async ({ pathname, request
     return null;
   }
 
-  const projectId = decodeURIComponent(projectMaterialsMatch[1]);
+  const projectId = decodePathParam(projectMaterialsMatch[1], "プロジェクトID");
   await requireExistingProject(store, projectId);
 
   if (request.method === "GET") {

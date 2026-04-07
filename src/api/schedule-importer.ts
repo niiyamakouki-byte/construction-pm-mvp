@@ -1,4 +1,5 @@
 import { extname } from "node:path";
+import { parseJapaneseEraDate } from "./japanese-era-date.js";
 import { inflateRawSync } from "node:zlib";
 
 export type ImportedScheduleTask = {
@@ -91,12 +92,9 @@ export function parseFlexibleScheduleDate(value: ParsedCell | Date, fieldLabel =
     throw new Error(`${fieldLabel}は必須です。`);
   }
 
-  const reiwaMatch =
-    normalized.match(/^r\s*(\d{1,2})[./-](\d{1,2})[./-](\d{1,2})$/i) ??
-    normalized.match(/^令和\s*(\d{1,2})年\s*(\d{1,2})月\s*(\d{1,2})日$/i);
-  if (reiwaMatch) {
-    const year = 2018 + Number(reiwaMatch[1]);
-    return formatIsoDate(year, Number(reiwaMatch[2]), Number(reiwaMatch[3]), fieldLabel);
+  const eraDate = parseJapaneseEraDate(normalized);
+  if (eraDate) {
+    return formatIsoDate(eraDate.year, eraDate.month, eraDate.day, fieldLabel);
   }
 
   const slashMatch = normalized.match(/^(\d{4})[./-](\d{1,2})[./-](\d{1,2})$/);

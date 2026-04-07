@@ -105,12 +105,11 @@ async function fetchWeather(
   lat: number,
   lon: number,
 ): Promise<WeatherData | null> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 5000);
   try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 5000);
     const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weather_code&timezone=Asia%2FTokyo`;
     const res = await fetch(url, { signal: controller.signal });
-    clearTimeout(timeoutId);
     if (!res.ok) return null;
     const data = (await res.json()) as {
       current?: { temperature_2m?: number; weather_code?: number };
@@ -127,6 +126,8 @@ async function fetchWeather(
     }
   } catch {
     // non-critical: weather is a nice-to-have
+  } finally {
+    clearTimeout(timeoutId);
   }
   return null;
 }
@@ -192,7 +193,7 @@ export function ProjectDetailPage({ projectId }: { projectId: string }) {
     } finally {
       setLoading(false);
     }
-  }, [projectId, expenseRepository]);
+  }, [costItemRepository, expenseRepository, projectId, projectRepository, taskRepository]);
 
   useEffect(() => {
     void loadData();

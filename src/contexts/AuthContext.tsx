@@ -37,34 +37,57 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return;
     }
 
+    let disposed = false;
     let unsubscribe: (() => void) | null = null;
 
-    getSupabaseClient().then((client) => {
-      // Initial session
-      client.auth.getSession().then(({ data }) => {
-        setSession(data.session);
-        setLoading(false);
-      });
+    void getSupabaseClient()
+      .then((client) => {
+        if (disposed) {
+          return;
+        }
 
-      // Listen for auth changes
-      const { data } = client.auth.onAuthStateChange((event, newSession) => {
-        setSession(newSession);
-        setLoading(false);
-        // OAuth/メールログイン後、ランディング/ログインページにいたらアプリへ遷移
-        // email_confirmed_at が null の場合はメール未確認のため遷移しない
-        if (event === "SIGNED_IN" && newSession?.user) {
-          const confirmedAt = (newSession.user as { email_confirmed_at?: string | null }).email_confirmed_at;
-          if (confirmedAt == null) return;
-          const hash = window.location.hash.replace("#", "") || "/";
-          if (hash === "/" || hash === "" || hash === "/login" || hash === "/signup") {
-            navigate("/app");
+        void client.auth.getSession().then(({ data }) => {
+          if (disposed) {
+            return;
           }
+
+          setSession(data.session);
+          setLoading(false);
+        });
+
+        const { data } = client.auth.onAuthStateChange((event, newSession) => {
+          if (disposed) {
+            return;
+          }
+
+          setSession(newSession);
+          setLoading(false);
+          // OAuth/メールログイン後、ランディング/ログインページにいたらアプリへ遷移
+          // email_confirmed_at が null の場合はメール未確認のため遷移しない
+          if (event === "SIGNED_IN" && newSession?.user) {
+            const confirmedAt = (newSession.user as { email_confirmed_at?: string | null }).email_confirmed_at;
+            if (confirmedAt == null) return;
+            const hash = window.location.hash.replace("#", "") || "/";
+            if (hash === "/" || hash === "" || hash === "/login" || hash === "/signup") {
+              navigate("/app");
+            }
+          }
+        });
+        if (disposed) {
+          data.subscription.unsubscribe();
+          return;
+        }
+        unsubscribe = () => data.subscription.unsubscribe();
+      })
+      .catch((error) => {
+        console.error("Failed to initialize auth context:", error);
+        if (!disposed) {
+          setLoading(false);
         }
       });
-      unsubscribe = () => data.subscription.unsubscribe();
-    });
 
     return () => {
+      disposed = true;
       unsubscribe?.();
     };
   }, []);

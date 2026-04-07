@@ -1,7 +1,7 @@
 /* @vitest-environment node */
 
 import { describe, expect, it } from "vitest";
-import { parseScheduleImportFile } from "./schedule-importer";
+import { parseFlexibleScheduleDate, parseScheduleImportFile } from "./schedule-importer";
 import { createMockXlsxBuffer } from "./test-utils";
 
 describe("schedule importer", () => {
@@ -96,6 +96,17 @@ describe("schedule importer", () => {
         endDate: "2026-04-15",
       },
     ]);
+  });
+
+  it("和暦の元年と改元境界日を正しく解釈できる", () => {
+    expect(parseFlexibleScheduleDate("令和元年5月1日")).toBe("2019-05-01");
+    expect(parseFlexibleScheduleDate("H31.4.30")).toBe("2019-04-30");
+    expect(parseFlexibleScheduleDate("昭和64年1月7日")).toBe("1989-01-07");
+  });
+
+  it("改元後の存在しない和暦日付は弾く", () => {
+    expect(() => parseFlexibleScheduleDate("平成31年5月1日")).toThrowError("日付が不正です。");
+    expect(() => parseFlexibleScheduleDate("R1.4.30")).toThrowError("日付が不正です。");
   });
 
   it("必須列が不足している場合はエラーを返す", () => {

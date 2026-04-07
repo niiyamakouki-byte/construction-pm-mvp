@@ -53,6 +53,14 @@ export async function requireExistingContractor(
   return contractor;
 }
 
+export function decodePathParam(value: string, fieldLabel = "ID"): string {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    throw new ApiError(400, `${fieldLabel}が不正です。`);
+  }
+}
+
 export async function resolveTaskContractor(
   store: ApiStore,
   contractorId: string | undefined | null,
