@@ -4,6 +4,15 @@ export const MATERIAL_STATUSES = ["ordered", "delivered", "installed"] as const;
 export const CHANGE_ORDER_STATUSES = ["pending", "approved", "rejected"] as const;
 export const NOTIFICATION_PRIORITIES = ["low", "medium", "high"] as const;
 export const DEPENDENCY_TYPES = ["FS", "SS", "FF", "SF"] as const;
+export const DOCUMENT_TYPES = [
+  "drawing",
+  "contract",
+  "permit",
+  "daily_report",
+  "photo",
+  "invoice",
+  "other",
+] as const;
 export const DEFAULT_PORT = 3001;
 
 export type ProjectStatus = (typeof PROJECT_STATUSES)[number];
@@ -12,6 +21,7 @@ export type MaterialStatus = (typeof MATERIAL_STATUSES)[number];
 export type ChangeOrderStatus = (typeof CHANGE_ORDER_STATUSES)[number];
 export type NotificationPriority = (typeof NOTIFICATION_PRIORITIES)[number];
 export type DependencyType = (typeof DEPENDENCY_TYPES)[number];
+export type DocumentType = (typeof DOCUMENT_TYPES)[number];
 
 export type DependencyRecord = {
   predecessorId: string;
@@ -107,6 +117,31 @@ export type ApiNotificationRecord = {
   readAt?: string;
 };
 
+export type ApiDocumentRecord = {
+  id: string;
+  createdAt: string;
+  updatedAt: string;
+  projectId: string;
+  name: string;
+  type: DocumentType;
+  url: string;
+  uploadedBy: string;
+  version: string;
+};
+
+export type ApiDocumentVersionRecord = {
+  id: string;
+  createdAt: string;
+  updatedAt: string;
+  documentId: string;
+  projectId: string;
+  name: string;
+  type: DocumentType;
+  url: string;
+  uploadedBy: string;
+  version: string;
+};
+
 export type DatabaseState = {
   projects: ApiProjectRecord[];
   tasks: ApiTaskRecord[];
@@ -114,6 +149,8 @@ export type DatabaseState = {
   materials: ApiMaterialRecord[];
   changeOrders: ApiChangeOrderRecord[];
   notifications: ApiNotificationRecord[];
+  documents: ApiDocumentRecord[];
+  documentVersions: ApiDocumentVersionRecord[];
 };
 
 export type CreateProjectInput = Pick<
@@ -160,6 +197,11 @@ export type CreateNotificationInput = Pick<
   "type" | "message" | "projectId" | "recipientId" | "priority"
 >;
 
+export type CreateDocumentInput = Pick<
+  ApiDocumentRecord,
+  "name" | "type" | "url" | "uploadedBy" | "version"
+>;
+
 export type UpdateProjectInput = {
   name?: string;
   contractor?: string;
@@ -188,6 +230,11 @@ export type UpdateTaskInput = {
   cost?: number;
   dependencies?: DependencyRecord[];
   isMilestone?: boolean;
+};
+
+export type UpdateDocumentInput = {
+  url?: string;
+  version?: string;
 };
 
 export type UploadedFile = {
@@ -226,6 +273,12 @@ export interface ApiStore {
   createNotification(input: CreateNotificationInput): Promise<ApiNotificationRecord>;
   markNotificationRead(id: string): Promise<ApiNotificationRecord | null>;
   countUnreadNotifications(): Promise<number>;
+  listDocuments(projectId: string, filter?: { type?: DocumentType }): Promise<ApiDocumentRecord[]>;
+  getDocument(id: string): Promise<ApiDocumentRecord | null>;
+  createDocument(projectId: string, input: CreateDocumentInput): Promise<ApiDocumentRecord>;
+  updateDocument(id: string, input: UpdateDocumentInput): Promise<ApiDocumentRecord | null>;
+  deleteDocument(id: string): Promise<boolean>;
+  listDocumentVersions(documentId: string): Promise<ApiDocumentVersionRecord[]>;
 }
 
 export type ApiRequest = {

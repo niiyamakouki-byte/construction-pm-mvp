@@ -1,6 +1,8 @@
 import type {
   ApiChangeOrderRecord,
   ApiContractorRecord,
+  ApiDocumentRecord,
+  ApiDocumentVersionRecord,
   ApiMaterialRecord,
   ApiNotificationRecord,
   ApiProjectRecord,
@@ -106,6 +108,35 @@ export function serializeNotification(notification: ApiNotificationRecord) {
     priority: notification.priority,
     read: notification.read,
     readAt: notification.readAt ?? null,
+  };
+}
+
+export function serializeDocument(document: ApiDocumentRecord) {
+  return {
+    id: document.id,
+    createdAt: document.createdAt,
+    updatedAt: document.updatedAt,
+    projectId: document.projectId,
+    name: document.name,
+    type: document.type,
+    url: document.url,
+    uploadedBy: document.uploadedBy,
+    version: document.version,
+  };
+}
+
+export function serializeDocumentVersion(version: ApiDocumentVersionRecord) {
+  return {
+    id: version.id,
+    createdAt: version.createdAt,
+    updatedAt: version.updatedAt,
+    documentId: version.documentId,
+    projectId: version.projectId,
+    name: version.name,
+    type: version.type,
+    url: version.url,
+    uploadedBy: version.uploadedBy,
+    version: version.version,
   };
 }
 

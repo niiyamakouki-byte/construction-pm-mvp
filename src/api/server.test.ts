@@ -1414,4 +1414,116 @@ describe("GenbaHub API", () => {
       error: "指定されたタスクが見つかりません。",
     });
   });
+  it("documents endpoints manage metadata, filtering, and version history", async () => {
+    const createdProject = await request("POST", "/api/projects", {
+      name: "書類案件",
+      contractor: "元請書類",
+      address: "東京都",
+      status: "planning",
+    });
+    const projectId = (createdProject.body as { project: { id: string } }).project.id;
+
+    const createdDocument = await request("POST", "/api/projects/" + projectId + "/documents", {
+      name: "配置図",
+      type: "drawing",
+      url: "https://example.com/docs/layout-v1.pdf",
+      uploadedBy: "pm@example.com",
+      version: "v1",
+    });
+
+    expect(createdDocument.status).toBe(201);
+    expect(createdDocument.body).toMatchObject({
+      document: {
+        projectId,
+        name: "配置図",
+        type: "drawing",
+        url: "https://example.com/docs/layout-v1.pdf",
+        uploadedBy: "pm@example.com",
+        version: "v1",
+      },
+    });
+
+    const documentId = (createdDocument.body as { document: { id: string } }).document.id;
+
+    await request("POST", "/api/projects/" + projectId + "/documents", {
+      name: "請求書",
+      type: "invoice",
+      url: "https://example.com/docs/invoice-v1.pdf",
+      uploadedBy: "accounting@example.com",
+      version: "v1",
+    });
+
+    const filteredList = await request("GET", "/api/projects/" + projectId + "/documents?type=drawing");
+    expect(filteredList.status).toBe(200);
+    expect(filteredList.body).toEqual({
+      documents: [
+        expect.objectContaining({
+          id: documentId,
+          type: "drawing",
+        }),
+      ],
+    });
+
+    const getDocument = await request("GET", "/api/documents/" + documentId);
+    expect(getDocument.status).toBe(200);
+    expect(getDocument.body).toMatchObject({
+      document: {
+        id: documentId,
+        version: "v1",
+      },
+    });
+
+    const updateDocument = await request("PATCH", "/api/documents/" + documentId, {
+      version: "v2",
+      url: "https://example.com/docs/layout-v2.pdf",
+    });
+    expect(updateDocument.status).toBe(200);
+    expect(updateDocument.body).toMatchObject({
+      document: {
+        id: documentId,
+        version: "v2",
+        url: "https://example.com/docs/layout-v2.pdf",
+      },
+    });
+
+    const versions = await request("GET", "/api/documents/" + documentId + "/versions");
+    expect(versions.status).toBe(200);
+    expect(versions.body).toEqual({
+      versions: [
+        expect.objectContaining({
+          documentId,
+          version: "v1",
+          url: "https://example.com/docs/layout-v1.pdf",
+        }),
+      ],
+    });
+
+    const deleteDocument = await request("DELETE", "/api/documents/" + documentId);
+    expect(deleteDocument.status).toBe(204);
+    expect(deleteDocument.body).toBeNull();
+
+    const getDeleted = await request("GET", "/api/documents/" + documentId);
+    expect(getDeleted.status).toBe(404);
+    expect(getDeleted.body).toEqual({
+      error: "指定されたドキュメントが見つかりません。",
+    });
+  });
+
+  it("document listing rejects unsupported type filters", async () => {
+    const createdProject = await request("POST", "/api/projects", {
+      name: "書類型案件",
+      contractor: "元請H",
+      address: "千葉県",
+      status: "planning",
+    });
+    const projectId = (createdProject.body as { project: { id: string } }).project.id;
+
+    const response = await request("GET", "/api/projects/" + projectId + "/documents?type=report");
+
+    expect(response.status).toBe(400);
+    expect(response.body).toEqual({
+      error: "type は「drawing」、「contract」、「permit」、「daily_report」、「photo」、「invoice」、「other」のいずれかを指定してください。",
+    });
+  });
+
 });

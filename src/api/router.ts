@@ -1,5 +1,6 @@
 import { handleChangesRoutes } from "./routes/changes.js";
 import { handleContractorsRoutes } from "./routes/contractors.js";
+import { handleDocumentsRoutes } from "./routes/documents.js";
 import { buildHealthPayload } from "./health.js";
 import { handleMaterialsRoutes } from "./routes/materials.js";
 import { handleNotificationsRoutes } from "./routes/notifications.js";
@@ -12,6 +13,7 @@ import { ApiError, type ApiRequest, type ApiResponse, type ApiStore } from "./ty
 const routeHandlers = [
   handleNotificationsRoutes,
   handleContractorsRoutes,
+  handleDocumentsRoutes,
   handleMaterialsRoutes,
   handleChangesRoutes,
   handleTasksRoutes,

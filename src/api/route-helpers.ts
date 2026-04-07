@@ -2,6 +2,7 @@ export { requireApiKey } from "./api-key.js";
 import { ApiError } from "./types.js";
 import type {
   ApiContractorRecord,
+  ApiDocumentRecord,
   ApiProjectRecord,
   ApiStore,
   ApiTaskRecord,
@@ -26,6 +27,18 @@ export async function requireExistingTask(store: ApiStore, taskId: string): Prom
   }
 
   return task;
+}
+
+export async function requireExistingDocument(
+  store: ApiStore,
+  documentId: string,
+): Promise<ApiDocumentRecord> {
+  const document = await store.getDocument(documentId);
+  if (!document) {
+    throw new ApiError(404, "指定されたドキュメントが見つかりません。");
+  }
+
+  return document;
 }
 
 export async function requireExistingContractor(

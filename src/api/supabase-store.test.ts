@@ -134,6 +134,8 @@ function createMockSupabaseClient(initialTables: Partial<Tables> = {}): Supabase
     materials: structuredClone(initialTables.materials ?? []),
     change_orders: structuredClone(initialTables.change_orders ?? []),
     notifications: structuredClone(initialTables.notifications ?? []),
+    documents: structuredClone(initialTables.documents ?? []),
+    document_versions: structuredClone(initialTables.document_versions ?? []),
   };
 
   return {
@@ -393,4 +395,53 @@ describe("SupabaseStore", () => {
     expect(await store.listChangeOrders(project.id)).toEqual([]);
     expect(await store.listNotifications()).toEqual([]);
   });
+  it("stores document versions and deletes scoped document records", async () => {
+    const store = new SupabaseStore({
+      client: createMockSupabaseClient(),
+    });
+
+    const project = await store.createProject({
+      name: "Document Project",
+      contractor: "Field Club",
+      address: "Tokyo",
+      status: "planning",
+    });
+
+    const document = await store.createDocument(project.id, {
+      name: "Floor Plan",
+      type: "drawing",
+      url: "https://example.com/floor-v1.pdf",
+      uploadedBy: "pm@example.com",
+      version: "v1",
+    });
+
+    const updated = await store.updateDocument(document.id, {
+      version: "v2",
+      url: "https://example.com/floor-v2.pdf",
+    });
+
+    expect(updated).toMatchObject({
+      id: document.id,
+      version: "v2",
+      url: "https://example.com/floor-v2.pdf",
+    });
+    expect(await store.listDocuments(project.id, { type: "drawing" })).toEqual([
+      expect.objectContaining({
+        id: document.id,
+        version: "v2",
+      }),
+    ]);
+    expect(await store.listDocumentVersions(document.id)).toEqual([
+      expect.objectContaining({
+        documentId: document.id,
+        version: "v1",
+        url: "https://example.com/floor-v1.pdf",
+      }),
+    ]);
+
+    expect(await store.deleteDocument(document.id)).toBe(true);
+    expect(await store.getDocument(document.id)).toBeNull();
+    expect(await store.listDocumentVersions(document.id)).toEqual([]);
+  });
+
 });

@@ -5,6 +5,8 @@ import {
   DEPENDENCY_TYPES,
   type ApiChangeOrderRecord,
   type ApiContractorRecord,
+  type ApiDocumentRecord,
+  type ApiDocumentVersionRecord,
   type ApiMaterialRecord,
   type ApiNotificationRecord,
   type ApiProjectRecord,
@@ -12,6 +14,7 @@ import {
   type ApiTaskRecord,
   type CreateChangeOrderInput,
   type CreateContractorInput,
+  type CreateDocumentInput,
   type CreateMaterialInput,
   type CreateNotificationInput,
   type CreateProjectInput,
@@ -19,6 +22,8 @@ import {
   type DatabaseState,
   type DependencyRecord,
   type DependencyType,
+  type DocumentType,
+  type UpdateDocumentInput,
   type UpdateProjectInput,
   type UpdateTaskInput,
 } from "./types.js";
@@ -32,6 +37,8 @@ function createEmptyState(): DatabaseState {
     materials: [],
     changeOrders: [],
     notifications: [],
+    documents: [],
+    documentVersions: [],
   };
 }
 
@@ -92,6 +99,28 @@ function normalizeTaskRecord(task: ApiTaskRecord): ApiTaskRecord {
   };
 }
 
+function normalizeNotificationRecord(notification: ApiNotificationRecord): ApiNotificationRecord {
+  return {
+    ...notification,
+    read: notification.read ?? false,
+    readAt: notification.readAt ?? undefined,
+  };
+}
+
+function normalizeDocumentRecord(document: ApiDocumentRecord): ApiDocumentRecord {
+  return {
+    ...document,
+  };
+}
+
+function normalizeDocumentVersionRecord(
+  version: ApiDocumentVersionRecord,
+): ApiDocumentVersionRecord {
+  return {
+    ...version,
+  };
+}
+
 function normalizeState(parsed: Partial<DatabaseState>): DatabaseState {
   return {
     projects: Array.isArray(parsed.projects)
@@ -112,14 +141,12 @@ function normalizeState(parsed: Partial<DatabaseState>): DatabaseState {
     notifications: Array.isArray(parsed.notifications)
       ? parsed.notifications.map((notification) => normalizeNotificationRecord(notification as ApiNotificationRecord))
       : [],
-  };
-}
-
-function normalizeNotificationRecord(notification: ApiNotificationRecord): ApiNotificationRecord {
-  return {
-    ...notification,
-    read: notification.read ?? false,
-    readAt: notification.readAt ?? undefined,
+    documents: Array.isArray(parsed.documents)
+      ? parsed.documents.map((document) => normalizeDocumentRecord(document as ApiDocumentRecord))
+      : [],
+    documentVersions: Array.isArray(parsed.documentVersions)
+      ? parsed.documentVersions.map((version) => normalizeDocumentVersionRecord(version as ApiDocumentVersionRecord))
+      : [],
   };
 }
 
@@ -278,6 +305,49 @@ function createNotificationRecord(input: CreateNotificationInput): ApiNotificati
   };
 }
 
+function createDocumentRecord(projectId: string, input: CreateDocumentInput): ApiDocumentRecord {
+  const now = new Date().toISOString();
+
+  return {
+    id: crypto.randomUUID(),
+    createdAt: now,
+    updatedAt: now,
+    projectId,
+    name: input.name,
+    type: input.type,
+    url: input.url,
+    uploadedBy: input.uploadedBy,
+    version: input.version,
+  };
+}
+
+function createDocumentVersionRecord(
+  document: ApiDocumentRecord,
+  archivedAt = new Date().toISOString(),
+): ApiDocumentVersionRecord {
+  return {
+    id: crypto.randomUUID(),
+    createdAt: archivedAt,
+    updatedAt: archivedAt,
+    documentId: document.id,
+    projectId: document.projectId,
+    name: document.name,
+    type: document.type,
+    url: document.url,
+    uploadedBy: document.uploadedBy,
+    version: document.version,
+  };
+}
+
+function applyDocumentUpdate(existing: ApiDocumentRecord, input: UpdateDocumentInput): ApiDocumentRecord {
+  return {
+    ...existing,
+    updatedAt: new Date().toISOString(),
+    ...(input.url !== undefined ? { url: input.url } : {}),
+    ...(input.version !== undefined ? { version: input.version } : {}),
+  };
+}
+
 function markNotificationRecordAsRead(existing: ApiNotificationRecord): ApiNotificationRecord {
   if (existing.read) {
     return existing;
@@ -303,6 +373,13 @@ function deleteProjectFromState(state: DatabaseState, id: string): boolean {
   state.materials = state.materials.filter((material) => material.projectId !== id);
   state.changeOrders = state.changeOrders.filter((changeOrder) => changeOrder.projectId !== id);
   state.notifications = state.notifications.filter((notification) => notification.projectId !== id);
+  const deletedDocumentIds = new Set(
+    state.documents.filter((document) => document.projectId === id).map((document) => document.id),
+  );
+  state.documents = state.documents.filter((document) => document.projectId !== id);
+  state.documentVersions = state.documentVersions.filter(
+    (version) => version.projectId !== id && !deletedDocumentIds.has(version.documentId),
+  );
   return true;
 }
 
@@ -317,6 +394,17 @@ function deleteTaskFromState(state: DatabaseState, id: string): boolean {
     ...task,
     dependencies: task.dependencies.filter((dependency) => dependency.predecessorId !== id),
   }));
+  return true;
+}
+
+function deleteDocumentFromState(state: DatabaseState, id: string): boolean {
+  const previousLength = state.documents.length;
+  state.documents = state.documents.filter((document) => document.id !== id);
+  if (state.documents.length === previousLength) {
+    return false;
+  }
+
+  state.documentVersions = state.documentVersions.filter((version) => version.documentId !== id);
   return true;
 }
 
@@ -458,6 +546,54 @@ export class InMemoryApiStore implements ApiStore {
 
   async countUnreadNotifications(): Promise<number> {
     return this.state.notifications.filter((notification) => !notification.read).length;
+  }
+
+  async listDocuments(
+    projectId: string,
+    filter?: { type?: DocumentType },
+  ): Promise<ApiDocumentRecord[]> {
+    return clone(
+      this.state.documents.filter(
+        (document) =>
+          document.projectId === projectId &&
+          (filter?.type === undefined || document.type === filter.type),
+      ),
+    );
+  }
+
+  async getDocument(id: string): Promise<ApiDocumentRecord | null> {
+    const document = this.state.documents.find((item) => item.id === id);
+    return document ? clone(document) : null;
+  }
+
+  async createDocument(projectId: string, input: CreateDocumentInput): Promise<ApiDocumentRecord> {
+    const document = createDocumentRecord(projectId, input);
+    this.state.documents.push(document);
+    return clone(document);
+  }
+
+  async updateDocument(id: string, input: UpdateDocumentInput): Promise<ApiDocumentRecord | null> {
+    const index = this.state.documents.findIndex((item) => item.id === id);
+    if (index === -1) {
+      return null;
+    }
+
+    const existing = this.state.documents[index];
+    if (input.url !== undefined || input.version !== undefined) {
+      this.state.documentVersions.push(createDocumentVersionRecord(existing));
+    }
+
+    const updated = applyDocumentUpdate(existing, input);
+    this.state.documents[index] = updated;
+    return clone(updated);
+  }
+
+  async deleteDocument(id: string): Promise<boolean> {
+    return deleteDocumentFromState(this.state, id);
+  }
+
+  async listDocumentVersions(documentId: string): Promise<ApiDocumentVersionRecord[]> {
+    return clone(this.state.documentVersions.filter((version) => version.documentId === documentId));
   }
 }
 
@@ -716,6 +852,77 @@ export class JsonFileApiStore implements ApiStore {
   async countUnreadNotifications(): Promise<number> {
     return this.enqueue(async () =>
       (await this.readState()).notifications.filter((notification) => !notification.read).length,
+    );
+  }
+
+  async listDocuments(
+    projectId: string,
+    filter?: { type?: DocumentType },
+  ): Promise<ApiDocumentRecord[]> {
+    return this.enqueue(async () =>
+      clone(
+        (await this.readState()).documents.filter(
+          (document) =>
+            document.projectId === projectId &&
+            (filter?.type === undefined || document.type === filter.type),
+        ),
+      ),
+    );
+  }
+
+  async getDocument(id: string): Promise<ApiDocumentRecord | null> {
+    return this.enqueue(async () => {
+      const document = (await this.readState()).documents.find((item) => item.id === id);
+      return document ? clone(document) : null;
+    });
+  }
+
+  async createDocument(projectId: string, input: CreateDocumentInput): Promise<ApiDocumentRecord> {
+    return this.enqueue(async () => {
+      const state = await this.readState();
+      const document = createDocumentRecord(projectId, input);
+      state.documents.push(document);
+      await this.writeState(state);
+      return clone(document);
+    });
+  }
+
+  async updateDocument(id: string, input: UpdateDocumentInput): Promise<ApiDocumentRecord | null> {
+    return this.enqueue(async () => {
+      const state = await this.readState();
+      const index = state.documents.findIndex((item) => item.id === id);
+      if (index === -1) {
+        return null;
+      }
+
+      const existing = state.documents[index];
+      if (input.url !== undefined || input.version !== undefined) {
+        state.documentVersions.push(createDocumentVersionRecord(existing));
+      }
+
+      const updated = applyDocumentUpdate(existing, input);
+      state.documents[index] = updated;
+      await this.writeState(state);
+      return clone(updated);
+    });
+  }
+
+  async deleteDocument(id: string): Promise<boolean> {
+    return this.enqueue(async () => {
+      const state = await this.readState();
+      const deleted = deleteDocumentFromState(state, id);
+      if (!deleted) {
+        return false;
+      }
+
+      await this.writeState(state);
+      return true;
+    });
+  }
+
+  async listDocumentVersions(documentId: string): Promise<ApiDocumentVersionRecord[]> {
+    return this.enqueue(async () =>
+      clone((await this.readState()).documentVersions.filter((version) => version.documentId === documentId)),
     );
   }
 }

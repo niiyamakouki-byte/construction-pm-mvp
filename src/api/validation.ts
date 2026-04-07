@@ -2,18 +2,21 @@ import { ApiError } from "./types.js";
 import {
   CHANGE_ORDER_STATUSES,
   DEPENDENCY_TYPES,
+  DOCUMENT_TYPES,
   MATERIAL_STATUSES,
   NOTIFICATION_PRIORITIES,
   PROJECT_STATUSES,
   TASK_STATUSES,
   type CreateChangeOrderInput,
   type CreateContractorInput,
+  type CreateDocumentInput,
   type CreateMaterialInput,
   type CreateNotificationInput,
   type CreateProjectInput,
   type CreateTaskInput,
   type DependencyRecord,
   type ProjectStatus,
+  type UpdateDocumentInput,
   type UpdateProjectInput,
   type UpdateTaskInput,
 } from "./types.js";
@@ -472,6 +475,41 @@ export function validateCreateNotificationInput(payload: unknown): CreateNotific
     recipientId: requireString(payload, "recipientId", "受信者ID", 200),
     priority: validateEnum(payload.priority, NOTIFICATION_PRIORITIES, "通知優先度"),
   };
+}
+
+export function validateCreateDocumentInput(payload: unknown): CreateDocumentInput {
+  if (!isObject(payload)) {
+    throw new ApiError(400, "リクエストボディはJSONオブジェクトで送信してください。");
+  }
+
+  return {
+    name: requireString(payload, "name", "ドキュメント名", 200),
+    type: validateEnum(payload.type, DOCUMENT_TYPES, "ドキュメント種別"),
+    url: requireString(payload, "url", "URL", 2000),
+    uploadedBy: requireString(payload, "uploadedBy", "アップロード者", 200),
+    version: requireString(payload, "version", "バージョン", 100),
+  };
+}
+
+export function validateUpdateDocumentInput(payload: unknown): UpdateDocumentInput {
+  if (!isObject(payload)) {
+    throw new ApiError(400, "リクエストボディはJSONオブジェクトで送信してください。");
+  }
+
+  const update: UpdateDocumentInput = {};
+
+  if ("url" in payload) {
+    update.url = optionalUpdatedString(payload, "url", "URL", 2000);
+  }
+  if ("version" in payload) {
+    update.version = optionalUpdatedString(payload, "version", "バージョン", 100);
+  }
+
+  if (Object.keys(update).length === 0) {
+    throw new ApiError(400, "更新対象の項目を指定してください。");
+  }
+
+  return update;
 }
 
 export function validateUpdateTaskInput(payload: unknown): UpdateTaskInput {

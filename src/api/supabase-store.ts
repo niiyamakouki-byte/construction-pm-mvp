@@ -4,6 +4,8 @@ import {
   DEPENDENCY_TYPES,
   type ApiChangeOrderRecord,
   type ApiContractorRecord,
+  type ApiDocumentRecord,
+  type ApiDocumentVersionRecord,
   type ApiMaterialRecord,
   type ApiNotificationRecord,
   type ApiProjectRecord,
@@ -11,12 +13,15 @@ import {
   type ApiTaskRecord,
   type CreateChangeOrderInput,
   type CreateContractorInput,
+  type CreateDocumentInput,
   type CreateMaterialInput,
   type CreateNotificationInput,
   type CreateProjectInput,
   type CreateTaskInput,
   type DependencyRecord,
   type DependencyType,
+  type DocumentType,
+  type UpdateDocumentInput,
   type UpdateProjectInput,
   type UpdateTaskInput,
 } from "./types.js";
@@ -138,6 +143,31 @@ type DbNotificationRecord = {
   read_at: string | null;
 };
 
+type DbDocumentRecord = {
+  id: string;
+  created_at: string;
+  updated_at: string;
+  project_id: string;
+  name: string;
+  type: ApiDocumentRecord["type"];
+  url: string;
+  uploaded_by: string;
+  version: string;
+};
+
+type DbDocumentVersionRecord = {
+  id: string;
+  created_at: string;
+  updated_at: string;
+  document_id: string;
+  project_id: string;
+  name: string;
+  type: ApiDocumentVersionRecord["type"];
+  url: string;
+  uploaded_by: string;
+  version: string;
+};
+
 export type SupabaseStoreOptions = {
   client?: SupabaseClientLike;
   url?: string;
@@ -204,6 +234,20 @@ function normalizeNotificationRecord(notification: ApiNotificationRecord): ApiNo
     ...notification,
     read: notification.read ?? false,
     readAt: notification.readAt ?? undefined,
+  };
+}
+
+function normalizeDocumentRecord(document: ApiDocumentRecord): ApiDocumentRecord {
+  return {
+    ...document,
+  };
+}
+
+function normalizeDocumentVersionRecord(
+  version: ApiDocumentVersionRecord,
+): ApiDocumentVersionRecord {
+  return {
+    ...version,
   };
 }
 
@@ -359,6 +403,49 @@ function createNotificationRecord(input: CreateNotificationInput): ApiNotificati
     recipientId: input.recipientId,
     priority: input.priority,
     read: false,
+  };
+}
+
+function createDocumentRecord(projectId: string, input: CreateDocumentInput): ApiDocumentRecord {
+  const now = new Date().toISOString();
+
+  return {
+    id: crypto.randomUUID(),
+    createdAt: now,
+    updatedAt: now,
+    projectId,
+    name: input.name,
+    type: input.type,
+    url: input.url,
+    uploadedBy: input.uploadedBy,
+    version: input.version,
+  };
+}
+
+function createDocumentVersionRecord(
+  document: ApiDocumentRecord,
+  archivedAt = new Date().toISOString(),
+): ApiDocumentVersionRecord {
+  return {
+    id: crypto.randomUUID(),
+    createdAt: archivedAt,
+    updatedAt: archivedAt,
+    documentId: document.id,
+    projectId: document.projectId,
+    name: document.name,
+    type: document.type,
+    url: document.url,
+    uploadedBy: document.uploadedBy,
+    version: document.version,
+  };
+}
+
+function applyDocumentUpdate(existing: ApiDocumentRecord, input: UpdateDocumentInput): ApiDocumentRecord {
+  return {
+    ...existing,
+    updatedAt: new Date().toISOString(),
+    ...(input.url !== undefined ? { url: input.url } : {}),
+    ...(input.version !== undefined ? { version: input.version } : {}),
   };
 }
 
@@ -597,6 +684,69 @@ function notificationFromDb(record: DbNotificationRecord): ApiNotificationRecord
   });
 }
 
+function documentToDb(record: ApiDocumentRecord): DbDocumentRecord {
+  return {
+    id: record.id,
+    created_at: record.createdAt,
+    updated_at: record.updatedAt,
+    project_id: record.projectId,
+    name: record.name,
+    type: record.type,
+    url: record.url,
+    uploaded_by: record.uploadedBy,
+    version: record.version,
+  };
+}
+
+function documentPatchToDb(record: ApiDocumentRecord): Omit<DbDocumentRecord, "id" | "created_at"> {
+  const { id: _id, created_at: _createdAt, ...rest } = documentToDb(record);
+  return rest;
+}
+
+function documentFromDb(record: DbDocumentRecord): ApiDocumentRecord {
+  return normalizeDocumentRecord({
+    id: record.id,
+    createdAt: record.created_at,
+    updatedAt: record.updated_at,
+    projectId: record.project_id,
+    name: record.name,
+    type: record.type,
+    url: record.url,
+    uploadedBy: record.uploaded_by,
+    version: record.version,
+  });
+}
+
+function documentVersionToDb(record: ApiDocumentVersionRecord): DbDocumentVersionRecord {
+  return {
+    id: record.id,
+    created_at: record.createdAt,
+    updated_at: record.updatedAt,
+    document_id: record.documentId,
+    project_id: record.projectId,
+    name: record.name,
+    type: record.type,
+    url: record.url,
+    uploaded_by: record.uploadedBy,
+    version: record.version,
+  };
+}
+
+function documentVersionFromDb(record: DbDocumentVersionRecord): ApiDocumentVersionRecord {
+  return normalizeDocumentVersionRecord({
+    id: record.id,
+    createdAt: record.created_at,
+    updatedAt: record.updated_at,
+    documentId: record.document_id,
+    projectId: record.project_id,
+    name: record.name,
+    type: record.type,
+    url: record.url,
+    uploadedBy: record.uploaded_by,
+    version: record.version,
+  });
+}
+
 function throwIfSupabaseError(error: SupabaseError | null): void {
   if (error) {
     throw new ApiError(500, "Supabaseへのアクセスに失敗しました。");
@@ -688,6 +838,8 @@ export class SupabaseStore implements ApiStore {
       this.client.from<DbMaterialRecord>("materials").delete().eq("project_id", id),
       this.client.from<DbChangeOrderRecord>("change_orders").delete().eq("project_id", id),
       this.client.from<DbNotificationRecord>("notifications").delete().eq("project_id", id),
+      this.client.from<DbDocumentRecord>("documents").delete().eq("project_id", id),
+      this.client.from<DbDocumentVersionRecord>("document_versions").delete().eq("project_id", id),
     ]).then((results) => {
       for (const result of results) {
         throwIfSupabaseError(result.error);
@@ -928,5 +1080,103 @@ export class SupabaseStore implements ApiStore {
 
   async countUnreadNotifications(): Promise<number> {
     return (await this.listNotifications({ read: false })).length;
+  }
+
+  async listDocuments(
+    projectId: string,
+    filter?: { type?: DocumentType },
+  ): Promise<ApiDocumentRecord[]> {
+    let query = this.client
+      .from<DbDocumentRecord>("documents")
+      .select("*")
+      .eq("project_id", projectId)
+      .order("created_at", { ascending: true });
+    if (filter?.type !== undefined) {
+      query = query.eq("type", filter.type);
+    }
+
+    const { data, error } = await query;
+    throwIfSupabaseError(error);
+    return clone((Array.isArray(data) ? data : []).map((record) => documentFromDb(record as DbDocumentRecord)));
+  }
+
+  async getDocument(id: string): Promise<ApiDocumentRecord | null> {
+    const { data, error } = await this.client
+      .from<DbDocumentRecord>("documents")
+      .select("*")
+      .eq("id", id)
+      .maybeSingle();
+    throwIfSupabaseError(error);
+    return data ? clone(documentFromDb(data as DbDocumentRecord)) : null;
+  }
+
+  async createDocument(projectId: string, input: CreateDocumentInput): Promise<ApiDocumentRecord> {
+    const document = createDocumentRecord(projectId, input);
+    const { data, error } = await this.client
+      .from<DbDocumentRecord>("documents")
+      .insert(documentToDb(document))
+      .select("*")
+      .single();
+    throwIfSupabaseError(error);
+    return clone(documentFromDb(data as DbDocumentRecord));
+  }
+
+  async updateDocument(id: string, input: UpdateDocumentInput): Promise<ApiDocumentRecord | null> {
+    const existing = await this.getDocument(id);
+    if (!existing) {
+      return null;
+    }
+
+    if (input.url !== undefined || input.version !== undefined) {
+      const versionRecord = createDocumentVersionRecord(existing);
+      const versionResult = await this.client
+        .from<DbDocumentVersionRecord>("document_versions")
+        .insert(documentVersionToDb(versionRecord))
+        .select("id")
+        .single();
+      throwIfSupabaseError(versionResult.error);
+    }
+
+    const updated = applyDocumentUpdate(existing, input);
+    const { data, error } = await this.client
+      .from<DbDocumentRecord>("documents")
+      .update(documentPatchToDb(updated))
+      .eq("id", id)
+      .select("*")
+      .maybeSingle();
+    throwIfSupabaseError(error);
+    return data ? clone(documentFromDb(data as DbDocumentRecord)) : null;
+  }
+
+  async deleteDocument(id: string): Promise<boolean> {
+    const { data, error } = await this.client
+      .from<DbDocumentRecord>("documents")
+      .delete()
+      .eq("id", id)
+      .select("id")
+      .maybeSingle();
+    throwIfSupabaseError(error);
+    if (!data) {
+      return false;
+    }
+
+    const versionResult = await this.client
+      .from<DbDocumentVersionRecord>("document_versions")
+      .delete()
+      .eq("document_id", id);
+    throwIfSupabaseError(versionResult.error);
+    return true;
+  }
+
+  async listDocumentVersions(documentId: string): Promise<ApiDocumentVersionRecord[]> {
+    const { data, error } = await this.client
+      .from<DbDocumentVersionRecord>("document_versions")
+      .select("*")
+      .eq("document_id", documentId)
+      .order("created_at", { ascending: true });
+    throwIfSupabaseError(error);
+    return clone(
+      (Array.isArray(data) ? data : []).map((record) => documentVersionFromDb(record as DbDocumentVersionRecord)),
+    );
   }
 }
