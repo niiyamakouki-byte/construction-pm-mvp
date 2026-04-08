@@ -5,6 +5,7 @@ import {
   type ReactNode,
 } from "react";
 import { useOrganizationContext } from "./OrganizationContext.js";
+import { hasSupabaseEnv } from "../infra/supabase-client.js";
 import type { PlanId } from "../lib/stripe.js";
 
 export type SubscriptionLimits = {
@@ -54,7 +55,8 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
   const { organization, loading } = useOrganizationContext();
 
   const value = useMemo<SubscriptionContextValue>(() => {
-    const plan = normalizePlan(organization?.plan);
+    // Internal company use: treat Supabase-authenticated users as having full access
+    const plan = hasSupabaseEnv() && !organization ? "pro" : normalizePlan(organization?.plan);
     const limits = PLAN_LIMITS[plan];
 
     const canCreateProject = (currentCount: number): boolean => {

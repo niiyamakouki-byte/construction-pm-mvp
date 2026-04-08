@@ -37,15 +37,7 @@ export class SupabaseRepository<T extends BaseEntity>
 {
   constructor(
     private readonly tableName: string,
-    private readonly getOrganizationId?: () => string | null,
   ) {}
-
-  private withOrganizationScope<Query extends { eq(column: string, value: unknown): Query }>(
-    query: Query,
-  ): Query {
-    const orgId = this.getOrganizationId?.();
-    return orgId ? query.eq("organization_id", orgId) : query;
-  }
 
   private async runQuery<TResult>(
     actionLabel: string,
@@ -65,12 +57,11 @@ export class SupabaseRepository<T extends BaseEntity>
 
   async findById(id: string): Promise<T | null> {
     const { data, error } = await this.runQuery("findById", async (client) =>
-      this.withOrganizationScope(
-        client
-          .from(this.tableName)
-          .select("*")
-          .eq("id", id),
-      ).maybeSingle(),
+      client
+        .from(this.tableName)
+        .select("*")
+        .eq("id", id)
+        .maybeSingle(),
     );
 
     if (error) {
@@ -82,9 +73,10 @@ export class SupabaseRepository<T extends BaseEntity>
 
   async findAll(): Promise<T[]> {
     const { data, error } = await this.runQuery("findAll", async (client) =>
-      this.withOrganizationScope(
-        client.from(this.tableName).select("*"),
-      ).order("created_at", { ascending: true }),
+      client
+        .from(this.tableName)
+        .select("*")
+        .order("created_at", { ascending: true }),
     );
 
     if (error) {
@@ -98,10 +90,6 @@ export class SupabaseRepository<T extends BaseEntity>
 
   async create(entity: T): Promise<T> {
     const record = toSnakeRecord(entity as Record<string, unknown>);
-    const orgId = this.getOrganizationId?.();
-    if (orgId && !record.organization_id) {
-      record.organization_id = orgId;
-    }
     const { data, error } = await this.runQuery("create", async (client) =>
       client.from(this.tableName).insert(record).select("*").single(),
     );
@@ -113,12 +101,10 @@ export class SupabaseRepository<T extends BaseEntity>
 
   async update(id: string, fields: Partial<Omit<T, "id" | "createdAt">>): Promise<T | null> {
     const { data, error } = await this.runQuery("update", async (client) =>
-      this.withOrganizationScope(
-        client
-          .from(this.tableName)
-          .update(toSnakeRecord(fields as Record<string, unknown>))
-          .eq("id", id),
-      )
+      client
+        .from(this.tableName)
+        .update(toSnakeRecord(fields as Record<string, unknown>))
+        .eq("id", id)
         .select("*")
         .maybeSingle(),
     );
@@ -130,12 +116,10 @@ export class SupabaseRepository<T extends BaseEntity>
 
   async delete(id: string): Promise<boolean> {
     const { data, error } = await this.runQuery("delete", async (client) =>
-      this.withOrganizationScope(
-        client
-          .from(this.tableName)
-          .delete()
-          .eq("id", id),
-      )
+      client
+        .from(this.tableName)
+        .delete()
+        .eq("id", id)
         .select("id")
         .maybeSingle(),
     );

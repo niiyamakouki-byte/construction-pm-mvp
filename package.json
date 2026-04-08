@@ -10,6 +10,7 @@
     "typecheck": "tsc --noEmit",
     "api:server": "node --experimental-strip-types ./src/api/server.ts",
     "genbahub-cli": "node --experimental-strip-types ./src/api/cli.ts",
+    "mcp:server": "node --experimental-strip-types ./src/mcp/genbahub-mcp-server.ts",
     "test": "vitest run",
     "ci": "pnpm run lint && pnpm run typecheck && pnpm run test"
   },
@@ -38,6 +39,7 @@
     "vitest": "^3.0.4"
   },
   "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
     "@stripe/stripe-js": "^9.0.1",
     "@supabase/supabase-js": "^2.0.0",
     "jspdf": "^4.2.1",

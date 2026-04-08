@@ -11,7 +11,7 @@ const testRepoCache = new Map<string, InMemoryRepository<BaseEntity>>();
 
 export function createAppRepository<T extends BaseEntity>(
   tableName: string,
-  getOrganizationId?: () => string | null,
+  _getOrganizationId?: () => string | null,
 ): Repository<T> {
   if (import.meta.env.MODE === "test" || import.meta.env.VITEST) {
     if (!testRepoCache.has(tableName)) {
@@ -21,7 +21,7 @@ export function createAppRepository<T extends BaseEntity>(
   }
 
   if (hasSupabaseEnv()) {
-    return new SupabaseRepository<T>(tableName, getOrganizationId);
+    return new SupabaseRepository<T>(tableName);
   }
 
   // Use localStorage for persistence across page reloads
