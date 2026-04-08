@@ -1,12 +1,21 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
+function createServerSupabaseClient(url: string, key: string): SupabaseClient {
+  return createClient(url, key, {
+    auth: {
+      persistSession: false,
+      autoRefreshToken: false,
+    },
+  });
+}
+
 function getSupabase(): SupabaseClient {
   const url = process.env["SUPABASE_URL"];
   const key = process.env["SUPABASE_SERVICE_ROLE_KEY"];
   if (!url || !key) {
     throw new Error("SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY env vars are required");
   }
-  return createClient(url, key);
+  return createServerSupabaseClient(url, key);
 }
 
 export type ProjectRow = {
@@ -62,9 +71,15 @@ export async function createProject(
   supabase?: SupabaseClient,
 ): Promise<ProjectRow> {
   const db = supabase ?? getSupabase();
+  const now = new Date().toISOString();
   const { data, error } = await db
     .from("projects")
-    .insert(input)
+    .insert({
+      description: "",
+      status: "planning",
+      start_date: now.slice(0, 10),
+      ...input,
+    })
     .select()
     .single();
   if (error) throw new Error(error.message);
@@ -105,12 +120,20 @@ export async function createTask(
   const db = supabase ?? getSupabase();
   const { data, error } = await db
     .from("tasks")
-    .insert(input)
+    .insert({
+      description: "",
+      status: "todo",
+      progress: 0,
+      cost: 0,
+      ...input,
+    })
     .select()
     .single();
   if (error) throw new Error(error.message);
   return data as TaskRow;
 }
+
+export { createServerSupabaseClient };
 
 export async function updateTask(
   id: string,

@@ -15,11 +15,12 @@ type Props = {
 
 export function DependencyLines({ lines, totalDays, dayWidth }: Props) {
   if (lines.length === 0) return null;
+  const chartWidth = (totalDays + 1) * dayWidth;
 
   return (
     <svg
       className="absolute inset-0 pointer-events-none z-10"
-      style={{ width: totalDays * dayWidth, height: "100%" }}
+      style={{ width: chartWidth, height: "100%" }}
       overflow="visible"
     >
       <defs>

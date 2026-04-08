@@ -50,6 +50,7 @@ export function GanttChart({
   const { chartStart, totalDays, dateInfo, highlightedDates, todayOffset, dayWidth } = chartLayout;
   const monthRowHeight = 28;
   const dayRowHeight = headerHeight - monthRowHeight;
+  const chartWidth = (totalDays + 1) * dayWidth;
   const chartShellStyle = { "--gantt-label-width": `${labelWidth}px` } as CSSProperties;
 
   const monthSegments: Array<{ key: string; label: string; start: number; span: number }> = [];
@@ -180,7 +181,7 @@ export function GanttChart({
         </div>
 
         <div ref={scrollRef} className="mobile-scroll-x flex-1 overflow-x-auto">
-          <div className="relative" style={{ width: totalDays * dayWidth, minWidth: "100%" }}>
+          <div className="relative" style={{ width: chartWidth, minWidth: "100%" }}>
             <div className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 backdrop-blur">
               <div className="relative border-b border-slate-200" style={{ height: monthRowHeight }}>
                 {monthSegments.map((segment) => (

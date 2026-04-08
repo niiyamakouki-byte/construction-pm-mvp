@@ -20,6 +20,7 @@ export function createApiStore(options: StoreFactoryOptions = {}): ApiStore {
     return new SupabaseStore({
       client: options.supabaseClient,
       url: env.SUPABASE_URL,
+      serviceRoleKey: env.SUPABASE_SERVICE_ROLE_KEY ?? env.SUPABASE_ANON_KEY,
       anonKey: env.SUPABASE_ANON_KEY,
     });
   }

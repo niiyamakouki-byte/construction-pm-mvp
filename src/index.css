@@ -183,7 +183,7 @@ textarea::placeholder {
 }
 
 .gantt-label-column {
-  width: var(--gantt-label-width, 240px);
+  width: var(--gantt-label-width, 320px);
 }
 
 /* Mobile: ensure modals are scrollable and don't overflow viewport */
@@ -235,7 +235,7 @@ textarea::placeholder {
   }
 
   .gantt-label-column {
-    width: min(10.5rem, 42vw);
+    width: min(12rem, 48vw);
   }
 }
 

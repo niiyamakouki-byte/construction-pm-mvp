@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { useAuth } from "../contexts/AuthContext.js";
 import { navigate } from "../hooks/useHashRouter.js";
+import { hasSupabaseEnv } from "../infra/supabase-client.js";
 
 type Props = {
   children: ReactNode;
@@ -8,6 +9,10 @@ type Props = {
 
 export function AuthGuard({ children }: Props) {
   const { session, loading } = useAuth();
+
+  if (!hasSupabaseEnv()) {
+    return <>{children}</>;
+  }
 
   if (loading) {
     return (

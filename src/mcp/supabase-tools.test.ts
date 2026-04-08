@@ -197,6 +197,9 @@ describe("supabase-tools", () => {
       const db = mockClient();
       const result = await createProject({ name: "新規案件", contractor: "ABC", address: "大阪" }, db);
       expect(result.name).toBe("新規案件");
+      expect(result.status).toBe("planning");
+      expect(result.description).toBe("");
+      expect(result.start_date).toMatch(/^\d{4}-\d{2}-\d{2}$/);
     });
   });
 
@@ -226,9 +229,13 @@ describe("supabase-tools", () => {
   describe("createTask", () => {
     it("creates a task", async () => {
       const db = mockClient();
-      const result = await createTask({ project_id: "p1", name: "電気工事", status: "todo", progress: 0, cost: 0 }, db);
+      const result = await createTask({ project_id: "p1", name: "電気工事" }, db);
       expect(result.name).toBe("電気工事");
       expect(result.project_id).toBe("p1");
+      expect(result.status).toBe("todo");
+      expect(result.description).toBe("");
+      expect(result.progress).toBe(0);
+      expect(result.cost).toBe(0);
     });
   });
 

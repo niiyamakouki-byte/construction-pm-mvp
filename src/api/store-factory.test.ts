@@ -28,6 +28,19 @@ describe("createApiStore", () => {
       env: {
         USE_SUPABASE: "true",
         SUPABASE_URL: "https://example.supabase.co",
+        SUPABASE_SERVICE_ROLE_KEY: "service-role-key",
+      },
+      supabaseClient: createUnusedClient(),
+    });
+
+    expect(store).toBeInstanceOf(SupabaseStore);
+  });
+
+  it("falls back to SUPABASE_ANON_KEY for legacy envs", () => {
+    const store = createApiStore({
+      env: {
+        USE_SUPABASE: "true",
+        SUPABASE_URL: "https://example.supabase.co",
         SUPABASE_ANON_KEY: "anon-key",
       },
       supabaseClient: createUnusedClient(),
@@ -43,7 +56,7 @@ describe("createApiStore", () => {
           USE_SUPABASE: "1",
         },
       }),
-    ).toThrow("SUPABASE_URL and SUPABASE_ANON_KEY");
+    ).toThrow("SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY");
   });
 });
 

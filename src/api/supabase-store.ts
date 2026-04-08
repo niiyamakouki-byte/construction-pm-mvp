@@ -171,6 +171,7 @@ type DbDocumentVersionRecord = {
 export type SupabaseStoreOptions = {
   client?: SupabaseClientLike;
   url?: string;
+  serviceRoleKey?: string;
   anonKey?: string;
 };
 
@@ -763,13 +764,24 @@ export class SupabaseStore implements ApiStore {
     }
 
     const url = options.url ?? process.env.SUPABASE_URL;
-    const anonKey = options.anonKey ?? process.env.SUPABASE_ANON_KEY;
+    const serviceRoleKey =
+      options.serviceRoleKey ??
+      process.env.SUPABASE_SERVICE_ROLE_KEY ??
+      options.anonKey ??
+      process.env.SUPABASE_ANON_KEY;
 
-    if (!url || !anonKey) {
-      throw new Error("SUPABASE_URL and SUPABASE_ANON_KEY must be set when USE_SUPABASE is enabled.");
+    if (!url || !serviceRoleKey) {
+      throw new Error(
+        "SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be set when USE_SUPABASE is enabled.",
+      );
     }
 
-    this.client = createClient(url, anonKey) as unknown as SupabaseClientLike;
+    this.client = createClient(url, serviceRoleKey, {
+      auth: {
+        persistSession: false,
+        autoRefreshToken: false,
+      },
+    }) as unknown as SupabaseClientLike;
   }
 
   async listProjects(): Promise<ApiProjectRecord[]> {
