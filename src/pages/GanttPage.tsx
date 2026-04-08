@@ -921,16 +921,24 @@ function GanttPageContent() {
 
       {/* Header: title + toolbar */}
       <GanttHeader
+        selectedProjectName={projects.length > 0 ? projects[0].name : "工程管理"}
+        selectedProjectStatusLabel={`${completedTasksCount}件完了`}
+        selectedProjectPeriod={chartLayout ? `${chartLayout.chartStart} 〜 ${chartLayout.chartEnd}` : ""}
         connectMode={connectMode}
         connectState={connectState}
         sidebarOpen={sidebarOpen}
         filterStatus={filterStatus}
         zoomLevel={zoomLevel}
         totalTasks={ganttTasks.length}
+        visibleTasks={filteredGanttTasks.length}
         completedTasks={completedTasksCount}
         onToggleConnectMode={() => { setConnectMode((m) => !m); setConnectState(null); }}
         onToggleSidebar={() => setSidebarOpen((v) => !v)}
         onOpenCsvModal={() => { setCsvResult(null); setCsvToastError(null); setShowCsvModal(true); }}
+        onOpenQuickAdd={() => {
+          const proj = projects[0];
+          if (proj) openQuickAdd(proj.id, proj.name);
+        }}
         onFilterStatus={setFilterStatus}
         onToggleZoom={() => setZoomLevel((z) => z === "day" ? "week" : "day")}
       />

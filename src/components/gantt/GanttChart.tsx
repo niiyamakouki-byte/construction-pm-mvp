@@ -1,7 +1,7 @@
 import type { CSSProperties, MouseEvent, MutableRefObject, RefObject } from "react";
 import type { GanttTask, PhaseGroup, DragState, ConnectState, ChartLayout } from "./types.js";
 import { gantt } from "../../theme/index.js";
-import { daysBetween, formatDateShort } from "./utils.js";
+import { daysBetween, formatDayNumber, formatMonthLabel, formatWeekdayLabel } from "./utils.js";
 import { GanttTaskBar, GanttTaskLabel } from "./GanttTaskBar.js";
 import { DependencyLines } from "./DependencyLines.js";
 
@@ -48,18 +48,27 @@ export function GanttChart({
 }: Props) {
   const { rowHeight, phaseRowHeight, headerHeight, labelWidth } = gantt;
   const { chartStart, totalDays, dateInfo, highlightedDates, todayOffset, dayWidth } = chartLayout;
-  const chartShellStyle = {
-    "--gantt-label-width": `${labelWidth}px`,
-  } as CSSProperties;
+  const monthRowHeight = 28;
+  const dayRowHeight = headerHeight - monthRowHeight;
+  const chartShellStyle = { "--gantt-label-width": `${labelWidth}px` } as CSSProperties;
 
-  // Build dependency lines
-  const taskRowIndexMap = new Map<string, number>();
-  let rowIdx = 0;
-  for (const row of visibleRows) {
-    if (row.type === "task") {
-      taskRowIndexMap.set(row.task.id, rowIdx);
+  const monthSegments: Array<{ key: string; label: string; start: number; span: number }> = [];
+  for (let index = 0; index < dateInfo.length; index += 1) {
+    const item = dateInfo[index];
+    const key = item.date.slice(0, 7);
+    const current = monthSegments[monthSegments.length - 1];
+    if (!current || current.key !== key) {
+      monthSegments.push({ key, label: formatMonthLabel(item.date), start: index, span: 1 });
+    } else {
+      current.span += 1;
     }
-    rowIdx++;
+  }
+
+  const taskRowIndexMap = new Map<string, number>();
+  let rowIndex = 0;
+  for (const row of visibleRows) {
+    if (row.type === "task") taskRowIndexMap.set(row.task.id, rowIndex);
+    rowIndex += 1;
   }
 
   const dependencyLines: Array<{
@@ -75,56 +84,58 @@ export function GanttChart({
     if (!task.dependencies || task.dependencies.length === 0) continue;
     const toRowIdx = taskRowIndexMap.get(task.id);
     if (toRowIdx === undefined) continue;
-
     for (const depId of task.dependencies) {
-      const fromTask = ganttTasks.find((t) => t.id === depId);
+      const fromTask = ganttTasks.find((candidate) => candidate.id === depId);
       if (!fromTask) continue;
       const fromRowIdx = taskRowIndexMap.get(depId);
       if (fromRowIdx === undefined) continue;
-
       const fromEndOffset = daysBetween(chartStart, fromTask.endDate);
       const toStartOffset = daysBetween(chartStart, task.startDate);
-
-      const x1 = fromEndOffset * dayWidth + dayWidth / 2;
-      const y1 = headerHeight + fromRowIdx * rowHeight + rowHeight / 2;
-      const x2 = toStartOffset * dayWidth;
-      const y2 = headerHeight + toRowIdx * rowHeight + rowHeight / 2;
-
-      dependencyLines.push({ fromTaskId: depId, toTaskId: task.id, x1, y1, x2, y2 });
+      dependencyLines.push({
+        fromTaskId: depId,
+        toTaskId: task.id,
+        x1: fromEndOffset * dayWidth + dayWidth / 2,
+        y1: headerHeight + fromRowIdx * rowHeight + rowHeight / 2,
+        x2: toStartOffset * dayWidth,
+        y2: headerHeight + toRowIdx * rowHeight + rowHeight / 2,
+      });
     }
   }
 
   return (
     <div
-      className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm"
+      className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_20px_60px_rgba(15,23,42,0.08)]"
       role="figure"
       aria-label={`ガントチャート: ${ganttTasks.length}タスク`}
       style={chartShellStyle}
     >
       <div className="flex">
-        {/* Left: Task labels */}
-        <div
-          className="gantt-label-column shrink-0 border-r border-slate-200 bg-slate-50/80"
-        >
-          <div
-            className="flex items-end border-b border-slate-200 px-3 py-2"
-            style={{ height: headerHeight }}
-          >
-            <span className="text-sm font-semibold text-slate-500 uppercase tracking-wider">
-              タスク ({ganttTasks.length})
-            </span>
+        <div className="gantt-label-column shrink-0 border-r border-slate-200 bg-slate-50/70">
+          <div className="border-b border-slate-200 px-4 py-3" style={{ height: headerHeight }}>
+            <p className="text-[11px] font-semibold tracking-[0.18em] text-slate-500 uppercase">工程一覧</p>
+            <div className="mt-2 flex items-end justify-between gap-2">
+              <div>
+                <p className="text-sm font-semibold text-slate-900">タスク名</p>
+                <p className="text-xs text-slate-500">全 {ganttTasks.length} 件</p>
+              </div>
+              <div className="text-right text-[11px] text-slate-500">
+                <div>左: 工程名</div>
+                <div>右: 日程バー</div>
+              </div>
+            </div>
           </div>
+
           {visibleRows.map((row) => {
             if (row.type === "phase") {
               const { group } = row;
               return (
                 <div
                   key={`phase-${group.projectId}`}
-                  className="flex items-center border-b border-slate-200 bg-slate-100/80 px-2 select-none hover:bg-slate-100"
+                  className="flex items-center border-b border-slate-200 bg-slate-100/70 px-3 select-none"
                   style={{ height: phaseRowHeight }}
                 >
                   <button
-                    className="flex flex-1 min-w-0 items-center gap-0 cursor-pointer"
+                    className="flex min-w-0 flex-1 items-center gap-2"
                     onClick={() => onTogglePhase(group.projectId)}
                     aria-label={`${group.projectName}を${group.collapsed ? "展開" : "折りたたむ"}`}
                   >
@@ -137,20 +148,18 @@ export function GanttChart({
                     >
                       <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
                     </svg>
-                    <span className="ml-1.5 text-sm font-bold text-slate-700 truncate">
-                      {group.projectName}
-                    </span>
-                    <span className="ml-1 text-xs text-slate-400 shrink-0">
-                      {group.tasks.length}件
-                    </span>
+                    <span className="truncate text-sm font-semibold text-slate-700">{group.projectName}</span>
+                    <span className="shrink-0 text-xs text-slate-400">{group.tasks.length}件</span>
                   </button>
                   <button
-                    className="ml-1 flex h-11 w-11 shrink-0 items-center justify-center rounded text-slate-400 hover:bg-brand-100 hover:text-brand-600 transition-colors"
-                    onClick={(e) => { e.stopPropagation(); onOpenQuickAdd(group.projectId, group.projectName); }}
+                    className="ml-1 flex h-9 w-9 items-center justify-center rounded-lg text-slate-400 hover:bg-white hover:text-brand-600"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onOpenQuickAdd(group.projectId, group.projectName);
+                    }}
                     aria-label={`${group.projectName}にタスクを追加`}
-                    title="タスクを追加"
                   >
-                    <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
                     </svg>
                   </button>
@@ -170,83 +179,79 @@ export function GanttChart({
           })}
         </div>
 
-        {/* Right: Chart area */}
         <div ref={scrollRef} className="mobile-scroll-x flex-1 overflow-x-auto">
-          <div style={{ width: totalDays * dayWidth, minWidth: "100%" }} className="relative">
-            {/* Date header */}
-            <div className="flex border-b border-slate-200 relative" style={{ height: headerHeight }}>
-              {dateInfo.map((di) => {
-                const dayNum = di.date.split("-")[2];
-                const isFirstOfMonth = dayNum === "01";
-                const monthLabel = isFirstOfMonth
-                  ? `${Number(di.date.split("-")[1])}月`
-                  : null;
-                return (
+          <div className="relative" style={{ width: totalDays * dayWidth, minWidth: "100%" }}>
+            <div className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 backdrop-blur">
+              <div className="relative border-b border-slate-200" style={{ height: monthRowHeight }}>
+                {monthSegments.map((segment) => (
                   <div
-                    key={di.date}
-                    data-today={di.isToday ? "true" : undefined}
-                    className={`relative flex flex-col items-center justify-end border-r border-slate-100 pb-1 ${
-                      di.isToday ? "bg-red-50" : di.isWeekend ? "bg-slate-50" : ""
-                    }`}
-                    style={{ width: dayWidth }}
+                    key={segment.key}
+                    className="absolute inset-y-0 flex items-center border-r border-slate-200 bg-slate-50/70 px-3"
+                    style={{ left: segment.start * dayWidth, width: segment.span * dayWidth }}
                   >
-                    {monthLabel && (
-                      <span className="absolute top-1 left-1 text-[10px] font-bold text-brand-600 whitespace-nowrap z-10 pointer-events-none">
-                        {monthLabel}
-                      </span>
-                    )}
-                    <span
-                      className={`text-xs font-semibold tabular-nums ${
-                        di.isToday ? "text-red-600" : di.isWeekend ? "text-slate-400" : "text-slate-500"
-                      }`}
-                    >
-                      {formatDateShort(di.date)}
-                    </span>
-                    {di.isToday && (
-                      <span className="mt-0.5 text-[8px] font-bold text-red-600 uppercase">TODAY</span>
-                    )}
+                    <span className="text-xs font-semibold text-slate-600">{segment.label}</span>
                   </div>
-                );
-              })}
+                ))}
+              </div>
+
+              <div className="relative flex" style={{ height: dayRowHeight }}>
+                {dateInfo.map((di) => {
+                  const weekday = formatWeekdayLabel(di.date);
+                  const isSunday = weekday === "日";
+                  const isSaturday = weekday === "土";
+                  return (
+                    <div
+                      key={di.date}
+                      data-today={di.isToday ? "true" : undefined}
+                      className={`relative flex flex-col items-center justify-center border-r border-slate-100 ${
+                        di.isToday ? "bg-red-50" : di.isWeekend ? "bg-slate-50/70" : "bg-white"
+                      }`}
+                      style={{ width: dayWidth }}
+                    >
+                      <span className="text-[13px] font-semibold tabular-nums text-slate-700">{formatDayNumber(di.date)}</span>
+                      <span className={`mt-0.5 text-[10px] ${isSunday ? "text-red-500" : isSaturday ? "text-blue-500" : "text-slate-400"}`}>
+                        {weekday}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
 
-            {/* Today vertical red dashed line */}
             {todayOffset >= 0 && todayOffset <= totalDays && (
-              <div
-                className="absolute z-20 pointer-events-none"
-                style={{
-                  left: todayOffset * dayWidth + dayWidth / 2,
-                  top: 0,
-                  bottom: 0,
-                  width: 0,
-                  borderLeft: "2px dashed #ef4444",
-                }}
-              />
+              <>
+                <div
+                  className="pointer-events-none absolute z-20"
+                  style={{
+                    left: todayOffset * dayWidth + dayWidth / 2,
+                    top: 0,
+                    bottom: 0,
+                    width: 0,
+                    borderLeft: "2px dashed #dc2626",
+                  }}
+                />
+                <div
+                  className="pointer-events-none absolute z-30 -translate-x-1/2 rounded-full bg-red-600 px-2 py-1 text-[11px] font-semibold text-white shadow-sm"
+                  style={{ left: todayOffset * dayWidth + dayWidth / 2, top: 8 }}
+                >
+                  本日
+                </div>
+              </>
             )}
 
-            {/* SVG dependency lines overlay */}
-            <DependencyLines
-              lines={dependencyLines}
-              totalDays={totalDays}
-              dayWidth={dayWidth}
-            />
+            <DependencyLines lines={dependencyLines} totalDays={totalDays} dayWidth={dayWidth} />
 
-            {/* Rows */}
-            {visibleRows.map((row, _rowIndex) => {
+            {visibleRows.map((row) => {
               if (row.type === "phase") {
                 const { group } = row;
                 return (
-                  <div
-                    key={`phase-chart-${group.projectId}`}
-                    className="relative border-b border-slate-200 bg-slate-100/50"
-                    style={{ height: phaseRowHeight }}
-                  >
+                  <div key={`phase-chart-${group.projectId}`} className="relative border-b border-slate-200 bg-slate-100/40" style={{ height: phaseRowHeight }}>
                     {highlightedDates.map((di) => {
                       const offset = daysBetween(chartStart, di.date);
                       return (
                         <div
                           key={di.date}
-                          className={`absolute top-0 h-full ${di.isToday ? "bg-red-50/30" : "bg-slate-50/50"}`}
+                          className={`absolute top-0 h-full border-r border-slate-100/70 ${di.isToday ? "bg-red-50/35" : "bg-slate-50/55"}`}
                           style={{ left: offset * dayWidth, width: dayWidth }}
                         />
                       );

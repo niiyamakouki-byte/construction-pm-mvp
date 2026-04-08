@@ -16,9 +16,9 @@ export const colors = {
 } as const;
 
 export const statusColors = {
-  todo: "#94a3b8",
-  in_progress: "#2563eb",
-  done: "#10b981",
+  todo: "#9ca3af",
+  in_progress: "#3b82f6",
+  done: "#22c55e",
 } as const;
 
 export const spacing = {
@@ -52,8 +52,8 @@ export const tapTarget = {
 // ガントチャート固有
 export const gantt = {
   dayWidth: 36,
-  rowHeight: 44,
-  phaseRowHeight: 36,
-  headerHeight: 56,
-  labelWidth: 240,
+  rowHeight: 56,
+  phaseRowHeight: 40,
+  headerHeight: 72,
+  labelWidth: 320,
 } as const;

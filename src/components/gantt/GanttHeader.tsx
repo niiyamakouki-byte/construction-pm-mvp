@@ -3,181 +3,162 @@ import { navigate } from "../../hooks/useHashRouter.js";
 import { statusColor, statusLabel } from "./utils.js";
 
 type Props = {
+  selectedProjectName: string;
+  selectedProjectStatusLabel: string;
+  selectedProjectPeriod: string;
   connectMode: boolean;
   connectState: { fromTaskId: string } | null;
   sidebarOpen: boolean;
   filterStatus: TaskStatus | "all";
   zoomLevel: "day" | "week";
   totalTasks: number;
+  visibleTasks: number;
   completedTasks: number;
   onToggleConnectMode: () => void;
   onToggleSidebar: () => void;
   onOpenCsvModal: () => void;
+  onOpenQuickAdd: () => void;
   onFilterStatus: (status: TaskStatus | "all") => void;
   onToggleZoom: () => void;
 };
 
 export function GanttHeader({
+  selectedProjectName,
+  selectedProjectStatusLabel,
+  selectedProjectPeriod,
   connectMode,
   connectState,
   sidebarOpen,
   filterStatus,
   zoomLevel,
   totalTasks,
+  visibleTasks,
   completedTasks,
   onToggleConnectMode,
   onToggleSidebar,
   onOpenCsvModal,
+  onOpenQuickAdd,
   onFilterStatus,
   onToggleZoom,
 }: Props) {
   const overallProgress = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
 
   return (
-    <div className="mb-4 space-y-2">
-      {/* Row 1: title + toolbar */}
-      <div className="flex items-center justify-between flex-wrap gap-2">
-        <div className="flex items-center gap-2">
-          <h2 className="text-xl font-bold text-slate-900">ガントチャート</h2>
-          <button
-            onClick={() => navigate("/node-schedule")}
-            className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors"
-            style={{ minHeight: 48 }}
-          >
-            ノード表示
-          </button>
-        </div>
-        <div className="flex items-center gap-2 flex-wrap">
-          {/* Zoom toggle */}
-          <button
-            onClick={onToggleZoom}
-            className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors"
-            style={{ minHeight: 48 }}
-            title={zoomLevel === "day" ? "週表示に切替" : "日表示に切替"}
-          >
-            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
-            </svg>
-            {zoomLevel === "day" ? "週表示" : "日表示"}
-          </button>
-
-          {/* Print button */}
-          <button
-            onClick={() => window.print()}
-            className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors no-print"
-            style={{ minHeight: 48 }}
-            title="印刷"
-          >
-            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6.72 13.829c-.24.03-.48.062-.72.096m.72-.096a42.415 42.415 0 0110.56 0m-10.56 0L6.34 18m10.94-4.171c.24.03.48.062.72.096m-.72-.096L17.66 18m0 0l.229 2.523a1.125 1.125 0 01-1.12 1.227H7.231c-.662 0-1.18-.568-1.12-1.227L6.34 18m11.318 0h1.091A2.25 2.25 0 0021 15.75V9.456c0-1.081-.768-2.015-1.837-2.175a48.055 48.055 0 00-1.913-.247M6.34 18H5.25A2.25 2.25 0 013 15.75V9.456c0-1.081.768-2.015 1.837-2.175a48.041 48.041 0 011.913-.247m10.5 0a48.536 48.536 0 00-10.5 0m10.5 0V3.375c0-.621-.504-1.125-1.125-1.125h-8.25c-.621 0-1.125.504-1.125 1.125v3.659M18 10.5h.008v.008H18V10.5zm-3 0h.008v.008H15V10.5z" />
-            </svg>
-            印刷
-          </button>
-
-          {/* CSV import */}
-          <button
-            onClick={onOpenCsvModal}
-            className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold bg-emerald-100 text-emerald-700 hover:bg-emerald-200 transition-colors"
-            style={{ minHeight: 48 }}
-          >
-            CSVインポート
-          </button>
-
-          {/* Connect mode toggle */}
-          <button
-            onClick={onToggleConnectMode}
-            className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold transition-colors ${
-              connectMode
-                ? "bg-violet-600 text-white shadow-sm"
-                : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-            }`}
-            style={{ minHeight: 48 }}
-            title="依存関係接続モード"
-          >
-            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" />
-            </svg>
-            {connectMode ? (connectState ? "→ 接続先を選択" : "接続元を選択") : "依存関係"}
-          </button>
-
-          {/* Sidebar toggle */}
-          <button
-            onClick={onToggleSidebar}
-            className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold transition-colors ${
-              sidebarOpen
-                ? "bg-brand-600 text-white shadow-sm"
-                : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-            }`}
-            style={{ minHeight: 48 }}
-            title="コミュニケーションパネル"
-          >
-            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M20.25 8.511c.884.284 1.5 1.128 1.5 2.097v4.286c0 1.136-.847 2.1-1.98 2.193-.34.027-.68.052-1.02.072v3.091l-3-3c-1.354 0-2.694-.055-4.02-.163a2.115 2.115 0 01-.825-.242m9.345-8.334a2.126 2.126 0 00-.476-.095 48.64 48.64 0 00-8.048 0c-1.131.094-1.976 1.057-1.976 2.192v4.286c0 .837.46 1.58 1.155 1.951m9.345-8.334V6.637c0-1.621-1.152-3.026-2.76-3.235A48.455 48.455 0 0011.25 3c-2.115 0-4.198.137-6.24.402-1.608.209-2.76 1.614-2.76 3.235v6.226c0 1.621 1.152 3.026 2.76 3.235.577.075 1.157.14 1.74.194V21l4.155-4.155" />
-            </svg>
-            現場チャット
-          </button>
-
-          {/* Legend */}
-          <div className="flex gap-3 text-sm" role="list" aria-label="ステータス凡例">
-            {(["todo", "in_progress", "done"] as const).map((s) => (
-              <span key={s} className="flex items-center gap-1.5" role="listitem">
-                <span
-                  className="inline-block h-3 w-3 rounded"
-                  style={{ backgroundColor: statusColor[s] }}
-                  aria-hidden="true"
+    <div className="mb-5 space-y-4">
+      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <div className="bg-[linear-gradient(135deg,#f8fafc_0%,#eef4ff_48%,#ffffff_100%)] px-5 py-5">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">案件工程表</p>
+              <h2 className="mt-2 text-2xl font-bold text-slate-900">{selectedProjectName}</h2>
+              <div className="mt-3 flex flex-wrap items-center gap-2 text-sm text-slate-600">
+                <span className="rounded-full bg-white px-3 py-1 shadow-sm ring-1 ring-slate-200">{selectedProjectStatusLabel}</span>
+                <span className="rounded-full bg-white px-3 py-1 shadow-sm ring-1 ring-slate-200">{selectedProjectPeriod}</span>
+                <span className="rounded-full bg-white px-3 py-1 shadow-sm ring-1 ring-slate-200">表示 {visibleTasks} / 全 {totalTasks} タスク</span>
+              </div>
+            </div>
+            <div className="min-w-[220px] rounded-2xl border border-slate-200 bg-white/90 p-4 shadow-sm">
+              <div className="flex items-end justify-between gap-3">
+                <div>
+                  <p className="text-xs text-slate-500">全体進捗</p>
+                  <p className="mt-1 text-3xl font-bold tabular-nums text-slate-900">{overallProgress}%</p>
+                </div>
+                <p className="text-sm font-semibold text-slate-600">完了 {completedTasks} / {totalTasks}</p>
+              </div>
+              <div className="mt-3 h-2.5 overflow-hidden rounded-full bg-slate-200">
+                <div
+                  className="h-full rounded-full transition-all"
+                  style={{
+                    width: `${overallProgress}%`,
+                    backgroundColor: overallProgress >= 100 ? "#10b981" : overallProgress >= 50 ? "#2563eb" : "#94a3b8",
+                  }}
                 />
-                {statusLabel[s]}
-              </span>
-            ))}
-            <span className="flex items-center gap-1.5" role="listitem">
-              <svg className="h-3 w-3" viewBox="0 0 12 12" aria-hidden="true">
-                <polygon points="6,0 12,6 6,12 0,6" fill="#f59e0b" />
-              </svg>
-              マイルストーン
-            </span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Row 2: filter bar + progress summary */}
-      <div className="flex items-center justify-between flex-wrap gap-2">
-        {/* Status filter */}
-        <div className="flex items-center gap-1" role="group" aria-label="ステータスフィルター">
-          <span className="text-sm text-slate-500 mr-1">絞込:</span>
-          {(["all", "todo", "in_progress", "done"] as const).map((s) => (
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            onClick={onOpenQuickAdd}
+            className="inline-flex min-h-12 items-center gap-1.5 rounded-xl bg-brand-600 px-4 py-3 text-sm font-semibold text-white shadow-sm hover:bg-brand-700"
+          >
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.4}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+            </svg>
+            タスク追加
+          </button>
+          <button
+            onClick={onToggleZoom}
+            className="inline-flex min-h-12 items-center gap-1.5 rounded-xl bg-slate-100 px-4 py-3 text-sm font-semibold text-slate-600 hover:bg-slate-200"
+            title={zoomLevel === "day" ? "週表示に切替" : "日表示に切替"}
+          >
+            {zoomLevel === "day" ? "週表示" : "日表示"}
+          </button>
+          <button
+            onClick={onOpenCsvModal}
+            className="inline-flex min-h-12 items-center rounded-xl bg-emerald-100 px-4 py-3 text-sm font-semibold text-emerald-700 hover:bg-emerald-200"
+          >
+            CSV取込
+          </button>
+          <button
+            onClick={onToggleConnectMode}
+            className={`inline-flex min-h-12 items-center gap-1.5 rounded-xl px-4 py-3 text-sm font-semibold transition-colors ${
+              connectMode ? "bg-violet-600 text-white shadow-sm" : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+            }`}
+          >
+            {connectMode ? (connectState ? "接続先を選択" : "接続元を選択") : "依存関係"}
+          </button>
+          <button
+            onClick={onToggleSidebar}
+            className={`inline-flex min-h-12 items-center rounded-xl px-4 py-3 text-sm font-semibold transition-colors ${
+              sidebarOpen ? "bg-brand-600 text-white shadow-sm" : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+            }`}
+          >
+            現場チャット
+          </button>
+          <button
+            onClick={() => navigate("/node-schedule")}
+            className="inline-flex min-h-12 items-center rounded-xl bg-slate-100 px-4 py-3 text-sm font-semibold text-slate-600 hover:bg-slate-200"
+          >
+            ノード表示
+          </button>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-3 text-sm" role="list" aria-label="ステータス凡例">
+          {(["todo", "in_progress", "done"] as const).map((status) => (
+            <span key={status} className="flex items-center gap-1.5" role="listitem">
+              <span className="inline-block h-3 w-3 rounded" style={{ backgroundColor: statusColor[status] }} aria-hidden="true" />
+              {statusLabel[status]}
+            </span>
+          ))}
+          <span className="flex items-center gap-1.5" role="listitem">
+            <svg className="h-3 w-3" viewBox="0 0 12 12" aria-hidden="true">
+              <polygon points="6,0 12,6 6,12 0,6" fill="#f59e0b" />
+            </svg>
+            マイルストーン
+          </span>
+        </div>
+      </div>
+
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+        <div className="flex flex-wrap items-center gap-2" role="group" aria-label="ステータスフィルター">
+          <span className="mr-1 text-sm text-slate-500">表示条件:</span>
+          {(["all", "todo", "in_progress", "done"] as const).map((status) => (
             <button
-              key={s}
-              onClick={() => onFilterStatus(s)}
-              className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
-                filterStatus === s
-                  ? "bg-brand-500 text-white shadow-sm"
-                  : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+              key={status}
+              onClick={() => onFilterStatus(status)}
+              className={`rounded-full px-3 py-2 text-sm font-medium transition-colors ${
+                filterStatus === status ? "bg-brand-600 text-white shadow-sm" : "bg-slate-100 text-slate-600 hover:bg-slate-200"
               }`}
-              style={{ minHeight: 36 }}
             >
-              {s === "all" ? "全て" : statusLabel[s]}
+              {status === "all" ? "全ステータス" : statusLabel[status]}
             </button>
           ))}
         </div>
-
-        {/* Overall progress bar */}
-        {totalTasks > 0 && (
-          <div className="flex items-center gap-2 text-sm">
-            <span className="text-slate-500">全体進捗</span>
-            <div className="w-32 h-2.5 rounded-full bg-slate-200 overflow-hidden">
-              <div
-                className="h-full rounded-full transition-all"
-                style={{
-                  width: `${overallProgress}%`,
-                  backgroundColor: overallProgress >= 100 ? "#10b981" : overallProgress >= 50 ? "#2563eb" : "#f59e0b",
-                }}
-              />
-            </div>
-            <span className="font-semibold tabular-nums text-slate-700">
-              {overallProgress}% ({completedTasks}/{totalTasks})
-            </span>
-          </div>
-        )}
+        <div className="text-sm text-slate-500">工程バーには進捗率を表示しています。</div>
       </div>
     </div>
   );

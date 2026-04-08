@@ -36,6 +36,25 @@ export function formatDateShort(dateStr: string): string {
   return `${Number(m)}/${Number(d)}`;
 }
 
+export function formatMonthLabel(dateStr: string): string {
+  const [year, month] = dateStr.split("-");
+  return `${Number(year)}年${Number(month)}月`;
+}
+
+export function formatDayNumber(dateStr: string): string {
+  return String(Number(dateStr.split("-")[2]));
+}
+
+export function formatWeekdayLabel(dateStr: string): string {
+  return ["日", "月", "火", "水", "木", "金", "土"][new Date(dateStr).getDay()] ?? "";
+}
+
+export function formatScheduleDate(dateStr: string): string {
+  if (!dateStr) return "未設定";
+  const [year, month, day] = dateStr.split("-");
+  return `${Number(year)}/${Number(month)}/${Number(day)}`;
+}
+
 export const statusColor: Record<TaskStatus, string> = statusColors;
 
 export const statusLabel: Record<TaskStatus, string> = {
@@ -58,9 +77,4 @@ export function getAlertLevel(task: GanttTask, today: string): "overdue" | "urge
   if (diff === 0) return "urgent";
   if (diff <= 3) return "soon";
   return null;
-}
-
-export function getAssigneeInitial(assigneeId?: string): string | null {
-  if (!assigneeId) return null;
-  return assigneeId.slice(0, 2).toUpperCase();
 }
