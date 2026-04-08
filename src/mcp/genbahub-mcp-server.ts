@@ -12,6 +12,15 @@ import {
   searchProjects,
 } from "./supabase-tools.js";
 
+function safeResult(data: unknown) {
+  return { content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }] };
+}
+
+function errorResult(err: unknown) {
+  const msg = err instanceof Error ? err.message : String(err);
+  return { content: [{ type: "text" as const, text: `エラー: ${msg}` }], isError: true };
+}
+
 const server = new McpServer({
   name: "genbahub",
   version: "1.0.0",
@@ -22,8 +31,10 @@ server.tool(
   "List all construction projects in GenbaHub",
   {},
   async () => {
-    const projects = await listProjects();
-    return { content: [{ type: "text", text: JSON.stringify(projects, null, 2) }] };
+    try {
+      const projects = await listProjects();
+      return safeResult(projects);
+    } catch (err) { return errorResult(err); }
   },
 );
 
@@ -32,11 +43,13 @@ server.tool(
   "Get a single project by ID",
   { id: z.string().describe("Project UUID") },
   async ({ id }) => {
-    const project = await getProject(id);
-    if (!project) {
-      return { content: [{ type: "text", text: `Project ${id} not found` }], isError: true };
-    }
-    return { content: [{ type: "text", text: JSON.stringify(project, null, 2) }] };
+    try {
+      const project = await getProject(id);
+      if (!project) {
+        return errorResult(new Error(`Project ${id} not found`));
+      }
+      return safeResult(project);
+    } catch (err) { return errorResult(err); }
   },
 );
 
@@ -53,8 +66,10 @@ server.tool(
     end_date: z.string().optional().describe("End date (YYYY-MM-DD)"),
   },
   async (input) => {
-    const project = await createProject(input);
-    return { content: [{ type: "text", text: JSON.stringify(project, null, 2) }] };
+    try {
+      const project = await createProject(input);
+      return safeResult(project);
+    } catch (err) { return errorResult(err); }
   },
 );
 
@@ -72,8 +87,10 @@ server.tool(
     end_date: z.string().optional(),
   },
   async ({ id, ...fields }) => {
-    const project = await updateProject(id, fields);
-    return { content: [{ type: "text", text: JSON.stringify(project, null, 2) }] };
+    try {
+      const project = await updateProject(id, fields);
+      return safeResult(project);
+    } catch (err) { return errorResult(err); }
   },
 );
 
@@ -82,8 +99,10 @@ server.tool(
   "List all tasks for a project",
   { project_id: z.string().describe("Project UUID") },
   async ({ project_id }) => {
-    const tasks = await listTasks(project_id);
-    return { content: [{ type: "text", text: JSON.stringify(tasks, null, 2) }] };
+    try {
+      const tasks = await listTasks(project_id);
+      return safeResult(tasks);
+    } catch (err) { return errorResult(err); }
   },
 );
 
@@ -101,8 +120,10 @@ server.tool(
     cost: z.number().optional().describe("Task cost in JPY"),
   },
   async (input) => {
-    const task = await createTask(input);
-    return { content: [{ type: "text", text: JSON.stringify(task, null, 2) }] };
+    try {
+      const task = await createTask(input);
+      return safeResult(task);
+    } catch (err) { return errorResult(err); }
   },
 );
 
@@ -120,8 +141,10 @@ server.tool(
     cost: z.number().optional(),
   },
   async ({ id, ...fields }) => {
-    const task = await updateTask(id, fields);
-    return { content: [{ type: "text", text: JSON.stringify(task, null, 2) }] };
+    try {
+      const task = await updateTask(id, fields);
+      return safeResult(task);
+    } catch (err) { return errorResult(err); }
   },
 );
 
@@ -130,8 +153,10 @@ server.tool(
   "Search projects by name, address, or contractor",
   { query: z.string().describe("Search keyword") },
   async ({ query }) => {
-    const projects = await searchProjects(query);
-    return { content: [{ type: "text", text: JSON.stringify(projects, null, 2) }] };
+    try {
+      const projects = await searchProjects(query);
+      return safeResult(projects);
+    } catch (err) { return errorResult(err); }
   },
 );
 
