@@ -55,13 +55,21 @@ type TabDef = {
   dataTour?: string;
 };
 
-const tabs: TabDef[] = [
+// Primary bottom tabs (4 max for mobile)
+const primaryTabs: TabDef[] = [
   {
     key: "today",
-    label: "今日",
+    label: "ダッシュボード",
     icon: "📋",
-    matchRoute: (r) => r === "/today",
+    matchRoute: (r) => r === "/today" || r === "/" || r === "",
     path: "/today",
+  },
+  {
+    key: "gantt",
+    label: "工程表",
+    icon: "📊",
+    matchRoute: (r) => r === "/gantt" || r === "/node-schedule",
+    path: "/gantt",
   },
   {
     key: "projects",
@@ -71,12 +79,18 @@ const tabs: TabDef[] = [
     path: "/app",
   },
   {
-    key: "gantt",
-    label: "工程表",
-    icon: "📊",
-    matchRoute: (r) => r === "/gantt" || r === "/node-schedule",
-    path: "/gantt",
+    key: "more",
+    label: "その他",
+    icon: "☰",
+    matchRoute: (r) =>
+      ["/invoice", "/estimate", "/contractors", "/notifications", "/help"].includes(r),
+    path: "/invoice",
   },
+];
+
+// All tabs including overflow (for desktop and "その他" drawer)
+const tabs: TabDef[] = [
+  ...primaryTabs.filter((t) => t.key !== "more"),
   {
     key: "invoice",
     label: "請求書",
@@ -125,9 +139,11 @@ function AppShell() {
   const [showTour, setShowTour] = useState(false);
   const [showShortcutHelp, setShowShortcutHelp] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [moreDrawerOpen, setMoreDrawerOpen] = useState(false);
 
   useEffect(() => {
     setMobileNavOpen(false);
+    setMoreDrawerOpen(false);
   }, [route]);
 
   useKeyboardShortcuts({
@@ -146,8 +162,13 @@ function AppShell() {
   const legalMatch = route.match(/^\/legal(?:#(.+))?$/);
 
   // Public routes
-  if (route === "/" || route === "") {
+  if (route === "/landing") {
     return <LandingPage />;
+  }
+  if (route === "/" || route === "") {
+    // Redirect root to dashboard immediately
+    navigate("/today");
+    return null;
   }
   if (route === "/login") {
     return <LoginPage />;
@@ -296,9 +317,9 @@ function AppShell() {
                 userLabel={user?.email ?? undefined}
                 onSignOut={user ? signOut : undefined}
               />
-              {/* Desktop nav */}
+              {/* Desktop nav - only primary tabs + overflow */}
               <nav className="hidden items-center gap-1 md:flex" aria-label="メインナビゲーション">
-                {tabs.map((tab) => (
+                {tabs.slice(0, 3).map((tab) => (
                   <NavButton
                     key={tab.key}
                     label={tab.label}
@@ -308,6 +329,33 @@ function AppShell() {
                     onClick={() => navigate(tab.path)}
                   />
                 ))}
+                {/* Overflow dropdown for desktop */}
+                <div className="relative">
+                  <NavButton
+                    label="その他"
+                    icon="☰"
+                    active={tabs.slice(3).some((t) => t.matchRoute(route))}
+                    onClick={() => setMoreDrawerOpen((v) => !v)}
+                  />
+                  {moreDrawerOpen && (
+                    <div className="absolute right-0 top-full mt-1 z-50 w-36 rounded-xl border border-slate-200 bg-white py-1 shadow-xl">
+                      {tabs.slice(3).map((tab) => (
+                        <button
+                          key={tab.key}
+                          onClick={() => { navigate(tab.path); setMoreDrawerOpen(false); }}
+                          className={`flex w-full items-center gap-2 px-3 py-2 text-sm font-medium transition-colors ${
+                            tab.matchRoute(route)
+                              ? "bg-brand-50 text-brand-700"
+                              : "text-slate-600 hover:bg-slate-50"
+                          }`}
+                        >
+                          <span aria-hidden="true">{tab.icon}</span>
+                          {tab.label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
                 {/* Persona toggle */}
                 <button
                   onClick={() => setPersona(persona === "supervisor" ? "executive" : "supervisor")}
@@ -331,14 +379,87 @@ function AppShell() {
           </div>
         </header>
 
-        {/* Main content */}
+        {/* Main content - add bottom padding on mobile so content isn't hidden behind tab bar */}
         <main
           id="main-content"
           key={route}
-          className="page-enter mx-auto max-w-5xl px-4 py-6 sm:py-8"
+          className="page-enter mx-auto max-w-5xl px-4 py-6 pb-24 sm:py-8 sm:pb-8"
         >
           {renderPage()}
         </main>
+
+        {/* Mobile bottom tab bar */}
+        <nav
+          className="fixed bottom-0 inset-x-0 z-40 flex border-t border-slate-200 bg-white shadow-[0_-2px_12px_rgba(0,0,0,0.08)] md:hidden"
+          aria-label="ボトムナビゲーション"
+        >
+          {primaryTabs.map((tab) => {
+            const isMore = tab.key === "more";
+            const isActive = isMore ? moreDrawerOpen || tab.matchRoute(route) : tab.matchRoute(route);
+            return (
+              <button
+                key={tab.key}
+                type="button"
+                aria-current={isActive && !isMore ? "page" : undefined}
+                onClick={() => {
+                  if (isMore) {
+                    setMoreDrawerOpen((v) => !v);
+                  } else {
+                    navigate(tab.path);
+                  }
+                }}
+                className={`flex flex-1 flex-col items-center justify-center gap-0.5 py-2 text-center transition-colors ${
+                  isActive
+                    ? "text-brand-600"
+                    : "text-slate-400 active:text-slate-600"
+                }`}
+              >
+                <span className="text-xl leading-none" aria-hidden="true">
+                  {tab.icon}
+                </span>
+                <span className="text-[10px] font-semibold leading-tight">
+                  {tab.label}
+                </span>
+              </button>
+            );
+          })}
+        </nav>
+
+        {/* "その他" bottom drawer for mobile */}
+        {moreDrawerOpen && (
+          <div className="fixed inset-0 z-30 md:hidden" onClick={() => setMoreDrawerOpen(false)}>
+            <div className="absolute inset-0 bg-slate-950/30" />
+            <div
+              className="absolute bottom-16 inset-x-0 rounded-t-2xl bg-white px-4 pt-4 pb-6 shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="mb-3 flex items-center justify-between">
+                <p className="text-sm font-bold text-slate-700">その他のメニュー</p>
+                <button onClick={() => setMoreDrawerOpen(false)} className="text-slate-400 hover:text-slate-600 p-1">
+                  <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5" aria-hidden="true">
+                    <path d="M6 6l12 12M18 6 6 18" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                  </svg>
+                </button>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                {tabs.slice(3).map((tab) => (
+                  <button
+                    key={tab.key}
+                    onClick={() => navigate(tab.path)}
+                    className={`flex items-center gap-3 rounded-xl border px-4 py-3 text-sm font-semibold transition-colors ${
+                      tab.matchRoute(route)
+                        ? "border-brand-200 bg-brand-50 text-brand-700"
+                        : "border-slate-200 bg-white text-slate-700 active:bg-slate-50"
+                    }`}
+                  >
+                    <span className="text-lg" aria-hidden="true">{tab.icon}</span>
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Onboarding wizard (first-time only; skip for Supabase-authenticated internal users) */}
         {!onboardingDone && !hasSupabaseEnv() && (
