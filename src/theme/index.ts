@@ -51,9 +51,9 @@ export const tapTarget = {
 
 // ガントチャート固有
 export const gantt = {
-  dayWidth: 36,
-  rowHeight: 56,
-  phaseRowHeight: 40,
-  headerHeight: 72,
-  labelWidth: 320,
+  dayWidth: 28,
+  rowHeight: 48,
+  phaseRowHeight: 36,
+  headerHeight: 64,
+  labelWidth: 160,
 } as const;

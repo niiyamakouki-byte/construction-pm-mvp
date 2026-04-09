@@ -20,9 +20,9 @@ import { filterScheduleTasks } from "../lib/cost-management.js";
 import type { ConnectState } from "../components/gantt/types.js";
 
 const MAX_CHART_DAYS = 240;
-const MIN_DAY_WIDTH = 20;
-const MAX_DAY_WIDTH = 52;
-const DEFAULT_DAY_WIDTH = 32;
+const MIN_DAY_WIDTH = 8;
+const MAX_DAY_WIDTH = 60;
+const DEFAULT_DAY_WIDTH = 28;
 
 const projectStatusLabel: Record<ProjectStatus, string> = {
   planning: "計画中",
