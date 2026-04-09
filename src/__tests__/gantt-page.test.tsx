@@ -65,7 +65,7 @@ describe("GanttPage", () => {
     expect(screen.getByRole("status", { name: "ガントチャートを読み込み中" })).toBeDefined();
   });
 
-  it("案件を選ぶと案件工程表ヘッダーと工程バーが表示される", async () => {
+  it("案件を選ぶとすぐ工程表とバーが表示される", async () => {
     const now = "2025-01-01T00:00:00.000Z";
     mockProjectRepository.findAll.mockResolvedValue([
       {
@@ -132,16 +132,15 @@ describe("GanttPage", () => {
     ]);
     mockContractorRepository.findAll.mockResolvedValue([]);
 
-    render(<GanttPage />);
+    render(<GanttPage initialProjectId="p1" />);
 
-    expect(await screen.findByText("案件別工程スケジュール")).toBeDefined();
-    expect(await screen.findAllByText("南青山ビル改修")).not.toHaveLength(0);
+    expect(await screen.findByRole("heading", { name: "南青山ビル改修" })).toBeDefined();
     expect(screen.getByRole("figure", { name: "ガントチャート: 2タスク" })).toBeDefined();
     expect(screen.getAllByText("墨出し").length).toBeGreaterThan(0);
     expect(screen.getAllByText("配線工事").length).toBeGreaterThan(0);
   });
 
-  it("別案件をクリックするとその案件の全工程に切り替わる", async () => {
+  it("案件チップを押すと表示案件が切り替わる", async () => {
     const now = "2025-01-01T00:00:00.000Z";
     mockProjectRepository.findAll.mockResolvedValue([
       {
@@ -196,13 +195,53 @@ describe("GanttPage", () => {
     mockContractorRepository.findAll.mockResolvedValue([]);
 
     const user = userEvent.setup();
-    render(<GanttPage />);
+    render(<GanttPage initialProjectId="p1" />);
 
-    await screen.findByText("案件別工程スケジュール");
-    await user.click(screen.getByRole("button", { name: /渋谷店舗新装/ }));
+    await screen.findByRole("heading", { name: "南青山ビル改修" });
+    await user.click(screen.getByRole("button", { name: "渋谷店舗新装" }));
 
-    expect(await screen.findAllByText("渋谷店舗新装")).not.toHaveLength(0);
+    expect(await screen.findByRole("heading", { name: "渋谷店舗新装" })).toBeDefined();
     expect(screen.getByRole("figure", { name: "ガントチャート: 1タスク" })).toBeDefined();
     expect(screen.getAllByText("仮設工事").length).toBeGreaterThan(0);
+  });
+
+  it("タスクをタップすると編集シートが開く", async () => {
+    const now = "2025-01-01T00:00:00.000Z";
+    mockProjectRepository.findAll.mockResolvedValue([
+      {
+        id: "p1",
+        name: "南青山ビル改修",
+        description: "",
+        status: "active",
+        startDate: "2025-01-10",
+        includeWeekends: true,
+        createdAt: now,
+        updatedAt: now,
+      },
+    ]);
+    mockTaskRepository.findAll.mockResolvedValue([
+      {
+        id: "t1",
+        projectId: "p1",
+        name: "墨出し",
+        description: "",
+        status: "todo",
+        startDate: "2025-01-10",
+        dueDate: "2025-01-12",
+        progress: 25,
+        dependencies: [],
+        createdAt: now,
+        updatedAt: now,
+      },
+    ]);
+    mockContractorRepository.findAll.mockResolvedValue([]);
+
+    const user = userEvent.setup();
+    render(<GanttPage initialProjectId="p1" />);
+
+    await screen.findByRole("figure", { name: "ガントチャート: 1タスク" });
+    await user.click(screen.getAllByText("墨出し")[0]);
+
+    expect(await screen.findByRole("dialog", { name: "タスクを編集" })).toBeDefined();
   });
 });

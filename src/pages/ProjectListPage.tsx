@@ -4,6 +4,7 @@ import { createProjectRepository } from "../stores/project-store.js";
 import { geocodeAddress } from "../infra/geocode.js";
 import { navigate } from "../hooks/useHashRouter.js";
 import { useOrganizationContext } from "../contexts/OrganizationContext.js";
+import { writeLastProjectId } from "../lib/last-project.js";
 
 function toLocalDateString(date: Date): string {
   const y = date.getFullYear();
@@ -26,32 +27,23 @@ const statusColor: Record<ProjectStatus, string> = {
   on_hold: "bg-amber-100 text-amber-700 border-amber-200",
 };
 
-const statusDot: Record<ProjectStatus, string> = {
-  planning: "bg-blue-500",
-  active: "bg-emerald-500",
-  completed: "bg-slate-400",
-  on_hold: "bg-amber-500",
-};
-
 export function ProjectListPage() {
   const { organizationId } = useOrganizationContext();
-  const projectRepository = useMemo(
-    () => createProjectRepository(() => organizationId),
-    [organizationId],
-  );
+  const projectRepository = useMemo(() => createProjectRepository(() => organizationId), [organizationId]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [address, setAddress] = useState("");
   const [status, setStatus] = useState<ProjectStatus>("planning");
   const [startDate, setStartDate] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const [submitting, setSubmitting] = useState(false);
   const [showForm, setShowForm] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [nameError, setNameError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const loadProjects = useCallback(async () => {
-    setProjects(await projectRepository.findAll());
+    const allProjects = await projectRepository.findAll();
+    setProjects(allProjects.sort((left, right) => right.updatedAt.localeCompare(left.updatedAt)));
   }, [projectRepository]);
 
   useEffect(() => {
@@ -71,41 +63,39 @@ export function ProjectListPage() {
     return true;
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
     setError(null);
-
     if (!validateName(name)) return;
-    setSubmitting(true);
 
+    setSubmitting(true);
     try {
       const now = new Date();
       const trimmedAddress = address.trim();
-
       let latitude: number | undefined;
       let longitude: number | undefined;
       if (trimmedAddress) {
-        const geo = await geocodeAddress(trimmedAddress);
-        if (geo) {
-          latitude = geo.lat;
-          longitude = geo.lon;
+        const geocode = await geocodeAddress(trimmedAddress);
+        if (geocode) {
+          latitude = geocode.lat;
+          longitude = geocode.lon;
         }
       }
 
-      const project: Project = {
+      await projectRepository.create({
         id: crypto.randomUUID(),
         name: name.trim(),
         description: description.trim(),
+        address: trimmedAddress || undefined,
+        latitude,
+        longitude,
         status,
         startDate: startDate || toLocalDateString(now),
         includeWeekends: true,
         createdAt: now.toISOString(),
         updatedAt: now.toISOString(),
-        ...(trimmedAddress ? { address: trimmedAddress } : {}),
-        ...(latitude !== undefined ? { latitude, longitude } : {}),
-      };
+      });
 
-      await projectRepository.create(project);
       setName("");
       setDescription("");
       setAddress("");
@@ -120,47 +110,42 @@ export function ProjectListPage() {
     }
   };
 
-  const activeCount = projects.filter((p) => p.status === "active").length;
-  const planningCount = projects.filter((p) => p.status === "planning").length;
+  const openProjectGantt = (project: Project) => {
+    writeLastProjectId(project.id);
+    navigate(`/gantt/${project.id}`);
+  };
 
   return (
-    <div className="space-y-6">
-      {/* Page Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h2 className="text-xl font-bold text-slate-900">プロジェクト</h2>
-          {projects.length > 0 && (
-            <p className="mt-1 text-sm text-slate-500">
-              {activeCount > 0 && <span className="text-emerald-600 font-medium">{activeCount}件 進行中</span>}
-              {activeCount > 0 && planningCount > 0 && " / "}
-              {planningCount > 0 && <span className="text-blue-600 font-medium">{planningCount}件 計画中</span>}
-              {activeCount === 0 && planningCount === 0 && `${projects.length}件`}
-            </p>
-          )}
+    <div className="space-y-4">
+      <section className="rounded-[28px] bg-[linear-gradient(145deg,#fffaf2_0%,#f6fbff_56%,#eff6ff_100%)] px-4 py-5 shadow-sm ring-1 ring-slate-200 sm:px-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="text-[11px] font-semibold tracking-[0.2em] text-slate-500">ホーム</p>
+            <h1 className="mt-1 text-2xl font-bold text-slate-900">案件一覧</h1>
+            <p className="mt-2 text-sm text-slate-500">案件をタップすると、そのまま工程表を開きます。</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setShowForm((current) => !current)}
+            className="rounded-2xl bg-brand-600 px-5 py-3 text-sm font-semibold text-white shadow-sm"
+          >
+            {showForm ? "フォームを閉じる" : "新規プロジェクト"}
+          </button>
         </div>
-        <button
-          onClick={() => setShowForm(!showForm)}
-          className="inline-flex items-center justify-center gap-2 rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-brand-600 active:bg-brand-700 transition-colors"
-        >
-          <span className="text-lg leading-none">{showForm ? "−" : "+"}</span>
-          {showForm ? "フォームを閉じる" : "新規プロジェクト"}
-        </button>
-      </div>
+      </section>
 
-      {/* New Project Form (Collapsible) */}
-      {showForm && (
-        <section className="rounded-xl border border-brand-200 bg-white p-5 sm:p-6 shadow-sm animate-in">
-          <h3 className="mb-5 text-base font-bold text-slate-900 flex items-center gap-2">
-            <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-brand-100 text-brand-600 text-xs">+</span>
-            新規プロジェクト作成
-          </h3>
+      {showForm ? (
+        <section className="rounded-[28px] bg-white p-5 shadow-sm ring-1 ring-slate-200 sm:p-6">
+          <div className="mb-5 flex items-center gap-2">
+            <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-brand-50 text-brand-600">+</span>
+            <h2 className="text-lg font-bold text-slate-900">新規プロジェクト作成</h2>
+          </div>
 
-          {error && (
-            <div role="alert" className="mb-4 flex items-start gap-2 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
-              <span className="shrink-0 mt-0.5">!</span>
-              <span>{error}</span>
+          {error ? (
+            <div role="alert" className="mb-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+              {error}
             </div>
-          )}
+          ) : null}
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
@@ -171,23 +156,21 @@ export function ProjectListPage() {
                 id="project-name"
                 type="text"
                 value={name}
-                onChange={(e) => {
-                  setName(e.target.value);
-                  if (nameError) validateName(e.target.value);
+                onChange={(event) => {
+                  setName(event.target.value);
+                  if (nameError) validateName(event.target.value);
                 }}
-                onBlur={() => { if (name) validateName(name); }}
-                required
-                maxLength={200}
-                autoComplete="off"
-                className={`mt-1.5 block w-full rounded-lg border px-3 py-2.5 text-sm shadow-sm transition-colors focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 focus:outline-none ${
+                onBlur={() => {
+                  if (name) validateName(name);
+                }}
+                placeholder="例: 渋谷オフィスビル内装工事"
+                className={`mt-1.5 w-full rounded-2xl border px-4 py-3 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 ${
                   nameError ? "border-red-300 bg-red-50" : "border-slate-300 bg-white"
                 }`}
-                placeholder="例: 渋谷オフィスビル内装工事"
               />
-              {nameError && (
-                <p className="mt-1.5 text-xs text-red-600">{nameError}</p>
-              )}
+              {nameError ? <p className="mt-1.5 text-xs text-red-600">{nameError}</p> : null}
             </div>
+
             <div>
               <label htmlFor="project-description" className="block text-sm font-medium text-slate-700">
                 説明
@@ -196,13 +179,12 @@ export function ProjectListPage() {
                 id="project-description"
                 type="text"
                 value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                maxLength={500}
-                autoComplete="off"
-                className="mt-1.5 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm shadow-sm transition-colors focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 focus:outline-none"
+                onChange={(event) => setDescription(event.target.value)}
                 placeholder="工事概要やメモを入力"
+                className="mt-1.5 w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
               />
             </div>
+
             <div>
               <label htmlFor="project-address" className="block text-sm font-medium text-slate-700">
                 現場住所
@@ -211,15 +193,13 @@ export function ProjectListPage() {
                 id="project-address"
                 type="text"
                 value={address}
-                onChange={(e) => setAddress(e.target.value)}
-                maxLength={300}
-                autoComplete="street-address"
-                className="mt-1.5 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm shadow-sm transition-colors focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 focus:outline-none"
+                onChange={(event) => setAddress(event.target.value)}
                 placeholder="例: 東京都港区南青山3-1-1"
+                className="mt-1.5 w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
               />
-              <p className="mt-1 text-xs text-slate-400">天気予報の取得に使用されます</p>
             </div>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+
+            <div className="grid gap-4 sm:grid-cols-2">
               <div>
                 <label htmlFor="project-status" className="block text-sm font-medium text-slate-700">
                   ステータス
@@ -227,8 +207,8 @@ export function ProjectListPage() {
                 <select
                   id="project-status"
                   value={status}
-                  onChange={(e) => setStatus(e.target.value as ProjectStatus)}
-                  className="mt-1.5 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm shadow-sm transition-colors focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 focus:outline-none"
+                  onChange={(event) => setStatus(event.target.value as ProjectStatus)}
+                  className="mt-1.5 w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
                 >
                   <option value="planning">計画中</option>
                   <option value="active">進行中</option>
@@ -244,187 +224,79 @@ export function ProjectListPage() {
                   id="project-start-date"
                   type="date"
                   value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                  className="mt-1.5 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm shadow-sm transition-colors focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 focus:outline-none"
+                  onChange={(event) => setStartDate(event.target.value)}
+                  className="mt-1.5 w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
                 />
               </div>
             </div>
+
             <div className="flex items-center gap-3 pt-2">
               <button
                 type="submit"
                 disabled={submitting}
-                className={`inline-flex items-center gap-2 rounded-lg bg-brand-500 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-brand-600 active:bg-brand-700 transition-colors ${
-                  submitting ? "opacity-60 cursor-not-allowed" : ""
-                }`}
+                className="rounded-2xl bg-brand-600 px-5 py-3 text-sm font-semibold text-white shadow-sm disabled:opacity-60"
               >
-                {submitting ? (
-                  <>
-                    <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-                    作成中...
-                  </>
-                ) : (
-                  "作成"
-                )}
+                {submitting ? "作成中..." : "作成"}
               </button>
               <button
                 type="button"
                 onClick={() => setShowForm(false)}
-                className="rounded-lg px-4 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-100 transition-colors"
+                className="rounded-2xl bg-slate-100 px-4 py-3 text-sm font-semibold text-slate-600"
               >
                 キャンセル
               </button>
             </div>
           </form>
         </section>
-      )}
+      ) : null}
 
-      {/* Project List */}
-      <section>
-        {projects.length === 0 ? (
-          <EmptyState onCreateClick={() => setShowForm(true)} />
-        ) : (
-          <>
-            {/* Desktop table - hidden on mobile */}
-            <div className="hidden sm:block overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-              <table className="w-full text-left text-sm">
-                <thead className="border-b border-slate-200 bg-slate-50/80">
-                  <tr>
-                    <th className="px-5 py-3.5 font-semibold text-slate-600 text-xs uppercase tracking-wider">プロジェクト名</th>
-                    <th className="px-5 py-3.5 font-semibold text-slate-600 text-xs uppercase tracking-wider">現場</th>
-                    <th className="px-5 py-3.5 font-semibold text-slate-600 text-xs uppercase tracking-wider">ステータス</th>
-                    <th className="px-5 py-3.5 font-semibold text-slate-600 text-xs uppercase tracking-wider">開始日</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {projects.map((p) => (
-                    <tr
-                      key={p.id}
-                      className="hover:bg-brand-50/30 transition-colors cursor-pointer"
-                      onClick={() => navigate(`/project/${p.id}`)}
-                      onKeyDown={(e) => { if (e.key === "Enter") navigate(`/project/${p.id}`); }}
-                      tabIndex={0}
-                      role="link"
-                      aria-label={`${p.name} - ${statusLabel[p.status]}`}
-                    >
-                      <td className="px-5 py-4">
-                        <p className="font-semibold text-slate-900">{p.name}</p>
-                        {p.description && (
-                          <p className="mt-0.5 text-xs text-slate-500 line-clamp-1">{p.description}</p>
-                        )}
-                      </td>
-                      <td className="px-5 py-4 text-xs text-slate-500">{p.address ?? "-"}</td>
-                      <td className="px-5 py-4">
-                        <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium ${statusColor[p.status]}`}>
-                          <span className={`h-1.5 w-1.5 rounded-full ${statusDot[p.status]}`} />
-                          {statusLabel[p.status]}
-                        </span>
-                      </td>
-                      <td className="px-5 py-4 text-sm text-slate-600 tabular-nums">{p.startDate}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Mobile card layout */}
-            <div className="space-y-3 sm:hidden">
-              {projects.map((p) => (
-                <ProjectCard key={p.id} project={p} />
-              ))}
-            </div>
-          </>
-        )}
-      </section>
-    </div>
-  );
-}
-
-/* ── Empty State ─────────────────────────────────────── */
-
-function EmptyState({ onCreateClick }: { onCreateClick: () => void }) {
-  return (
-    <div className="rounded-xl border-2 border-dashed border-slate-200 bg-white p-8 sm:p-12 text-center">
-      <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-brand-50">
-        <svg width="32" height="32" viewBox="0 0 100 100" aria-hidden="true">
-          <rect x="10" y="60" width="80" height="35" rx="3" fill="#1e3a5f" opacity="0.3" />
-          <rect x="20" y="30" width="60" height="35" rx="3" fill="#2563eb" opacity="0.3" />
-          <polygon points="50,5 15,35 85,35" fill="#f59e0b" opacity="0.5" />
-        </svg>
-      </div>
-      <h3 className="text-lg font-bold text-slate-900">
-        最初のプロジェクトを作成しましょう
-      </h3>
-      <p className="mx-auto mt-2 max-w-md text-sm text-slate-500 leading-relaxed">
-        プロジェクトを作成すると、工程管理・タスク追跡・現場天気の確認ができるようになります。まずは進行中の工事を1つ登録してみましょう。
-      </p>
-      <button
-        onClick={onCreateClick}
-        className="mt-6 inline-flex items-center gap-2 rounded-lg bg-brand-500 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-brand-600 active:bg-brand-700 transition-colors"
-      >
-        <span className="text-lg leading-none">+</span>
-        プロジェクトを作成
-      </button>
-      <div className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-3 text-left">
-        <FeatureHint
-          title="工程管理"
-          description="ガントチャートでスケジュールを可視化"
-        />
-        <FeatureHint
-          title="天気連動"
-          description="現場の天気予報を自動取得"
-        />
-        <FeatureHint
-          title="今日のタスク"
-          description="現場で使えるモバイルダッシュボード"
-        />
-      </div>
-    </div>
-  );
-}
-
-function FeatureHint({ title, description }: { title: string; description: string }) {
-  return (
-    <div className="rounded-lg bg-slate-50 p-3">
-      <p className="text-sm font-semibold text-slate-700">{title}</p>
-      <p className="mt-0.5 text-xs text-slate-500">{description}</p>
-    </div>
-  );
-}
-
-/* ── Mobile Project Card ─────────────────────────────── */
-
-function ProjectCard({ project }: { project: Project }) {
-  return (
-    <div
-      className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm active:bg-slate-50 transition-colors cursor-pointer"
-      onClick={() => navigate(`/project/${project.id}`)}
-    >
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0 flex-1">
-          <h3 className="font-semibold text-slate-900 text-sm leading-tight truncate">
-            {project.name}
-          </h3>
-          {project.description && (
-            <p className="mt-0.5 text-xs text-slate-500 line-clamp-1">{project.description}</p>
-          )}
+      {projects.length === 0 ? (
+        <div className="rounded-[28px] border border-dashed border-slate-300 bg-white px-6 py-12 text-center shadow-sm">
+          <h2 className="text-xl font-bold text-slate-900">最初のプロジェクトを作成しましょう</h2>
+          <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-slate-500">
+            プロジェクトを作成すると、工程表まで最短で移動できます。まずは1件登録してください。
+          </p>
+          <button
+            type="button"
+            onClick={() => setShowForm(true)}
+            className="mt-6 rounded-2xl bg-brand-600 px-5 py-3 text-sm font-semibold text-white shadow-sm"
+          >
+            プロジェクトを作成
+          </button>
         </div>
-        <span className={`shrink-0 inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-medium ${statusColor[project.status]}`}>
-          <span className={`h-1.5 w-1.5 rounded-full ${statusDot[project.status]}`} />
-          {statusLabel[project.status]}
-        </span>
-      </div>
-      <div className="mt-3 flex items-center gap-4 text-xs text-slate-500">
-        {project.address && (
-          <span className="flex items-center gap-1 truncate">
-            <span aria-hidden="true">📍</span>
-            {project.address}
-          </span>
-        )}
-        <span className="flex items-center gap-1 tabular-nums">
-          <span aria-hidden="true">📅</span>
-          {project.startDate}
-        </span>
-      </div>
+      ) : (
+        <div className="grid gap-3">
+          {projects.map((project) => (
+            <button
+              key={project.id}
+              type="button"
+              onClick={() => openProjectGantt(project)}
+              className="rounded-[26px] bg-white px-4 py-4 text-left shadow-sm ring-1 ring-slate-200 transition-transform active:scale-[0.99] sm:px-5"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h2 className="truncate text-base font-semibold text-slate-900 sm:text-lg">{project.name}</h2>
+                    <span className={`inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold ${statusColor[project.status]}`}>
+                      {statusLabel[project.status]}
+                    </span>
+                  </div>
+                  {project.description ? (
+                    <p className="mt-2 line-clamp-2 text-sm text-slate-500">{project.description}</p>
+                  ) : null}
+                </div>
+                <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
+                  工程表を開く
+                </span>
+              </div>
+              <div className="mt-4 flex flex-wrap items-center gap-3 text-sm text-slate-500">
+                <span>{project.address ?? "住所未設定"}</span>
+                <span>{project.startDate}</span>
+              </div>
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

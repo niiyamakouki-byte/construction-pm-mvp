@@ -276,3 +276,21 @@ textarea::placeholder {
     overflow: visible !important;
   }
 }
+
+.sheet-backdrop {
+  backdrop-filter: blur(6px);
+}
+
+.sheet-panel {
+  max-height: min(86dvh, 760px);
+}
+
+.sheet-scroll {
+  overscroll-behavior: contain;
+}
+
+@media (max-width: 767px) {
+  .gantt-label-column {
+    width: min(10rem, 44vw);
+  }
+}
