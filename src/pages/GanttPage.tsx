@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { Contractor, Project, ProjectStatus, TaskStatus } from "../domain/types.js";
+import type { Contractor, Project, ProjectStatus } from "../domain/types.js";
 import { createProjectRepository } from "../stores/project-store.js";
 import { createTaskRepository } from "../stores/task-store.js";
 import { createContractorRepository } from "../stores/contractor-store.js";

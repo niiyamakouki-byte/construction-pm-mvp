@@ -7,7 +7,7 @@ import type {
 } from "react";
 import type { ChartLayout, ConnectState, DragState, GanttTask } from "./types.js";
 import { gantt } from "../../theme/index.js";
-import { daysBetween, formatDayNumber, formatMonthLabel, formatWeekdayLabel } from "./utils.js";
+import { formatDayNumber, formatMonthLabel, formatWeekdayLabel } from "./utils.js";
 import { GanttTaskBar, GanttTaskLabel } from "./GanttTaskBar.js";
 import { DependencyArrows } from "./DependencyArrows.js";
 
@@ -58,7 +58,7 @@ export function GanttChart({
   onTimelineTouchMove,
   onTimelineTouchEnd,
 }: Props) {
-  const { rowHeight, phaseRowHeight, headerHeight, labelWidth } = gantt;
+  const { phaseRowHeight, headerHeight, labelWidth } = gantt;
   const { chartStart, totalDays, dateInfo, highlightedDates, todayOffset, dayWidth } = chartLayout;
   const monthRowHeight = 30;
   const dayRowHeight = headerHeight - monthRowHeight;

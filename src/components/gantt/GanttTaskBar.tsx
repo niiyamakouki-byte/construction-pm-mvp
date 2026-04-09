@@ -29,7 +29,7 @@ function isOverdue(task: GanttTask, today: string): boolean {
 export function GanttTaskBar({
   task,
   dragState,
-  dragRef,
+  dragRef: _dragRef,
   chartStart,
   highlightedDates,
   today,

@@ -291,11 +291,11 @@ function AppShell() {
             <button
               onClick={() => navigate("/app")}
               className="flex items-center gap-3"
-              aria-label="Compass ホームへ"
+              aria-label="GenbaHub ホームへ"
             >
               <LogoIcon />
               <div className="text-left">
-                <span className="block text-lg font-bold tracking-tight">Compass</span>
+                <span className="block text-lg font-bold tracking-tight">GenbaHub</span>
                 <span className="block text-[11px] text-slate-500">現場工程を最短で開く</span>
               </div>
             </button>
