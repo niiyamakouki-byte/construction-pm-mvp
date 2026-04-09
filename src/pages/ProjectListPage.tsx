@@ -40,10 +40,12 @@ export function ProjectListPage() {
   const [submitting, setSubmitting] = useState(false);
   const [nameError, setNameError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
   const loadProjects = useCallback(async () => {
     const allProjects = await projectRepository.findAll();
     setProjects(allProjects.sort((left, right) => right.updatedAt.localeCompare(left.updatedAt)));
+    setLoading(false);
   }, [projectRepository]);
 
   useEffect(() => {
@@ -114,6 +116,15 @@ export function ProjectListPage() {
     writeLastProjectId(project.id);
     navigate(`/gantt/${project.id}`);
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center gap-2 py-16" role="status" aria-label="読み込み中">
+        <span className="inline-block h-5 w-5 animate-spin rounded-full border-2 border-brand-200 border-t-brand-600" />
+        <span className="text-sm text-slate-400">読み込み中...</span>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">

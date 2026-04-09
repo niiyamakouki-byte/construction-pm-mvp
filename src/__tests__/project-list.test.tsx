@@ -29,7 +29,8 @@ describe("ProjectListPage", () => {
     const user = userEvent.setup();
     render(<ProjectListPage />);
 
-    // Open the form first (collapsible)
+    // Wait for loading to complete, then open form
+    await screen.findByText("新規プロジェクト");
     await user.click(screen.getByText("新規プロジェクト"));
 
     await user.type(screen.getByPlaceholderText("例: 渋谷オフィスビル内装工事"), "テスト工事A");
@@ -50,7 +51,8 @@ describe("ProjectListPage", () => {
     const user = userEvent.setup();
     render(<ProjectListPage />);
 
-    // Open the form
+    // Wait for loading to complete, then open form
+    await screen.findByText("新規プロジェクト");
     await user.click(screen.getByText("新規プロジェクト"));
 
     await user.type(screen.getByPlaceholderText("例: 渋谷オフィスビル内装工事"), "日付テスト");
@@ -68,7 +70,8 @@ describe("ProjectListPage", () => {
     const user = userEvent.setup();
     render(<ProjectListPage />);
 
-    // Open the form
+    // Wait for loading to complete, then open form
+    await screen.findByText("新規プロジェクト");
     await user.click(screen.getByText("新規プロジェクト"));
 
     await user.type(screen.getByPlaceholderText("例: 渋谷オフィスビル内装工事"), "工事X");

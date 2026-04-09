@@ -19,6 +19,7 @@ export function TasksPage() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [tasks, setTasks] = useState<GanttTask[]>([]);
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(readLastProjectId());
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const load = async () => {
@@ -44,6 +45,7 @@ export function TasksPage() {
           }))
           .sort((left, right) => left.startDate.localeCompare(right.startDate)),
       );
+      setLoading(false);
     };
 
     void load();
@@ -51,6 +53,15 @@ export function TasksPage() {
 
   const visibleProjects = projects.length > 0 ? projects : [];
   const visibleTasks = tasks.filter((task) => !selectedProjectId || task.projectId === selectedProjectId);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center gap-2 py-16" role="status" aria-label="読み込み中">
+        <span className="inline-block h-5 w-5 animate-spin rounded-full border-2 border-brand-200 border-t-brand-600" />
+        <span className="text-sm text-slate-400">読み込み中...</span>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
