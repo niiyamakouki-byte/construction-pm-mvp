@@ -2,7 +2,7 @@
  * TodayDashboardPage のテスト
  */
 import { describe, expect, it, beforeEach, vi } from "vitest";
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { TodayDashboardPage } from "../pages/TodayDashboardPage.js";
 import type { Task, Project } from "../domain/types.js";
 
@@ -60,6 +60,22 @@ function makeTask(overrides: Partial<Task> = {}): Task {
   };
 }
 
+function makeProject(overrides: Partial<Project> = {}): Project {
+  const now = new Date().toISOString();
+  const today = new Date().toISOString().slice(0, 10);
+  return {
+    id: "p-1",
+    name: "品川物流センター新築",
+    description: "",
+    status: "active",
+    startDate: today,
+    includeWeekends: false,
+    createdAt: now,
+    updatedAt: now,
+    ...overrides,
+  };
+}
+
 
 describe("TodayDashboardPage", () => {
   beforeEach(() => {
@@ -69,6 +85,16 @@ describe("TodayDashboardPage", () => {
     mockTaskFindAll.mockClear();
     mockTaskUpdate.mockClear();
     mockProjectFindAll.mockClear();
+    Object.defineProperty(globalThis.URL, "createObjectURL", {
+      writable: true,
+      configurable: true,
+      value: vi.fn(() => "blob:report"),
+    });
+    Object.defineProperty(globalThis.URL, "revokeObjectURL", {
+      writable: true,
+      configurable: true,
+      value: vi.fn(),
+    });
   });
 
   it("ページタイトル「今日のタスク」が表示される", async () => {
@@ -144,6 +170,38 @@ describe("TodayDashboardPage", () => {
   it("「本日の概要」ヘッダーが表示される", async () => {
     render(<TodayDashboardPage />);
     await waitFor(() => expect(screen.getByText("本日の概要")).toBeDefined());
+  });
+
+  it("「本日の日報」セクションとHTML出力ボタンが表示される", async () => {
+    render(<TodayDashboardPage />);
+    await waitFor(() => expect(screen.getByText("本日の日報")).toBeDefined());
+    expect(screen.getByRole("button", { name: "HTMLで日報出力" })).toBeDefined();
+  });
+
+  it("HTML日報出力ボタンから日報をエクスポートできる", async () => {
+    const today = new Date().toISOString().slice(0, 10);
+    mockProjects = [makeProject()];
+    mockTasks = [
+      makeTask({
+        name: "鉄筋組立",
+        status: "in_progress",
+        startDate: today,
+        dueDate: today,
+        progress: 55,
+      }),
+    ];
+
+    render(<TodayDashboardPage />);
+
+    const exportButton = await screen.findByRole("button", { name: "HTMLで日報出力" });
+    await waitFor(() => expect(exportButton.hasAttribute("disabled")).toBe(false));
+
+    fireEvent.click(exportButton);
+
+    expect(URL.createObjectURL).toHaveBeenCalled();
+    await waitFor(() =>
+      expect(screen.getByText("HTML日報を出力しました")).toBeDefined(),
+    );
   });
 
   it("weather pageへの導線が表示される", async () => {

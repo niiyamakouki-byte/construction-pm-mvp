@@ -19,6 +19,7 @@ import { PricingPage } from "./pages/PricingPage.js";
 import { TasksPage } from "./pages/TasksPage.js";
 import { CostManagementPage } from "./pages/CostManagementPage.js";
 import { WeatherPage } from "./pages/WeatherPage.js";
+import { SafetyInspectionPage } from "./pages/SafetyInspectionPage.js";
 import { ErrorBoundary } from "./components/ErrorBoundary.js";
 import { AuthGuard } from "./components/AuthGuard.js";
 import { OnboardingWizard, useOnboardingDone } from "./components/OnboardingWizard.js";
@@ -109,7 +110,7 @@ function AppShell() {
       icon: "☰",
       path: "/notifications",
       matchRoute: (currentRoute) =>
-        ["/today", "/invoice", "/estimate", "/contractors", "/notifications", "/help", "/node-schedule", "/cost-management", "/weather"].includes(currentRoute),
+        ["/today", "/invoice", "/estimate", "/contractors", "/notifications", "/help", "/node-schedule", "/cost-management", "/weather", "/safety"].includes(currentRoute),
     },
   ];
 
@@ -150,6 +151,7 @@ function AppShell() {
       path: "/estimate",
       matchRoute: (currentRoute) => currentRoute === "/estimate",
     },
+    { key: "safety", label: "安全", icon: "🦺", path: "/safety", matchRoute: (currentRoute) => currentRoute === "/safety" },
     { key: "cost", label: "コスト", icon: "💹", path: "/cost-management", matchRoute: (currentRoute) => currentRoute === "/cost-management" },
     {
       key: "invoice",
@@ -258,6 +260,13 @@ function AppShell() {
       return (
         <ErrorBoundary fallbackTitle="天気予報エラー">
           <WeatherPage />
+        </ErrorBoundary>
+      );
+    }
+    if (route === "/safety") {
+      return (
+        <ErrorBoundary fallbackTitle="安全点検エラー">
+          <SafetyInspectionPage />
         </ErrorBoundary>
       );
     }
