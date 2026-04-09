@@ -14,6 +14,8 @@ import { GanttHeader } from "../components/gantt/GanttHeader.js";
 import { GanttChart } from "../components/gantt/GanttChart.js";
 import { QuickAddForm } from "../components/gantt/QuickAddForm.js";
 import { TaskEditModal } from "../components/gantt/TaskEditModal.js";
+import { TaskBottomSheet } from "../components/TaskBottomSheet.js";
+import { QuickAddSheet } from "../components/QuickAddSheet.js";
 import type { GanttTask, ConnectState, QuickAddState, TaskDetailState, ChartLayout } from "../components/gantt/types.js";
 import { addDays, daysBetween, formatScheduleDate, getAlertLevel, toLocalDateString } from "../components/gantt/utils.js";
 
@@ -584,7 +586,7 @@ function GanttPageContent() {
       <CommunicationSidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
       {quickAdd && (
-        <QuickAddForm
+        <QuickAddSheet
           quickAdd={quickAdd}
           onClose={() => setQuickAdd(null)}
           onSubmit={(event) => void handleQuickAddSubmit(event)}
@@ -593,7 +595,7 @@ function GanttPageContent() {
       )}
 
       {taskDetail && (
-        <TaskEditModal
+        <TaskBottomSheet
           taskDetail={taskDetail}
           contractors={contractors}
           onClose={() => setTaskDetail(null)}

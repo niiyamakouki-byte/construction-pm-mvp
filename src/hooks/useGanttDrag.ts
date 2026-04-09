@@ -19,7 +19,7 @@ type UseGanttDragOptions = {
   onError: (message: string) => void;
 };
 
-type DragStartMouseEvent = React.MouseEvent<HTMLElement>;
+type DragStartPointerEvent = React.PointerEvent<HTMLElement>;
 
 const createDragState = (
   task: GanttTask,
@@ -48,8 +48,8 @@ export function useGanttDrag({
   const dragRef = useRef<DragState | null>(null);
 
   const startDrag = useCallback(
-    (task: GanttTask, type: DragState["type"], event: DragStartMouseEvent) => {
-      if (event.button !== 0) return;
+    (task: GanttTask, type: DragState["type"], event: DragStartPointerEvent) => {
+      if (event.pointerType !== "touch" && event.button !== 0) return;
       event.preventDefault();
 
       const nextDrag = createDragState(task, type, event.clientX);
@@ -60,14 +60,14 @@ export function useGanttDrag({
   );
 
   const startTaskDrag = useCallback(
-    (task: GanttTask, event: DragStartMouseEvent) => {
+    (task: GanttTask, event: DragStartPointerEvent) => {
       startDrag(task, "move", event);
     },
     [startDrag],
   );
 
   const startTaskResize = useCallback(
-    (task: GanttTask, event: DragStartMouseEvent) => {
+    (task: GanttTask, event: DragStartPointerEvent) => {
       event.stopPropagation();
       startDrag(task, "resize", event);
     },
@@ -75,7 +75,7 @@ export function useGanttDrag({
   );
 
   useEffect(() => {
-    const handleMouseMove = (event: MouseEvent) => {
+    const handlePointerMove = (event: PointerEvent) => {
       const drag = dragRef.current;
       if (!drag) return;
 
@@ -104,7 +104,7 @@ export function useGanttDrag({
       setDragState(nextDrag);
     };
 
-    const handleMouseUp = async () => {
+    const handlePointerUp = async () => {
       const drag = dragRef.current;
       if (!drag) return;
 
@@ -159,16 +159,18 @@ export function useGanttDrag({
       }
     };
 
-    const mouseUpHandler = () => {
-      void handleMouseUp();
+    const pointerUpHandler = () => {
+      void handlePointerUp();
     };
 
-    window.addEventListener("mousemove", handleMouseMove);
-    window.addEventListener("mouseup", mouseUpHandler);
+    window.addEventListener("pointermove", handlePointerMove);
+    window.addEventListener("pointerup", pointerUpHandler);
+    window.addEventListener("pointercancel", pointerUpHandler);
 
     return () => {
-      window.removeEventListener("mousemove", handleMouseMove);
-      window.removeEventListener("mouseup", mouseUpHandler);
+      window.removeEventListener("pointermove", handlePointerMove);
+      window.removeEventListener("pointerup", pointerUpHandler);
+      window.removeEventListener("pointercancel", pointerUpHandler);
     };
   }, [
     contractors,

@@ -186,6 +186,12 @@ textarea::placeholder {
   width: var(--gantt-label-width, 320px);
 }
 
+/* Bottom sheet slide-up animation */
+@keyframes slideUpSheet {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
 /* Mobile: ensure modals are scrollable and don't overflow viewport */
 .modal-scroll {
   overflow-y: auto;

@@ -42,7 +42,8 @@ export type QuickAddState = {
   name: string;
   startDate: string;
   dueDate: string;
-  assigneeId: string;
+  contractorId: string;
+  status: TaskStatus;
   submitting: boolean;
   selectedCategory: string;
 };
