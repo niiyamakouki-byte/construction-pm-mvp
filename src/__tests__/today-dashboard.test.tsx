@@ -145,4 +145,11 @@ describe("TodayDashboardPage", () => {
     render(<TodayDashboardPage />);
     await waitFor(() => expect(screen.getByText("本日の概要")).toBeDefined());
   });
+
+  it("weather pageへの導線が表示される", async () => {
+    render(<TodayDashboardPage />);
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: "7日間の現場天気を見る" })).toBeDefined(),
+    );
+  });
 });

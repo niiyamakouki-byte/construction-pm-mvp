@@ -8,6 +8,11 @@ import { usePersona } from "../contexts/PersonaContext.js";
 import { TodayDashboardPageErrorBoundary } from "../components/PageErrorBoundaries.js";
 import { TodayDashboardSkeleton } from "../components/PageSkeletons.js";
 import { filterScheduleTasks } from "../lib/cost-management.js";
+import {
+  buildMockConstructionSiteForecasts,
+  getDailyWeatherRisk,
+  getWeatherEmoji,
+} from "../lib/weather.js";
 
 // ── Helpers ────────────────────────────────────────────
 
@@ -52,154 +57,6 @@ const statusButtonStyle: Record<TaskStatus, string> = {
 
 type TaskWithProject = Task & { projectName: string };
 
-// ── Weather Widget (simple fetch from Open-Meteo, free, no key) ────
-
-type WeatherData = {
-  temperature: number;
-  description: string;
-  icon: string;
-};
-
-type ProjectWeather = {
-  projectName: string;
-  locationLabel: string;
-  weather: WeatherData | null;
-};
-
-// Default: Tokyo
-const TOKYO_LAT = 35.6762;
-const TOKYO_LON = 139.6503;
-
-const weatherCodes: Record<number, { desc: string; icon: string }> = {
-  0: { desc: "快晴", icon: "☀️" },
-  1: { desc: "晴れ", icon: "🌤" },
-  2: { desc: "曇り", icon: "⛅" },
-  3: { desc: "曇天", icon: "☁️" },
-  45: { desc: "霧", icon: "🌫" },
-  48: { desc: "霧氷", icon: "🌫" },
-  51: { desc: "小雨", icon: "🌦" },
-  53: { desc: "雨", icon: "🌧" },
-  55: { desc: "強い雨", icon: "🌧" },
-  61: { desc: "小雨", icon: "🌦" },
-  63: { desc: "雨", icon: "🌧" },
-  65: { desc: "大雨", icon: "🌧" },
-  71: { desc: "小雪", icon: "🌨" },
-  73: { desc: "雪", icon: "❄️" },
-  75: { desc: "大雪", icon: "❄️" },
-  80: { desc: "にわか雨", icon: "🌦" },
-  81: { desc: "にわか雨", icon: "🌧" },
-  82: { desc: "激しい雨", icon: "⛈" },
-  95: { desc: "雷雨", icon: "⛈" },
-};
-
-async function fetchWeather(
-  lat: number,
-  lon: number,
-): Promise<WeatherData | null> {
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 5000);
-  try {
-    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weather_code&timezone=Asia%2FTokyo`;
-    const res = await fetch(url, { signal: controller.signal });
-    if (!res.ok) return null;
-    const data = (await res.json()) as {
-      current?: { temperature_2m?: number; weather_code?: number };
-    };
-    const current = data.current;
-    if (current) {
-      const code = current.weather_code ?? 0;
-      const info = weatherCodes[code] ?? { desc: "不明", icon: "🌡" };
-      return {
-        temperature: current.temperature_2m ?? 0,
-        description: info.desc,
-        icon: info.icon,
-      };
-    }
-  } catch {
-    // Network error or timeout — non-critical, return null
-  } finally {
-    clearTimeout(timeoutId);
-  }
-  return null;
-}
-
-function coordKey(lat: number, lon: number): string {
-  return `${lat.toFixed(2)},${lon.toFixed(2)}`;
-}
-
-function useProjectWeathers(projects: Project[]): {
-  weathers: ProjectWeather[];
-  loading: boolean;
-} {
-  const [weathers, setWeathers] = useState<ProjectWeather[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    async function load() {
-      const buckets = new Map<
-        string,
-        { lat: number; lon: number; entries: { name: string; label: string }[] }
-      >();
-
-      const activeProjects = projects.filter(
-        (p) => p.status === "active" || p.status === "planning",
-      );
-
-      if (activeProjects.length === 0) {
-        const key = coordKey(TOKYO_LAT, TOKYO_LON);
-        buckets.set(key, {
-          lat: TOKYO_LAT,
-          lon: TOKYO_LON,
-          entries: [{ name: "本社", label: "東京" }],
-        });
-      } else {
-        for (const p of activeProjects) {
-          const lat = p.latitude ?? TOKYO_LAT;
-          const lon = p.longitude ?? TOKYO_LON;
-          const label = p.address ?? "東京";
-          const key = coordKey(lat, lon);
-          const existing = buckets.get(key);
-          if (existing) {
-            existing.entries.push({ name: p.name, label });
-          } else {
-            buckets.set(key, {
-              lat,
-              lon,
-              entries: [{ name: p.name, label }],
-            });
-          }
-        }
-      }
-
-      const results: ProjectWeather[] = [];
-      for (const bucket of buckets.values()) {
-        const w = await fetchWeather(bucket.lat, bucket.lon);
-        for (const entry of bucket.entries) {
-          results.push({
-            projectName: entry.name,
-            locationLabel: entry.label,
-            weather: w,
-          });
-        }
-      }
-
-      if (!cancelled) {
-        setWeathers(results);
-        setLoading(false);
-      }
-    }
-
-    void load();
-    return () => {
-      cancelled = true;
-    };
-  }, [projects]);
-
-  return { weathers, loading };
-}
-
 // ── Main Component ─────────────────────────────────────
 
 function TodayDashboardPageContent() {
@@ -218,7 +75,10 @@ function TodayDashboardPageContent() {
   const [allProjects, setAllProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const { weathers, loading: weatherLoading } = useProjectWeathers(allProjects);
+  const siteForecasts = useMemo(
+    () => buildMockConstructionSiteForecasts(allProjects).slice(0, 3),
+    [allProjects],
+  );
 
   const loadData = useCallback(async () => {
     try {
@@ -346,53 +206,58 @@ function TodayDashboardPageContent() {
           </div>
         </div>
 
-        {/* Per-project weather */}
-        {weatherLoading ? (
-          <div className="mt-4 grid grid-cols-2 gap-2">
-            {Array.from({ length: 2 }, (_, index) => (
-              <div
-                key={index}
-                className="rounded-xl bg-white/10 px-3 py-3 backdrop-blur-sm"
+        <div className="mt-4 grid gap-2 sm:grid-cols-3">
+          {siteForecasts.map((site) => {
+            const todayForecast = site.forecast.daily[0];
+            const risk = getDailyWeatherRisk(todayForecast);
+            return (
+              <button
+                key={site.siteId}
+                type="button"
+                onClick={() => navigate("/weather")}
+                className="rounded-xl bg-white/10 px-3 py-3 text-left backdrop-blur-sm transition-colors hover:bg-white/15"
               >
-                <div aria-hidden="true" className="animate-pulse space-y-2">
-                  <div className="h-6 w-8 rounded bg-white/20" />
-                  <div className="h-5 w-14 rounded bg-white/25" />
-                  <div className="h-3 w-20 rounded bg-white/20" />
-                  <div className="h-3 w-16 rounded bg-white/15" />
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : weathers.length > 0 && (
-          <div className="mt-4 grid gap-2" style={{ gridTemplateColumns: `repeat(${Math.min(weathers.length, 3)}, 1fr)` }}>
-            {weathers.map((pw, i) => (
-              <div
-                key={i}
-                className="rounded-xl bg-white/10 backdrop-blur-sm px-3 py-3 text-center"
-              >
-                {pw.weather ? (
-                  <>
-                    <p className="text-2xl leading-tight">{pw.weather.icon}</p>
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-2xl leading-tight">
+                      {getWeatherEmoji(todayForecast.weather[0]?.icon)}
+                    </p>
                     <p className="mt-1 text-base font-bold">
-                      {pw.weather.temperature}°C
+                      {Math.round(todayForecast.temp.max)}° / {Math.round(todayForecast.temp.min)}°
                     </p>
-                    <p className="text-[11px] text-brand-200">
-                      {pw.weather.description}
-                    </p>
-                  </>
-                ) : (
-                  <p className="text-xs text-brand-300">取得不可</p>
-                )}
+                  </div>
+                  <span
+                    className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+                      risk.level === "danger"
+                        ? "bg-red-100 text-red-700"
+                        : risk.level === "warning"
+                          ? "bg-amber-100 text-amber-700"
+                          : "bg-emerald-100 text-emerald-700"
+                    }`}
+                  >
+                    {risk.level === "danger" ? "延期候補" : risk.level === "warning" ? "要注意" : "施工可"}
+                  </span>
+                </div>
+                <p className="mt-2 text-[11px] text-brand-200">
+                  降水 {Math.round(todayForecast.pop * 100)}% · 風速 {todayForecast.wind_speed.toFixed(1)}m/s
+                </p>
                 <p className="mt-1.5 truncate text-[11px] font-semibold text-white">
-                  {pw.projectName}
+                  {site.siteName}
                 </p>
                 <p className="truncate text-[10px] text-brand-300">
-                  {pw.locationLabel}
+                  {site.locationLabel}
                 </p>
-              </div>
-            ))}
-          </div>
-        )}
+              </button>
+            );
+          })}
+        </div>
+        <button
+          type="button"
+          onClick={() => navigate("/weather")}
+          className="mt-3 w-full rounded-xl border border-white/20 bg-white/10 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-white/15"
+        >
+          7日間の現場天気を見る
+        </button>
       </div>
 
       {/* Stats Cards */}

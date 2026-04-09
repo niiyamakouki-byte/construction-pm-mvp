@@ -18,6 +18,7 @@ import { LegalPages } from "./pages/LegalPages.js";
 import { PricingPage } from "./pages/PricingPage.js";
 import { TasksPage } from "./pages/TasksPage.js";
 import { CostManagementPage } from "./pages/CostManagementPage.js";
+import { WeatherPage } from "./pages/WeatherPage.js";
 import { ErrorBoundary } from "./components/ErrorBoundary.js";
 import { AuthGuard } from "./components/AuthGuard.js";
 import { OnboardingWizard, useOnboardingDone } from "./components/OnboardingWizard.js";
@@ -31,6 +32,7 @@ import { useHashRoute, navigate } from "./hooks/useHashRouter.js";
 import { useTheme } from "./hooks/useTheme.js";
 import { ThemeToggle } from "./components/ThemeToggle.js";
 import { MobileNav } from "./components/MobileNav.js";
+import { NotificationBanner } from "./components/NotificationBanner.js";
 import { readLastProjectId } from "./lib/last-project.js";
 
 function LogoIcon() {
@@ -94,7 +96,7 @@ function AppShell() {
       icon: "☰",
       path: "/notifications",
       matchRoute: (currentRoute) =>
-        ["/today", "/invoice", "/estimate", "/contractors", "/notifications", "/help", "/node-schedule", "/cost-management"].includes(currentRoute),
+        ["/today", "/invoice", "/estimate", "/contractors", "/notifications", "/help", "/node-schedule", "/cost-management", "/weather"].includes(currentRoute),
     },
   ];
 
@@ -112,6 +114,13 @@ function AppShell() {
       icon: "🔔",
       path: "/notifications",
       matchRoute: (currentRoute) => currentRoute === "/notifications",
+    },
+    {
+      key: "weather",
+      label: "天気",
+      icon: "☔",
+      path: "/weather",
+      matchRoute: (currentRoute) => currentRoute === "/weather",
     },
     {
       key: "contractors",
@@ -229,6 +238,13 @@ function AppShell() {
       return (
         <ErrorBoundary fallbackTitle="コスト管理エラー">
           <CostManagementPage />
+        </ErrorBoundary>
+      );
+    }
+    if (route === "/weather") {
+      return (
+        <ErrorBoundary fallbackTitle="天気予報エラー">
+          <WeatherPage />
         </ErrorBoundary>
       );
     }
@@ -364,6 +380,8 @@ function AppShell() {
             </div>
           </div>
         </header>
+
+        <NotificationBanner refreshKey={route} />
 
         <main id="main-content" key={route} className="page-enter mx-auto max-w-6xl px-4 py-5 pb-24 sm:py-6">
           {renderPage()}
