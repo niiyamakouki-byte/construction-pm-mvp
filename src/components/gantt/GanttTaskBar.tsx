@@ -22,20 +22,30 @@ type GanttTaskBarProps = {
   onConnectTask: (toTaskId: string) => void;
 };
 
+function isOverdue(task: GanttTask, today: string): boolean {
+  return task.endDate < today && task.status !== "done";
+}
+
 export function GanttTaskBar({
   task,
   dragState,
   dragRef,
   chartStart,
   highlightedDates,
+  today,
   dayWidth,
+  connectMode,
+  connectState,
   onTaskDragStart,
   onTaskResizeStart,
   onOpenTaskDetail,
+  onSetConnectState,
+  onConnectTask,
 }: GanttTaskBarProps) {
   const { rowHeight } = gantt;
   const pointerStartXRef = useRef<number | null>(null);
   const isDragging = dragState?.taskId === task.id;
+  const overdue = isOverdue(task, today);
   const displayStartDate = isDragging ? dragState.previewStartDate : task.startDate;
   const displayEndDate = isDragging ? dragState.previewEndDate : task.endDate;
   const startOffset = daysBetween(chartStart, displayStartDate);
@@ -63,10 +73,10 @@ export function GanttTaskBar({
       <div
         role="button"
         tabIndex={0}
-        aria-label={`${task.name} ${statusLabel[task.status]} ${task.progress}%`}
+        aria-label={`${task.name} ${statusLabel[task.status]} ${task.progress}%${overdue ? " 期限超過" : ""}`}
         className={`absolute rounded-full border border-white/70 shadow-sm transition-transform ${
           isDragging ? "cursor-grabbing opacity-90" : "cursor-pointer active:scale-[0.99]"
-        }`}
+        } ${connectMode ? "ring-2 ring-violet-400 ring-offset-1" : ""}`}
         style={{
           left: barLeft + 4,
           top: 14,
@@ -76,10 +86,20 @@ export function GanttTaskBar({
           touchAction: "none",
         }}
         onPointerDown={(event) => {
+          if (connectMode) return;
           pointerStartXRef.current = event.clientX;
           onTaskDragStart(task, event);
         }}
         onPointerUp={(event) => {
+          if (connectMode) {
+            event.stopPropagation();
+            if (!connectState) {
+              onSetConnectState({ fromTaskId: task.id });
+            } else if (connectState.fromTaskId !== task.id) {
+              onConnectTask(task.id);
+            }
+            return;
+          }
           const startX = pointerStartXRef.current;
           pointerStartXRef.current = null;
           if (startX !== null && Math.abs(event.clientX - startX) < 6) {
@@ -89,7 +109,15 @@ export function GanttTaskBar({
         onKeyDown={(event) => {
           if (event.key === "Enter" || event.key === " ") {
             event.preventDefault();
-            onOpenTaskDetail(task);
+            if (connectMode) {
+              if (!connectState) {
+                onSetConnectState({ fromTaskId: task.id });
+              } else if (connectState.fromTaskId !== task.id) {
+                onConnectTask(task.id);
+              }
+            } else {
+              onOpenTaskDetail(task);
+            }
           }
         }}
       >
@@ -106,11 +134,18 @@ export function GanttTaskBar({
               </p>
             ) : null}
           </div>
-          {barWidth >= 78 ? (
-            <span className="rounded-full bg-white/18 px-2 py-0.5 text-[11px] font-bold tabular-nums">
-              {task.progress}%
-            </span>
-          ) : null}
+          <div className="flex shrink-0 items-center gap-1">
+            {overdue ? (
+              <span className="rounded-full bg-red-500 px-1.5 py-0.5 text-[10px] font-bold text-white shadow-sm">
+                期限切
+              </span>
+            ) : null}
+            {barWidth >= 78 ? (
+              <span className="rounded-full bg-white/18 px-2 py-0.5 text-[11px] font-bold tabular-nums">
+                {task.progress}%
+              </span>
+            ) : null}
+          </div>
         </div>
         <div
           className="absolute right-0 top-0 flex h-full w-5 items-center justify-center rounded-r-full bg-black/10"

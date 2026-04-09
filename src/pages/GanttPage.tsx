@@ -15,6 +15,8 @@ import { TaskEditModal } from "../components/gantt/TaskEditModal.js";
 import type { ChartLayout, GanttTask, QuickAddState, TaskDetailState } from "../components/gantt/types.js";
 import { addDays, daysBetween, formatScheduleDate, toLocalDateString } from "../components/gantt/utils.js";
 import { readLastProjectId, writeLastProjectId } from "../lib/last-project.js";
+import { cascadeSchedule } from "../lib/cascade-scheduler.js";
+import type { ConnectState } from "../components/gantt/types.js";
 
 const MAX_CHART_DAYS = 240;
 const MIN_DAY_WIDTH = 20;
@@ -87,6 +89,8 @@ function GanttPageContent({ initialProjectId = null }: GanttPageProps) {
   const [quickAdd, setQuickAdd] = useState<QuickAddState | null>(null);
   const [taskDetail, setTaskDetail] = useState<TaskDetailState | null>(null);
   const [dayWidth, setDayWidth] = useState(DEFAULT_DAY_WIDTH);
+  const [connectMode, setConnectMode] = useState(false);
+  const [connectState, setConnectState] = useState<ConnectState | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const pinchRef = useRef<{
     distance: number;
@@ -304,13 +308,55 @@ function GanttPageContent({ initialProjectId = null }: GanttPageProps) {
         });
       }
 
+      // Cascade date changes to downstream dependents
+      const newEndDate = taskDetail.editDueDate || taskDetail.task.endDate;
+      const cascadeUpdates = cascadeSchedule(ganttTasks, taskDetail.task.id, taskDetail.editStartDate || taskDetail.task.startDate, newEndDate);
+      const now2 = new Date().toISOString();
+      await Promise.all(
+        Array.from(cascadeUpdates.entries()).map(([taskId, dates]) =>
+          taskRepository.update(taskId, { startDate: dates.startDate, dueDate: dates.endDate, updatedAt: now2 }),
+        ),
+      );
+
       setTaskDetail(null);
       await loadData();
     } catch (err) {
       setError(err instanceof Error ? err.message : "タスクの更新に失敗しました");
       setTaskDetail((current) => (current ? { ...current, saving: false } : current));
     }
-  }, [contractors, loadData, organizationId, taskDetail, taskRepository]);
+  }, [contractors, ganttTasks, loadData, organizationId, taskDetail, taskRepository]);
+
+  const handleConnectTask = useCallback(async (toTaskId: string) => {
+    if (!connectState) return;
+    const { fromTaskId } = connectState;
+    if (fromTaskId === toTaskId) return;
+
+    setConnectState(null);
+    setConnectMode(false);
+
+    const toTask = ganttTasks.find((t) => t.id === toTaskId);
+    if (!toTask) return;
+
+    // Prevent duplicate dependencies
+    if (toTask.dependencies?.includes(fromTaskId)) return;
+
+    try {
+      await taskRepository.update(toTaskId, {
+        dependencies: [...(toTask.dependencies ?? []), fromTaskId],
+        updatedAt: new Date().toISOString(),
+      });
+      await loadData();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "依存関係の設定に失敗しました");
+    }
+  }, [connectState, ganttTasks, loadData, taskRepository]);
+
+  const handleToggleConnectMode = useCallback(() => {
+    setConnectMode((prev) => {
+      if (prev) setConnectState(null);
+      return !prev;
+    });
+  }, []);
 
   const { dragState, dragRef, startTaskDrag, startTaskResize } = useGanttDrag({
     ganttTasks,
@@ -494,8 +540,25 @@ function GanttPageContent({ initialProjectId = null }: GanttPageProps) {
               </span>
             </div>
           </div>
-          <div className="rounded-2xl bg-white/90 px-4 py-3 text-sm text-slate-600 ring-1 ring-slate-200">
-            ピンチで拡大縮小 / バーをドラッグして日程変更
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="rounded-2xl bg-white/90 px-4 py-3 text-sm text-slate-600 ring-1 ring-slate-200">
+              ピンチで拡大縮小 / バーをドラッグして日程変更
+            </div>
+            <button
+              type="button"
+              onClick={handleToggleConnectMode}
+              className={`rounded-2xl px-4 py-3 text-sm font-semibold transition-colors ${
+                connectMode
+                  ? "bg-violet-600 text-white shadow-sm"
+                  : "bg-white text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50"
+              }`}
+            >
+              {connectMode
+                ? connectState
+                  ? "接続先を選択"
+                  : "接続元を選択"
+                : "依存関係を接続"}
+            </button>
           </div>
         </div>
 
@@ -536,8 +599,8 @@ function GanttPageContent({ initialProjectId = null }: GanttPageProps) {
           chartLayout={chartLayout}
           dragState={dragState}
           dragRef={dragRef}
-          connectMode={false}
-          connectState={null}
+          connectMode={connectMode}
+          connectState={connectState}
           today={today}
           scrollRef={scrollRef}
           onTaskDragStart={startTaskDrag}
@@ -545,8 +608,8 @@ function GanttPageContent({ initialProjectId = null }: GanttPageProps) {
           onOpenTaskDetail={openTaskDetail}
           onOpenQuickAdd={openQuickAdd}
           onTogglePhase={() => undefined}
-          onSetConnectState={() => undefined}
-          onConnectTask={() => undefined}
+          onSetConnectState={setConnectState}
+          onConnectTask={(toTaskId) => void handleConnectTask(toTaskId)}
           onTimelineTouchStart={handleTimelineTouchStart}
           onTimelineTouchMove={handleTimelineTouchMove}
           onTimelineTouchEnd={handleTimelineTouchEnd}

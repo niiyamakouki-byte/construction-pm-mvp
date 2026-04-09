@@ -9,6 +9,7 @@ import type { ChartLayout, ConnectState, DragState, GanttTask } from "./types.js
 import { gantt } from "../../theme/index.js";
 import { daysBetween, formatDayNumber, formatMonthLabel, formatWeekdayLabel } from "./utils.js";
 import { GanttTaskBar, GanttTaskLabel } from "./GanttTaskBar.js";
+import { DependencyArrows } from "./DependencyArrows.js";
 
 type VisibleRow =
   | { type: "phase"; group: { projectId: string; projectName: string; tasks: GanttTask[]; collapsed: boolean } }
@@ -237,6 +238,13 @@ export function GanttChart({
                 />
               );
             })}
+
+            <DependencyArrows
+              tasks={ganttTasks}
+              chartStart={chartStart}
+              dayWidth={dayWidth}
+              totalDays={totalDays}
+            />
           </div>
         </div>
       </div>
