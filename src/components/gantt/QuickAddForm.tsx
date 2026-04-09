@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import type { Contractor, TaskStatus } from "../../domain/types.js";
 import type { QuickAddState } from "./types.js";
-import { addDays, statusLabel } from "./utils.js";
+import { addDaysBySchedule, statusLabel } from "./utils.js";
 import { WORK_CATEGORIES } from "./workCategories.js";
 
 type Props = {
@@ -72,7 +72,11 @@ export function QuickAddForm({ quickAdd, contractors, onClose, onSubmit, onChang
                   ...state,
                   selectedCategory: value,
                   name: item.name,
-                  dueDate: addDays(state.startDate, item.defaultDays),
+                  dueDate: addDaysBySchedule(
+                    state.startDate,
+                    item.defaultDays,
+                    state.projectIncludesWeekends,
+                  ),
                 }));
               }}
               className="rounded-2xl border border-slate-300 px-4 py-3 text-base focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
@@ -152,7 +156,11 @@ export function QuickAddForm({ quickAdd, contractors, onClose, onSubmit, onChang
                         return {
                           ...state,
                           startDate: nextStartDate,
-                          dueDate: addDays(nextStartDate, item.defaultDays),
+                          dueDate: addDaysBySchedule(
+                            nextStartDate,
+                            item.defaultDays,
+                            state.projectIncludesWeekends,
+                          ),
                         };
                       }
                     }

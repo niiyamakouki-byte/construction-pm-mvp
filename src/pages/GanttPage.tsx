@@ -13,11 +13,19 @@ import { GanttChart } from "../components/gantt/GanttChart.js";
 import { QuickAddForm } from "../components/gantt/QuickAddForm.js";
 import { TaskEditModal } from "../components/gantt/TaskEditModal.js";
 import type { ChartLayout, GanttTask, QuickAddState, TaskDetailState } from "../components/gantt/types.js";
-import { addDays, daysBetween, formatScheduleDate, toLocalDateString } from "../components/gantt/utils.js";
+import {
+  addDays,
+  addDaysBySchedule,
+  addDaysSkipWeekends,
+  daysBetween,
+  formatScheduleDate,
+  toLocalDateString,
+} from "../components/gantt/utils.js";
 import { getHolidayName } from "../lib/japanese-holidays.js";
 import { readLastProjectId, writeLastProjectId } from "../lib/last-project.js";
 import { cascadeSchedule } from "../lib/cascade-scheduler.js";
 import { filterScheduleTasks } from "../lib/cost-management.js";
+import { exportGanttToPdf } from "../lib/gantt-pdf-export.js";
 import type { ConnectState } from "../components/gantt/types.js";
 
 const MAX_CHART_DAYS = 240;
@@ -93,6 +101,7 @@ function GanttPageContent({ initialProjectId = null }: GanttPageProps) {
   const [dayWidth, setDayWidth] = useState(DEFAULT_DAY_WIDTH);
   const [connectMode, setConnectMode] = useState(false);
   const [connectState, setConnectState] = useState<ConnectState | null>(null);
+  const [pdfExporting, setPdfExporting] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const pinchRef = useRef<{
     distance: number;
@@ -120,8 +129,18 @@ function GanttPageContent({ initialProjectId = null }: GanttPageProps) {
         .map((task) => {
           const project = projectMap.get(task.projectId);
           const projectStart = project?.startDate ?? today;
-          const startDate = task.startDate ?? (task.dueDate ? addDays(task.dueDate, -2) : projectStart);
-          const endDate = task.dueDate ?? addDays(startDate, 2);
+          const normalizedProjectStart = addDaysSkipWeekends(
+            projectStart,
+            0,
+            project?.includeWeekends ?? true,
+            task.includeWeekends,
+          );
+          const startDate = task.startDate
+            ?? (task.dueDate
+              ? addDaysBySchedule(task.dueDate, -2, project?.includeWeekends ?? true, task.includeWeekends)
+              : normalizedProjectStart);
+          const endDate = task.dueDate
+            ?? addDaysBySchedule(startDate, 2, project?.includeWeekends ?? true, task.includeWeekends);
           return {
             ...task,
             projectName: project?.name ?? "不明な案件",
@@ -198,9 +217,10 @@ function GanttPageContent({ initialProjectId = null }: GanttPageProps) {
     setQuickAdd({
       projectId,
       projectName,
+      projectIncludesWeekends: project?.includeWeekends ?? true,
       name: "",
       startDate,
-      dueDate: addDays(startDate, 2),
+      dueDate: addDaysBySchedule(startDate, 2, project?.includeWeekends ?? true),
       contractorId: "",
       status: "todo",
       submitting: false,
@@ -214,6 +234,8 @@ function GanttPageContent({ initialProjectId = null }: GanttPageProps) {
       editName: task.name,
       editStartDate: task.startDate,
       editDueDate: task.endDate,
+      editIncludeWeekendsOverride: task.includeWeekends !== undefined,
+      editIncludeWeekends: task.includeWeekends ?? task.projectIncludesWeekends,
       editAssigneeId: task.assigneeId ?? "",
       editContractorId: task.contractorId ?? "",
       editProgress: task.progress,
@@ -287,6 +309,7 @@ function GanttPageContent({ initialProjectId = null }: GanttPageProps) {
         name: taskDetail.editName.trim(),
         startDate: nextStartDate,
         dueDate: taskDetail.editDueDate || undefined,
+        includeWeekends: taskDetail.editIncludeWeekendsOverride ? taskDetail.editIncludeWeekends : undefined,
         assigneeId: taskDetail.editAssigneeId.trim() || undefined,
         contractorId: nextContractorId,
         progress: taskDetail.editProgress,
@@ -394,7 +417,7 @@ function GanttPageContent({ initialProjectId = null }: GanttPageProps) {
     const dates: string[] = [];
     for (let index = 0; index <= totalDays; index += 1) dates.push(addDays(chartStart, index));
     const dateInfo = dates.map((date) => {
-      const day = new Date(date).getDay();
+      const day = new Date(`${date}T00:00:00`).getDay();
       const holidayName = getHolidayName(date);
       return {
         date,
@@ -423,6 +446,24 @@ function GanttPageContent({ initialProjectId = null }: GanttPageProps) {
     writeLastProjectId(projectId);
     navigate(`/gantt/${projectId}`);
   }, []);
+
+  const handlePdfExport = useCallback(() => {
+    if (!selectedProject) return;
+
+    setPdfExporting(true);
+    try {
+      exportGanttToPdf(
+        selectedProject,
+        selectedProjectTasks,
+        chartLayout?.chartStart ?? selectedProject.startDate,
+        chartLayout?.totalDays ?? 0,
+      );
+    } catch (err) {
+      window.alert(err instanceof Error ? err.message : "PDF出力に失敗しました");
+    } finally {
+      setPdfExporting(false);
+    }
+  }, [chartLayout, selectedProject, selectedProjectTasks]);
 
   const handleTimelineTouchStart = useCallback((event: React.TouchEvent<HTMLDivElement>) => {
     if (event.touches.length !== 2 || !scrollRef.current) return;
@@ -572,6 +613,14 @@ function GanttPageContent({ initialProjectId = null }: GanttPageProps) {
                   ? "接続先を選択"
                   : "接続元を選択"
                 : "依存関係を接続"}
+            </button>
+            <button
+              type="button"
+              disabled={pdfExporting}
+              onClick={handlePdfExport}
+              className="rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50"
+            >
+              {pdfExporting ? "出力中..." : "PDF出力"}
             </button>
           </div>
         </div>

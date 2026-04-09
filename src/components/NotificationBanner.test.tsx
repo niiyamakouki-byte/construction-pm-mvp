@@ -155,4 +155,25 @@ describe("NotificationBanner", () => {
 
     expect(mockNavigate).toHaveBeenCalledWith("/notifications");
   });
+
+  it("renders procurement alerts as orange workflow notifications", async () => {
+    const today = new Date();
+    const twoDaysOut = new Date(today);
+    twoDaysOut.setDate(today.getDate() + 2);
+
+    mockProjects = [makeProject({ id: "p-1", name: "青山オフィス改修" })];
+    mockTasks = [
+      makeTask({
+        id: "t-procurement",
+        name: "配電盤搬入",
+        startDate: toLocalDateString(twoDaysOut),
+        lead_time: 2,
+      }),
+    ];
+
+    render(<NotificationBanner refreshKey="/gantt" />);
+
+    expect(await screen.findByText("調達アラート")).toBeDefined();
+    expect(screen.getByText(/リードタイム 2日/)).toBeDefined();
+  });
 });

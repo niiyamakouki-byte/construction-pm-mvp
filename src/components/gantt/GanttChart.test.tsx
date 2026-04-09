@@ -66,4 +66,45 @@ describe("GanttChart", () => {
     expect(timeline).not.toBeNull();
     expect((timeline as HTMLDivElement).style.width).toBe("108px");
   });
+
+  it("renders holidays with a light red header background", () => {
+    const holidayLayout: ChartLayout = {
+      ...chartLayout,
+      dateInfo: [
+        {
+          date: "2025-01-01",
+          isToday: false,
+          isWeekend: false,
+          isHoliday: true,
+          holidayName: "元日",
+        },
+        ...chartLayout.dateInfo.slice(1),
+      ],
+    };
+
+    const { container } = render(
+      <GanttChart
+        ganttTasks={[task]}
+        visibleRows={[{ type: "task", task }]}
+        chartLayout={holidayLayout}
+        dragState={null}
+        dragRef={{ current: null }}
+        connectMode={false}
+        connectState={null}
+        today="2025-01-03"
+        scrollRef={createRef<HTMLDivElement>()}
+        onTaskDragStart={vi.fn()}
+        onTaskResizeStart={vi.fn()}
+        onOpenTaskDetail={vi.fn()}
+        onOpenQuickAdd={vi.fn()}
+        onTogglePhase={vi.fn()}
+        onSetConnectState={vi.fn()}
+        onConnectTask={vi.fn()}
+      />,
+    );
+
+    const holidayCell = container.querySelector('[title="元日"]');
+    expect(holidayCell).not.toBeNull();
+    expect(holidayCell?.className).toContain("bg-rose-50");
+  });
 });

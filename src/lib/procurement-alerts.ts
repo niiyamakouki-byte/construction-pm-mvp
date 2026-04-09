@@ -22,8 +22,8 @@ function daysBetween(startDate: string, endDate: string): number {
   return Math.round((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
 }
 
-export function getTaskLeadTime(task: Task): number | null {
-  const rawLeadTime = task.leadTimeDays ?? task.lead_time;
+export function getTaskLeadTime(task: Pick<Task, "lead_time" | "leadTimeDays">): number | null {
+  const rawLeadTime = task.lead_time ?? task.leadTimeDays;
   if (rawLeadTime == null || !Number.isFinite(rawLeadTime)) {
     return null;
   }
@@ -48,14 +48,16 @@ export function buildProcurementAlerts(
         return [];
       }
 
-      return [{
-        taskId: task.id,
-        projectId: task.projectId,
-        taskName: task.name,
-        startDate: task.startDate,
-        leadTime,
-        daysRemaining,
-      }];
+      return [
+        {
+          taskId: task.id,
+          projectId: task.projectId,
+          taskName: task.name,
+          startDate: task.startDate,
+          leadTime,
+          daysRemaining,
+        },
+      ];
     })
     .sort((left, right) => {
       const byRemaining = left.daysRemaining - right.daysRemaining;

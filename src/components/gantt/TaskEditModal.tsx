@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import type { Contractor } from "../../domain/types.js";
 import type { TaskDetailState } from "./types.js";
-import { addDays, statusLabel } from "./utils.js";
+import { addDays, resolveIncludeWeekends, statusLabel } from "./utils.js";
 
 type Props = {
   taskDetail: TaskDetailState;
@@ -20,6 +20,11 @@ export function TaskEditModal({
   onChange,
   onDelete,
 }: Props) {
+  const effectiveIncludeWeekends = resolveIncludeWeekends(
+    taskDetail.task.projectIncludesWeekends,
+    taskDetail.editIncludeWeekendsOverride ? taskDetail.editIncludeWeekends : undefined,
+  );
+
   useEffect(() => {
     const handler = (event: KeyboardEvent) => {
       if (event.key === "Escape") onClose();
@@ -159,6 +164,50 @@ export function TaskEditModal({
               className="rounded-2xl border border-slate-300 px-4 py-3 text-base focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
             />
           </label>
+
+          <div className="rounded-3xl border border-slate-200 bg-slate-50 px-4 py-4">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-sm font-medium text-slate-700">土日稼働</p>
+                <p className="mt-1 text-xs text-slate-500">未設定のときは案件設定に従います。</p>
+              </div>
+              <label className="flex items-center gap-2 text-sm font-medium text-slate-600">
+                <input
+                  type="checkbox"
+                  checked={taskDetail.editIncludeWeekendsOverride}
+                  onChange={(event) =>
+                    onChange((detail) => ({
+                      ...detail,
+                      editIncludeWeekendsOverride: event.target.checked,
+                    }))
+                  }
+                  className="h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500"
+                />
+                上書きする
+              </label>
+            </div>
+
+            <label className="mt-4 flex items-center justify-between gap-3 rounded-2xl bg-white px-4 py-3">
+              <div>
+                <p className="text-sm font-medium text-slate-700">この工程は土日稼働</p>
+                <p className="mt-1 text-xs text-slate-500">
+                  現在の適用値: {effectiveIncludeWeekends ? "土日を含める" : "土日を除外する"}
+                </p>
+              </div>
+              <input
+                type="checkbox"
+                checked={taskDetail.editIncludeWeekends}
+                disabled={!taskDetail.editIncludeWeekendsOverride}
+                onChange={(event) =>
+                  onChange((detail) => ({
+                    ...detail,
+                    editIncludeWeekends: event.target.checked,
+                  }))
+                }
+                className="h-5 w-5 rounded border-slate-300 text-brand-600 focus:ring-brand-500 disabled:opacity-50"
+              />
+            </label>
+          </div>
 
           <div className="rounded-3xl bg-slate-50 px-4 py-4">
             <div className="flex items-center justify-between gap-3">

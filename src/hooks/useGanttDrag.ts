@@ -4,8 +4,7 @@ import type { Repository } from "../domain/repository.js";
 import type { DragState, GanttTask } from "../components/gantt/types.js";
 import { createNotificationRepository } from "../stores/notification-store.js";
 import {
-  addDays,
-  addDaysSkipWeekends,
+  addDaysBySchedule,
   daysBetween,
 } from "../components/gantt/utils.js";
 import { cascadeSchedule } from "../lib/cascade-scheduler.js";
@@ -129,22 +128,41 @@ export function useGanttDrag({
 
       const deltaDays = Math.round((event.clientX - drag.startX) / dayWidth);
       const draggedTask = ganttTasks.find((task) => task.id === drag.taskId);
-      const skipWeekends = draggedTask ? !draggedTask.projectIncludesWeekends : false;
-      const addFn = skipWeekends ? addDaysSkipWeekends : addDays;
 
       let previewStartDate = drag.originalStartDate;
       let previewEndDate = drag.originalEndDate;
 
       if (drag.type === "move") {
-        previewStartDate = addFn(drag.originalStartDate, deltaDays);
-        previewEndDate = addFn(drag.originalEndDate, deltaDays);
+        previewStartDate = draggedTask
+          ? addDaysBySchedule(
+            drag.originalStartDate,
+            deltaDays,
+            draggedTask.projectIncludesWeekends,
+            draggedTask.includeWeekends,
+          )
+          : drag.originalStartDate;
+        previewEndDate = draggedTask
+          ? addDaysBySchedule(
+            drag.originalEndDate,
+            deltaDays,
+            draggedTask.projectIncludesWeekends,
+            draggedTask.includeWeekends,
+          )
+          : drag.originalEndDate;
       } else {
         const originalDuration = daysBetween(
           drag.originalStartDate,
           drag.originalEndDate,
         );
         const newDuration = Math.max(1, originalDuration + deltaDays);
-        previewEndDate = addFn(drag.originalStartDate, newDuration);
+        previewEndDate = draggedTask
+          ? addDaysBySchedule(
+            drag.originalStartDate,
+            newDuration,
+            draggedTask.projectIncludesWeekends,
+            draggedTask.includeWeekends,
+          )
+          : drag.originalEndDate;
       }
 
       const nextDrag = { ...drag, previewStartDate, previewEndDate };

@@ -10,15 +10,19 @@ export function toLocalDateString(date: Date): string {
   return `${y}-${m}-${d}`;
 }
 
+function toDate(dateStr: string): Date {
+  return new Date(`${dateStr}T00:00:00`);
+}
+
 export function addDays(dateStr: string, days: number): string {
-  const d = new Date(dateStr);
+  const d = toDate(dateStr);
   d.setDate(d.getDate() + days);
   return toLocalDateString(d);
 }
 
 export function daysBetween(a: string, b: string): number {
-  const da = new Date(a);
-  const db = new Date(b);
+  const da = toDate(a);
+  const db = toDate(b);
   return Math.round((db.getTime() - da.getTime()) / (1000 * 60 * 60 * 24));
 }
 
@@ -27,13 +31,55 @@ function isWeekend(date: Date): boolean {
   return dayOfWeek === 0 || dayOfWeek === 6;
 }
 
+function isNonWorkingDay(date: Date): boolean {
+  return isWeekend(date) || isHoliday(toLocalDateString(date));
+}
+
+export function resolveIncludeWeekends(
+  projectIncludeWeekends: boolean,
+  taskIncludeWeekends?: boolean,
+): boolean {
+  return taskIncludeWeekends ?? projectIncludeWeekends;
+}
+
 /** Move a date by N calendar days, then skip forward past weekends and holidays. */
-export function addDaysSkipWeekends(dateStr: string, days: number): string {
-  const d = new Date(dateStr);
+export function addDaysSkipWeekends(
+  dateStr: string,
+  days: number,
+  projectIncludeWeekends = false,
+  taskIncludeWeekends?: boolean,
+): string {
+  const includeWeekends = resolveIncludeWeekends(projectIncludeWeekends, taskIncludeWeekends);
+  if (includeWeekends) return addDays(dateStr, days);
+
+  const d = toDate(dateStr);
   d.setDate(d.getDate() + days);
 
-  while (isWeekend(d) || isHoliday(toLocalDateString(d))) {
+  while (isNonWorkingDay(d)) {
     d.setDate(d.getDate() + 1);
+  }
+
+  return toLocalDateString(d);
+}
+
+/** Move a date by N working days when weekends are excluded. */
+export function addDaysBySchedule(
+  dateStr: string,
+  days: number,
+  projectIncludeWeekends = false,
+  taskIncludeWeekends?: boolean,
+): string {
+  const includeWeekends = resolveIncludeWeekends(projectIncludeWeekends, taskIncludeWeekends);
+  if (includeWeekends) return addDays(dateStr, days);
+  if (days === 0) return addDaysSkipWeekends(dateStr, 0, false);
+
+  const d = toDate(dateStr);
+  const direction = days > 0 ? 1 : -1;
+  let remaining = Math.abs(days);
+
+  while (remaining > 0) {
+    d.setDate(d.getDate() + direction);
+    if (!isNonWorkingDay(d)) remaining -= 1;
   }
 
   return toLocalDateString(d);
@@ -54,7 +100,7 @@ export function formatDayNumber(dateStr: string): string {
 }
 
 export function formatWeekdayLabel(dateStr: string): string {
-  return ["日", "月", "火", "水", "木", "金", "土"][new Date(dateStr).getDay()] ?? "";
+  return ["日", "月", "火", "水", "木", "金", "土"][toDate(dateStr).getDay()] ?? "";
 }
 
 export function formatScheduleDate(dateStr: string): string {

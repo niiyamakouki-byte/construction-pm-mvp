@@ -39,6 +39,7 @@ export type ConnectState = {
 export type QuickAddState = {
   projectId: string;
   projectName: string;
+  projectIncludesWeekends: boolean;
   name: string;
   startDate: string;
   dueDate: string;
@@ -53,6 +54,8 @@ export type TaskDetailState = {
   editName: string;
   editStartDate: string;
   editDueDate: string;
+  editIncludeWeekendsOverride: boolean;
+  editIncludeWeekends: boolean;
   editAssigneeId: string;
   editContractorId: string;
   editProgress: number;

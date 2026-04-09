@@ -85,4 +85,25 @@ describe("buildNotifications", () => {
 
     expect(notifications).toEqual([]);
   });
+
+  it("builds procurement alerts for tasks approaching their lead time window", () => {
+    const notifications = buildNotifications({
+      projects: [makeProject()],
+      tasks: [
+        makeTask({
+          id: "t-procurement",
+          name: "受変電設備搬入",
+          startDate: "2025-01-14",
+          lead_time: 2,
+        }),
+      ],
+      today: "2025-01-10",
+    });
+
+    expect(notifications).toHaveLength(1);
+    expect(notifications[0].type).toBe("procurement_alert");
+    expect(notifications[0].tone).toBe("orange");
+    expect(notifications[0].message).toContain("リードタイム 2日");
+    expect(notifications[0].path).toBe("/gantt/p-1");
+  });
 });

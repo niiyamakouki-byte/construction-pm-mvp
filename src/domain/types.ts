@@ -31,6 +31,7 @@ export type Task = BaseEntity & {
   name: string;
   description: string;
   status: TaskStatus;
+  includeWeekends?: boolean;
   assigneeId?: string;
   startDate?: string;
   dueDate?: string;
