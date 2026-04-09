@@ -4,6 +4,7 @@ import { createTaskRepository } from "../stores/task-store.js";
 import { createProjectRepository } from "../stores/project-store.js";
 import { useOrganizationContext } from "../contexts/OrganizationContext.js";
 import { navigate } from "../hooks/useHashRouter.js";
+import { filterScheduleTasks } from "../lib/cost-management.js";
 
 // ── Types ─────────────────────────────────────────────────────
 
@@ -98,7 +99,7 @@ export function NodeSchedulePage() {
     try {
       setError(null);
       const all = await taskRepository.findAll();
-      setTasks(all);
+      setTasks(filterScheduleTasks(all));
     } catch (err) {
       console.error("Failed to load node schedule tasks", err);
       setError(err instanceof Error ? err.message : "読み込み失敗");

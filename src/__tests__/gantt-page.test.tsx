@@ -244,4 +244,53 @@ describe("GanttPage", () => {
 
     expect(await screen.findByRole("dialog", { name: "タスクを編集" })).toBeDefined();
   });
+
+  it("コスト項目扱いのタスクはガントに表示しない", async () => {
+    const now = "2025-01-01T00:00:00.000Z";
+    mockProjectRepository.findAll.mockResolvedValue([
+      {
+        id: "p1",
+        name: "南青山ビル改修",
+        description: "",
+        status: "active",
+        startDate: "2025-01-10",
+        includeWeekends: true,
+        createdAt: now,
+        updatedAt: now,
+      },
+    ]);
+    mockTaskRepository.findAll.mockResolvedValue([
+      {
+        id: "t1",
+        projectId: "p1",
+        name: "墨出し",
+        description: "",
+        status: "todo",
+        startDate: "2025-01-10",
+        dueDate: "2025-01-12",
+        progress: 25,
+        dependencies: [],
+        createdAt: now,
+        updatedAt: now,
+      },
+      {
+        id: "t2",
+        projectId: "p1",
+        name: "Grow 広告運用",
+        description: "外注費 50000円",
+        status: "todo",
+        progress: 0,
+        dependencies: [],
+        createdAt: now,
+        updatedAt: now,
+      },
+    ]);
+    mockContractorRepository.findAll.mockResolvedValue([]);
+
+    render(<GanttPage initialProjectId="p1" />);
+
+    expect(await screen.findByRole("figure", { name: "ガントチャート: 1タスク" })).toBeDefined();
+    expect(screen.getAllByText("墨出し").length).toBeGreaterThan(0);
+    expect(screen.queryByText("Grow 広告運用")).toBeNull();
+  });
 });

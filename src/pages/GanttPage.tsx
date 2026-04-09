@@ -16,6 +16,7 @@ import type { ChartLayout, GanttTask, QuickAddState, TaskDetailState } from "../
 import { addDays, daysBetween, formatScheduleDate, toLocalDateString } from "../components/gantt/utils.js";
 import { readLastProjectId, writeLastProjectId } from "../lib/last-project.js";
 import { cascadeSchedule } from "../lib/cascade-scheduler.js";
+import { filterScheduleTasks } from "../lib/cost-management.js";
 import type { ConnectState } from "../components/gantt/types.js";
 
 const MAX_CHART_DAYS = 240;
@@ -114,7 +115,7 @@ function GanttPageContent({ initialProjectId = null }: GanttPageProps) {
       const contractorMap = new Map(allContractors.map((contractor) => [contractor.id, contractor]));
       const projectMap = new Map(allProjects.map((project) => [project.id, project]));
 
-      const nextTasks = allTasks
+      const nextTasks = filterScheduleTasks(allTasks)
         .map((task) => {
           const project = projectMap.get(task.projectId);
           const projectStart = project?.startDate ?? today;

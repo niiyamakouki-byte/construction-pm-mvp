@@ -17,6 +17,7 @@ import { SignupPage } from "./pages/SignupPage.js";
 import { LegalPages } from "./pages/LegalPages.js";
 import { PricingPage } from "./pages/PricingPage.js";
 import { TasksPage } from "./pages/TasksPage.js";
+import { CostManagementPage } from "./pages/CostManagementPage.js";
 import { ErrorBoundary } from "./components/ErrorBoundary.js";
 import { AuthGuard } from "./components/AuthGuard.js";
 import { OnboardingWizard, useOnboardingDone } from "./components/OnboardingWizard.js";
@@ -93,7 +94,7 @@ function AppShell() {
       icon: "☰",
       path: "/notifications",
       matchRoute: (currentRoute) =>
-        ["/today", "/invoice", "/estimate", "/contractors", "/notifications", "/help", "/node-schedule"].includes(currentRoute),
+        ["/today", "/invoice", "/estimate", "/contractors", "/notifications", "/help", "/node-schedule", "/cost-management"].includes(currentRoute),
     },
   ];
 
@@ -127,6 +128,7 @@ function AppShell() {
       path: "/estimate",
       matchRoute: (currentRoute) => currentRoute === "/estimate",
     },
+    { key: "cost", label: "コスト", icon: "💹", path: "/cost-management", matchRoute: (currentRoute) => currentRoute === "/cost-management" },
     {
       key: "invoice",
       label: "請求",
@@ -222,6 +224,13 @@ function AppShell() {
     }
     if (route === "/estimate") {
       return <EstimatePage />;
+    }
+    if (route === "/cost-management") {
+      return (
+        <ErrorBoundary fallbackTitle="コスト管理エラー">
+          <CostManagementPage />
+        </ErrorBoundary>
+      );
     }
     if (route === "/contractors") {
       return (

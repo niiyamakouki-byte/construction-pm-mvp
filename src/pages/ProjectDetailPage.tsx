@@ -6,6 +6,7 @@ import { createCostItemRepository } from "../stores/cost-item-store.js";
 import { createAppRepository } from "../infra/create-app-repository.js";
 import { navigate } from "../hooks/useHashRouter.js";
 import { useOrganizationContext } from "../contexts/OrganizationContext.js";
+import { filterScheduleTasks } from "../lib/cost-management.js";
 
 // ── Construction templates ────────────────────────────
 
@@ -179,7 +180,7 @@ export function ProjectDetailPage({ projectId }: { projectId: string }) {
         expenseRepository.findAll(),
       ]);
       setProject(p);
-      setTasks(allTasks.filter((t) => t.projectId === projectId));
+      setTasks(filterScheduleTasks(allTasks).filter((t) => t.projectId === projectId));
       setCostItems(allCosts.filter((c) => c.projectId === projectId));
       setExpenses(allExpenses.filter((e) => e.projectId === projectId));
 

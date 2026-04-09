@@ -8,6 +8,7 @@ import { navigate } from "../hooks/useHashRouter.js";
 import { readLastProjectId, writeLastProjectId } from "../lib/last-project.js";
 import { formatScheduleDate, statusColor, statusLabel } from "../components/gantt/utils.js";
 import type { GanttTask } from "../components/gantt/types.js";
+import { filterScheduleTasks } from "../lib/cost-management.js";
 
 export function TasksPage() {
   const { organizationId } = useOrganizationContext();
@@ -30,7 +31,7 @@ export function TasksPage() {
       setProjects(allProjects);
       setSelectedProjectId((current) => current ?? allProjects[0]?.id ?? null);
       setTasks(
-        allTasks
+        filterScheduleTasks(allTasks)
           .map((task) => ({
             ...task,
             projectName: allProjects.find((project) => project.id === task.projectId)?.name ?? "不明な案件",

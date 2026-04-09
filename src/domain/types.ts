@@ -55,12 +55,23 @@ export type Resource = BaseEntity & {
 
 // ── CostItem ────────────────────────────────────────
 
+export type CostPaymentStatus = "paid" | "unpaid";
+
+export type CostBreakdownType =
+  | "task_cost"
+  | "material_cost"
+  | "change_order_cost"
+  | "invoice_received";
+
 export type CostItem = BaseEntity & {
   projectId: string;
   taskId?: string;
   description: string;
   amount: number;
   category: string;
+  costDate?: string;
+  paymentStatus?: CostPaymentStatus;
+  breakdownType?: CostBreakdownType;
 };
 
 // ── TeamMember ──────────────────────────────────────

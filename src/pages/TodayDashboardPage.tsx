@@ -7,6 +7,7 @@ import { useOrganizationContext } from "../contexts/OrganizationContext.js";
 import { usePersona } from "../contexts/PersonaContext.js";
 import { TodayDashboardPageErrorBoundary } from "../components/PageErrorBoundaries.js";
 import { TodayDashboardSkeleton } from "../components/PageSkeletons.js";
+import { filterScheduleTasks } from "../lib/cost-management.js";
 
 // ── Helpers ────────────────────────────────────────────
 
@@ -227,13 +228,15 @@ function TodayDashboardPageContent() {
         projectRepository.findAll(),
       ]);
 
-      setAllTasks(allT);
+      const scheduleTasks = filterScheduleTasks(allT);
+
+      setAllTasks(scheduleTasks);
       setAllProjects(allP);
 
       const projectMap = new Map<string, Project>();
       for (const p of allP) projectMap.set(p.id, p);
 
-      const todayTasks = allT
+      const todayTasks = scheduleTasks
         .filter((t) => {
           if (t.status === "done") return false;
           if (t.dueDate === today) return true;
