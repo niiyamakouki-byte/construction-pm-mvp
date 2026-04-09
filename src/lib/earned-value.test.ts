@@ -11,9 +11,7 @@ import {
 
 function makeTask(overrides: Partial<ProgressTask> & Pick<ProgressTask, "id" | "name">): ProgressTask {
   return {
-    id: overrides.id,
     projectId: "proj-1",
-    name: overrides.name,
     description: "",
     status: "todo",
     progress: 0,

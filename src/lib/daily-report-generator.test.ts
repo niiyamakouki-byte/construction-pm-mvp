@@ -22,9 +22,7 @@ function makeProject(overrides?: Partial<Project>): Project {
 
 function makeTask(overrides: Partial<Task> & Pick<Task, "id" | "name">): Task {
   return {
-    id: overrides.id,
     projectId: "proj-1",
-    name: overrides.name,
     description: "",
     status: "todo",
     progress: 0,
@@ -37,8 +35,6 @@ function makeTask(overrides: Partial<Task> & Pick<Task, "id" | "name">): Task {
 
 function makeContractor(overrides: Partial<Contractor> & Pick<Contractor, "id" | "name">): Contractor {
   return {
-    id: overrides.id,
-    name: overrides.name,
     createdAt: "2025-01-01T00:00:00.000Z",
     updatedAt: "2025-01-01T00:00:00.000Z",
     ...overrides,

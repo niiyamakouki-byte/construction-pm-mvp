@@ -8,7 +8,6 @@ import {
 
 function makePhoto(overrides: Partial<PhotoMetadata> & Pick<PhotoMetadata, "id">): PhotoMetadata {
   return {
-    id: overrides.id,
     url: `https://example.com/${overrides.id}.jpg`,
     capturedAt: "2025-03-10T09:00:00.000Z",
     projectId: "proj-1",

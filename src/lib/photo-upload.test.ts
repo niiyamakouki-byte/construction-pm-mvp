@@ -10,7 +10,6 @@ import {
 
 function makePhoto(overrides: Partial<PhotoWithCategory> & Pick<PhotoWithCategory, "id">): PhotoWithCategory {
   return {
-    id: overrides.id,
     url: `https://cdn.example.com/photos/${overrides.id}.jpg`,
     category: PhotoCategory.other,
     capturedAt: "2025-06-01T09:00:00.000Z",
