@@ -30,6 +30,52 @@ export type ForecastReport = {
   recommendations: string[];
 };
 
+// ── Overhead cost calculation ─────────────────────────
+
+export type OverheadRates = {
+  siteManagement: number; // e.g. 0.05 = 5%
+  generalAdmin: number;   // e.g. 0.08 = 8%
+  designFee: number;      // e.g. 0 = optional
+};
+
+export type OverheadBreakdown = {
+  directCost: number;
+  siteManagement: number;
+  generalAdmin: number;
+  designFee: number;
+  totalOverhead: number;
+  grandTotal: number;
+  rates: OverheadRates;
+};
+
+const DEFAULT_OVERHEAD_RATES: OverheadRates = {
+  siteManagement: 0.05,
+  generalAdmin: 0.08,
+  designFee: 0,
+};
+
+export function calculateOverheadCosts(
+  directCost: number,
+  overheadRates: Partial<OverheadRates> = {},
+): OverheadBreakdown {
+  const rates: OverheadRates = { ...DEFAULT_OVERHEAD_RATES, ...overheadRates };
+
+  const siteManagement = Math.round(directCost * rates.siteManagement);
+  const generalAdmin = Math.round(directCost * rates.generalAdmin);
+  const designFee = Math.round(directCost * rates.designFee);
+  const totalOverhead = siteManagement + generalAdmin + designFee;
+
+  return {
+    directCost,
+    siteManagement,
+    generalAdmin,
+    designFee,
+    totalOverhead,
+    grandTotal: directCost + totalOverhead,
+    rates,
+  };
+}
+
 // ── Predict final cost ─────────────────────────────
 
 export function predictFinalCost(

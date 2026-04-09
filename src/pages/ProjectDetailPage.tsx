@@ -8,6 +8,14 @@ import { navigate } from "../hooks/useHashRouter.js";
 import { useOrganizationContext } from "../contexts/OrganizationContext.js";
 import { filterScheduleTasks } from "../lib/cost-management.js";
 import { ProjectDetailTabs } from "../components/ProjectDetailTabs.js";
+import {
+  ConstructionPhase,
+  getPhaseChecklist,
+  getPhaseLabel,
+  evaluatePhaseCompletion,
+  type ChecklistItem,
+  type PhaseCompletionResult,
+} from "../lib/construction-checklist.js";
 
 // ── Construction templates ────────────────────────────
 
@@ -170,6 +178,8 @@ export function ProjectDetailPage({ projectId }: { projectId: string }) {
   const [error, setError] = useState<string | null>(null);
   const [deletingTaskId, setDeletingTaskId] = useState<string | null>(null);
   const weatherFetched = useRef(false);
+  const [selectedPhase, setSelectedPhase] = useState<string>(ConstructionPhase.demolition);
+  const [completedChecklistIds, setCompletedChecklistIds] = useState<Set<string>>(new Set());
 
   const loadData = useCallback(async () => {
     try {
@@ -877,6 +887,83 @@ export function ProjectDetailPage({ projectId }: { projectId: string }) {
               ))}
           </ul>
         )}
+      </section>
+
+      {/* Construction Checklist */}
+      <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+        <h2 className="mb-3 text-base font-bold text-slate-800">工事チェックリスト</h2>
+
+        <div className="mb-3">
+          <label htmlFor="phase-select" className="block text-xs font-semibold text-slate-500 mb-1">工事フェーズ選択</label>
+          <select
+            id="phase-select"
+            value={selectedPhase}
+            onChange={(e) => {
+              setSelectedPhase(e.target.value);
+              setCompletedChecklistIds(new Set());
+            }}
+            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+          >
+            {Object.values(ConstructionPhase).map((phase) => (
+              <option key={phase} value={phase}>{getPhaseLabel(phase)}</option>
+            ))}
+          </select>
+        </div>
+
+        {(() => {
+          const phase = selectedPhase as import("../lib/construction-checklist.js").ConstructionPhase;
+          const items = getPhaseChecklist(phase);
+          const completion = evaluatePhaseCompletion(phase, Array.from(completedChecklistIds));
+
+          return (
+            <>
+              <div className="mb-3 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="h-2 flex-1 min-w-[80px] rounded-full bg-slate-100 overflow-hidden">
+                    <div
+                      className={`h-full rounded-full transition-all duration-300 ${completion.passed ? "bg-emerald-500" : "bg-brand-500"}`}
+                      style={{ width: `${completion.percentage}%` }}
+                    />
+                  </div>
+                  <span className="text-xs font-semibold tabular-nums text-slate-600">{completion.percentage}%</span>
+                </div>
+                <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+                  completion.passed ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700"
+                }`}>
+                  {completion.passed ? "合格" : `必須: ${completion.requiredCompleted}/${completion.requiredTotal}`}
+                </span>
+              </div>
+
+              <ul className="space-y-1.5">
+                {items.map((item) => {
+                  const checked = completedChecklistIds.has(item.id);
+                  return (
+                    <li key={item.id} className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        id={`cl-${item.id}`}
+                        checked={checked}
+                        onChange={() => {
+                          setCompletedChecklistIds((prev) => {
+                            const next = new Set(prev);
+                            if (next.has(item.id)) next.delete(item.id);
+                            else next.add(item.id);
+                            return next;
+                          });
+                        }}
+                        className="h-4 w-4 rounded border-slate-300 accent-brand-500"
+                      />
+                      <label htmlFor={`cl-${item.id}`} className={`text-sm ${checked ? "text-slate-400 line-through" : "text-slate-700"}`}>
+                        {item.descriptionJa}
+                        {item.required && <span className="ml-1 text-red-500 text-xs">*</span>}
+                      </label>
+                    </li>
+                  );
+                })}
+              </ul>
+            </>
+          );
+        })()}
       </section>
     </div>
   );

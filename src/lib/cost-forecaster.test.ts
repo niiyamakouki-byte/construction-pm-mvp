@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   type MonthlyData,
+  calculateOverheadCosts,
   predictFinalCost,
   trendAnalysis,
   generateForecastReport,
@@ -21,6 +22,53 @@ function makeExpenses(amounts: number[]) {
     approvalStatus: "approved" as const,
   }));
 }
+
+// ── calculateOverheadCosts ─────────────────────────
+
+describe("calculateOverheadCosts", () => {
+  it("applies default rates", () => {
+    const result = calculateOverheadCosts(10_000_000);
+    expect(result.siteManagement).toBe(500_000);  // 5%
+    expect(result.generalAdmin).toBe(800_000);     // 8%
+    expect(result.designFee).toBe(0);              // 0%
+    expect(result.totalOverhead).toBe(1_300_000);
+    expect(result.grandTotal).toBe(11_300_000);
+  });
+
+  it("accepts custom rates", () => {
+    const result = calculateOverheadCosts(10_000_000, {
+      siteManagement: 0.10,
+      generalAdmin: 0.05,
+      designFee: 0.03,
+    });
+    expect(result.siteManagement).toBe(1_000_000);
+    expect(result.generalAdmin).toBe(500_000);
+    expect(result.designFee).toBe(300_000);
+    expect(result.totalOverhead).toBe(1_800_000);
+    expect(result.grandTotal).toBe(11_800_000);
+  });
+
+  it("handles partial custom rates (merges with defaults)", () => {
+    const result = calculateOverheadCosts(10_000_000, { designFee: 0.06 });
+    expect(result.siteManagement).toBe(500_000);   // default 5%
+    expect(result.generalAdmin).toBe(800_000);     // default 8%
+    expect(result.designFee).toBe(600_000);        // custom 6%
+    expect(result.grandTotal).toBe(11_900_000);
+  });
+
+  it("handles zero direct cost", () => {
+    const result = calculateOverheadCosts(0);
+    expect(result.totalOverhead).toBe(0);
+    expect(result.grandTotal).toBe(0);
+  });
+
+  it("returns correct rates in the result", () => {
+    const result = calculateOverheadCosts(1_000_000, { designFee: 0.10 });
+    expect(result.rates.siteManagement).toBe(0.05);
+    expect(result.rates.generalAdmin).toBe(0.08);
+    expect(result.rates.designFee).toBe(0.10);
+  });
+});
 
 // ── predictFinalCost ───────────────────────────────
 

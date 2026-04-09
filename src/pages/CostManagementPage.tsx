@@ -11,14 +11,22 @@ import {
 } from "../lib/cost-management.js";
 import { readLastProjectId, writeLastProjectId } from "../lib/last-project.js";
 import {
+  calculateOverheadCosts,
   generateForecastReport,
   type MonthlyData,
+  type OverheadBreakdown,
 } from "../lib/cost-forecaster.js";
 import {
   calculateWaste,
   forecastNeeded,
   getDeliveries,
 } from "../lib/material-tracker.js";
+import {
+  getPaymentSchedule,
+  calculateOutstanding,
+  type Payment,
+  type PaymentScheduleEntry,
+} from "../lib/payment-tracker.js";
 import { daysBetween } from "../components/gantt/utils.js";
 import { createProjectRepository } from "../stores/project-store.js";
 import { createTaskRepository } from "../stores/task-store.js";
@@ -252,6 +260,18 @@ export function CostManagementPage() {
     ),
     [expenses, monthlyCostSeries, selectedProject, selectedProjectTasks],
   );
+  const overheadBreakdown = useMemo<OverheadBreakdown | null>(
+    () => (summary.total > 0 ? calculateOverheadCosts(summary.total) : null),
+    [summary.total],
+  );
+  const paymentSchedule = useMemo<PaymentScheduleEntry[]>(
+    () => (selectedProjectId ? getPaymentSchedule(selectedProjectId) : []),
+    [selectedProjectId],
+  );
+  const outstandingAmount = useMemo<number>(
+    () => (selectedProjectId ? calculateOutstanding(selectedProjectId) : 0),
+    [selectedProjectId],
+  );
   const materialDeliveries = useMemo(
     () => (selectedProjectId ? getDeliveries(selectedProjectId) : []),
     [selectedProjectId],
@@ -470,6 +490,93 @@ export function CostManagementPage() {
           ) : null}
         </article>
       </section>
+      {/* Overhead Cost Breakdown */}
+      {overheadBreakdown && (
+        <section className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm">
+          <div>
+            <p className="text-xs font-semibold tracking-[0.18em] text-slate-500">諸経費</p>
+            <h2 className="mt-1 text-xl font-bold text-slate-900">諸経費内訳</h2>
+          </div>
+          <div className="mt-4 grid gap-3 md:grid-cols-4">
+            <StatCard
+              label={`現場管理費 (${(overheadBreakdown.rates.siteManagement * 100).toFixed(0)}%)`}
+              value={formatCurrency(overheadBreakdown.siteManagement)}
+              tone="border-slate-200 bg-white text-slate-900"
+            />
+            <StatCard
+              label={`一般管理費 (${(overheadBreakdown.rates.generalAdmin * 100).toFixed(0)}%)`}
+              value={formatCurrency(overheadBreakdown.generalAdmin)}
+              tone="border-slate-200 bg-white text-slate-900"
+            />
+            <StatCard
+              label={`設計料 (${(overheadBreakdown.rates.designFee * 100).toFixed(0)}%)`}
+              value={formatCurrency(overheadBreakdown.designFee)}
+              tone="border-slate-200 bg-white text-slate-900"
+            />
+            <StatCard
+              label="諸経費込み合計"
+              value={formatCurrency(overheadBreakdown.grandTotal)}
+              tone="border-brand-200 bg-brand-50 text-brand-900"
+            />
+          </div>
+        </section>
+      )}
+
+      {/* Payment Tracker */}
+      <section className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <p className="text-xs font-semibold tracking-[0.18em] text-slate-500">支払管理</p>
+            <h2 className="mt-1 text-xl font-bold text-slate-900">支払スケジュール</h2>
+          </div>
+          {outstandingAmount > 0 && (
+            <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700">
+              未払残: {formatCurrency(outstandingAmount)}
+            </span>
+          )}
+        </div>
+        {paymentSchedule.length > 0 ? (
+          <div className="mt-4 overflow-x-auto">
+            <table className="min-w-full text-left">
+              <thead className="bg-slate-50 text-xs font-semibold text-slate-500">
+                <tr>
+                  <th className="px-5 py-3">支払日</th>
+                  <th className="px-5 py-3">業者</th>
+                  <th className="px-5 py-3 text-right">金額</th>
+                  <th className="px-5 py-3 text-center">ステータス</th>
+                </tr>
+              </thead>
+              <tbody>
+                {paymentSchedule.map((entry) => (
+                  <tr key={entry.payment.id} className="border-t border-slate-100 text-sm text-slate-700">
+                    <td className="px-5 py-4 tabular-nums text-slate-500">{formatCostDate(entry.dueDate)}</td>
+                    <td className="px-5 py-4 font-semibold text-slate-900">{entry.payment.vendor}</td>
+                    <td className="px-5 py-4 text-right font-semibold tabular-nums text-slate-900">
+                      {formatCurrency(entry.payment.amount)}
+                    </td>
+                    <td className="px-5 py-4 text-center">
+                      <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${
+                        entry.payment.status === "paid"
+                          ? "bg-emerald-50 text-emerald-700"
+                          : entry.payment.status === "overdue"
+                            ? "bg-red-50 text-red-700"
+                            : "bg-amber-50 text-amber-700"
+                      }`}>
+                        {entry.payment.status === "paid" ? "支払済" : entry.payment.status === "overdue" ? "期限超過" : "未払い"}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <p className="mt-4 rounded-2xl border border-dashed border-slate-200 px-4 py-4 text-sm text-slate-500">
+            payment-tracker に支払データが入ると、スケジュールと未払残を表示します。
+          </p>
+        )}
+      </section>
+
       <section className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm">
         <div className="flex items-center justify-between gap-4">
           <div>
