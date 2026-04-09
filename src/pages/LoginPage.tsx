@@ -1,21 +1,30 @@
 import { useState, type FormEvent } from "react";
-import { getSupabaseClient, hasSupabaseEnv } from "../infra/supabase-client.js";
+import {
+  getRememberLoginPreference,
+  getSupabaseClient,
+  hasSupabaseEnv,
+  setRememberLoginPreference,
+} from "../infra/supabase-client.js";
 import { navigate } from "../hooks/useHashRouter.js";
 
 export function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [rememberLogin, setRememberLogin] = useState(() => getRememberLoginPreference());
   const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!hasSupabaseEnv()) {
       setError("Supabase が設定されていません");
+      setSuccessMessage(null);
       return;
     }
     setLoading(true);
     setError(null);
+    setSuccessMessage(null);
     try {
       const client = await getSupabaseClient();
       const { error: authError } = await client.auth.signInWithPassword({ email, password });
@@ -39,8 +48,11 @@ export function LoginPage() {
   const handleGoogle = async () => {
     if (!hasSupabaseEnv()) {
       setError("Supabase が設定されていません");
+      setSuccessMessage(null);
       return;
     }
+    setError(null);
+    setSuccessMessage(null);
     try {
       const client = await getSupabaseClient();
       const redirectTo =
@@ -55,6 +67,43 @@ export function LoginPage() {
       console.error("Failed to start Google login", err);
       setError("Google ログインに失敗しました。");
     }
+  };
+
+  const handleMagicLink = async () => {
+    if (!hasSupabaseEnv()) {
+      setError("Supabase が設定されていません");
+      setSuccessMessage(null);
+      return;
+    }
+
+    if (!email.trim()) {
+      setError("メールアドレスを入力してください。");
+      setSuccessMessage(null);
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+    setSuccessMessage(null);
+    try {
+      const client = await getSupabaseClient();
+      const { error: authError } = await client.auth.signInWithOtp({ email: email.trim() });
+      if (authError) {
+        setError(authError.message);
+        return;
+      }
+      setSuccessMessage("メールを確認してください。ログインリンクを送信しました。");
+    } catch (err) {
+      console.error("Failed to send magic link", err);
+      setError("認証メールの送信に失敗しました。もう一度お試しください。");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRememberLoginChange = (checked: boolean) => {
+    setRememberLogin(checked);
+    setRememberLoginPreference(checked);
   };
 
   return (
@@ -84,6 +133,12 @@ export function LoginPage() {
           {error && (
             <div className="mb-4 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">
               {error}
+            </div>
+          )}
+
+          {successMessage && (
+            <div className="mb-4 rounded-lg bg-emerald-50 px-4 py-3 text-sm text-emerald-700" role="status">
+              {successMessage}
             </div>
           )}
 
@@ -118,6 +173,15 @@ export function LoginPage() {
                 placeholder="••••••••"
               />
             </div>
+            <label className="flex items-center gap-3 text-sm text-slate-600">
+              <input
+                type="checkbox"
+                checked={rememberLogin}
+                onChange={(e) => handleRememberLoginChange(e.target.checked)}
+                className="h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500"
+              />
+              <span>ログイン状態を保持</span>
+            </label>
             <button
               type="submit"
               disabled={loading}
@@ -158,6 +222,37 @@ export function LoginPage() {
             </svg>
             Google でログイン
           </button>
+
+          <div className="mt-6 border-t border-slate-200 pt-6">
+            <h2 className="text-sm font-semibold text-slate-900">マジックリンクでログイン</h2>
+            <p className="mt-1 text-xs text-slate-500">
+              メールのログインリンクからパスワードなしで認証します。
+            </p>
+            <div className="mt-4 space-y-3">
+              <div>
+                <label htmlFor="magic-link-email" className="mb-1 block text-sm font-medium text-slate-700">
+                  メールアドレス
+                </label>
+                <input
+                  id="magic-link-email"
+                  type="email"
+                  autoComplete="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200"
+                  placeholder="your@email.com"
+                />
+              </div>
+              <button
+                type="button"
+                onClick={handleMagicLink}
+                disabled={loading}
+                className="w-full rounded-lg border border-brand-200 bg-brand-50 px-4 py-2.5 text-sm font-semibold text-brand-700 shadow-sm hover:bg-brand-100 disabled:opacity-60"
+              >
+                {loading ? "送信中..." : "認証メールを送信"}
+              </button>
+            </div>
+          </div>
 
           <p className="mt-6 text-center text-sm text-slate-500">
             アカウントをお持ちでない方は{" "}

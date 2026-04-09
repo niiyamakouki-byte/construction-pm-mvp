@@ -110,6 +110,12 @@ type SupabaseSession = {
   access_token: string;
 };
 
+type StorageLike = {
+  getItem(key: string): string | null;
+  setItem(key: string, value: string): void;
+  removeItem(key: string): void;
+};
+
 type AuthChangeEvent =
   | "SIGNED_IN"
   | "SIGNED_OUT"
@@ -120,6 +126,7 @@ type AuthChangeEvent =
 type SupabaseAuthClient = {
   getSession(): Promise<{ data: { session: SupabaseSession | null }; error: { message: string } | null }>;
   signInWithPassword(credentials: { email: string; password: string }): Promise<{ data: { session: SupabaseSession | null }; error: { message: string } | null }>;
+  signInWithOtp(credentials: { email: string }): Promise<{ data: { session: SupabaseSession | null }; error: { message: string } | null }>;
   signInWithOAuth(options: { provider: string; options?: { redirectTo?: string } }): Promise<{ data: unknown; error: { message: string } | null }>;
   signUp(credentials: { email: string; password: string; options?: { data?: Record<string, unknown> } }): Promise<{ data: { session: SupabaseSession | null }; error: { message: string } | null }>;
   signOut(): Promise<{ error: { message: string } | null }>;
@@ -132,10 +139,119 @@ export type SupabaseClientLike = {
 };
 
 type SupabaseModule = {
-  createClient(url: string, anonKey: string): SupabaseClientLike;
+  createClient(
+    url: string,
+    anonKey: string,
+    options?: {
+      auth?: {
+        persistSession?: boolean;
+        storage?: StorageLike;
+        storageKey?: string;
+      };
+    },
+  ): SupabaseClientLike;
 };
 
 let clientPromise: Promise<SupabaseClientLike> | null = null;
+
+const REMEMBER_LOGIN_STORAGE_KEY = "genbahub_remember_login";
+const AUTH_STORAGE_KEY = "genbahub_auth_token";
+
+function getBrowserStorage(kind: "localStorage" | "sessionStorage"): Storage | null {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  try {
+    return window[kind];
+  } catch {
+    return null;
+  }
+}
+
+function getRememberPreferenceStorage(): Storage | null {
+  return getBrowserStorage("localStorage");
+}
+
+function readStorageValue(storage: Storage | null, key: string): string | null {
+  if (!storage) {
+    return null;
+  }
+
+  try {
+    return storage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
+function writeStorageValue(storage: Storage | null, key: string, value: string): void {
+  if (!storage) {
+    return;
+  }
+
+  try {
+    storage.setItem(key, value);
+  } catch {
+    // Ignore storage write failures and keep auth in memory for this session.
+  }
+}
+
+function removeStorageValue(storage: Storage | null, key: string): void {
+  if (!storage) {
+    return;
+  }
+
+  try {
+    storage.removeItem(key);
+  } catch {
+    // Ignore storage removal failures.
+  }
+}
+
+export function getRememberLoginPreference(): boolean {
+  const storedValue = readStorageValue(getRememberPreferenceStorage(), REMEMBER_LOGIN_STORAGE_KEY);
+  return storedValue !== "0";
+}
+
+export function setRememberLoginPreference(remember: boolean): void {
+  writeStorageValue(
+    getRememberPreferenceStorage(),
+    REMEMBER_LOGIN_STORAGE_KEY,
+    remember ? "1" : "0",
+  );
+
+  const localStorageRef = getBrowserStorage("localStorage");
+  const sessionStorageRef = getBrowserStorage("sessionStorage");
+  const sourceStorage = remember ? sessionStorageRef : localStorageRef;
+  const targetStorage = remember ? localStorageRef : sessionStorageRef;
+  const existingSession = readStorageValue(sourceStorage, AUTH_STORAGE_KEY);
+
+  if (existingSession) {
+    writeStorageValue(targetStorage, AUTH_STORAGE_KEY, existingSession);
+    removeStorageValue(sourceStorage, AUTH_STORAGE_KEY);
+  }
+}
+
+const authStorage: StorageLike = {
+  getItem(key) {
+    const storage = getRememberLoginPreference()
+      ? getBrowserStorage("localStorage")
+      : getBrowserStorage("sessionStorage");
+    return readStorageValue(storage, key);
+  },
+  setItem(key, value) {
+    const useLocalStorage = getRememberLoginPreference();
+    const primaryStorage = getBrowserStorage(useLocalStorage ? "localStorage" : "sessionStorage");
+    const secondaryStorage = getBrowserStorage(useLocalStorage ? "sessionStorage" : "localStorage");
+    writeStorageValue(primaryStorage, key, value);
+    removeStorageValue(secondaryStorage, key);
+  },
+  removeItem(key) {
+    removeStorageValue(getBrowserStorage("localStorage"), key);
+    removeStorageValue(getBrowserStorage("sessionStorage"), key);
+  },
+};
 
 export function getSupabaseEnv() {
   return {
@@ -157,7 +273,13 @@ export async function getSupabaseClient(): Promise<SupabaseClientLike> {
   clientPromise ??= (async () => {
     const { createClient } = (await import("@supabase/supabase-js")) as unknown as SupabaseModule;
     const { url, anonKey } = getSupabaseEnv();
-    return createClient(url!, anonKey!);
+    return createClient(url!, anonKey!, {
+      auth: {
+        persistSession: true,
+        storage: authStorage,
+        storageKey: AUTH_STORAGE_KEY,
+      },
+    });
   })();
 
   return clientPromise;
