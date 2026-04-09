@@ -185,14 +185,26 @@ export function exportGanttToPdf(
   chartStart: string,
   totalDays: number,
 ): void {
-  const printWindow = window.open("", "_blank", "noopener,noreferrer");
-  if (!printWindow) {
-    throw new Error("PDF出力ウィンドウを開けませんでした");
+  const html = buildGanttPdfHtml(project, tasks, chartStart, totalDays);
+
+  // Try window.open first, fall back to Blob download for iOS popup blocker
+  const printWindow = window.open("", "_blank");
+  if (printWindow) {
+    printWindow.document.open();
+    printWindow.document.write(html);
+    printWindow.document.close();
+    printWindow.focus?.();
+    return;
   }
 
-  const html = buildGanttPdfHtml(project, tasks, chartStart, totalDays);
-  printWindow.document.open();
-  printWindow.document.write(html);
-  printWindow.document.close();
-  printWindow.focus?.();
+  // Fallback: download as HTML file (works on iOS)
+  const blob = new Blob([html], { type: "text/html;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `${project.name}_工程表.html`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
 }
