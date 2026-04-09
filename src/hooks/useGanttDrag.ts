@@ -8,6 +8,7 @@ import {
   daysBetween,
 } from "../components/gantt/utils.js";
 import { cascadeSchedule } from "../lib/cascade-scheduler.js";
+import type { UndoEntry } from "../lib/undo-stack.js";
 
 type UseGanttDragOptions = {
   ganttTasks: GanttTask[];
@@ -17,6 +18,7 @@ type UseGanttDragOptions = {
   taskRepository: Repository<Task>;
   loadData: () => Promise<void>;
   onError: (message: string) => void;
+  onDatesCommitted?: (entry: UndoEntry) => void;
 };
 
 type DragStartPointerEvent = React.PointerEvent<HTMLElement>;
@@ -46,6 +48,7 @@ export function useGanttDrag({
   taskRepository,
   loadData,
   onError,
+  onDatesCommitted,
 }: UseGanttDragOptions) {
   const [dragState, setDragState] = useState<DragState | null>(null);
   const dragRef = useRef<DragState | null>(null);
@@ -210,6 +213,15 @@ export function useGanttDrag({
           ),
         );
 
+        onDatesCommitted?.({
+          taskId: drag.taskId,
+          previousStartDate: drag.originalStartDate,
+          previousEndDate: drag.originalEndDate,
+          newStartDate: drag.previewStartDate,
+          newEndDate: drag.previewEndDate,
+          timestamp: now,
+        });
+
         if (drag.previewStartDate !== drag.originalStartDate) {
           const movedTask = ganttTasks.find((task) => task.id === drag.taskId);
           if (movedTask?.contractorId) {
@@ -264,6 +276,7 @@ export function useGanttDrag({
     ganttTasks,
     loadData,
     onError,
+    onDatesCommitted,
     organizationId,
     taskRepository,
   ]);

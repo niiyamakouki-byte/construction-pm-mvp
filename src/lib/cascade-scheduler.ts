@@ -1,4 +1,4 @@
-import { addDays, daysBetween } from "../components/gantt/utils.js";
+import { addDaysSkipWeekends, daysBetween } from "../components/gantt/utils.js";
 import type { GanttTask } from "../components/gantt/types.js";
 
 /**
@@ -55,8 +55,18 @@ export function cascadeSchedule(
       const currentStart = prevUpdate?.startDate ?? successor.startDate;
       const currentEnd = prevUpdate?.endDate ?? successor.endDate;
 
-      const newSStart = addDays(currentStart, shiftDays);
-      const newSEnd = addDays(currentEnd, shiftDays);
+      const newSStart = addDaysSkipWeekends(
+        currentStart,
+        shiftDays,
+        successor.projectIncludesWeekends,
+        successor.includeWeekends,
+      );
+      const newSEnd = addDaysSkipWeekends(
+        currentEnd,
+        shiftDays,
+        successor.projectIncludesWeekends,
+        successor.includeWeekends,
+      );
 
       updates.set(successorId, { startDate: newSStart, endDate: newSEnd });
 

@@ -27,6 +27,7 @@ import { cascadeSchedule } from "../lib/cascade-scheduler.js";
 import { filterScheduleTasks } from "../lib/cost-management.js";
 import { exportGanttToPdf } from "../lib/gantt-pdf-export.js";
 import type { ConnectState } from "../components/gantt/types.js";
+import { undoStack } from "../lib/undo-stack.js";
 
 const MAX_CHART_DAYS = 240;
 const MIN_DAY_WIDTH = 8;
@@ -102,6 +103,8 @@ function GanttPageContent({ initialProjectId = null }: GanttPageProps) {
   const [connectMode, setConnectMode] = useState(false);
   const [connectState, setConnectState] = useState<ConnectState | null>(null);
   const [pdfExporting, setPdfExporting] = useState(false);
+  const [undoing, setUndoing] = useState(false);
+  const [canUndo, setCanUndo] = useState(() => undoStack.canUndo());
   const scrollRef = useRef<HTMLDivElement>(null);
   const pinchRef = useRef<{
     distance: number;
@@ -185,6 +188,15 @@ function GanttPageContent({ initialProjectId = null }: GanttPageProps) {
   useEffect(() => {
     if (!selectedProjectId) return;
     writeLastProjectId(selectedProjectId);
+  }, [selectedProjectId]);
+
+  useEffect(() => () => {
+    undoStack.clear();
+  }, []);
+
+  useEffect(() => {
+    undoStack.clear();
+    setCanUndo(false);
   }, [selectedProjectId]);
 
   const selectedProject = useMemo(
@@ -388,6 +400,28 @@ function GanttPageContent({ initialProjectId = null }: GanttPageProps) {
     });
   }, []);
 
+  const handleUndo = useCallback(async () => {
+    const entry = undoStack.undo();
+    setCanUndo(undoStack.canUndo());
+    if (!entry) return;
+
+    setUndoing(true);
+    try {
+      await taskRepository.update(entry.taskId, {
+        startDate: entry.previousStartDate,
+        dueDate: entry.previousEndDate,
+        updatedAt: new Date().toISOString(),
+      });
+      await loadData();
+    } catch (err) {
+      undoStack.push(entry);
+      setCanUndo(true);
+      setError(err instanceof Error ? err.message : "変更の取り消しに失敗しました");
+    } finally {
+      setUndoing(false);
+    }
+  }, [loadData, taskRepository]);
+
   const { dragState, dragRef, startTaskDrag, startTaskResize } = useGanttDrag({
     ganttTasks,
     contractors,
@@ -396,6 +430,10 @@ function GanttPageContent({ initialProjectId = null }: GanttPageProps) {
     taskRepository,
     loadData,
     onError: setError,
+    onDatesCommitted: (entry) => {
+      undoStack.push(entry);
+      setCanUndo(undoStack.canUndo());
+    },
   });
 
   const chartLayout = useMemo((): ChartLayout | null => {
@@ -599,6 +637,17 @@ function GanttPageContent({ initialProjectId = null }: GanttPageProps) {
             <div className="rounded-2xl bg-white/90 px-4 py-3 text-sm text-slate-600 ring-1 ring-slate-200">
               ピンチで拡大縮小 / バーをドラッグして日程変更
             </div>
+            {canUndo ? (
+              <button
+                type="button"
+                onClick={() => void handleUndo()}
+                disabled={undoing}
+                aria-label="直前の変更を元に戻す"
+                className="flex h-11 w-11 items-center justify-center rounded-full bg-white text-xl text-slate-600 ring-1 ring-slate-200 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                ↩
+              </button>
+            ) : null}
             <button
               type="button"
               onClick={handleToggleConnectMode}

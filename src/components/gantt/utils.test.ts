@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { addDaysSkipWeekends } from "./utils.js";
+import { addDaysBySchedule, addDaysSkipWeekends } from "./utils.js";
 
 describe("gantt utils", () => {
-  it("skips substitute holidays when weekends are excluded", () => {
-    expect(addDaysSkipWeekends("2025-02-21", 2)).toBe("2025-02-25");
+  it("task-level includeWeekends overrides the project setting", () => {
+    expect(addDaysSkipWeekends("2025-01-03", 1, false, true)).toBe("2025-01-04");
   });
 
-  it("skips consecutive Golden Week holidays when weekends are excluded", () => {
-    expect(addDaysSkipWeekends("2026-05-01", 2)).toBe("2026-05-07");
+  it("moves backward across weekends when weekends are excluded", () => {
+    expect(addDaysBySchedule("2025-01-06", -1, false)).toBe("2025-01-03");
   });
 });
