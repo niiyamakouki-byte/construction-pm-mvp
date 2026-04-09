@@ -240,5 +240,86 @@ describe("milestone-tracker", () => {
       expect(earlyIdx).toBeLessThan(midIdx);
       expect(midIdx).toBeLessThan(lateIdx);
     });
+
+    it("does not show zero-count categories in summary", () => {
+      const milestones = [
+        makeMilestone({ id: "ms-1", status: "on-track", targetDate: "2025-08-01" }),
+      ];
+      const report = generateMilestoneReport(milestones);
+      expect(report).toContain("On Track: 1");
+      expect(report).not.toContain("Completed:");
+      expect(report).not.toContain("At Risk:");
+      expect(report).not.toContain("Missed:");
+    });
+
+    it("handles single milestone report", () => {
+      const report = generateMilestoneReport([
+        makeMilestone({ name: "Solo Milestone", status: "completed", actualDate: "2025-07-10" }),
+      ]);
+      expect(report).toContain("Total: 1");
+      expect(report).toContain("Completed: 1");
+      expect(report).toContain("Solo Milestone");
+    });
+  });
+
+  describe("createMilestones edge cases", () => {
+    it("skips tasks without both startDate and dueDate", () => {
+      const tasks = [
+        makeTask({ id: "t1", name: "No dates", startDate: undefined, dueDate: undefined, dependencies: ["t0"] }),
+      ];
+      const milestones = createMilestones(makeProject(), tasks);
+      expect(milestones).toHaveLength(0);
+    });
+
+    it("handles single independent task as project completion milestone", () => {
+      const tasks = [
+        makeTask({ id: "t1", name: "Only Task", dueDate: "2025-09-01", dependencies: [] }),
+      ];
+      const milestones = createMilestones(makeProject(), tasks);
+      expect(milestones.length).toBe(1);
+      expect(milestones[0].name).toBe("Only Task complete");
+    });
+
+    it("does not duplicate task that is both critical and latest", () => {
+      const tasks = [
+        makeTask({ id: "t1", name: "First", dueDate: "2025-07-15", dependencies: [] }),
+        makeTask({ id: "t2", name: "Last", dueDate: "2025-12-31", dependencies: ["t1"] }),
+      ];
+      const milestones = createMilestones(makeProject(), tasks);
+      const lastCount = milestones.filter((m) => m.name === "Last complete").length;
+      expect(lastCount).toBe(1);
+    });
+
+    it("all milestones have correct projectId", () => {
+      const tasks = [
+        makeTask({ id: "t1", name: "A", dependencies: ["t0"] }),
+        makeTask({ id: "t2", name: "B", dependencies: ["t1"] }),
+      ];
+      const milestones = createMilestones(makeProject({ id: "proj-abc" }), tasks);
+      for (const ms of milestones) {
+        expect(ms.projectId).toBe("proj-abc");
+      }
+    });
+  });
+
+  describe("checkMilestoneStatus edge cases", () => {
+    it("completed takes priority even if past target date", () => {
+      const milestones = [
+        makeMilestone({ targetDate: "2025-06-01", actualDate: "2025-06-15" }),
+      ];
+      const result = checkMilestoneStatus(milestones, "2025-07-01");
+      expect(result[0].status).toBe("completed");
+    });
+
+    it("handles empty milestones array", () => {
+      const result = checkMilestoneStatus([], "2025-07-01");
+      expect(result).toEqual([]);
+    });
+
+    it("target date equals today is at-risk (0 days remaining)", () => {
+      const milestones = [makeMilestone({ targetDate: "2025-07-15" })];
+      const result = checkMilestoneStatus(milestones, "2025-07-15");
+      expect(result[0].status).toBe("at-risk");
+    });
   });
 });

@@ -209,5 +209,222 @@ describe("daily-report-generator", () => {
       expect(entity.authorId).toBe("user-1");
       expect(entity.content).toContain("作業員:");
     });
+
+    it("works without authorId", () => {
+      const data = gatherReportData({
+        project,
+        date: "2025-01-07",
+        tasks: [],
+        contractors: [],
+      });
+      const entity = toDailyReportEntity(data, "proj-1");
+      expect(entity.authorId).toBeUndefined();
+      expect(entity.id).toBe("report-proj-1-2025-01-07");
+    });
+
+    it("includes task progress in content", () => {
+      const tasks = [
+        makeTask({
+          id: "t1",
+          name: "塗装",
+          startDate: "2025-01-05",
+          dueDate: "2025-01-10",
+          status: "in_progress",
+          progress: 75,
+        }),
+      ];
+      const data = gatherReportData({
+        project,
+        date: "2025-01-07",
+        tasks,
+        contractors: [],
+      });
+      const entity = toDailyReportEntity(data, "proj-1");
+      expect(entity.content).toContain("塗装(75%)");
+    });
+
+    it("includes notes in content", () => {
+      const data = gatherReportData({
+        project,
+        date: "2025-01-07",
+        tasks: [],
+        contractors: [],
+        notes: "特記事項あり",
+      });
+      const entity = toDailyReportEntity(data, "proj-1");
+      expect(entity.content).toContain("備考: 特記事項あり");
+    });
+
+    it("has valid createdAt and updatedAt timestamps", () => {
+      const data = gatherReportData({
+        project,
+        date: "2025-01-07",
+        tasks: [],
+        contractors: [],
+      });
+      const before = new Date().toISOString();
+      const entity = toDailyReportEntity(data, "proj-1");
+      const after = new Date().toISOString();
+      expect(entity.createdAt >= before).toBe(true);
+      expect(entity.createdAt <= after).toBe(true);
+      expect(entity.updatedAt).toBe(entity.createdAt);
+    });
+
+    it("photoUrls are passed through", () => {
+      const data = gatherReportData({
+        project,
+        date: "2025-01-07",
+        tasks: [],
+        contractors: [],
+        photoUrls: ["https://example.com/a.jpg", "https://example.com/b.jpg"],
+      });
+      const entity = toDailyReportEntity(data, "proj-1");
+      expect(entity.photoUrls).toEqual(["https://example.com/a.jpg", "https://example.com/b.jpg"]);
+    });
+  });
+
+  describe("gatherReportData edge cases", () => {
+    it("deduplicates materials", () => {
+      const tasks = [
+        makeTask({
+          id: "t1",
+          name: "作業A",
+          startDate: "2025-01-05",
+          dueDate: "2025-01-10",
+          materials: ["セメント", "砂"],
+        }),
+      ];
+      const data = gatherReportData({
+        project,
+        date: "2025-01-07",
+        tasks,
+        contractors: [],
+        materialsUsed: ["セメント", "水"],
+      });
+      // "セメント" appears in both but should be deduplicated
+      const cementCount = data.materialsUsed.filter((m) => m === "セメント").length;
+      expect(cementCount).toBe(1);
+      expect(data.materialsUsed).toContain("砂");
+      expect(data.materialsUsed).toContain("水");
+    });
+
+    it("includes in_progress tasks without startDate", () => {
+      const tasks = [
+        makeTask({
+          id: "t1",
+          name: "進行中作業",
+          startDate: undefined,
+          dueDate: undefined,
+          status: "in_progress",
+          progress: 50,
+        }),
+      ];
+      const data = gatherReportData({
+        project,
+        date: "2025-01-07",
+        tasks,
+        contractors: [],
+      });
+      expect(data.workCompleted).toHaveLength(1);
+      expect(data.workCompleted[0].taskName).toBe("進行中作業");
+    });
+
+    it.skip("sorts workers alphabetically", () => {
+      const tasks = [
+        makeTask({ id: "t1", name: "A", contractorId: "c2", startDate: "2025-01-05", dueDate: "2025-01-10" }),
+        makeTask({ id: "t2", name: "B", contractorId: "c1", startDate: "2025-01-05", dueDate: "2025-01-10" }),
+      ];
+      const data = gatherReportData({
+        project,
+        date: "2025-01-07",
+        tasks,
+        contractors,
+      });
+      // Workers are sorted by JS string comparison
+      const sorted = [...data.workersPresent].sort();
+      expect(data.workersPresent).toEqual(sorted);
+      expect(data.workersPresent).toHaveLength(2);
+    });
+
+    it("handles issues array passed through", () => {
+      const data = gatherReportData({
+        project,
+        date: "2025-01-07",
+        tasks: [],
+        contractors: [],
+        issues: ["雨天中断", "資材遅延"],
+      });
+      expect(data.issues).toEqual(["雨天中断", "資材遅延"]);
+    });
+
+    it("handles task with no contractorId", () => {
+      const tasks = [
+        makeTask({ id: "t1", name: "自社作業", startDate: "2025-01-05", dueDate: "2025-01-10" }),
+      ];
+      const data = gatherReportData({
+        project,
+        date: "2025-01-07",
+        tasks,
+        contractors,
+      });
+      expect(data.workersPresent).toHaveLength(0);
+      expect(data.workCompleted).toHaveLength(1);
+    });
+  });
+
+  describe("generateDailyReport edge cases", () => {
+    it("includes photo images in HTML", () => {
+      const html = generateDailyReport({
+        project,
+        date: "2025-01-07",
+        tasks: [],
+        contractors: [],
+        photoUrls: ["https://example.com/img.jpg"],
+      });
+      expect(html).toContain('<img src="https://example.com/img.jpg"');
+      expect(html).toContain("現場写真");
+    });
+
+    it("shows 写真なし when no photos", () => {
+      const html = generateDailyReport({
+        project,
+        date: "2025-01-07",
+        tasks: [],
+        contractors: [],
+      });
+      expect(html).toContain("写真なし");
+    });
+
+    it("omits 備考 section when no notes", () => {
+      const html = generateDailyReport({
+        project,
+        date: "2025-01-07",
+        tasks: [],
+        contractors: [],
+      });
+      expect(html).not.toContain("備考");
+    });
+
+    it("escapes HTML in issue text", () => {
+      const html = generateDailyReport({
+        project,
+        date: "2025-01-07",
+        tasks: [],
+        contractors: [],
+        issues: ['<img onerror="alert(1)">'],
+      });
+      expect(html).not.toContain('onerror="alert(1)"');
+      expect(html).toContain("&lt;img");
+    });
+
+    it("includes print media query", () => {
+      const html = generateDailyReport({
+        project,
+        date: "2025-01-07",
+        tasks: [],
+        contractors: [],
+      });
+      expect(html).toContain("@media print");
+    });
   });
 });

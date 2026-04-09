@@ -164,5 +164,106 @@ describe("change-order-tracker", () => {
       expect(log[0].order.id).toBe("co-1");
       expect(log[1].order.id).toBe("co-2");
     });
+
+    it("handles negative cost deltas (cost savings)", () => {
+      createChangeOrder(makeOrder({
+        id: "co-1",
+        dateRequested: "2025-02-01",
+        impact: { costDelta: 100000, scheduleDeltaDays: 3, affectedTaskIds: [] },
+      }));
+      createChangeOrder(makeOrder({
+        id: "co-2",
+        dateRequested: "2025-02-10",
+        impact: { costDelta: -30000, scheduleDeltaDays: -1, affectedTaskIds: [] },
+      }));
+      const log = generateChangeLog("proj-1");
+      expect(log[1].cumulativeCostDelta).toBe(70000);
+      expect(log[1].cumulativeScheduleDelta).toBe(2);
+    });
+  });
+
+  describe("clearChangeOrders", () => {
+    it("removes all stored orders", () => {
+      createChangeOrder(makeOrder({ id: "co-1" }));
+      createChangeOrder(makeOrder({ id: "co-2" }));
+      expect(getChangeOrders()).toHaveLength(2);
+      clearChangeOrders();
+      expect(getChangeOrders()).toHaveLength(0);
+    });
+  });
+
+  describe("assessImpact edge cases", () => {
+    it("returns empty affectedTasks when no matching tasks", () => {
+      const order = makeOrder({
+        impact: { costDelta: 50000, scheduleDeltaDays: 1, affectedTaskIds: ["t99"] },
+      });
+      const tasks = [makeTask({ id: "t1", name: "Unrelated" })];
+      const result = assessImpact(order, tasks);
+      expect(result.affectedTasks).toHaveLength(0);
+    });
+
+    it("classifies medium risk by schedule alone", () => {
+      const order = makeOrder({
+        impact: { costDelta: 1000, scheduleDeltaDays: 10, affectedTaskIds: [] },
+      });
+      const result = assessImpact(order, []);
+      expect(result.riskLevel).toBe("medium");
+    });
+
+    it("high risk threshold: exactly 1000001 cost", () => {
+      const order = makeOrder({
+        impact: { costDelta: 1000001, scheduleDeltaDays: 0, affectedTaskIds: [] },
+      });
+      const result = assessImpact(order, []);
+      expect(result.riskLevel).toBe("high");
+    });
+
+    it("medium risk threshold: exactly 500001 cost", () => {
+      const order = makeOrder({
+        impact: { costDelta: 500001, scheduleDeltaDays: 0, affectedTaskIds: [] },
+      });
+      const result = assessImpact(order, []);
+      expect(result.riskLevel).toBe("medium");
+    });
+
+    it("low risk at boundary: exactly 500000 cost", () => {
+      const order = makeOrder({
+        impact: { costDelta: 500000, scheduleDeltaDays: 0, affectedTaskIds: [] },
+      });
+      const result = assessImpact(order, []);
+      expect(result.riskLevel).toBe("low");
+    });
+
+    it("high risk by negative cost (absolute value)", () => {
+      const order = makeOrder({
+        impact: { costDelta: -2000000, scheduleDeltaDays: 0, affectedTaskIds: [] },
+      });
+      const result = assessImpact(order, []);
+      expect(result.riskLevel).toBe("high");
+    });
+
+    it("returns multiple affected tasks", () => {
+      const order = makeOrder({
+        impact: { costDelta: 50000, scheduleDeltaDays: 2, affectedTaskIds: ["t1", "t2", "t3"] },
+      });
+      const tasks = [
+        makeTask({ id: "t1", name: "A" }),
+        makeTask({ id: "t2", name: "B" }),
+        makeTask({ id: "t3", name: "C" }),
+        makeTask({ id: "t4", name: "D" }),
+      ];
+      const result = assessImpact(order, tasks);
+      expect(result.affectedTasks).toHaveLength(3);
+    });
+  });
+
+  describe("createChangeOrder isolation", () => {
+    it("does not share reference with original object", () => {
+      const order = makeOrder();
+      createChangeOrder(order);
+      order.description = "Mutated";
+      const stored = getChangeOrders();
+      expect(stored[0].description).toBe("Add extra wall outlet");
+    });
   });
 });
