@@ -100,3 +100,50 @@ export function createMeetingMinutes(input: CreateMeetingMinutesInput): MeetingM
   meetings.push(meeting);
   return cloneMeeting(meeting);
 }
+
+export function getMeetingMinutes(projectId?: string): MeetingMinutes[] {
+  const items = projectId
+    ? meetings.filter((meeting) => meeting.projectId === projectId)
+    : meetings;
+
+  return items.map((meeting) => cloneMeeting(meeting));
+}
+
+export function addMeetingAttendee(meetingId: string, attendee: MeetingAttendee): MeetingMinutes {
+  const meetingIndex = findMeetingIndex(meetingId);
+  if (meetingIndex < 0) {
+    throw new Error(`Meeting minutes not found: ${meetingId}`);
+  }
+
+  const updated: MeetingMinutes = {
+    ...meetings[meetingIndex],
+    attendees: [...meetings[meetingIndex].attendees, { ...attendee }],
+  };
+
+  meetings[meetingIndex] = updated;
+  return cloneMeeting(updated);
+}
+
+export function addMeetingActionItem(meetingId: string, actionItem: CreateActionItemInput): MeetingMinutes {
+  const meetingIndex = findMeetingIndex(meetingId);
+  if (meetingIndex < 0) {
+    throw new Error(`Meeting minutes not found: ${meetingId}`);
+  }
+
+  const updated: MeetingMinutes = {
+    ...meetings[meetingIndex],
+    actionItems: [
+      ...meetings[meetingIndex].actionItems,
+      {
+        id: actionItem.id ?? nextActionItemId(),
+        description: actionItem.description,
+        owner: actionItem.owner,
+        dueDate: actionItem.dueDate,
+        status: actionItem.status ?? "open",
+      },
+    ],
+  };
+
+  meetings[meetingIndex] = updated;
+  return cloneMeeting(updated);
+}
