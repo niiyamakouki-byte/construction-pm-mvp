@@ -8,7 +8,7 @@ import type { Project, Task } from "../domain/types.js";
 import type { CostRow } from "./cost-management.js";
 import { summarizeCostRows } from "./cost-management.js";
 import {
-  calculateEarnedValue,
+  calculateEarnedValue as _calculateEarnedValue,
   schedulePerformanceIndex,
   costPerformanceIndex,
   type ProgressTask,

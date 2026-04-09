@@ -168,6 +168,7 @@ describe("Integration: full workflow", () => {
   });
 
   it("tracks budget vs actual throughout lifecycle", () => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const project = makeProject({ budget: 20000 });
     const tasks: ProgressTask[] = [
       makeProgressTask({
@@ -323,6 +324,7 @@ describe("Integration: edge cases", () => {
   });
 
   it("large dependency chain cascades correctly", () => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const project = makeProject();
     const chainLength = 5;
     const tasks: Task[] = [];
