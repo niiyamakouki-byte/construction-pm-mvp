@@ -9,7 +9,7 @@ import {
 const project = { name: "Test Project", budget: 10_000_000 };
 
 function makeTasks(progresses: number[]) {
-  return progresses.map((p, i) => ({
+  return progresses.map((p, _i) => ({
     progress: p,
     status: p === 100 ? ("done" as const) : ("in_progress" as const),
   }));
