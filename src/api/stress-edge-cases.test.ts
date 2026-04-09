@@ -365,7 +365,7 @@ describe("Scenario 4: Gantt chart with 100+ tasks", () => {
       }),
     );
 
-    const elapsed = Date.now() - start;
+    const _elapsed = Date.now() - start;
 
     // Listing should be fast
     const listStart = Date.now();

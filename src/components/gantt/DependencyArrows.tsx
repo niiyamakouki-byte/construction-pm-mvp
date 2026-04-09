@@ -11,7 +11,7 @@ type Props = {
 
 /** SVG overlay that draws FS dependency arrows between task bars. */
 export function DependencyArrows({ tasks, chartStart, dayWidth, totalDays }: Props) {
-  const { rowHeight, phaseRowHeight, headerHeight } = gantt;
+  const { rowHeight, headerHeight } = gantt;
   const taskMap = new Map(tasks.map((t, i) => [t.id, { task: t, index: i }]));
 
   const arrows: Array<{ key: string; x1: number; y1: number; x2: number; y2: number }> = [];
