@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import type { CostItem, Expense, Task, TaskStatus, Project } from "../domain/types.js";
+import type { Contractor, CostItem, Expense, Task, TaskStatus, Project } from "../domain/types.js";
 import { createTaskRepository } from "../stores/task-store.js";
 import { createProjectRepository } from "../stores/project-store.js";
 import { createCostItemRepository } from "../stores/cost-item-store.js";
+import { createContractorRepository } from "../stores/contractor-store.js";
 import { navigate } from "../hooks/useHashRouter.js";
 import { useOrganizationContext } from "../contexts/OrganizationContext.js";
 import { usePersona } from "../contexts/PersonaContext.js";
@@ -22,8 +23,10 @@ import {
   type DelayCategory,
 } from "../lib/timeline-analyzer.js";
 import { assessProjectHealth } from "../lib/project-health.js";
+import { generateDailyReport } from "../lib/daily-report-generator.js";
 import {
   buildMockConstructionSiteForecasts,
+  getConstructionRecommendation,
   getDailyWeatherRisk,
   getWeatherEmoji,
 } from "../lib/weather.js";
@@ -135,6 +138,18 @@ function getProjectEndDate(project: Project, tasks: Task[]): string {
     ?? project.startDate;
 }
 
+function isTaskActiveOnDate(task: Task, date: string): boolean {
+  if (!task.startDate) return task.status === "in_progress";
+  const endDate = task.dueDate ?? task.startDate;
+  return task.startDate <= date && endDate >= date;
+}
+
+function getWeatherRiskLabel(level: "normal" | "warning" | "danger"): string {
+  if (level === "danger") return "延期候補";
+  if (level === "warning") return "要注意";
+  return "施工可";
+}
+
 // ── Main Component ─────────────────────────────────────
 
 function TodayDashboardPageContent() {
@@ -151,6 +166,10 @@ function TodayDashboardPageContent() {
     () => createCostItemRepository(() => organizationId),
     [organizationId],
   );
+  const contractorRepository = useMemo(
+    () => createContractorRepository(() => organizationId),
+    [organizationId],
+  );
   const expenseRepository = useMemo(
     () => createAppRepository<Expense>("expenses", () => organizationId),
     [organizationId],
@@ -160,21 +179,29 @@ function TodayDashboardPageContent() {
   const [allProjectTasks, setAllProjectTasks] = useState<Task[]>([]);
   const [allTasks, setAllTasks] = useState<Task[]>([]);
   const [allProjects, setAllProjects] = useState<Project[]>([]);
+  const [contractors, setContractors] = useState<Contractor[]>([]);
   const [costItems, setCostItems] = useState<CostItem[]>([]);
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const siteForecasts = useMemo(
-    () => buildMockConstructionSiteForecasts(allProjects).slice(0, 3),
+  const [dailyReportStatus, setDailyReportStatus] = useState<string | null>(null);
+  const [dailyReportExporting, setDailyReportExporting] = useState(false);
+  const allSiteForecasts = useMemo(
+    () => buildMockConstructionSiteForecasts(allProjects),
     [allProjects],
+  );
+  const siteForecasts = useMemo(
+    () => allSiteForecasts.slice(0, 3),
+    [allSiteForecasts],
   );
 
   const loadData = useCallback(async () => {
     try {
       setLoadError(null);
-      const [allT, allP, allCostItems, allExpenses] = await Promise.all([
+      const [allT, allP, allContractors, allCostItems, allExpenses] = await Promise.all([
         taskRepository.findAll(),
         projectRepository.findAll(),
+        contractorRepository.findAll(),
         costItemRepository.findAll(),
         expenseRepository.findAll(),
       ]);
@@ -184,6 +211,7 @@ function TodayDashboardPageContent() {
       setAllProjectTasks(allT);
       setAllTasks(scheduleTasks);
       setAllProjects(allP);
+      setContractors(allContractors);
       setCostItems(allCostItems);
       setExpenses(allExpenses);
 
@@ -209,7 +237,7 @@ function TodayDashboardPageContent() {
     } finally {
       setLoading(false);
     }
-  }, [costItemRepository, expenseRepository, projectRepository, taskRepository, today]);
+  }, [contractorRepository, costItemRepository, expenseRepository, projectRepository, taskRepository, today]);
 
   useEffect(() => {
     void loadData();
@@ -344,6 +372,120 @@ function TodayDashboardPageContent() {
     [insightCostRows, insightProject, insightTasks, today],
   );
 
+  const dailyReportProject = insightProject;
+
+  const dailyReportTasks = useMemo(
+    () => (
+      dailyReportProject
+        ? allProjectTasks.filter((task) => task.projectId === dailyReportProject.id)
+        : []
+    ),
+    [allProjectTasks, dailyReportProject],
+  );
+
+  const dailyReportActiveTasks = useMemo(
+    () => dailyReportTasks.filter((task) => isTaskActiveOnDate(task, today)),
+    [dailyReportTasks, today],
+  );
+
+  const dailyReportForecast = useMemo(
+    () => (
+      dailyReportProject
+        ? allSiteForecasts.find((site) => site.projectId === dailyReportProject.id) ?? allSiteForecasts[0] ?? null
+        : allSiteForecasts[0] ?? null
+    ),
+    [allSiteForecasts, dailyReportProject],
+  );
+
+  const dailyWeatherSummary = useMemo(() => {
+    if (!dailyReportForecast) {
+      return {
+        title: "天候情報なし",
+        detail: "天気データを取得できません",
+        exportText: "天候情報なし",
+        issues: [] as string[],
+      };
+    }
+
+    const todayForecast = dailyReportForecast.forecast.daily[0];
+    const risk = getDailyWeatherRisk(todayForecast);
+    const riskLabel = getWeatherRiskLabel(risk.level);
+
+    return {
+      title: `${getWeatherEmoji(todayForecast.weather[0]?.icon)} ${riskLabel}`,
+      detail: `${Math.round(todayForecast.temp.max)}° / ${Math.round(todayForecast.temp.min)}° · 降水 ${Math.round(todayForecast.pop * 100)}% · ${getConstructionRecommendation(todayForecast)}`,
+      exportText: `${getWeatherEmoji(todayForecast.weather[0]?.icon)} ${riskLabel} / 最高 ${Math.round(todayForecast.temp.max)}℃ / 最低 ${Math.round(todayForecast.temp.min)}℃ / 降水 ${Math.round(todayForecast.pop * 100)}% / 風速 ${todayForecast.wind_speed.toFixed(1)}m/s`,
+      issues: risk.reasons.map((reason) => `天候注意: ${reason}`),
+    };
+  }, [dailyReportForecast]);
+
+  const dailyReportWorkerNames = useMemo(() => {
+    const contractorMap = new Map(contractors.map((contractor) => [contractor.id, contractor.name]));
+
+    return Array.from(
+      new Set(
+        dailyReportActiveTasks
+          .map((task) => task.contractorId)
+          .filter((contractorId): contractorId is string => Boolean(contractorId))
+          .map((contractorId) => contractorMap.get(contractorId) ?? contractorId),
+      ),
+    ).sort();
+  }, [contractors, dailyReportActiveTasks]);
+
+  const dailyReportIssues = useMemo(() => {
+    const overdueIssues = dailyReportTasks
+      .filter((task) => task.status !== "done" && task.dueDate && task.dueDate < today)
+      .slice(0, 3)
+      .map((task) => `期限超過: ${task.name}`);
+
+    return [...dailyWeatherSummary.issues, ...overdueIssues];
+  }, [dailyReportTasks, dailyWeatherSummary.issues, today]);
+
+  const handleDailyReportExport = useCallback(() => {
+    if (!dailyReportProject) {
+      setDailyReportStatus("日報出力対象の案件がありません");
+      return;
+    }
+
+    setDailyReportExporting(true);
+    setDailyReportStatus(null);
+
+    try {
+      const html = generateDailyReport({
+        project: dailyReportProject,
+        date: today,
+        weather: dailyWeatherSummary.exportText,
+        tasks: dailyReportTasks,
+        contractors,
+        issues: dailyReportIssues,
+        notes: dailyReportActiveTasks.length > 0
+          ? `進行中作業 ${dailyReportActiveTasks.length}件 / 入場業者 ${dailyReportWorkerNames.length}社`
+          : "本日の進行中作業はありません",
+      });
+      const blob = new Blob([html], { type: "text/html;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = `日報_${dailyReportProject.name}_${today}.html`;
+      anchor.click();
+      URL.revokeObjectURL(url);
+      setDailyReportStatus("HTML日報を出力しました");
+    } catch (err) {
+      setDailyReportStatus(err instanceof Error ? err.message : "日報出力に失敗しました");
+    } finally {
+      setDailyReportExporting(false);
+    }
+  }, [
+    contractors,
+    dailyReportActiveTasks.length,
+    dailyReportIssues,
+    dailyReportProject,
+    dailyReportTasks,
+    dailyReportWorkerNames.length,
+    dailyWeatherSummary.exportText,
+    today,
+  ]);
+
   // ── Render ───────────────────────────────────────────
   if (loading) {
     return <TodayDashboardSkeleton />;
@@ -432,6 +574,59 @@ function TodayDashboardPageContent() {
         <StatCard label="完了タスク" value={completedTasks} color="text-emerald-600" bgColor="bg-emerald-50" />
         <StatCard label="期限超過" value={overdueTasks} color="text-red-600" bgColor={overdueTasks > 0 ? "bg-red-50" : "bg-white"} />
       </div>
+
+      <section>
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <h2 className="text-base font-bold text-slate-800">本日の日報</h2>
+          <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
+            {dailyReportProject?.name ?? "案件なし"}
+          </span>
+        </div>
+        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+          <div className="grid gap-3 sm:grid-cols-2">
+            <DashboardSummaryCard
+              label="進行中作業"
+              value={`${dailyReportActiveTasks.length}件`}
+              detail={
+                dailyReportActiveTasks.length > 0
+                  ? dailyReportActiveTasks
+                    .slice(0, 3)
+                    .map((task) => `${task.name} (${task.progress}%)`)
+                    .join(" / ")
+                  : "本日の進行中作業はありません"
+              }
+            />
+            <DashboardSummaryCard
+              label="入場業者"
+              value={dailyReportWorkerNames.length > 0 ? `${dailyReportWorkerNames.length}社` : "未設定"}
+              detail={dailyReportWorkerNames.join(" / ") || "担当業者の割当がありません"}
+            />
+            <DashboardSummaryCard
+              label="天候"
+              value={dailyWeatherSummary.title}
+              detail={dailyWeatherSummary.detail}
+            />
+            <DashboardSummaryCard
+              label="懸念事項"
+              value={dailyReportIssues.length > 0 ? `${dailyReportIssues.length}件` : "なし"}
+              detail={dailyReportIssues.join(" / ") || "大きな懸念事項はありません"}
+            />
+          </div>
+
+          {dailyReportStatus && (
+            <p className="mt-4 text-sm text-slate-500">{dailyReportStatus}</p>
+          )}
+
+          <button
+            type="button"
+            onClick={handleDailyReportExport}
+            disabled={!dailyReportProject || dailyReportExporting}
+            className="mt-4 w-full rounded-xl bg-brand-700 px-4 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-brand-800 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {dailyReportExporting ? "HTML生成中..." : "HTMLで日報出力"}
+          </button>
+        </div>
+      </section>
 
       <section>
         <div className="mb-3 flex items-center justify-between gap-3">
@@ -688,6 +883,24 @@ function StatCard({
     <div className={`rounded-xl ${bgColor} p-3 text-center shadow-sm border border-slate-100`}>
       <p className={`text-xl font-bold tabular-nums ${color}`}>{value}</p>
       <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">{label}</p>
+    </div>
+  );
+}
+
+function DashboardSummaryCard({
+  label,
+  value,
+  detail,
+}: {
+  label: string;
+  value: string;
+  detail: string;
+}) {
+  return (
+    <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-3">
+      <p className="text-xs font-semibold tracking-[0.18em] text-slate-500">{label}</p>
+      <p className="mt-1 text-base font-bold text-slate-900">{value}</p>
+      <p className="mt-2 text-xs leading-5 text-slate-600">{detail}</p>
     </div>
   );
 }
