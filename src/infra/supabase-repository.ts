@@ -29,7 +29,7 @@ function toCamelRecord<T>(input: Record<string, unknown>): T {
 }
 
 function normalizeError(error: { message: string } | null): Error {
-  return new Error(error?.message ?? "Supabase operation failed");
+  return new Error(error?.message ?? "Supabase操作に失敗しました");
 }
 
 export class SupabaseRepository<T extends BaseEntity>

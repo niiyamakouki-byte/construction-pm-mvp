@@ -8,6 +8,7 @@ import {
   addDaysSkipWeekends,
   daysBetween,
 } from "../components/gantt/utils.js";
+import { cascadeSchedule } from "../lib/cascade-scheduler.js";
 
 type UseGanttDragOptions = {
   ganttTasks: GanttTask[];
@@ -119,11 +120,29 @@ export function useGanttDrag({
       }
 
       try {
+        const now = new Date().toISOString();
         await taskRepository.update(drag.taskId, {
           startDate: drag.previewStartDate,
           dueDate: drag.previewEndDate,
-          updatedAt: new Date().toISOString(),
+          updatedAt: now,
         });
+
+        // Cascade date changes to downstream dependents
+        const cascadeUpdates = cascadeSchedule(
+          ganttTasks,
+          drag.taskId,
+          drag.previewStartDate,
+          drag.previewEndDate,
+        );
+        await Promise.all(
+          Array.from(cascadeUpdates.entries()).map(([taskId, dates]) =>
+            taskRepository.update(taskId, {
+              startDate: dates.startDate,
+              dueDate: dates.endDate,
+              updatedAt: now,
+            }),
+          ),
+        );
 
         if (drag.previewStartDate !== drag.originalStartDate) {
           const movedTask = ganttTasks.find((task) => task.id === drag.taskId);
