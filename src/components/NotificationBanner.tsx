@@ -33,6 +33,7 @@ const iconMap = {
   upcoming_deadline: "⏳",
   weather_warning: "☔",
   cost_overrun: "¥",
+  procurement_alert: "📦",
 } as const;
 
 export function NotificationBanner({ refreshKey }: NotificationBannerProps) {

@@ -22,9 +22,9 @@ function daysBetween(startDate: string, endDate: string): number {
   return Math.round((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
 }
 
-export function getTaskLeadTime(task: Pick<Task, "lead_time" | "leadTimeDays">): number | null {
-  const rawLeadTime = task.lead_time ?? task.leadTimeDays;
-  if (!Number.isFinite(rawLeadTime)) {
+export function getTaskLeadTime(task: Task): number | null {
+  const rawLeadTime = task.leadTimeDays ?? task.lead_time;
+  if (rawLeadTime == null || !Number.isFinite(rawLeadTime)) {
     return null;
   }
 

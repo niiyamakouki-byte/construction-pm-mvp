@@ -1,9 +1,7 @@
 import { useRef } from "react";
-import type { ConnectState, DragState, GanttTask } from "./types.js";
+import type { ChartDateInfo, ConnectState, DragState, GanttTask } from "./types.js";
 import { daysBetween, formatScheduleDate, statusColor, statusLabel } from "./utils.js";
 import { gantt } from "../../theme/index.js";
-
-type HighlightedDate = { date: string; isToday: boolean; isWeekend: boolean };
 
 type GanttTaskBarProps = {
   task: GanttTask;
@@ -12,7 +10,7 @@ type GanttTaskBarProps = {
   connectMode: boolean;
   connectState: ConnectState | null;
   chartStart: string;
-  highlightedDates: HighlightedDate[];
+  highlightedDates: ChartDateInfo[];
   today: string;
   dayWidth: number;
   onTaskDragStart: (task: GanttTask, event: React.PointerEvent<HTMLDivElement>) => void;

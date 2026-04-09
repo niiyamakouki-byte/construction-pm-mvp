@@ -1,12 +1,14 @@
 import type { CostItem, Expense, Project, Task } from "../domain/types.js";
 import { buildProjectCostRows, getProjectBudgetSummary } from "./cost-management.js";
 import { filterScheduleTasks } from "./cost-management.js";
+import { buildProcurementAlerts } from "./procurement-alerts.js";
 
 export type AppNotificationType =
   | "overdue_task"
   | "upcoming_deadline"
   | "weather_warning"
-  | "cost_overrun";
+  | "cost_overrun"
+  | "procurement_alert";
 
 export type AppNotificationTone = "red" | "yellow" | "blue" | "orange";
 
@@ -112,6 +114,22 @@ export function buildNotifications({
       };
     });
 
+  const procurementNotifications = buildProcurementAlerts(scheduleTasks, today)
+    .map((alert) => {
+      const projectName = projectMap.get(alert.projectId)?.name ?? "未割当案件";
+      return {
+        id: `procurement:${alert.taskId}`,
+        type: "procurement_alert" as const,
+        tone: "orange" as const,
+        title: "調達アラート",
+        message: `${projectName}: ${alert.taskName} は ${alert.startDate} 開始予定です。リードタイム ${alert.leadTime}日、残り ${alert.daysRemaining}日です。`,
+        path: `/gantt/${alert.projectId}`,
+        projectId: alert.projectId,
+        taskId: alert.taskId,
+        sortDate: alert.startDate,
+      };
+    });
+
   const costOverrunNotifications = projects
     .filter((project) => typeof project.budget === "number" && project.budget > 0)
     .flatMap((project) => {
@@ -143,6 +161,7 @@ export function buildNotifications({
   return sortNotifications([
     ...overdueNotifications,
     ...costOverrunNotifications,
+    ...procurementNotifications,
     ...upcomingNotifications,
   ]);
 }

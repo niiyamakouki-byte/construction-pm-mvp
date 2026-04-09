@@ -306,6 +306,7 @@ export function NodeSchedulePage() {
               dueDate: row["終了日"] ?? row["end_date"] ?? undefined,
               contractorId: row["担当業者"] ?? row["contractor"] ?? row["assignee"] ?? undefined,
               materials: row["材料"] ? [row["材料"]] : [],
+              lead_time: row["リードタイム日数"] ? Number(row["リードタイム日数"]) : 0,
               leadTimeDays: row["リードタイム日数"] ? Number(row["リードタイム日数"]) : 0,
               progress: 0,
               dependencies: [],

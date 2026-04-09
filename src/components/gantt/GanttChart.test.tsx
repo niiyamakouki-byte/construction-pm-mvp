@@ -11,11 +11,11 @@ const chartLayout: ChartLayout = {
   isCapped: false,
   dates: ["2025-01-01", "2025-01-02", "2025-01-03"],
   dateInfo: [
-    { date: "2025-01-01", isToday: false, isWeekend: false },
-    { date: "2025-01-02", isToday: false, isWeekend: false },
-    { date: "2025-01-03", isToday: true, isWeekend: false },
+    { date: "2025-01-01", isToday: false, isWeekend: false, isHoliday: false, holidayName: null },
+    { date: "2025-01-02", isToday: false, isWeekend: false, isHoliday: false, holidayName: null },
+    { date: "2025-01-03", isToday: true, isWeekend: false, isHoliday: false, holidayName: null },
   ],
-  highlightedDates: [{ date: "2025-01-03", isToday: true, isWeekend: false }],
+  highlightedDates: [{ date: "2025-01-03", isToday: true, isWeekend: false, isHoliday: false, holidayName: null }],
   todayOffset: 2,
   dayWidth: 36,
 };

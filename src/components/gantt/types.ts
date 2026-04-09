@@ -62,14 +62,22 @@ export type TaskDetailState = {
   saving: boolean;
 };
 
+export type ChartDateInfo = {
+  date: string;
+  isToday: boolean;
+  isWeekend: boolean;
+  isHoliday: boolean;
+  holidayName: string | null;
+};
+
 export type ChartLayout = {
   chartStart: string;
   chartEnd: string;
   totalDays: number;
   isCapped: boolean;
   dates: string[];
-  dateInfo: Array<{ date: string; isToday: boolean; isWeekend: boolean }>;
-  highlightedDates: Array<{ date: string; isToday: boolean; isWeekend: boolean }>;
+  dateInfo: ChartDateInfo[];
+  highlightedDates: ChartDateInfo[];
   todayOffset: number;
   /** Effective pixel width per day (changes with zoom level) */
   dayWidth: number;

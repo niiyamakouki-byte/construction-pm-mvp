@@ -38,6 +38,7 @@ export type Task = BaseEntity & {
   dependencies: string[];
   contractorId?: string;
   materials?: string[];
+  lead_time?: number;
   leadTimeDays?: number;
   canvasX?: number;
   canvasY?: number;

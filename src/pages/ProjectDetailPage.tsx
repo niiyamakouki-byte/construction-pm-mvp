@@ -7,6 +7,7 @@ import { createAppRepository } from "../infra/create-app-repository.js";
 import { navigate } from "../hooks/useHashRouter.js";
 import { useOrganizationContext } from "../contexts/OrganizationContext.js";
 import { filterScheduleTasks } from "../lib/cost-management.js";
+import { ProjectDetailTabs } from "../components/ProjectDetailTabs.js";
 
 // ── Construction templates ────────────────────────────
 
@@ -478,6 +479,8 @@ export function ProjectDetailPage({ projectId }: { projectId: string }) {
           </div>
         )}
       </div>
+
+      <ProjectDetailTabs projectId={projectId} activeTab="overview" />
 
       {/* Settings */}
       <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">

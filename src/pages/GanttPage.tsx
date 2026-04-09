@@ -14,6 +14,7 @@ import { QuickAddForm } from "../components/gantt/QuickAddForm.js";
 import { TaskEditModal } from "../components/gantt/TaskEditModal.js";
 import type { ChartLayout, GanttTask, QuickAddState, TaskDetailState } from "../components/gantt/types.js";
 import { addDays, daysBetween, formatScheduleDate, toLocalDateString } from "../components/gantt/utils.js";
+import { getHolidayName } from "../lib/japanese-holidays.js";
 import { readLastProjectId, writeLastProjectId } from "../lib/last-project.js";
 import { cascadeSchedule } from "../lib/cascade-scheduler.js";
 import { filterScheduleTasks } from "../lib/cost-management.js";
@@ -218,7 +219,11 @@ function GanttPageContent({ initialProjectId = null }: GanttPageProps) {
       editProgress: task.progress,
       editStatus: task.status,
       editMaterials: task.materials?.join(", ") ?? "",
-      editLeadTimeDays: task.leadTimeDays != null ? String(task.leadTimeDays) : "",
+      editLeadTimeDays: task.lead_time != null
+        ? String(task.lead_time)
+        : task.leadTimeDays != null
+          ? String(task.leadTimeDays)
+          : "",
       saving: false,
     });
   }, []);
@@ -287,6 +292,7 @@ function GanttPageContent({ initialProjectId = null }: GanttPageProps) {
         progress: taskDetail.editProgress,
         status: taskDetail.editStatus,
         materials,
+        lead_time: Number.isFinite(leadTimeDays) ? leadTimeDays : undefined,
         leadTimeDays: Number.isFinite(leadTimeDays) ? leadTimeDays : undefined,
         updatedAt: new Date().toISOString(),
       });
@@ -389,7 +395,14 @@ function GanttPageContent({ initialProjectId = null }: GanttPageProps) {
     for (let index = 0; index <= totalDays; index += 1) dates.push(addDays(chartStart, index));
     const dateInfo = dates.map((date) => {
       const day = new Date(date).getDay();
-      return { date, isToday: date === today, isWeekend: day === 0 || day === 6 };
+      const holidayName = getHolidayName(date);
+      return {
+        date,
+        isToday: date === today,
+        isWeekend: day === 0 || day === 6,
+        isHoliday: holidayName !== null,
+        holidayName,
+      };
     });
 
     return {

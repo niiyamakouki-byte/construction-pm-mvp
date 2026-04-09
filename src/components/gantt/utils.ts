@@ -1,5 +1,6 @@
 import { statusColors, colors } from "../../theme/index.js";
 import type { TaskStatus } from "../../domain/types.js";
+import { isHoliday } from "../../lib/japanese-holidays.js";
 import type { GanttTask } from "./types.js";
 
 export function toLocalDateString(date: Date): string {
@@ -21,13 +22,20 @@ export function daysBetween(a: string, b: string): number {
   return Math.round((db.getTime() - da.getTime()) / (1000 * 60 * 60 * 24));
 }
 
-/** Move a date by N calendar days, then skip forward past any weekends if includeWeekends=false */
+function isWeekend(date: Date): boolean {
+  const dayOfWeek = date.getDay();
+  return dayOfWeek === 0 || dayOfWeek === 6;
+}
+
+/** Move a date by N calendar days, then skip forward past weekends and holidays. */
 export function addDaysSkipWeekends(dateStr: string, days: number): string {
   const d = new Date(dateStr);
   d.setDate(d.getDate() + days);
-  const dow = d.getDay();
-  if (dow === 6) d.setDate(d.getDate() + 2);
-  else if (dow === 0) d.setDate(d.getDate() + 1);
+
+  while (isWeekend(d) || isHoliday(toLocalDateString(d))) {
+    d.setDate(d.getDate() + 1);
+  }
+
   return toLocalDateString(d);
 }
 

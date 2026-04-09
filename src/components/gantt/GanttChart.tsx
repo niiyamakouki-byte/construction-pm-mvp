@@ -161,8 +161,15 @@ export function GanttChart({
                     <div
                       key={date.date}
                       data-today={date.isToday ? "true" : undefined}
+                      title={date.holidayName ?? undefined}
                       className={`relative flex flex-col items-center justify-center border-r border-slate-100 ${
-                        date.isToday ? "bg-red-50" : date.isWeekend ? "bg-slate-50/90" : "bg-white"
+                        date.isToday
+                          ? "bg-red-50"
+                          : date.isHoliday
+                            ? "bg-rose-50"
+                            : date.isWeekend
+                              ? "bg-slate-50/90"
+                              : "bg-white"
                       }`}
                       style={{ width: dayWidth }}
                     >
