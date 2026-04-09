@@ -1,18 +1,33 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import type { Task, TaskStatus, Project } from "../domain/types.js";
+import type { CostItem, Expense, Task, TaskStatus, Project } from "../domain/types.js";
 import { createTaskRepository } from "../stores/task-store.js";
 import { createProjectRepository } from "../stores/project-store.js";
+import { createCostItemRepository } from "../stores/cost-item-store.js";
 import { navigate } from "../hooks/useHashRouter.js";
 import { useOrganizationContext } from "../contexts/OrganizationContext.js";
 import { usePersona } from "../contexts/PersonaContext.js";
 import { TodayDashboardPageErrorBoundary } from "../components/PageErrorBoundaries.js";
 import { TodayDashboardSkeleton } from "../components/PageSkeletons.js";
-import { filterScheduleTasks } from "../lib/cost-management.js";
+import { createAppRepository } from "../infra/create-app-repository.js";
+import {
+  buildProjectCostRows,
+  filterScheduleTasks,
+} from "../lib/cost-management.js";
+import {
+  calculateBudgetBreakdown,
+  compareEstimateVsActual,
+} from "../lib/budget-calculator.js";
+import {
+  generateTimelineReport,
+  type DelayCategory,
+} from "../lib/timeline-analyzer.js";
+import { assessProjectHealth } from "../lib/project-health.js";
 import {
   buildMockConstructionSiteForecasts,
   getDailyWeatherRisk,
   getWeatherEmoji,
 } from "../lib/weather.js";
+import { daysBetween } from "../components/gantt/utils.js";
 
 // ── Helpers ────────────────────────────────────────────
 
@@ -55,7 +70,70 @@ const statusButtonStyle: Record<TaskStatus, string> = {
   todo: "bg-amber-500 text-white active:bg-amber-600",
 };
 
+const currencyFormatter = new Intl.NumberFormat("ja-JP", {
+  style: "currency",
+  currency: "JPY",
+  maximumFractionDigits: 0,
+});
+
+const budgetStatusTone = {
+  under_budget: "bg-emerald-50 text-emerald-700 border-emerald-200",
+  on_budget: "bg-blue-50 text-blue-700 border-blue-200",
+  over_budget: "bg-red-50 text-red-700 border-red-200",
+} as const;
+
+const healthGradeTone = {
+  A: "bg-emerald-100 text-emerald-700 border-emerald-200",
+  B: "bg-lime-100 text-lime-700 border-lime-200",
+  C: "bg-amber-100 text-amber-700 border-amber-200",
+  D: "bg-orange-100 text-orange-700 border-orange-200",
+  F: "bg-red-100 text-red-700 border-red-200",
+} as const;
+
+const confidenceLabel = {
+  high: "高",
+  medium: "中",
+  low: "低",
+} as const;
+
+const delayCategoryLabel: Record<DelayCategory, string> = {
+  weather: "天候",
+  material: "資材",
+  labor: "人員",
+  permit: "許認可",
+  design_change: "設計変更",
+  equipment: "機材",
+  unknown: "要確認",
+};
+
 type TaskWithProject = Task & { projectName: string };
+
+function formatCurrency(value: number): string {
+  return currencyFormatter.format(value);
+}
+
+function getPriorityProject(projects: Project[]): Project | null {
+  return projects.find((project) => project.status === "active")
+    ?? projects.find((project) => project.status === "planning")
+    ?? projects[0]
+    ?? null;
+}
+
+function inferDelayCategory(task: Task): DelayCategory {
+  if ((task.materials ?? []).length > 0) return "material";
+  if (task.contractorId) return "labor";
+  return "unknown";
+}
+
+function getProjectEndDate(project: Project, tasks: Task[]): string {
+  return tasks
+    .map((task) => task.dueDate ?? task.startDate)
+    .filter((date): date is string => Boolean(date))
+    .sort()
+    .at(-1)
+    ?? project.endDate
+    ?? project.startDate;
+}
 
 // ── Main Component ─────────────────────────────────────
 
@@ -69,10 +147,21 @@ function TodayDashboardPageContent() {
     () => createProjectRepository(() => organizationId),
     [organizationId],
   );
+  const costItemRepository = useMemo(
+    () => createCostItemRepository(() => organizationId),
+    [organizationId],
+  );
+  const expenseRepository = useMemo(
+    () => createAppRepository<Expense>("expenses", () => organizationId),
+    [organizationId],
+  );
   const today = toLocalDateString(new Date());
   const [tasks, setTasks] = useState<TaskWithProject[]>([]);
+  const [allProjectTasks, setAllProjectTasks] = useState<Task[]>([]);
   const [allTasks, setAllTasks] = useState<Task[]>([]);
   const [allProjects, setAllProjects] = useState<Project[]>([]);
+  const [costItems, setCostItems] = useState<CostItem[]>([]);
+  const [expenses, setExpenses] = useState<Expense[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const siteForecasts = useMemo(
@@ -83,15 +172,20 @@ function TodayDashboardPageContent() {
   const loadData = useCallback(async () => {
     try {
       setLoadError(null);
-      const [allT, allP] = await Promise.all([
+      const [allT, allP, allCostItems, allExpenses] = await Promise.all([
         taskRepository.findAll(),
         projectRepository.findAll(),
+        costItemRepository.findAll(),
+        expenseRepository.findAll(),
       ]);
 
       const scheduleTasks = filterScheduleTasks(allT);
 
+      setAllProjectTasks(allT);
       setAllTasks(scheduleTasks);
       setAllProjects(allP);
+      setCostItems(allCostItems);
+      setExpenses(allExpenses);
 
       const projectMap = new Map<string, Project>();
       for (const p of allP) projectMap.set(p.id, p);
@@ -115,7 +209,7 @@ function TodayDashboardPageContent() {
     } finally {
       setLoading(false);
     }
-  }, [today, taskRepository, projectRepository]);
+  }, [costItemRepository, expenseRepository, projectRepository, taskRepository, today]);
 
   useEffect(() => {
     void loadData();
@@ -178,6 +272,77 @@ function TodayDashboardPageContent() {
       return { ...p, taskCount: pTasks.length, doneCount: done, pct };
     });
   }, [allProjects, allTasks]);
+
+  const insightProject = useMemo(() => getPriorityProject(allProjects), [allProjects]);
+
+  const insightTasks = useMemo(
+    () => (insightProject ? allTasks.filter((task) => task.projectId === insightProject.id) : []),
+    [allTasks, insightProject],
+  );
+
+  const insightCostRows = useMemo(
+    () => (
+      insightProject
+        ? buildProjectCostRows(insightProject.id, { tasks: allProjectTasks, costItems, expenses })
+        : []
+    ),
+    [allProjectTasks, costItems, expenses, insightProject],
+  );
+
+  const budgetInsight = useMemo(() => {
+    if (!insightProject) return null;
+
+    const estimatedAmount = insightProject.budget ?? 0;
+    const actualAmount = insightCostRows.reduce((sum, row) => sum + row.amount, 0);
+
+    return {
+      breakdown: calculateBudgetBreakdown(insightProject.name, [
+        { name: "総コスト", estimated: estimatedAmount, actual: actualAmount },
+      ]),
+      comparison: compareEstimateVsActual([
+        { category: "総コスト", estimated: estimatedAmount, actual: actualAmount },
+      ]),
+    };
+  }, [insightCostRows, insightProject]);
+
+  const timelineInsight = useMemo(() => {
+    if (!insightProject) return null;
+
+    const projectEndDate = getProjectEndDate(insightProject, insightTasks);
+    const delayEntries = insightTasks
+      .filter((task) => task.status !== "done" && task.dueDate && task.dueDate < today)
+      .map((task) => ({
+        taskName: task.name,
+        category: inferDelayCategory(task),
+        delayDays: Math.max(1, daysBetween(task.dueDate!, today)),
+        description: `${task.name} が期限を超過しています`,
+        date: task.dueDate!,
+      }));
+
+    return generateTimelineReport({
+      projectName: insightProject.name,
+      startDate: insightProject.startDate,
+      originalEndDate: projectEndDate,
+      totalTasks: insightTasks.length,
+      completedTasks: insightTasks.filter((task) => task.status === "done").length,
+      delays: delayEntries,
+      elapsedDays: Math.max(0, daysBetween(insightProject.startDate, today) + 1),
+    });
+  }, [insightProject, insightTasks, today]);
+
+  const healthInsight = useMemo(
+    () => (
+      insightProject
+        ? assessProjectHealth({
+          project: insightProject,
+          tasks: insightTasks,
+          costRows: insightCostRows,
+          asOfDate: today,
+        })
+        : null
+    ),
+    [insightCostRows, insightProject, insightTasks, today],
+  );
 
   // ── Render ───────────────────────────────────────────
   if (loading) {
@@ -267,6 +432,122 @@ function TodayDashboardPageContent() {
         <StatCard label="完了タスク" value={completedTasks} color="text-emerald-600" bgColor="bg-emerald-50" />
         <StatCard label="期限超過" value={overdueTasks} color="text-red-600" bgColor={overdueTasks > 0 ? "bg-red-50" : "bg-white"} />
       </div>
+
+      <section>
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <h2 className="text-base font-bold text-slate-800">GenbaHub Insight</h2>
+          <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
+            {insightProject?.name ?? "案件なし"}
+          </span>
+        </div>
+        {insightProject && budgetInsight && timelineInsight && healthInsight ? (
+          <div className="grid gap-3 md:grid-cols-3">
+            <article className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-xs font-semibold tracking-[0.18em] text-slate-500">予算サマリー</p>
+                  <h3 className="mt-1 text-lg font-bold text-slate-900">見積 vs 実績</h3>
+                </div>
+                <span className={`rounded-full border px-3 py-1 text-xs font-semibold ${budgetStatusTone[budgetInsight.breakdown.status]}`}>
+                  {budgetInsight.breakdown.status === "over_budget"
+                    ? "超過"
+                    : budgetInsight.breakdown.status === "under_budget"
+                      ? "余力あり"
+                      : "予算通り"}
+                </span>
+              </div>
+              <div className="mt-4 space-y-2 text-sm text-slate-600">
+                <div className="flex items-center justify-between gap-3">
+                  <span>見積</span>
+                  <span className="font-semibold tabular-nums text-slate-900">
+                    {formatCurrency(budgetInsight.breakdown.totalEstimated)}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between gap-3">
+                  <span>実績</span>
+                  <span className="font-semibold tabular-nums text-slate-900">
+                    {formatCurrency(budgetInsight.breakdown.totalActual)}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between gap-3 border-t border-slate-100 pt-2">
+                  <span>差異</span>
+                  <span className={`font-semibold tabular-nums ${
+                    budgetInsight.comparison.overallVariance > 0 ? "text-red-600" : "text-emerald-600"
+                  }`}>
+                    {budgetInsight.comparison.overallVariance > 0 ? "+" : ""}
+                    {formatCurrency(budgetInsight.comparison.overallVariance)}
+                  </span>
+                </div>
+              </div>
+            </article>
+
+            <article className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-xs font-semibold tracking-[0.18em] text-slate-500">工程予測</p>
+                  <h3 className="mt-1 text-lg font-bold text-slate-900">完了見込み</h3>
+                </div>
+                <span className={`rounded-full border px-3 py-1 text-xs font-semibold ${
+                  timelineInsight.onTrack
+                    ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                    : "border-amber-200 bg-amber-50 text-amber-700"
+                }`}>
+                  信頼度 {confidenceLabel[
+                    timelineInsight.progressPct > 70
+                      ? "high"
+                      : timelineInsight.progressPct < 20
+                        ? "low"
+                        : "medium"
+                  ]}
+                </span>
+              </div>
+              <div className="mt-4 space-y-2 text-sm text-slate-600">
+                <div className="flex items-center justify-between gap-3">
+                  <span>予定完了</span>
+                  <span className="font-semibold tabular-nums text-slate-900">{timelineInsight.originalEndDate}</span>
+                </div>
+                <div className="flex items-center justify-between gap-3">
+                  <span>予測完了</span>
+                  <span className="font-semibold tabular-nums text-slate-900">{timelineInsight.predictedEndDate}</span>
+                </div>
+                <div className="flex items-center justify-between gap-3 border-t border-slate-100 pt-2">
+                  <span>遅延分析</span>
+                  <span className="font-semibold text-slate-900">
+                    {timelineInsight.delayAnalysis.totalDelayDays}日 /
+                    {" "}
+                    {delayCategoryLabel[timelineInsight.delayAnalysis.largestCause]}
+                  </span>
+                </div>
+              </div>
+            </article>
+
+            <article className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-xs font-semibold tracking-[0.18em] text-slate-500">案件健全性</p>
+                  <h3 className="mt-1 text-lg font-bold text-slate-900">Health Score</h3>
+                </div>
+                <span className={`rounded-full border px-3 py-1 text-xs font-bold ${healthGradeTone[healthInsight.grade]}`}>
+                  Grade {healthInsight.grade}
+                </span>
+              </div>
+              <div className="mt-4 flex items-end justify-between gap-3">
+                <div>
+                  <p className="text-3xl font-bold tabular-nums text-slate-900">{healthInsight.overall}</p>
+                  <p className="mt-1 text-xs text-slate-500">schedule / cost / quality / risk</p>
+                </div>
+                <p className="max-w-[14rem] text-right text-xs leading-5 text-slate-500">
+                  {healthInsight.recommendations[0]}
+                </p>
+              </div>
+            </article>
+          </div>
+        ) : (
+          <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-4 py-6 text-sm text-slate-500 shadow-sm">
+            案件データが揃うと、予算・工程・健全性のカードを表示します。
+          </div>
+        )}
+      </section>
 
       {/* Upcoming milestones */}
       {upcomingMilestones.length > 0 && (

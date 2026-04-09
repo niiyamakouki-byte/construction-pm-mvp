@@ -10,6 +10,16 @@ import {
   type CostRow,
 } from "../lib/cost-management.js";
 import { readLastProjectId, writeLastProjectId } from "../lib/last-project.js";
+import {
+  generateForecastReport,
+  type MonthlyData,
+} from "../lib/cost-forecaster.js";
+import {
+  calculateWaste,
+  forecastNeeded,
+  getDeliveries,
+} from "../lib/material-tracker.js";
+import { daysBetween } from "../components/gantt/utils.js";
 import { createProjectRepository } from "../stores/project-store.js";
 import { createTaskRepository } from "../stores/task-store.js";
 import { createCostItemRepository } from "../stores/cost-item-store.js";
@@ -41,6 +51,42 @@ function formatCostDate(date: string): string {
   const [year, month, day] = date.split("-");
   if (!year || !month || !day) return date;
   return `${year}/${month}/${day}`;
+}
+
+function buildMonthlyCostSeries(project: Project | null, rows: CostRow[]): MonthlyData[] {
+  if (!project || rows.length === 0) return [];
+
+  const monthlyTotals = new Map<string, number>();
+  for (const row of rows) {
+    const monthKey = row.date.slice(0, 7);
+    monthlyTotals.set(monthKey, (monthlyTotals.get(monthKey) ?? 0) + row.amount);
+  }
+
+  const months = Array.from(monthlyTotals.keys()).sort();
+  const budgetPerMonth = months.length > 0
+    ? Math.round((project.budget ?? 0) / months.length)
+    : 0;
+
+  return months.map((month) => ({
+    month,
+    actualCost: monthlyTotals.get(month) ?? 0,
+    budgetedCost: budgetPerMonth,
+  }));
+}
+
+function getRemainingProjectDays(project: Project | null, tasks: Task[], today: string): number {
+  if (!project) return 30;
+
+  const endDate = [
+    project.endDate,
+    ...tasks.map((task) => task.dueDate ?? task.startDate),
+  ]
+    .filter((date): date is string => Boolean(date))
+    .sort()
+    .at(-1)
+    ?? today;
+
+  return Math.max(0, daysBetween(today, endDate));
 }
 
 function StatCard({
@@ -185,6 +231,46 @@ export function CostManagementPage() {
     [projectCostRows, selectedProject],
   );
   const categoryGroups = useMemo(() => groupCostRowsByCategory(projectCostRows), [projectCostRows]);
+  const selectedProjectTasks = useMemo(
+    () => tasks.filter((task) => task.projectId === selectedProjectId),
+    [selectedProjectId, tasks],
+  );
+  const monthlyCostSeries = useMemo(
+    () => buildMonthlyCostSeries(selectedProject, projectCostRows),
+    [projectCostRows, selectedProject],
+  );
+  const forecastReport = useMemo(
+    () => (
+      selectedProject
+        ? generateForecastReport(
+          selectedProject,
+          selectedProjectTasks,
+          expenses.filter((expense) => expense.projectId === selectedProject.id),
+          monthlyCostSeries,
+        )
+        : null
+    ),
+    [expenses, monthlyCostSeries, selectedProject, selectedProjectTasks],
+  );
+  const materialDeliveries = useMemo(
+    () => (selectedProjectId ? getDeliveries(selectedProjectId) : []),
+    [selectedProjectId],
+  );
+  const materialForecasts = useMemo(
+    () => (
+      selectedProjectId
+        ? forecastNeeded(
+          selectedProjectId,
+          getRemainingProjectDays(selectedProject, selectedProjectTasks, new Date().toISOString().slice(0, 10)),
+        )
+        : []
+    ),
+    [selectedProject, selectedProjectId, selectedProjectTasks],
+  );
+  const materialWaste = useMemo(
+    () => (selectedProjectId ? calculateWaste(selectedProjectId) : []),
+    [selectedProjectId],
+  );
 
   if (loading) {
     return (
@@ -241,6 +327,148 @@ export function CostManagementPage() {
         <StatCard label="総予算" value={formatCurrency(budgetSummary.budget)} tone="border-slate-200 bg-white text-slate-900" />
         <StatCard label="総支出" value={formatCurrency(budgetSummary.spent)} tone="border-emerald-200 bg-emerald-50 text-emerald-900" />
         <StatCard label="残予算" value={formatCurrency(budgetSummary.remaining)} tone="border-amber-200 bg-amber-50 text-amber-900" />
+      </section>
+      <section className="grid gap-3 lg:grid-cols-2">
+        <article className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className="text-xs font-semibold tracking-[0.18em] text-slate-500">予測</p>
+              <h2 className="mt-1 text-xl font-bold text-slate-900">コスト予測トレンド</h2>
+            </div>
+            <span className={`rounded-full px-3 py-1 text-xs font-semibold ${
+              forecastReport?.riskLevel === "high"
+                ? "bg-red-50 text-red-700"
+                : forecastReport?.riskLevel === "medium"
+                  ? "bg-amber-50 text-amber-700"
+                  : "bg-emerald-50 text-emerald-700"
+            }`}>
+              {forecastReport?.riskLevel === "high"
+                ? "High Risk"
+                : forecastReport?.riskLevel === "medium"
+                  ? "Medium Risk"
+                  : "Low Risk"}
+            </span>
+          </div>
+          {forecastReport ? (
+            <>
+              <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                <StatCard
+                  label="予測最終原価"
+                  value={formatCurrency(forecastReport.predictedFinalCost)}
+                  tone="border-slate-200 bg-slate-50 text-slate-900"
+                />
+                <StatCard
+                  label="次月予測"
+                  value={formatCurrency(forecastReport.trend.projectedNext)}
+                  tone="border-slate-200 bg-white text-slate-900"
+                />
+              </div>
+              <div className="mt-4 grid gap-2 text-sm text-slate-600">
+                <div className="flex items-center justify-between gap-3">
+                  <span>進捗率</span>
+                  <span className="font-semibold tabular-nums text-slate-900">{forecastReport.completionPct}%</span>
+                </div>
+                <div className="flex items-center justify-between gap-3">
+                  <span>トレンド</span>
+                  <span className="font-semibold text-slate-900">
+                    {forecastReport.trend.trend === "increasing"
+                      ? "増加傾向"
+                      : forecastReport.trend.trend === "decreasing"
+                        ? "減少傾向"
+                        : "安定"}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between gap-3">
+                  <span>予算差</span>
+                  <span className={`font-semibold tabular-nums ${
+                    forecastReport.overUnder > 0 ? "text-red-600" : "text-emerald-600"
+                  }`}>
+                    {forecastReport.overUnder > 0 ? "+" : ""}
+                    {formatCurrency(forecastReport.overUnder)}
+                  </span>
+                </div>
+              </div>
+              <p className="mt-4 rounded-2xl bg-slate-50 px-4 py-3 text-sm text-slate-600">
+                {forecastReport.recommendations[0]}
+              </p>
+            </>
+          ) : (
+            <p className="mt-4 text-sm text-slate-500">予測対象の案件データがありません。</p>
+          )}
+        </article>
+
+        <article className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className="text-xs font-semibold tracking-[0.18em] text-slate-500">資材</p>
+              <h2 className="mt-1 text-xl font-bold text-slate-900">資材配送ステータス</h2>
+            </div>
+            <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
+              {materialDeliveries.length}件
+            </span>
+          </div>
+          {materialDeliveries.length > 0 ? (
+            <div className="mt-4 space-y-3">
+              {materialDeliveries.slice(0, 3).map((delivery) => (
+                <div key={delivery.id} className="rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <p className="font-semibold text-slate-900">{delivery.materialName}</p>
+                      <p className="text-xs text-slate-500">
+                        {delivery.quantity}
+                        {delivery.unit}
+                        {" "}
+                        ·
+                        {" "}
+                        {formatCostDate(delivery.deliveryDate)}
+                      </p>
+                    </div>
+                    <span className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                      delivery.inspectionPassed
+                        ? "bg-emerald-50 text-emerald-700"
+                        : "bg-amber-50 text-amber-700"
+                    }`}>
+                      {delivery.inspectionPassed ? "検収済" : "要確認"}
+                    </span>
+                  </div>
+                </div>
+              ))}
+              {materialForecasts.length > 0 ? (
+                <div className="rounded-2xl border border-dashed border-slate-200 px-4 py-3 text-sm text-slate-600">
+                  補充目安:
+                  {" "}
+                  {materialForecasts[0].materialName}
+                  {" "}
+                  /
+                  {" "}
+                  残
+                  {" "}
+                  {Number.isFinite(materialForecasts[0].daysRemaining) ? `${materialForecasts[0].daysRemaining}日` : "十分"}
+                  {" "}
+                  /
+                  {" "}
+                  追加見込
+                  {" "}
+                  {materialForecasts[0].forecastedNeed}
+                  {materialForecasts[0].unit}
+                </div>
+              ) : null}
+            </div>
+          ) : (
+            <p className="mt-4 rounded-2xl border border-dashed border-slate-200 px-4 py-4 text-sm text-slate-500">
+              material-tracker に配送データが入ると、納品状況と補充見込みを表示します。
+            </p>
+          )}
+          {materialWaste.length > 0 ? (
+            <p className="mt-4 text-xs text-slate-500">
+              ロス率:
+              {" "}
+              {materialWaste[0].materialName}
+              {" "}
+              {materialWaste[0].wastePercentage.toFixed(1)}%
+            </p>
+          ) : null}
+        </article>
       </section>
       <section className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm">
         <div className="flex items-center justify-between gap-4">

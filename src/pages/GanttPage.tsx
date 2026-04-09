@@ -26,6 +26,14 @@ import { readLastProjectId, writeLastProjectId } from "../lib/last-project.js";
 import { cascadeSchedule } from "../lib/cascade-scheduler.js";
 import { filterScheduleTasks } from "../lib/cost-management.js";
 import { exportGanttToPdf } from "../lib/gantt-pdf-export.js";
+import {
+  checkMilestoneStatus,
+  createMilestones,
+} from "../lib/milestone-tracker.js";
+import {
+  generateChangeLog,
+  getChangeOrders,
+} from "../lib/change-order-tracker.js";
 import type { ConnectState } from "../components/gantt/types.js";
 import { undoStack } from "../lib/undo-stack.js";
 
@@ -105,6 +113,8 @@ function GanttPageContent({ initialProjectId = null }: GanttPageProps) {
   const [pdfExporting, setPdfExporting] = useState(false);
   const [undoing, setUndoing] = useState(false);
   const [canUndo, setCanUndo] = useState(() => undoStack.canUndo());
+  const [showMilestones, setShowMilestones] = useState(true);
+  const [showChanges, setShowChanges] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const pinchRef = useRef<{
     distance: number;
@@ -213,6 +223,38 @@ function GanttPageContent({ initialProjectId = null }: GanttPageProps) {
     if (!selectedProject) return "期間未設定";
     return buildProjectPeriod(selectedProject, selectedProjectTasks);
   }, [selectedProject, selectedProjectTasks]);
+
+  const milestoneIndicators = useMemo(
+    () => (
+      selectedProject
+        ? checkMilestoneStatus(createMilestones(selectedProject, selectedProjectTasks), today)
+        : []
+    ),
+    [selectedProject, selectedProjectTasks, today],
+  );
+
+  const milestoneSummary = useMemo(
+    () => milestoneIndicators.reduce((summary, milestone) => {
+      summary[milestone.status] += 1;
+      return summary;
+    }, {
+      "on-track": 0,
+      "at-risk": 0,
+      missed: 0,
+      completed: 0,
+    }),
+    [milestoneIndicators],
+  );
+
+  const projectChangeOrders = useMemo(
+    () => (selectedProject ? getChangeOrders(selectedProject.id) : []),
+    [selectedProject],
+  );
+
+  const changeLog = useMemo(
+    () => (selectedProject ? generateChangeLog(selectedProject.id) : []),
+    [selectedProject],
+  );
 
   useEffect(() => {
     if (!loading && scrollRef.current) {
@@ -637,6 +679,32 @@ function GanttPageContent({ initialProjectId = null }: GanttPageProps) {
             <div className="rounded-2xl bg-white/90 px-4 py-3 text-sm text-slate-600 ring-1 ring-slate-200">
               ピンチで拡大縮小 / バーをドラッグして日程変更
             </div>
+            <button
+              type="button"
+              onClick={() => setShowMilestones((current) => !current)}
+              className={`rounded-2xl px-4 py-3 text-sm font-semibold transition-colors ${
+                showMilestones
+                  ? "bg-slate-900 text-white shadow-sm"
+                  : "bg-white text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50"
+              }`}
+            >
+              Milestones
+              {" "}
+              {milestoneIndicators.length}
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowChanges((current) => !current)}
+              className={`rounded-2xl px-4 py-3 text-sm font-semibold transition-colors ${
+                showChanges
+                  ? "bg-amber-500 text-white shadow-sm"
+                  : "bg-white text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50"
+              }`}
+            >
+              Changes
+              {" "}
+              {projectChangeOrders.length}
+            </button>
             {canUndo ? (
               <button
                 type="button"
@@ -673,6 +741,89 @@ function GanttPageContent({ initialProjectId = null }: GanttPageProps) {
             </button>
           </div>
         </div>
+
+        {showMilestones || showChanges ? (
+          <div className="mt-4 grid gap-3 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+            <div className="rounded-2xl bg-white/90 px-4 py-4 ring-1 ring-slate-200">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-xs font-semibold tracking-[0.18em] text-slate-500">milestone-tracker</p>
+                  <h2 className="mt-1 text-sm font-bold text-slate-900">工程上の主要マイルストーン</h2>
+                </div>
+                <div className="flex flex-wrap items-center gap-2 text-xs font-semibold">
+                  <span className="rounded-full bg-emerald-50 px-3 py-1 text-emerald-700">
+                    完了 {milestoneSummary.completed}
+                  </span>
+                  <span className="rounded-full bg-blue-50 px-3 py-1 text-blue-700">
+                    順調 {milestoneSummary["on-track"]}
+                  </span>
+                  <span className="rounded-full bg-amber-50 px-3 py-1 text-amber-700">
+                    注意 {milestoneSummary["at-risk"]}
+                  </span>
+                  <span className="rounded-full bg-red-50 px-3 py-1 text-red-700">
+                    遅延 {milestoneSummary.missed}
+                  </span>
+                </div>
+              </div>
+              {milestoneIndicators.length > 0 ? (
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {milestoneIndicators.slice(0, 6).map((milestone) => (
+                    <span
+                      key={milestone.id}
+                      className={`rounded-full px-3 py-1.5 text-xs font-semibold ${
+                        milestone.status === "completed"
+                          ? "bg-emerald-50 text-emerald-700"
+                          : milestone.status === "at-risk"
+                            ? "bg-amber-50 text-amber-700"
+                            : milestone.status === "missed"
+                              ? "bg-red-50 text-red-700"
+                              : "bg-blue-50 text-blue-700"
+                      }`}
+                    >
+                      {milestone.name}
+                      {" "}
+                      ·
+                      {" "}
+                      {milestone.targetDate}
+                    </span>
+                  ))}
+                </div>
+              ) : (
+                <p className="mt-3 text-sm text-slate-500">依存関係のある工程が増えるとマイルストーンを自動表示します。</p>
+              )}
+            </div>
+
+            <div className="rounded-2xl bg-white/90 px-4 py-4 ring-1 ring-slate-200">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-xs font-semibold tracking-[0.18em] text-slate-500">change-order-tracker</p>
+                  <h2 className="mt-1 text-sm font-bold text-slate-900">変更指示サマリー</h2>
+                </div>
+                <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
+                  {projectChangeOrders.length}件
+                </span>
+              </div>
+              {showChanges && changeLog.length > 0 ? (
+                <div className="mt-3 space-y-2 text-sm text-slate-600">
+                  <div className="flex items-center justify-between gap-3">
+                    <span>累計コスト影響</span>
+                    <span className="font-semibold tabular-nums text-slate-900">
+                      ¥{changeLog.at(-1)?.cumulativeCostDelta.toLocaleString()}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between gap-3">
+                    <span>累計日程影響</span>
+                    <span className="font-semibold tabular-nums text-slate-900">
+                      {changeLog.at(-1)?.cumulativeScheduleDelta}日
+                    </span>
+                  </div>
+                </div>
+              ) : (
+                <p className="mt-3 text-sm text-slate-500">登録済みの変更指示はありません。</p>
+              )}
+            </div>
+          </div>
+        ) : null}
 
         <div className="mobile-scroll-x mt-4 overflow-x-auto pb-1">
           <div className="flex min-w-max gap-2">
@@ -713,6 +864,8 @@ function GanttPageContent({ initialProjectId = null }: GanttPageProps) {
           dragRef={dragRef}
           connectMode={connectMode}
           connectState={connectState}
+          milestones={milestoneIndicators}
+          showMilestones={showMilestones}
           today={today}
           scrollRef={scrollRef}
           onTaskDragStart={startTaskDrag}

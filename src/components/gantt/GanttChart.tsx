@@ -6,8 +6,9 @@ import type {
   TouchEvent as ReactTouchEvent,
 } from "react";
 import type { ChartLayout, ConnectState, DragState, GanttTask } from "./types.js";
+import type { Milestone, MilestoneStatus } from "../../lib/milestone-tracker.js";
 import { gantt } from "../../theme/index.js";
-import { formatDayNumber, formatMonthLabel, formatWeekdayLabel } from "./utils.js";
+import { daysBetween, formatDayNumber, formatMonthLabel, formatWeekdayLabel } from "./utils.js";
 import { GanttTaskBar, GanttTaskLabel } from "./GanttTaskBar.js";
 import { DependencyArrows } from "./DependencyArrows.js";
 
@@ -23,6 +24,8 @@ type Props = {
   dragRef: MutableRefObject<DragState | null>;
   connectMode: boolean;
   connectState: ConnectState | null;
+  milestones?: Milestone[];
+  showMilestones?: boolean;
   today: string;
   scrollRef: RefObject<HTMLDivElement | null>;
   onTaskDragStart: (task: GanttTask, event: ReactPointerEvent<HTMLDivElement>) => void;
@@ -45,6 +48,8 @@ export function GanttChart({
   dragRef,
   connectMode,
   connectState,
+  milestones = [],
+  showMilestones = true,
   today,
   scrollRef,
   onTaskDragStart,
@@ -76,6 +81,22 @@ export function GanttChart({
       current.span += 1;
     }
   }
+
+  const visibleMilestones = showMilestones
+    ? milestones
+      .map((milestone) => ({
+        ...milestone,
+        offset: daysBetween(chartStart, milestone.targetDate),
+      }))
+      .filter((milestone) => milestone.offset >= 0 && milestone.offset <= totalDays)
+    : [];
+
+  const milestoneTone: Record<MilestoneStatus, string> = {
+    "on-track": "bg-blue-500 text-blue-700",
+    "at-risk": "bg-amber-500 text-amber-700",
+    missed: "bg-red-500 text-red-700",
+    completed: "bg-emerald-500 text-emerald-700",
+  };
 
   return (
     <div
@@ -213,6 +234,28 @@ export function GanttChart({
                 </div>
               </>
             ) : null}
+
+            {visibleMilestones.map((milestone, index) => (
+              <div
+                key={milestone.id}
+                className="pointer-events-none absolute z-20 -translate-x-1/2"
+                style={{
+                  left: milestone.offset * dayWidth + dayWidth / 2,
+                  top: headerHeight + 8 + (index % 2) * 24,
+                }}
+              >
+                <div className="flex flex-col items-center gap-1">
+                  <span
+                    className={`block h-3.5 w-3.5 rotate-45 rounded-[3px] border border-white shadow-sm ${milestoneTone[milestone.status].split(" ")[0]}`}
+                  />
+                  {dayWidth >= 20 ? (
+                    <span className={`rounded-full bg-white/95 px-2 py-1 text-[10px] font-semibold shadow-sm ${milestoneTone[milestone.status].split(" ")[1]}`}>
+                      {milestone.name}
+                    </span>
+                  ) : null}
+                </div>
+              </div>
+            ))}
 
             {visibleRows.map((row) => {
               if (row.type === "phase") {
