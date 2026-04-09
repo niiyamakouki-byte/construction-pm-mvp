@@ -65,7 +65,20 @@ function AppShell() {
   const [showShortcutHelp, setShowShortcutHelp] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [moreDrawerOpen, setMoreDrawerOpen] = useState(false);
+  const [keyboardOpen, setKeyboardOpen] = useState(false);
   const lastProjectId = readLastProjectId();
+
+  // iOS keyboard detection via visualViewport
+  useEffect(() => {
+    const vv = window.visualViewport;
+    if (!vv) return;
+    const onResize = () => {
+      const threshold = window.innerHeight * 0.75;
+      setKeyboardOpen(vv.height < threshold);
+    };
+    vv.addEventListener("resize", onResize);
+    return () => vv.removeEventListener("resize", onResize);
+  }, []);
   const ganttPath = lastProjectId ? `/gantt/${lastProjectId}` : "/gantt";
 
   const primaryTabs: TabDef[] = [
@@ -388,7 +401,7 @@ function AppShell() {
         </main>
 
         <nav
-          className="safe-bottom fixed inset-x-0 bottom-0 z-40 flex border-t border-slate-200 bg-white shadow-[0_-2px_12px_rgba(0,0,0,0.08)] md:hidden"
+          className={`safe-bottom fixed inset-x-0 bottom-0 z-40 flex border-t border-slate-200 bg-white shadow-[0_-2px_12px_rgba(0,0,0,0.08)] md:hidden transition-transform duration-200 ${keyboardOpen ? "translate-y-full" : ""}`}
           aria-label="ボトムナビゲーション"
         >
           {primaryTabs.map((tab) => {

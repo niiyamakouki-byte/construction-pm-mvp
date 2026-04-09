@@ -36,6 +36,9 @@ const createDragState = (
   previewEndDate: task.endDate,
 });
 
+const LONG_PRESS_MS = 400;
+const SCROLL_TOLERANCE = 8; // px – if finger moves more than this, cancel long press
+
 export function useGanttDrag({
   ganttTasks,
   contractors,
@@ -47,17 +50,50 @@ export function useGanttDrag({
 }: UseGanttDragOptions) {
   const [dragState, setDragState] = useState<DragState | null>(null);
   const dragRef = useRef<DragState | null>(null);
+  const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pendingDragRef = useRef<{ task: GanttTask; type: DragState["type"]; startX: number; startY: number } | null>(null);
 
-  const startDrag = useCallback(
-    (task: GanttTask, type: DragState["type"], event: DragStartPointerEvent) => {
-      if (event.pointerType !== "touch" && event.button !== 0) return;
-      event.preventDefault();
+  const cancelLongPress = useCallback(() => {
+    if (longPressTimerRef.current) {
+      clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+    }
+    pendingDragRef.current = null;
+  }, []);
 
-      const nextDrag = createDragState(task, type, event.clientX);
+  const activateDrag = useCallback(
+    (task: GanttTask, type: DragState["type"], startX: number) => {
+      const nextDrag = createDragState(task, type, startX);
       dragRef.current = nextDrag;
       setDragState(nextDrag);
     },
     [],
+  );
+
+  const startDrag = useCallback(
+    (task: GanttTask, type: DragState["type"], event: DragStartPointerEvent) => {
+      if (event.pointerType !== "touch" && event.button !== 0) return;
+
+      // Mouse: start immediately
+      if (event.pointerType !== "touch") {
+        event.preventDefault();
+        activateDrag(task, type, event.clientX);
+        return;
+      }
+
+      // Touch: require long press to avoid scroll conflict
+      pendingDragRef.current = { task, type, startX: event.clientX, startY: event.clientY };
+      longPressTimerRef.current = setTimeout(() => {
+        const pending = pendingDragRef.current;
+        if (pending) {
+          activateDrag(pending.task, pending.type, pending.startX);
+          // Haptic feedback hint (vibration)
+          navigator.vibrate?.(30);
+        }
+        longPressTimerRef.current = null;
+      }, LONG_PRESS_MS);
+    },
+    [activateDrag],
   );
 
   const startTaskDrag = useCallback(
@@ -77,6 +113,17 @@ export function useGanttDrag({
 
   useEffect(() => {
     const handlePointerMove = (event: PointerEvent) => {
+      // Cancel long press if finger moved too far (user is scrolling)
+      const pending = pendingDragRef.current;
+      if (pending && !dragRef.current) {
+        const dx = Math.abs(event.clientX - pending.startX);
+        const dy = Math.abs(event.clientY - pending.startY);
+        if (dx > SCROLL_TOLERANCE || dy > SCROLL_TOLERANCE) {
+          cancelLongPress();
+        }
+        return;
+      }
+
       const drag = dragRef.current;
       if (!drag) return;
 
@@ -106,6 +153,7 @@ export function useGanttDrag({
     };
 
     const handlePointerUp = async () => {
+      cancelLongPress();
       const drag = dragRef.current;
       if (!drag) return;
 
@@ -192,6 +240,7 @@ export function useGanttDrag({
       window.removeEventListener("pointercancel", pointerUpHandler);
     };
   }, [
+    cancelLongPress,
     contractors,
     dayWidth,
     ganttTasks,
