@@ -228,9 +228,8 @@ function AppShell() {
   const portalProjectId = portalMatch?.[1] ? decodeURIComponent(portalMatch[1]) : null;
   const portalCompany = portalMatch?.[2] ? decodeURIComponent(portalMatch[2]) : undefined;
 
+  // 認証不要ページ（入退場キオスク+協力会社ポータルのみ）
   if (entryProjectId) return <SiteEntryPage projectId={entryProjectId} />;
-  if (historyProjectId) return <AttendanceHistoryPage projectId={historyProjectId} />;
-  if (reportsMatch) return <ReportsPage projectId={reportsProjectId} />;
   if (portalProjectId) return <ContractorPortalPage projectId={portalProjectId} company={portalCompany} />;
   if (route === "/landing") return <LandingPage />;
   if (route === "/" || route === "") {
@@ -246,6 +245,12 @@ function AppShell() {
   if (route === "/pricing") return <PricingPage />;
 
   const renderPage = () => {
+    if (historyProjectId) {
+      return <AttendanceHistoryPage projectId={historyProjectId} />;
+    }
+    if (reportsMatch) {
+      return <ReportsPage projectId={reportsProjectId} />;
+    }
     if (route === "/app") {
       return (
         <ErrorBoundary fallbackTitle="案件一覧エラー">
