@@ -44,6 +44,17 @@ import {
   PhotoCategory,
   type PhotoValidationResult,
 } from "../lib/photo-upload.js";
+import {
+  getTodayWorkerCount,
+  getEntryLog,
+} from "../lib/site-entry-log.js";
+import { generateForecastReport } from "../lib/cost-forecaster.js";
+import { criticalPath } from "../lib/schedule-validator.js";
+import {
+  CockpitDashboard,
+  type CriticalPathStatus,
+  type ProjectCockpitSummary,
+} from "../components/CockpitDashboard.js";
 
 // ── Helpers ────────────────────────────────────────────
 
@@ -502,6 +513,70 @@ function TodayDashboardPageContent() {
     today,
   ]);
 
+  // ── Cockpit data ─────────────────────────────────────
+  const cockpitCriticalPath = useMemo<CriticalPathStatus | null>(() => {
+    if (!insightProject || insightTasks.length === 0) return null;
+    const cp = criticalPath(insightTasks);
+    const cpTaskSet = new Set(cp.taskIds);
+    const cpTasks = insightTasks.filter((t) => cpTaskSet.has(t.id));
+    const completed = cpTasks.filter((t) => t.status === "done").length;
+    const delayed = cpTasks.filter(
+      (t) => t.status !== "done" && t.dueDate && t.dueDate < today,
+    );
+    const maxDelay = delayed.reduce((max, t) => {
+      const d = Math.max(1, daysBetween(t.dueDate!, today));
+      return Math.max(max, d);
+    }, 0);
+    const progress =
+      cpTasks.length > 0 ? Math.round((completed / cpTasks.length) * 100) : 0;
+    return {
+      totalTasks: cpTasks.length,
+      completedTasks: completed,
+      delayedTasks: delayed.length,
+      progress,
+      maxDelayDays: maxDelay,
+    };
+  }, [insightProject, insightTasks, today]);
+
+  const cockpitForecast = useMemo(() => {
+    if (!insightProject) return null;
+    return generateForecastReport(insightProject, insightTasks, expenses);
+  }, [insightProject, insightTasks, expenses]);
+
+  const cockpitEntries = useMemo(() => {
+    if (!insightProject) return [];
+    return getEntryLog(insightProject.id, today);
+  }, [insightProject, today]);
+
+  void getTodayWorkerCount; // imported for potential future use
+
+  const cockpitProjects = useMemo<ProjectCockpitSummary[]>(() => {
+    return projectStats.map((p) => {
+      const overdue = allTasks.filter(
+        (t) => t.projectId === p.id && t.status !== "done" && t.dueDate && t.dueDate < today,
+      );
+      const maxDelay = overdue.reduce((max, t) => {
+        return Math.max(max, Math.max(1, daysBetween(t.dueDate!, today)));
+      }, 0);
+      const status: ProjectCockpitSummary["status"] =
+        maxDelay > 7
+          ? "major_delay"
+          : maxDelay > 0
+            ? "minor_delay"
+            : p.pct === 100
+              ? "on_track"
+              : "on_track";
+      return {
+        id: p.id,
+        name: p.name,
+        progress: p.pct,
+        delayDays: maxDelay,
+        pendingCount: 0,
+        status,
+      };
+    });
+  }, [projectStats, allTasks, today]);
+
   // ── Alerts ───────────────────────────────────────────
   const triggeredAlerts = useMemo<TriggeredAlert[]>(() => {
     return allProjects.flatMap((p) => {
@@ -608,6 +683,25 @@ function TodayDashboardPageContent() {
         <StatCard label="完了タスク" value={completedTasks} color="text-emerald-600" bgColor="bg-emerald-50" />
         <StatCard label="期限超過" value={overdueTasks} color="text-red-600" bgColor={overdueTasks > 0 ? "bg-red-50" : "bg-white"} />
       </div>
+
+      {/* Cockpit Dashboard */}
+      <section>
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <h2 className="text-base font-bold text-slate-800">コックピット</h2>
+          {insightProject && (
+            <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
+              {insightProject.name}
+            </span>
+          )}
+        </div>
+        <CockpitDashboard
+          health={healthInsight}
+          criticalPath={cockpitCriticalPath}
+          forecast={cockpitForecast}
+          todayEntries={cockpitEntries}
+          projects={cockpitProjects}
+        />
+      </section>
 
       <section>
         <div className="mb-3 flex items-center justify-between gap-3">

@@ -20,7 +20,9 @@ import { TasksPage } from "./pages/TasksPage.js";
 import { CostManagementPage } from "./pages/CostManagementPage.js";
 import { WeatherPage } from "./pages/WeatherPage.js";
 import { SafetyInspectionPage } from "./pages/SafetyInspectionPage.js";
+import { ProcurementPage } from "./pages/ProcurementPage.js";
 import { SiteEntryPage } from "./pages/SiteEntryPage.js";
+import { AttendanceHistoryPage } from "./pages/AttendanceHistoryPage.js";
 import { ErrorBoundary } from "./components/ErrorBoundary.js";
 import { AuthGuard } from "./components/AuthGuard.js";
 import { OnboardingWizard, useOnboardingDone } from "./components/OnboardingWizard.js";
@@ -111,7 +113,7 @@ function AppShell() {
       icon: "☰",
       path: "/notifications",
       matchRoute: (currentRoute) =>
-        ["/today", "/invoice", "/estimate", "/contractors", "/notifications", "/help", "/node-schedule", "/cost-management", "/weather", "/safety"].includes(currentRoute),
+        ["/today", "/invoice", "/estimate", "/contractors", "/notifications", "/help", "/node-schedule", "/cost-management", "/weather", "/safety", "/procurement"].includes(currentRoute),
     },
   ];
 
@@ -153,6 +155,7 @@ function AppShell() {
       matchRoute: (currentRoute) => currentRoute === "/estimate",
     },
     { key: "safety", label: "安全", icon: "🦺", path: "/safety", matchRoute: (currentRoute) => currentRoute === "/safety" },
+    { key: "procurement", label: "発注", icon: "📦", path: "/procurement", matchRoute: (currentRoute) => currentRoute === "/procurement" },
     { key: "cost", label: "コスト", icon: "💹", path: "/cost-management", matchRoute: (currentRoute) => currentRoute === "/cost-management" },
     {
       key: "invoice",
@@ -197,14 +200,17 @@ function AppShell() {
   const projectDetailMatch = route.match(/^\/project\/([^/]+)(?:\/(.+))?$/);
   const ganttMatch = route.match(/^\/gantt(?:\/(.+))?$/);
   const entryMatch = route.match(/^\/entry\/(.+)$/);
+  const historyMatch = route.match(/^\/attendance-history\/(.+)$/);
   const projectId = projectDetailMatch?.[1]
     ? decodeURIComponent(projectDetailMatch[1])
     : null;
   const projectSubPath = projectDetailMatch?.[2] ?? null;
   const ganttProjectId = ganttMatch?.[1] ? decodeURIComponent(ganttMatch[1]) : null;
   const entryProjectId = entryMatch?.[1] ? decodeURIComponent(entryMatch[1]) : null;
+  const historyProjectId = historyMatch?.[1] ? decodeURIComponent(historyMatch[1]) : null;
 
   if (entryProjectId) return <SiteEntryPage projectId={entryProjectId} />;
+  if (historyProjectId) return <AttendanceHistoryPage projectId={historyProjectId} />;
   if (route === "/landing") return <LandingPage />;
   if (route === "/" || route === "") {
     navigate("/app");
@@ -267,6 +273,13 @@ function AppShell() {
       return (
         <ErrorBoundary fallbackTitle="天気予報エラー">
           <WeatherPage />
+        </ErrorBoundary>
+      );
+    }
+    if (route === "/procurement") {
+      return (
+        <ErrorBoundary fallbackTitle="発注管理エラー">
+          <ProcurementPage />
         </ErrorBoundary>
       );
     }
