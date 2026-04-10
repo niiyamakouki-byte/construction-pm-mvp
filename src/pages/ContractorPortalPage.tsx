@@ -37,7 +37,7 @@ function GanttReadOnly({ tasks }: { tasks: Task[] }) {
   );
 
   const startDates = sorted.map((t) => t.startDate).filter(Boolean) as string[];
-  const endDates = sorted.map((t) => t.endDate).filter(Boolean) as string[];
+  const endDates = sorted.map((t) => t.dueDate).filter(Boolean) as string[];
   const minDate = startDates.length > 0 ? startDates.reduce((a, b) => (a < b ? a : b)) : null;
   const maxDate = endDates.length > 0 ? endDates.reduce((a, b) => (a > b ? a : b)) : null;
 
@@ -54,11 +54,11 @@ function GanttReadOnly({ tasks }: { tasks: Task[] }) {
     const startOffset = Math.round(
       (new Date(task.startDate).getTime() - new Date(minDate).getTime()) / 86_400_000,
     );
-    const duration = task.endDate
+    const duration = task.dueDate
       ? Math.max(
           1,
           Math.round(
-            (new Date(task.endDate).getTime() - new Date(task.startDate).getTime()) / 86_400_000,
+            (new Date(task.dueDate).getTime() - new Date(task.startDate).getTime()) / 86_400_000,
           ) + 1,
         )
       : 3;
@@ -261,7 +261,7 @@ type Props = {
   company?: string;
 };
 
-export function ContractorPortalPage({ projectId, company = null }: Props) {
+export function ContractorPortalPage({ projectId, company = undefined }: Props) {
   const projectRepository = useMemo(() => createProjectRepository(() => null), []);
   const taskRepository = useMemo(() => createTaskRepository(() => null), []);
 
@@ -369,7 +369,7 @@ export function ContractorPortalPage({ projectId, company = null }: Props) {
         {activeTab === "chat" && <ChatReadOnly projectId={projectId} />}
         {activeTab === "drawings" && <DrawingsReadOnly projectId={projectId} />}
         {activeTab === "attendance" && (
-          <AttendanceReadOnly projectId={projectId} company={company} />
+          <AttendanceReadOnly projectId={projectId} company={company ?? null} />
         )}
 
         {/* Read-only notice */}
