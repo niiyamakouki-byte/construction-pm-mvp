@@ -16,8 +16,9 @@ import {
   saveScale,
   type Point,
 } from "../lib/drawing-measure.js";
+import { comparePDFs, type DiffResult, type DiffColor } from "../lib/blueprint-diff.js";
 
-type ViewerMode = "pin" | "calibrate" | "measure" | "area";
+type ViewerMode = "pin" | "calibrate" | "measure" | "area" | "diff";
 
 type Props = {
   /** Drawing image URL */
@@ -28,6 +29,8 @@ type Props = {
   initialPins?: DrawingPin[];
   /** Called whenever pins change */
   onPinsChange?: (pins: DrawingPin[]) => void;
+  /** Optional second drawing URL for diff mode */
+  compareDrawingUrl?: string;
 };
 
 type PopoverState = {
@@ -54,6 +57,7 @@ export function DrawingViewer({
   drawingId = "default",
   initialPins = [],
   onPinsChange,
+  compareDrawingUrl,
 }: Props) {
   const [pins, setPins] = useState<DrawingPin[]>(initialPins);
   const [popover, setPopover] = useState<PopoverState | null>(null);
@@ -65,9 +69,16 @@ export function DrawingViewer({
   const [calibrateState, setCalibrateState] = useState<CalibrateState>({ stage: "idle" });
   const [calibrateInput, setCalibrateInput] = useState("");
   const [pinchActive, setPinchActive] = useState(false);
+  // diff mode state
+  const [diffResult, setDiffResult] = useState<DiffResult | null>(null);
+  const [diffRunning, setDiffRunning] = useState(false);
+  const [diffOpacity, setDiffOpacity] = useState(0.7);
+  const [oldOpacity, setOldOpacity] = useState(0.5);
   const imgRef = useRef<HTMLImageElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const oldImgRef = useRef<HTMLImageElement | null>(null);
+  const diffCanvasRef = useRef<HTMLCanvasElement | null>(null);
 
   // Load persisted scale on mount
   useEffect(() => {
@@ -313,7 +324,88 @@ export function DrawingViewer({
     if (next !== "calibrate") setCalibrateState({ stage: "idle" });
     if (next !== "measure") setMeasureState({ stage: "idle" });
     if (next !== "area") setAreaState({ stage: "collecting", points: [] });
+    if (next !== "diff") { setDiffResult(null); }
   };
+
+  // Run diff when switching to diff mode with both images loaded
+  const runDiff = useCallback(() => {
+    const newImg = imgRef.current;
+    const oldImg = oldImgRef.current;
+    if (!newImg || !oldImg) return;
+    if (!newImg.complete || !oldImg.complete) return;
+
+    setDiffRunning(true);
+
+    // Draw each image to an offscreen canvas to get ImageData
+    const getImageData = (img: HTMLImageElement): ImageData => {
+      const c = document.createElement("canvas");
+      c.width = img.naturalWidth || img.width;
+      c.height = img.naturalHeight || img.height;
+      const ctx = c.getContext("2d");
+      if (!ctx) throw new Error("No 2d context");
+      ctx.drawImage(img, 0, 0);
+      return ctx.getImageData(0, 0, c.width, c.height);
+    };
+
+    try {
+      const oldData = getImageData(oldImg);
+      const newData = getImageData(newImg);
+      const result = comparePDFs(oldData, newData);
+      setDiffResult(result);
+
+      // Auto-place diff pins
+      if (result.regions.length > 0) {
+        const newW = newImg.naturalWidth || newImg.width;
+        const newH = newImg.naturalHeight || newImg.height;
+        const DIFF_COLOR_LABEL: Record<DiffColor, string> = {
+          added: "追加（青）",
+          removed: "削除（赤）",
+          changed: "変更（黄）",
+        };
+        const diffPins: DrawingPin[] = result.regions.slice(0, 20).map((region) => {
+          const cx = (region.box.x + region.box.width / 2) / newW;
+          const cy = (region.box.y + region.box.height / 2) / newH;
+          return createPin({
+            x: Math.max(0, Math.min(1, cx)),
+            y: Math.max(0, Math.min(1, cy)),
+            comment: `ここが変わりました（${DIFF_COLOR_LABEL[region.type]}）`,
+            assignee: "",
+            dueDate: "",
+            status: "未着手",
+          });
+        });
+        notify(diffPins);
+      }
+    } finally {
+      setDiffRunning(false);
+    }
+  }, []);
+
+  // Render diff overlay onto diffCanvasRef whenever diffResult changes
+  useEffect(() => {
+    if (mode !== "diff") return;
+    const canvas = diffCanvasRef.current;
+    const img = imgRef.current;
+    if (!canvas || !img || !diffResult) return;
+    const rect = img.getBoundingClientRect();
+    canvas.width = rect.width;
+    canvas.height = rect.height;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Scale overlay data to displayed size
+    const offscreen = document.createElement("canvas");
+    offscreen.width = diffResult.overlayData.width;
+    offscreen.height = diffResult.overlayData.height;
+    const offCtx = offscreen.getContext("2d");
+    if (!offCtx) return;
+    offCtx.putImageData(diffResult.overlayData, 0, 0);
+
+    ctx.globalAlpha = diffOpacity;
+    ctx.drawImage(offscreen, 0, 0, canvas.width, canvas.height);
+    ctx.globalAlpha = 1;
+  }, [diffResult, diffOpacity, mode]);
 
   const handleSaveDraft = () => {
     if (draft.x == null || draft.y == null) return;
@@ -346,6 +438,7 @@ export function DrawingViewer({
     { key: "calibrate", label: "縮尺設定" },
     { key: "measure", label: "距離計測" },
     { key: "area", label: "面積計測" },
+    { key: "diff", label: "差分" },
   ];
 
   const noScaleWarning = (mode === "measure" || mode === "area") && !scale;
@@ -366,7 +459,7 @@ export function DrawingViewer({
         />
 
         {/* Measurement / calibration overlay canvas */}
-        {mode !== "pin" && (
+        {mode !== "pin" && mode !== "diff" && (
           <canvas
             ref={canvasRef}
             className="absolute inset-0 w-full h-full pointer-events-auto cursor-crosshair"
@@ -374,6 +467,27 @@ export function DrawingViewer({
             onTouchStart={(e) => { handleTouchStart(e); if (e.touches.length === 1) handleCanvasClick(e); }}
             onTouchEnd={handleTouchEnd}
           />
+        )}
+
+        {/* Diff mode: old drawing overlay + diff color canvas */}
+        {mode === "diff" && compareDrawingUrl && (
+          <>
+            {/* Hidden old image loader */}
+            <img
+              ref={(el) => { oldImgRef.current = el; }}
+              src={compareDrawingUrl}
+              alt="旧図面"
+              className="absolute inset-0 w-full h-full object-fill pointer-events-none"
+              style={{ opacity: oldOpacity }}
+              onLoad={runDiff}
+              crossOrigin="anonymous"
+            />
+            {/* Diff overlay canvas */}
+            <canvas
+              ref={(el) => { diffCanvasRef.current = el; }}
+              className="absolute inset-0 w-full h-full pointer-events-none"
+            />
+          </>
         )}
 
         {/* Pin markers */}
@@ -438,6 +552,27 @@ export function DrawingViewer({
             </span>
           </div>
         )}
+        {mode === "diff" && !compareDrawingUrl && (
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <span className="bg-slate-800/90 text-white text-sm px-4 py-2 rounded-2xl shadow">
+              比較する旧図面URLを設定してください
+            </span>
+          </div>
+        )}
+        {mode === "diff" && compareDrawingUrl && diffRunning && (
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <span className="bg-slate-800/90 text-white text-sm px-4 py-2 rounded-2xl shadow">
+              差分を計算中...
+            </span>
+          </div>
+        )}
+        {mode === "diff" && compareDrawingUrl && diffResult && (
+          <div className="absolute inset-0 border-2 border-purple-400 rounded-2xl pointer-events-none flex items-start justify-center pt-3">
+            <span className="bg-purple-600 text-white text-xs px-3 py-1 rounded-full shadow">
+              差分: {(diffResult.diffRatio * 100).toFixed(1)}% 変化 / {diffResult.regions.length}箇所
+            </span>
+          </div>
+        )}
       </div>
 
       {/* Sidebar */}
@@ -457,6 +592,8 @@ export function DrawingViewer({
                     ? "bg-blue-600 text-white"
                     : key === "area"
                     ? "bg-emerald-600 text-white"
+                    : key === "diff"
+                    ? "bg-purple-600 text-white"
                     : "bg-blue-600 text-white"
                   : "bg-slate-800 text-white hover:bg-slate-700"
               }`}
@@ -506,6 +643,58 @@ export function DrawingViewer({
             >
               リセット
             </button>
+          </div>
+        )}
+
+        {/* Diff controls */}
+        {mode === "diff" && compareDrawingUrl && (
+          <div className="flex flex-col gap-3">
+            <button
+              type="button"
+              onClick={runDiff}
+              disabled={diffRunning}
+              className="rounded-2xl bg-purple-600 py-2.5 text-sm font-bold text-white disabled:opacity-50"
+            >
+              {diffRunning ? "計算中..." : "差分を再実行"}
+            </button>
+            {diffResult && (
+              <>
+                <div className="rounded-xl bg-purple-50 border border-purple-200 px-3 py-2 text-xs text-purple-800 space-y-1">
+                  <p className="font-bold">差分結果</p>
+                  <p>変化率: {(diffResult.diffRatio * 100).toFixed(2)}%</p>
+                  <p>変化箇所: {diffResult.regions.length}箇所</p>
+                  <div className="flex gap-2 mt-1">
+                    <span className="flex items-center gap-1"><span className="inline-block w-3 h-3 rounded-full bg-blue-600" />追加</span>
+                    <span className="flex items-center gap-1"><span className="inline-block w-3 h-3 rounded-full bg-red-600" />削除</span>
+                    <span className="flex items-center gap-1"><span className="inline-block w-3 h-3 rounded-full bg-yellow-500" />変更</span>
+                  </div>
+                </div>
+                <label className="flex flex-col gap-1 text-xs font-medium text-slate-600">
+                  差分オーバーレイ透明度
+                  <input
+                    type="range"
+                    min={0}
+                    max={1}
+                    step={0.05}
+                    value={diffOpacity}
+                    onChange={(e) => setDiffOpacity(parseFloat(e.target.value))}
+                    className="w-full accent-purple-600"
+                  />
+                </label>
+                <label className="flex flex-col gap-1 text-xs font-medium text-slate-600">
+                  旧図面の透明度
+                  <input
+                    type="range"
+                    min={0}
+                    max={1}
+                    step={0.05}
+                    value={oldOpacity}
+                    onChange={(e) => setOldOpacity(parseFloat(e.target.value))}
+                    className="w-full accent-slate-500"
+                  />
+                </label>
+              </>
+            )}
           </div>
         )}
 
