@@ -3,6 +3,23 @@ import type { ChartDateInfo, ConnectState, DragState, GanttTask } from "./types.
 import { daysBetween, formatScheduleDate, statusColor, statusLabel } from "./utils.js";
 import { gantt } from "../../theme/index.js";
 
+/** 大項目ごとの色マッピング */
+const MAJOR_CATEGORY_COLORS: Record<string, string> = {
+  仮設工事: "#94a3b8",
+  解体工事: "#f87171",
+  "躯体・下地": "#fb923c",
+  床工事: "#fbbf24",
+  "壁・天井仕上げ": "#a3e635",
+  建具工事: "#34d399",
+  電気工事: "#38bdf8",
+  給排水工事: "#818cf8",
+  "空調・換気": "#c084fc",
+  造作家具: "#f472b6",
+  塗装工事: "#2dd4bf",
+  クリーニング: "#86efac",
+  検査: "#e879f9",
+};
+
 type GanttTaskBarProps = {
   task: GanttTask;
   dragState: DragState | null;
@@ -209,7 +226,17 @@ export function GanttTaskLabel({ task, connectMode, onOpenTaskDetail }: GanttTas
       }}
     >
       <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-semibold text-slate-900">{task.name}</p>
+        <div className="flex items-center gap-1.5">
+          {task.majorCategory && (
+            <span
+              className="shrink-0 rounded-full px-1.5 py-0.5 text-[9px] font-bold text-white"
+              style={{ backgroundColor: MAJOR_CATEGORY_COLORS[task.majorCategory] ?? "#94a3b8" }}
+            >
+              {task.majorCategory}
+            </span>
+          )}
+          <p className="truncate text-sm font-semibold text-slate-900">{task.name}</p>
+        </div>
         <p className="mt-1 truncate text-xs text-slate-500">{task.contractorName ?? "協力会社未設定"}</p>
         <div className="mt-2 flex items-center gap-2">
           <div className="h-1.5 flex-1 rounded-full bg-slate-200">

@@ -1,5 +1,10 @@
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import type { Contractor, TaskStatus } from "../../domain/types.js";
+import {
+  getCategories,
+  getSubCategories,
+  searchCategories,
+} from "../../lib/task-categories.js";
 import type { QuickAddState } from "./types.js";
 import { addDaysBySchedule, statusLabel } from "./utils.js";
 import { WORK_CATEGORIES } from "./workCategories.js";
@@ -21,6 +26,36 @@ export function QuickAddForm({ quickAdd, contractors, onClose, onSubmit, onChang
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
   }, [onClose]);
+
+  const majorList = useMemo(() => getCategories(), []);
+  const middleList = useMemo(
+    () => (quickAdd.majorCategory ? getCategories(quickAdd.majorCategory) : []),
+    [quickAdd.majorCategory],
+  );
+  const minorList = useMemo(
+    () =>
+      quickAdd.majorCategory && quickAdd.middleCategory
+        ? getSubCategories(quickAdd.majorCategory, quickAdd.middleCategory)
+        : [],
+    [quickAdd.majorCategory, quickAdd.middleCategory],
+  );
+
+  const searchResults = useMemo(
+    () => (quickAdd.categorySearch.trim() ? searchCategories(quickAdd.categorySearch) : []),
+    [quickAdd.categorySearch],
+  );
+
+  const applySearchResult = (major: string, middle: string, minor?: string) => {
+    const label = minor ? `${middle} / ${minor}` : middle;
+    onChange((state) => ({
+      ...state,
+      majorCategory: major,
+      middleCategory: middle,
+      minorCategory: minor ?? "",
+      categorySearch: "",
+      name: state.name || label,
+    }));
+  };
 
   return (
     <div className="sheet-backdrop fixed inset-0 z-[70] bg-slate-950/40" onClick={onClose}>
@@ -55,6 +90,122 @@ export function QuickAddForm({ quickAdd, contractors, onClose, onSubmit, onChang
         </div>
 
         <form onSubmit={onSubmit} className="sheet-scroll flex max-h-[78dvh] flex-col gap-3 overflow-y-auto pr-1">
+          {/* ── カテゴリ検索 ── */}
+          <label className="flex flex-col gap-1.5">
+            <span className="text-sm font-medium text-slate-600">カテゴリ検索</span>
+            <input
+              type="text"
+              value={quickAdd.categorySearch}
+              onChange={(e) =>
+                onChange((state) => ({ ...state, categorySearch: e.target.value }))
+              }
+              placeholder="例: 配線、フローリング、塗装..."
+              aria-label="カテゴリ検索テキスト"
+              className="rounded-2xl border border-slate-300 px-4 py-3 text-base focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
+            />
+            {searchResults.length > 0 && (
+              <ul className="rounded-2xl border border-slate-200 bg-white shadow-md">
+                {searchResults.slice(0, 8).map((r) => (
+                  <li key={r.id}>
+                    <button
+                      type="button"
+                      className="w-full px-4 py-2 text-left text-sm hover:bg-slate-50"
+                      onClick={() => applySearchResult(r.major, r.middle, r.minor)}
+                    >
+                      <span className="font-semibold text-slate-700">{r.major}</span>
+                      <span className="text-slate-400"> › </span>
+                      <span className="text-slate-600">{r.middle}</span>
+                      {r.minor && (
+                        <>
+                          <span className="text-slate-400"> › </span>
+                          <span className="text-slate-500">{r.minor}</span>
+                        </>
+                      )}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </label>
+
+          {/* ── 3階層プルダウン ── */}
+          <div className="grid gap-3 sm:grid-cols-3">
+            <label className="flex flex-col gap-1.5">
+              <span className="text-sm font-medium text-slate-600">大項目</span>
+              <select
+                value={quickAdd.majorCategory}
+                onChange={(e) => {
+                  const major = e.target.value;
+                  onChange((state) => ({
+                    ...state,
+                    majorCategory: major,
+                    middleCategory: "",
+                    minorCategory: "",
+                    name: state.name || major,
+                  }));
+                }}
+                className="rounded-2xl border border-slate-300 px-3 py-3 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
+              >
+                <option value="">選択...</option>
+                {majorList.map((m) => (
+                  <option key={m} value={m}>
+                    {m}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label className="flex flex-col gap-1.5">
+              <span className="text-sm font-medium text-slate-600">中項目</span>
+              <select
+                value={quickAdd.middleCategory}
+                disabled={!quickAdd.majorCategory}
+                onChange={(e) => {
+                  const middle = e.target.value;
+                  onChange((state) => ({
+                    ...state,
+                    middleCategory: middle,
+                    minorCategory: "",
+                    name: state.name || (middle ? `${state.majorCategory} ${middle}` : state.majorCategory),
+                  }));
+                }}
+                className="rounded-2xl border border-slate-300 px-3 py-3 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 disabled:bg-slate-50 disabled:text-slate-400"
+              >
+                <option value="">選択...</option>
+                {middleList.map((m) => (
+                  <option key={m} value={m}>
+                    {m}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label className="flex flex-col gap-1.5">
+              <span className="text-sm font-medium text-slate-600">小項目</span>
+              <select
+                value={quickAdd.minorCategory}
+                disabled={!quickAdd.middleCategory || minorList.length === 0}
+                onChange={(e) => {
+                  const minor = e.target.value;
+                  onChange((state) => ({
+                    ...state,
+                    minorCategory: minor,
+                    name: minor || state.name,
+                  }));
+                }}
+                className="rounded-2xl border border-slate-300 px-3 py-3 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 disabled:bg-slate-50 disabled:text-slate-400"
+              >
+                <option value="">{minorList.length === 0 ? "なし" : "選択..."}</option>
+                {minorList.map((m) => (
+                  <option key={m} value={m}>
+                    {m}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+
+          {/* ── 既存テンプレート ── */}
           <label className="flex flex-col gap-1.5">
             <span className="text-sm font-medium text-slate-600">テンプレート</span>
             <select

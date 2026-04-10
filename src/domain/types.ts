@@ -55,6 +55,9 @@ export type Task = BaseEntity & {
   leadTimeDays?: number;
   canvasX?: number;
   canvasY?: number;
+  majorCategory?: string;
+  middleCategory?: string;
+  minorCategory?: string;
 };
 
 // ── Resource ────────────────────────────────────────

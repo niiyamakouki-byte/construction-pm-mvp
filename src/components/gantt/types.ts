@@ -47,6 +47,10 @@ export type QuickAddState = {
   status: TaskStatus;
   submitting: boolean;
   selectedCategory: string;
+  majorCategory: string;
+  middleCategory: string;
+  minorCategory: string;
+  categorySearch: string;
 };
 
 export type TaskDetailState = {

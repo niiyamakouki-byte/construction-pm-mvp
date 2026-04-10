@@ -282,6 +282,10 @@ function GanttPageContent({ initialProjectId = null }: GanttPageProps) {
       status: "todo",
       submitting: false,
       selectedCategory: "",
+      majorCategory: "",
+      middleCategory: "",
+      minorCategory: "",
+      categorySearch: "",
     });
   }, [projects, today]);
 
@@ -328,6 +332,9 @@ function GanttPageContent({ initialProjectId = null }: GanttPageProps) {
         dependencies: [],
         createdAt: now,
         updatedAt: now,
+        majorCategory: quickAdd.majorCategory || undefined,
+        middleCategory: quickAdd.middleCategory || undefined,
+        minorCategory: quickAdd.minorCategory || undefined,
       });
       setQuickAdd(null);
       await loadData();
