@@ -4,6 +4,15 @@ import { createDefaultChecklist, evaluateChecklist, generateInspectionReport } f
 import { useOrganizationContext } from "../contexts/OrganizationContext.js";
 import type { KyActivity, NearMissReport } from "../lib/safety-records.js";
 import { addKyActivity, addNearMissReport, listKyActivities, listNearMissReports } from "../lib/safety-records.js";
+import type { SafetyDocument, SafetyDocumentType } from "../lib/safety-documents.js";
+import {
+  listDocuments,
+  createFromTemplate,
+  copyDocumentToProject,
+  deleteDocument,
+  generateDocumentHtml,
+  DOCUMENT_TEMPLATE_DATA,
+} from "../lib/safety-documents.js";
 
 type ProjectType = "general" | "renovation" | "demolition" | "high-rise";
 
@@ -52,12 +61,13 @@ const SEVERITY_STYLES: Record<NearMissReport["severity"], string> = {
 
 // ── Tab type ─────────────────────────────────────────────────────────────────
 
-type Tab = "checklist" | "ky" | "nearmiss";
+type Tab = "checklist" | "ky" | "nearmiss" | "documents";
 
 const TAB_DEFS: { key: Tab; label: string; icon: string }[] = [
   { key: "checklist", label: "チェックリスト", icon: "✅" },
   { key: "ky", label: "KY活動", icon: "⚠️" },
   { key: "nearmiss", label: "ヒヤリハット", icon: "🚨" },
+  { key: "documents", label: "書類", icon: "📄" },
 ];
 
 // ── KY Activity Form ─────────────────────────────────────────────────────────
@@ -319,6 +329,186 @@ function NearMissTab() {
                   <p className="text-xs text-slate-700">{r.countermeasure}</p>
                 </div>
               </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Safety Documents Tab ──────────────────────────────────────────────────────
+
+const DOCUMENT_TYPE_OPTIONS: SafetyDocumentType[] = [
+  "作業員名簿",
+  "新規入場者教育",
+  "工事安全衛生計画書",
+  "作業手順書",
+  "有資格者一覧",
+];
+
+function SafetyDocumentsTab({ projectId }: { projectId: string }) {
+  const [docs, setDocs] = useState<SafetyDocument[]>(() => listDocuments(projectId));
+  const [newType, setNewType] = useState<SafetyDocumentType>("作業員名簿");
+  const [copySourceId, setCopySourceId] = useState("");
+  const [copyProjectId, setCopyProjectId] = useState("");
+  const [status, setStatus] = useState<string | null>(null);
+
+  const refresh = () => setDocs(listDocuments(projectId));
+
+  const handleCreate = (e: React.FormEvent) => {
+    e.preventDefault();
+    createFromTemplate(projectId, newType);
+    refresh();
+    setStatus(`「${newType}」を作成しました`);
+    setTimeout(() => setStatus(null), 2000);
+  };
+
+  const handleCopy = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!copySourceId || !copyProjectId) return;
+    const copied = copyDocumentToProject(copySourceId, copyProjectId);
+    if (copied) {
+      refresh();
+      setStatus(`書類をプロジェクト「${copyProjectId}」にコピーしました`);
+      setCopySourceId("");
+      setCopyProjectId("");
+    } else {
+      setStatus("コピー元の書類が見つかりません");
+    }
+    setTimeout(() => setStatus(null), 2500);
+  };
+
+  const handleDelete = (id: string) => {
+    deleteDocument(id);
+    refresh();
+  };
+
+  const handleExport = (doc: SafetyDocument) => {
+    const html = generateDocumentHtml(doc);
+    const blob = new Blob([html], { type: "text/html;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${doc.title}_${doc.createdAt.slice(0, 10)}.html`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  // Preview field keys for each document type
+  const previewText = (doc: SafetyDocument): string => {
+    if (doc.data.type === "作業員名簿") return `${doc.data.workers.length}名`;
+    if (doc.data.type === "新規入場者教育") return `${doc.data.records.length}件`;
+    if (doc.data.type === "工事安全衛生計画書") return doc.data.plan.projectName || "未入力";
+    if (doc.data.type === "作業手順書") return `${doc.data.procedures.length}手順`;
+    if (doc.data.type === "有資格者一覧") return `${doc.data.workers.length}名`;
+    return "";
+  };
+
+  return (
+    <div className="space-y-5">
+      {/* テンプレートから新規作成 */}
+      <form onSubmit={handleCreate} className="rounded-2xl border border-slate-200 bg-white p-5 space-y-3">
+        <h2 className="text-sm font-bold text-slate-800">テンプレートから新規作成</h2>
+        <div>
+          <label className="block text-xs font-semibold text-slate-600 mb-1" htmlFor="doc-type">
+            書類種別
+          </label>
+          <select
+            id="doc-type"
+            value={newType}
+            onChange={(e) => setNewType(e.target.value as SafetyDocumentType)}
+            className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
+          >
+            {DOCUMENT_TYPE_OPTIONS.map((t) => (
+              <option key={t} value={t}>{t}</option>
+            ))}
+          </select>
+        </div>
+        <button
+          type="submit"
+          className="w-full rounded-xl bg-brand-700 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-brand-800"
+        >
+          作成
+        </button>
+      </form>
+
+      {/* 他プロジェクトからコピー */}
+      <form onSubmit={handleCopy} className="rounded-2xl border border-slate-200 bg-white p-5 space-y-3">
+        <h2 className="text-sm font-bold text-slate-800">他プロジェクトからコピー</h2>
+        <div>
+          <label className="block text-xs font-semibold text-slate-600 mb-1" htmlFor="copy-source">
+            コピー元書類ID
+          </label>
+          <input
+            id="copy-source"
+            type="text"
+            value={copySourceId}
+            onChange={(e) => setCopySourceId(e.target.value)}
+            placeholder="sdoc-..."
+            className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
+          />
+        </div>
+        <div>
+          <label className="block text-xs font-semibold text-slate-600 mb-1" htmlFor="copy-target">
+            コピー先プロジェクトID
+          </label>
+          <input
+            id="copy-target"
+            type="text"
+            value={copyProjectId}
+            onChange={(e) => setCopyProjectId(e.target.value)}
+            placeholder="proj-..."
+            className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
+          />
+        </div>
+        <button
+          type="submit"
+          disabled={!copySourceId || !copyProjectId}
+          className="w-full rounded-xl bg-slate-700 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-slate-800 disabled:opacity-40"
+        >
+          コピー
+        </button>
+      </form>
+
+      {status && (
+        <p className="text-center text-xs font-semibold text-emerald-600">{status}</p>
+      )}
+
+      {/* 書類一覧 */}
+      {docs.length === 0 ? (
+        <p className="text-center text-sm text-slate-400 py-8">書類がありません</p>
+      ) : (
+        <div className="space-y-3">
+          <h3 className="text-xs font-bold text-slate-600 uppercase tracking-wider">書類一覧</h3>
+          {docs.map((doc) => (
+            <div key={doc.id} className="rounded-xl border border-slate-200 bg-white p-4 space-y-2">
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-slate-900 truncate">{doc.title}</p>
+                  <p className="text-xs text-slate-500">{doc.type} / {previewText(doc)}</p>
+                  <p className="text-[10px] text-slate-400 mt-0.5">ID: {doc.id}</p>
+                </div>
+                <div className="flex shrink-0 gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => handleExport(doc)}
+                    className="rounded-lg border border-brand-200 bg-brand-50 px-2.5 py-1 text-[11px] font-semibold text-brand-700 hover:bg-brand-100 transition-colors"
+                  >
+                    PDF出力
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleDelete(doc.id)}
+                    className="rounded-lg border border-red-200 bg-red-50 px-2.5 py-1 text-[11px] font-semibold text-red-600 hover:bg-red-100 transition-colors"
+                  >
+                    削除
+                  </button>
+                </div>
+              </div>
+              <p className="text-[10px] text-slate-400">
+                作成: {doc.createdAt.slice(0, 10)} / 更新: {doc.updatedAt.slice(0, 10)}
+              </p>
             </div>
           ))}
         </div>
@@ -611,6 +801,11 @@ export function SafetyInspectionPage() {
 
       {/* Tab: Near Miss */}
       {activeTab === "nearmiss" && <NearMissTab />}
+
+      {/* Tab: Safety Documents */}
+      {activeTab === "documents" && (
+        <SafetyDocumentsTab projectId={organizationId ?? "default"} />
+      )}
     </div>
   );
 }
