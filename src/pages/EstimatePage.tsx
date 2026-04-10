@@ -22,7 +22,7 @@ type SelectedItem = EstimateInput & { name: string; unit: string; unitPrice: num
 
 const SIMULATION_MARGINS = [20, 25, 30];
 
-type PageTab = "estimate" | "comparison";
+type PageTab = "estimate" | "comparison" | "matsubamebushi";
 
 // フォーム入力用の業者見積データ
 type ContractorEstimateForm = {
@@ -330,6 +330,246 @@ function ComparisonTab() {
   );
 }
 
+// 松竹梅3パターン単価管理タブ
+const MATSUBAMEBUSHI_MARGINS = [15, 25, 35] as const;
+const PATTERN_LABELS = ["梅", "竹", "松"] as const;
+const PATTERN_COLORS = [
+  "border-slate-200 bg-slate-50",
+  "border-brand-200 bg-brand-50/40",
+  "border-amber-200 bg-amber-50/40",
+] as const;
+const PATTERN_HEADER_COLORS = [
+  "text-slate-600",
+  "text-brand-700",
+  "text-amber-700",
+] as const;
+
+type MatsuItem = {
+  id: string;
+  name: string;
+  quantity: number;
+  /** unitPrice per pattern: [梅, 竹, 松] */
+  unitPrices: [number, number, number];
+};
+
+function MatsubamebushiTab() {
+  const [items, setItems] = useState<MatsuItem[]>([
+    { id: "1", name: "", quantity: 1, unitPrices: [0, 0, 0] },
+  ]);
+  const [includeLegalWelfare, setIncludeLegalWelfare] = useState(false);
+
+  const addRow = () => {
+    setItems((prev) => [
+      ...prev,
+      { id: String(Date.now()), name: "", quantity: 1, unitPrices: [0, 0, 0] },
+    ]);
+  };
+
+  const removeRow = (id: string) => {
+    setItems((prev) => prev.filter((i) => i.id !== id));
+  };
+
+  const updateItem = (id: string, patch: Partial<MatsuItem>) => {
+    setItems((prev) => prev.map((i) => (i.id === id ? { ...i, ...patch } : i)));
+  };
+
+  const updateUnitPrice = (id: string, patternIdx: number, value: number) => {
+    setItems((prev) =>
+      prev.map((i) => {
+        if (i.id !== id) return i;
+        const next: [number, number, number] = [...i.unitPrices] as [number, number, number];
+        next[patternIdx] = value;
+        return { ...i, unitPrices: next };
+      }),
+    );
+  };
+
+  // Simulate all 3 patterns using simulateMultiple
+  const patternResults = PATTERN_LABELS.map((label, pidx) => {
+    const costItems: CostItem[] = items
+      .filter((i) => i.name.trim() && i.quantity > 0)
+      .map((i) => ({
+        code: i.id,
+        name: i.name,
+        unitPrice: i.unitPrices[pidx],
+        quantity: i.quantity,
+      }));
+    if (costItems.length === 0) return null;
+    try {
+      const result = simulateMultiple(costItems, [MATSUBAMEBUSHI_MARGINS[pidx]], includeLegalWelfare);
+      return { label, result: result[0] ?? null };
+    } catch {
+      return null;
+    }
+  });
+
+  return (
+    <div className="space-y-4" data-testid="matsubamebushi-tab">
+      <h2 className="text-lg font-bold text-slate-900">松竹梅3パターン見積</h2>
+      <p className="text-xs text-slate-500">
+        同じ品目リストで松(高品質)・竹(標準)・梅(コスト重視)の単価を並列管理し、合計と粗利率を比較できます。
+      </p>
+
+      {/* Legal welfare toggle */}
+      <label className="flex items-center gap-2 text-xs text-slate-600 cursor-pointer">
+        <input
+          type="checkbox"
+          checked={includeLegalWelfare}
+          onChange={(e) => setIncludeLegalWelfare(e.target.checked)}
+          className="h-4 w-4 rounded border-slate-300 accent-brand-500"
+        />
+        法定福利費を自動計上（労務費×15.35%）
+      </label>
+
+      {/* Pattern summary cards */}
+      <div className="grid grid-cols-3 gap-2">
+        {PATTERN_LABELS.map((label, pidx) => {
+          const pr = patternResults[pidx];
+          return (
+            <div
+              key={label}
+              className={`rounded-xl border p-3 text-center ${PATTERN_COLORS[pidx]}`}
+              data-testid={`pattern-card-${label}`}
+            >
+              <p className={`text-sm font-bold ${PATTERN_HEADER_COLORS[pidx]}`}>{label}</p>
+              <p className="text-[10px] text-slate-400 mt-0.5">粗利 {MATSUBAMEBUSHI_MARGINS[pidx]}%</p>
+              {pr?.result ? (
+                <>
+                  <p className="text-sm font-bold tabular-nums mt-1">
+                    ¥{pr.result.estimatePrice.toLocaleString()}
+                  </p>
+                  <p className="text-[10px] text-emerald-600 tabular-nums">
+                    粗利 ¥{pr.result.grossProfit.toLocaleString()}
+                  </p>
+                </>
+              ) : (
+                <p className="text-xs text-slate-300 mt-2">—</p>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Item table */}
+      <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-xs">
+            <thead>
+              <tr className="border-b border-slate-200 bg-slate-50/80 text-slate-500">
+                <th className="py-2 px-3 text-left font-medium">品目名</th>
+                <th className="py-2 px-2 text-center font-medium w-14">数量</th>
+                {PATTERN_LABELS.map((label, pidx) => (
+                  <th
+                    key={label}
+                    className={`py-2 px-2 text-right font-medium w-24 ${PATTERN_HEADER_COLORS[pidx]}`}
+                  >
+                    {label}単価
+                  </th>
+                ))}
+                {PATTERN_LABELS.map((label, pidx) => (
+                  <th
+                    key={`amt-${label}`}
+                    className={`py-2 px-2 text-right font-medium w-24 ${PATTERN_HEADER_COLORS[pidx]}`}
+                  >
+                    {label}金額
+                  </th>
+                ))}
+                <th className="py-2 px-2 w-8" />
+              </tr>
+            </thead>
+            <tbody>
+              {items.map((item) => (
+                <tr key={item.id} className="border-b border-slate-50">
+                  <td className="py-1.5 px-3">
+                    <input
+                      type="text"
+                      value={item.name}
+                      onChange={(e) => updateItem(item.id, { name: e.target.value })}
+                      placeholder="品目名"
+                      className="w-full rounded border border-slate-200 px-2 py-1 text-xs focus:border-brand-400 focus:outline-none"
+                    />
+                  </td>
+                  <td className="py-1.5 px-2">
+                    <input
+                      type="number"
+                      inputMode="numeric"
+                      value={item.quantity}
+                      onChange={(e) => updateItem(item.id, { quantity: Math.max(1, Number(e.target.value)) })}
+                      min={1}
+                      className="w-full rounded border border-slate-200 px-1 py-1 text-center text-xs tabular-nums focus:border-brand-400 focus:outline-none"
+                    />
+                  </td>
+                  {PATTERN_LABELS.map((_, pidx) => (
+                    <td key={`up-${pidx}`} className="py-1.5 px-2">
+                      <input
+                        type="number"
+                        inputMode="numeric"
+                        value={item.unitPrices[pidx]}
+                        onChange={(e) => updateUnitPrice(item.id, pidx, Math.max(0, Number(e.target.value)))}
+                        min={0}
+                        className="w-full rounded border border-slate-200 px-1 py-1 text-right text-xs tabular-nums focus:border-brand-400 focus:outline-none"
+                        aria-label={`${PATTERN_LABELS[pidx]}単価`}
+                      />
+                    </td>
+                  ))}
+                  {PATTERN_LABELS.map((_, pidx) => (
+                    <td key={`amt-${pidx}`} className="py-1.5 px-2 text-right tabular-nums text-slate-600">
+                      ¥{(item.unitPrices[pidx] * item.quantity).toLocaleString()}
+                    </td>
+                  ))}
+                  <td className="py-1.5 px-2">
+                    {items.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => removeRow(item.id)}
+                        className="flex h-7 w-7 items-center justify-center rounded text-slate-300 hover:text-red-500 hover:bg-red-50"
+                        aria-label="行を削除"
+                      >
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M18 6L6 18M6 6l12 12" />
+                        </svg>
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+            <tfoot>
+              <tr className="border-t-2 border-slate-200 bg-slate-50/50">
+                <td colSpan={2} className="py-2 px-3 text-right text-slate-500 font-semibold">合計金額</td>
+                {PATTERN_LABELS.map((_, pidx) => (
+                  <td key={`total-up-${pidx}`} />
+                ))}
+                {PATTERN_LABELS.map((_, pidx) => {
+                  const total = items.reduce((s, i) => s + i.unitPrices[pidx] * i.quantity, 0);
+                  return (
+                    <td
+                      key={`total-amt-${pidx}`}
+                      className={`py-2 px-2 text-right tabular-nums font-bold ${PATTERN_HEADER_COLORS[pidx]}`}
+                    >
+                      ¥{total.toLocaleString()}
+                    </td>
+                  );
+                })}
+                <td />
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+        <div className="px-3 py-2 border-t border-slate-100">
+          <button
+            type="button"
+            onClick={addRow}
+            className="text-xs text-brand-600 hover:text-brand-700 font-medium"
+          >
+            + 品目追加
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function EstimatePageContent() {
   const [activeTab, setActiveTab] = useState<PageTab>("estimate");
   const [propertyName, setPropertyName] = useState("");
@@ -613,9 +853,20 @@ function EstimatePageContent() {
         >
           業者比較
         </button>
+        <button
+          onClick={() => setActiveTab("matsubamebushi")}
+          className={`flex-1 rounded-md py-1.5 text-sm font-semibold transition-colors ${
+            activeTab === "matsubamebushi"
+              ? "bg-white text-slate-900 shadow-sm"
+              : "text-slate-500 hover:text-slate-700"
+          }`}
+        >
+          松竹梅
+        </button>
       </div>
 
       {activeTab === "comparison" && <ComparisonTab />}
+      {activeTab === "matsubamebushi" && <MatsubamebushiTab />}
       {activeTab === "estimate" && (
         <>
       <h2 className="text-lg font-bold text-slate-900">見積作成</h2>

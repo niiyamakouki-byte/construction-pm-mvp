@@ -18,7 +18,7 @@ import {
 } from "../lib/drawing-measure.js";
 import { comparePDFs, type DiffResult, type DiffColor } from "../lib/blueprint-diff.js";
 
-type ViewerMode = "pin" | "calibrate" | "measure" | "area" | "diff";
+type ViewerMode = "pin" | "calibrate" | "measure" | "area" | "diff" | "pickup";
 
 type Props = {
   /** Drawing image URL */
