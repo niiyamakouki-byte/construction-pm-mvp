@@ -26,6 +26,16 @@ export type Project = BaseEntity & {
 
 export type TaskStatus = "todo" | "in_progress" | "done";
 
+/**
+ * Dependency relationship type between tasks.
+ * FS = Finish-to-Start (default)
+ * FF = Finish-to-Finish
+ * SS = Start-to-Start
+ * SF = Start-to-Finish
+ * none = no dependency (parallel)
+ */
+export type DependencyType = "FS" | "FF" | "SS" | "SF" | "none";
+
 export type Task = BaseEntity & {
   projectId: string;
   name: string;
@@ -37,6 +47,8 @@ export type Task = BaseEntity & {
   dueDate?: string;
   progress: number;
   dependencies: string[];
+  /** Dependency relationship type; defaults to 'FS' when not set */
+  dependencyType?: DependencyType;
   contractorId?: string;
   materials?: string[];
   lead_time?: number;

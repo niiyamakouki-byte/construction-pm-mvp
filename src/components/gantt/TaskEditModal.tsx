@@ -1,7 +1,15 @@
 import { useEffect } from "react";
-import type { Contractor } from "../../domain/types.js";
+import type { Contractor, DependencyType } from "../../domain/types.js";
 import type { TaskDetailState } from "./types.js";
 import { addDays, resolveIncludeWeekends, statusLabel } from "./utils.js";
+
+const DEP_TYPE_OPTIONS: Array<{ value: DependencyType; label: string; description: string }> = [
+  { value: "FS", label: "FS", description: "前タスク完了→開始" },
+  { value: "FF", label: "FF", description: "前タスク完了→完了" },
+  { value: "SS", label: "SS", description: "前タスク開始→開始" },
+  { value: "SF", label: "SF", description: "前タスク開始→完了" },
+  { value: "none", label: "並行", description: "依存関係なし" },
+];
 
 type Props = {
   taskDetail: TaskDetailState;
@@ -152,6 +160,30 @@ export function TaskEditModal({
             <p className="rounded-2xl bg-amber-50 px-4 py-3 text-sm text-amber-700">
               発注期限: {addDays(taskDetail.editStartDate, -Number(taskDetail.editLeadTimeDays))}
             </p>
+          )}
+
+          {taskDetail.task.dependencies && taskDetail.task.dependencies.length > 0 && (
+            <div className="flex flex-col gap-1.5">
+              <span className="text-sm font-medium text-slate-600">依存関係タイプ</span>
+              <div className="grid grid-cols-5 gap-1.5">
+                {DEP_TYPE_OPTIONS.map((opt) => (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    title={opt.description}
+                    onClick={() => onChange((detail) => ({ ...detail, editDependencyType: opt.value }))}
+                    className={`rounded-xl border px-2 py-2 text-xs font-semibold transition-colors ${
+                      taskDetail.editDependencyType === opt.value
+                        ? "border-brand-500 bg-brand-50 text-brand-700"
+                        : "border-slate-200 bg-white text-slate-500"
+                    }`}
+                  >
+                    <span className="block font-bold">{opt.label}</span>
+                    <span className="mt-0.5 block text-[10px] leading-tight text-slate-400">{opt.description}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
           )}
 
           <label className="flex flex-col gap-1.5">

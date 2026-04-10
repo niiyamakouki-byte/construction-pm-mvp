@@ -303,6 +303,7 @@ function GanttPageContent({ initialProjectId = null }: GanttPageProps) {
         : task.leadTimeDays != null
           ? String(task.leadTimeDays)
           : "",
+      editDependencyType: task.dependencyType ?? "FS",
       saving: false,
     });
   }, []);
@@ -374,6 +375,7 @@ function GanttPageContent({ initialProjectId = null }: GanttPageProps) {
         materials,
         lead_time: Number.isFinite(leadTimeDays) ? leadTimeDays : undefined,
         leadTimeDays: Number.isFinite(leadTimeDays) ? leadTimeDays : undefined,
+        dependencyType: taskDetail.editDependencyType,
         updatedAt: new Date().toISOString(),
       });
 

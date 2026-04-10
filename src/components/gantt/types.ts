@@ -1,4 +1,4 @@
-import type { Task, TaskStatus } from "../../domain/types.js";
+import type { DependencyType, Task, TaskStatus } from "../../domain/types.js";
 
 export type GanttTask = Task & {
   projectName: string;
@@ -62,6 +62,7 @@ export type TaskDetailState = {
   editStatus: TaskStatus;
   editMaterials: string;
   editLeadTimeDays: string;
+  editDependencyType: DependencyType;
   saving: boolean;
 };
 
