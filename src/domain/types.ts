@@ -135,6 +135,9 @@ export type Contractor = BaseEntity & {
 
 // ── ChatMessage / ChatRoom ───────────────────────────────
 
+/** Message classification: text=通常, inquiry=質疑, notice=周知, image=画像 */
+export type MessageType = "text" | "inquiry" | "notice" | "image";
+
 export type ChatMessage = {
   id: string;
   projectId: string;
@@ -142,6 +145,9 @@ export type ChatMessage = {
   userName: string;
   content: string;
   timestamp: string;
+  type?: MessageType;
+  /** User IDs who have read this message */
+  readBy?: string[];
   attachments?: string[];
 };
 

@@ -2,7 +2,7 @@
  * In-memory chat store for project-scoped chat rooms.
  */
 
-import type { ChatMessage, ChatRoom } from "../domain/types.js";
+import type { ChatMessage, ChatRoom, MessageType } from "../domain/types.js";
 
 // In-memory store keyed by projectId
 const rooms: Map<string, ChatRoom> = new Map();
@@ -25,6 +25,7 @@ export function sendMessage(
   userName: string,
   content: string,
   attachments?: string[],
+  type?: MessageType,
 ): ChatMessage {
   const room = getOrCreateRoom(projectId);
   const now = new Date().toISOString();
@@ -35,11 +36,51 @@ export function sendMessage(
     userName,
     content,
     timestamp: now,
+    type: type ?? "text",
+    readBy: [],
     ...(attachments && attachments.length > 0 ? { attachments } : {}),
   };
   room.messages.push(msg);
   room.lastActivity = now;
   return msg;
+}
+
+/**
+ * Mark a message as read by a user.
+ * Idempotent — calling twice with the same userId has no effect.
+ */
+export function markAsRead(
+  projectId: string,
+  messageId: string,
+  userId: string,
+): void {
+  const room = rooms.get(projectId);
+  if (!room) return;
+  const msg = room.messages.find((m) => m.id === messageId);
+  if (!msg) return;
+  if (!msg.readBy) msg.readBy = [];
+  if (!msg.readBy.includes(userId)) {
+    msg.readBy.push(userId);
+  }
+}
+
+/**
+ * Mark all messages in a project as read by a user (up to optional beforeTimestamp).
+ */
+export function markAllAsRead(
+  projectId: string,
+  userId: string,
+  beforeTimestamp?: string,
+): void {
+  const room = rooms.get(projectId);
+  if (!room) return;
+  for (const msg of room.messages) {
+    if (beforeTimestamp && msg.timestamp > beforeTimestamp) continue;
+    if (!msg.readBy) msg.readBy = [];
+    if (!msg.readBy.includes(userId)) {
+      msg.readBy.push(userId);
+    }
+  }
 }
 
 export function getMessages(
@@ -74,3 +115,5 @@ export function _resetChatStore(): void {
   rooms.clear();
   nextId = 1;
 }
+
+export type { MessageType };

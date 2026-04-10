@@ -3,6 +3,8 @@ import {
   sendMessage,
   getMessages,
   getUnreadCount,
+  markAsRead,
+  markAllAsRead,
   _resetChatStore,
 } from "./chat-store.js";
 
@@ -36,6 +38,21 @@ describe("chat-store", () => {
     it("omits attachments field when none provided", () => {
       const msg = sendMessage("proj-1", "u1", "A", "no attach");
       expect(msg.attachments).toBeUndefined();
+    });
+
+    it("defaults type to 'text' when not specified", () => {
+      const msg = sendMessage("proj-1", "u1", "A", "hello");
+      expect(msg.type).toBe("text");
+    });
+
+    it("stores specified message type", () => {
+      const msg = sendMessage("proj-1", "u1", "A", "質問です", undefined, "inquiry");
+      expect(msg.type).toBe("inquiry");
+    });
+
+    it("initialises readBy as empty array", () => {
+      const msg = sendMessage("proj-1", "u1", "A", "hello");
+      expect(msg.readBy).toEqual([]);
     });
   });
 
@@ -104,6 +121,63 @@ describe("chat-store", () => {
       sendMessage("p1", "u1", "A", "msg");
       const after = new Date(Date.now() + 1000).toISOString();
       expect(getUnreadCount("p1", after)).toBe(0);
+    });
+  });
+
+  describe("markAsRead", () => {
+    it("adds userId to readBy", () => {
+      const msg = sendMessage("p1", "u1", "A", "hello");
+      markAsRead("p1", msg.id, "u2");
+      const msgs = getMessages("p1");
+      expect(msgs[0].readBy).toContain("u2");
+    });
+
+    it("is idempotent — second call does not duplicate", () => {
+      const msg = sendMessage("p1", "u1", "A", "hello");
+      markAsRead("p1", msg.id, "u2");
+      markAsRead("p1", msg.id, "u2");
+      const msgs = getMessages("p1");
+      expect(msgs[0].readBy?.filter((id) => id === "u2")).toHaveLength(1);
+    });
+
+    it("is a no-op for unknown project", () => {
+      expect(() => markAsRead("no-proj", "msg-1", "u1")).not.toThrow();
+    });
+
+    it("is a no-op for unknown message", () => {
+      expect(() => markAsRead("p1", "no-msg", "u1")).not.toThrow();
+    });
+  });
+
+  describe("markAllAsRead", () => {
+    it("marks all messages as read by userId", () => {
+      sendMessage("p1", "u1", "A", "msg 1");
+      sendMessage("p1", "u1", "A", "msg 2");
+      markAllAsRead("p1", "u2");
+      const msgs = getMessages("p1");
+      expect(msgs.every((m) => m.readBy?.includes("u2"))).toBe(true);
+    });
+
+    it("respects beforeTimestamp — excludes messages after cutoff", () => {
+      const future = new Date(Date.now() + 60_000).toISOString();
+      sendMessage("p1", "u1", "A", "present");
+      markAllAsRead("p1", "u2", future);
+      const msgs = getMessages("p1");
+      // The message was sent before the future cutoff, so it should be marked
+      expect(msgs[0].readBy).toContain("u2");
+
+      // A message with a timestamp after the cutoff should NOT be marked
+      const pastCutoff = new Date(Date.now() - 60_000).toISOString();
+      sendMessage("p1", "u1", "A", "future message");
+      // markAllAsRead with a cutoff in the past — newly added message is after cutoff
+      markAllAsRead("p1", "u3", pastCutoff);
+      const msgsAfter = getMessages("p1");
+      const newerMsg = msgsAfter[msgsAfter.length - 1];
+      expect(newerMsg.readBy).not.toContain("u3");
+    });
+
+    it("is a no-op for unknown project", () => {
+      expect(() => markAllAsRead("no-proj", "u1")).not.toThrow();
     });
   });
 });
