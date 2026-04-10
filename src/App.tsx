@@ -27,6 +27,7 @@ import { ContractorPortalPage } from "./pages/ContractorPortalPage.js";
 import { CRMPage } from "./pages/CRMPage.js";
 import { ReportsPage } from "./pages/ReportsPage.js";
 import { OrderManagementPage } from "./pages/OrderManagementPage.js";
+import { InvoiceManagementPage } from "./pages/InvoiceManagementPage.js";
 import { ErrorBoundary } from "./components/ErrorBoundary.js";
 import { AuthGuard } from "./components/AuthGuard.js";
 import { OnboardingWizard, useOnboardingDone } from "./components/OnboardingWizard.js";
@@ -117,7 +118,7 @@ function AppShell() {
       icon: "☰",
       path: "/notifications",
       matchRoute: (currentRoute) =>
-        ["/today", "/invoice", "/estimate", "/contractors", "/notifications", "/help", "/node-schedule", "/cost-management", "/weather", "/safety", "/procurement", "/orders", "/crm", "/reports"].includes(currentRoute) || currentRoute.startsWith("/reports/"),
+        ["/today", "/invoice", "/estimate", "/contractors", "/notifications", "/help", "/node-schedule", "/cost-management", "/weather", "/safety", "/procurement", "/orders", "/crm", "/reports", "/invoices"].includes(currentRoute) || currentRoute.startsWith("/reports/"),
     },
   ];
 
@@ -286,6 +287,13 @@ function AppShell() {
       return (
         <ErrorBoundary fallbackTitle="コスト管理エラー">
           <CostManagementPage />
+        </ErrorBoundary>
+      );
+    }
+    if (route === "/invoices") {
+      return (
+        <ErrorBoundary fallbackTitle="請求書管理エラー">
+          <InvoiceManagementPage />
         </ErrorBoundary>
       );
     }
