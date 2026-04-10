@@ -20,6 +20,7 @@ import { TasksPage } from "./pages/TasksPage.js";
 import { CostManagementPage } from "./pages/CostManagementPage.js";
 import { WeatherPage } from "./pages/WeatherPage.js";
 import { SafetyInspectionPage } from "./pages/SafetyInspectionPage.js";
+import { SiteEntryPage } from "./pages/SiteEntryPage.js";
 import { ErrorBoundary } from "./components/ErrorBoundary.js";
 import { AuthGuard } from "./components/AuthGuard.js";
 import { OnboardingWizard, useOnboardingDone } from "./components/OnboardingWizard.js";
@@ -195,9 +196,12 @@ function AppShell() {
   const legalMatch = route.match(/^\/legal(?:#(.+))?$/);
   const projectDetailMatch = route.match(/^\/project\/(.+)$/);
   const ganttMatch = route.match(/^\/gantt(?:\/(.+))?$/);
+  const entryMatch = route.match(/^\/entry\/(.+)$/);
   const projectId = projectDetailMatch?.[1] ?? null;
   const ganttProjectId = ganttMatch?.[1] ? decodeURIComponent(ganttMatch[1]) : null;
+  const entryProjectId = entryMatch?.[1] ? decodeURIComponent(entryMatch[1]) : null;
 
+  if (entryProjectId) return <SiteEntryPage projectId={entryProjectId} />;
   if (route === "/landing") return <LandingPage />;
   if (route === "/" || route === "") {
     navigate("/app");

@@ -15,6 +15,9 @@ import {
   evaluatePhaseCompletion,
 } from "../lib/construction-checklist.js";
 import { generateProjectQR, generateFieldModeUrl } from "../lib/qr-code.js";
+import { generateSiteEntryPrintHtml } from "../lib/site-entry-qr.js";
+import { getEntryLog, getTodayWorkerCount } from "../lib/site-entry-log.js";
+import type { SiteEntryRecord } from "../lib/site-entry-log.js";
 
 // ── Construction templates ────────────────────────────
 
@@ -179,6 +182,8 @@ export function ProjectDetailPage({ projectId }: { projectId: string }) {
   const weatherFetched = useRef(false);
   const [selectedPhase, setSelectedPhase] = useState<string>(ConstructionPhase.demolition);
   const [completedChecklistIds, setCompletedChecklistIds] = useState<Set<string>>(new Set());
+  const [todayEntryLog, setTodayEntryLog] = useState<SiteEntryRecord[]>([]);
+  const [onSiteCount, setOnSiteCount] = useState(0);
 
   const loadData = useCallback(async () => {
     try {
@@ -209,6 +214,12 @@ export function ProjectDetailPage({ projectId }: { projectId: string }) {
   useEffect(() => {
     void loadData();
   }, [loadData]);
+
+  useEffect(() => {
+    const today = new Date().toISOString().slice(0, 10);
+    setTodayEntryLog(getEntryLog(projectId, today));
+    setOnSiteCount(getTodayWorkerCount(projectId));
+  }, [projectId]);
 
   const handleStatusChange = async (taskId: string, newStatus: TaskStatus) => {
     try {
@@ -986,6 +997,74 @@ export function ProjectDetailPage({ projectId }: { projectId: string }) {
             </p>
           </div>
         </div>
+      </section>
+
+      {/* Site Entry QR — print and today's log */}
+      <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-base font-bold text-slate-800">入退場QRコード</h2>
+          <button
+            type="button"
+            onClick={() => {
+              const html = generateSiteEntryPrintHtml(
+                projectId,
+                project.name,
+                "https://app.genbahub.com",
+              );
+              const blob = new Blob([html], { type: "text/html" });
+              const url = URL.createObjectURL(blob);
+              window.open(url, "_blank");
+            }}
+            className="inline-flex items-center gap-1.5 rounded-lg bg-slate-800 px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-slate-700 active:bg-slate-900 transition-colors"
+          >
+            <span aria-hidden="true">🖨</span>
+            QR印刷
+          </button>
+        </div>
+        <p className="text-xs text-slate-500 mb-4">
+          印刷したQRを現場入口に掲示。職人がスマホでスキャンして入退場を記録できます。
+        </p>
+
+        {/* On-site count badge */}
+        <div className="mb-4 inline-flex items-center gap-2 rounded-xl bg-emerald-50 border border-emerald-200 px-3 py-2">
+          <span className="text-xl" aria-hidden="true">👷</span>
+          <div>
+            <p className="text-xs font-semibold text-emerald-700">現在の入場者数</p>
+            <p className="text-2xl font-bold text-emerald-800 tabular-nums leading-tight">{onSiteCount}<span className="text-sm font-normal ml-0.5">名</span></p>
+          </div>
+        </div>
+
+        {/* Today's entry log */}
+        {todayEntryLog.length > 0 ? (
+          <div>
+            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">本日の入退場記録</p>
+            <ul className="space-y-1.5">
+              {todayEntryLog.map((record) => (
+                <li
+                  key={record.id}
+                  className="flex items-center justify-between rounded-lg bg-slate-50 border border-slate-100 px-3 py-2"
+                >
+                  <div>
+                    <p className="text-sm font-semibold text-slate-800">{record.workerName}</p>
+                    {record.company && (
+                      <p className="text-xs text-slate-400">{record.company}</p>
+                    )}
+                  </div>
+                  <div className="text-right text-xs text-slate-500 tabular-nums">
+                    <p>入: {new Date(record.entryTime).toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit" })}</p>
+                    {record.exitTime ? (
+                      <p>退: {new Date(record.exitTime).toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit" })}</p>
+                    ) : (
+                      <span className="inline-block mt-0.5 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-700">入場中</span>
+                    )}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : (
+          <p className="text-xs text-slate-400">本日の入退場記録はありません。</p>
+        )}
       </section>
     </div>
   );
