@@ -471,7 +471,7 @@ export function ProjectChat({
                   ? {
                       backgroundColor: TYPE_CONFIG[t].bg,
                       color: TYPE_CONFIG[t].text,
-                      ringColor: TYPE_CONFIG[t].text,
+                      outlineColor: TYPE_CONFIG[t].text,
                     }
                   : selectedType === t
                     ? { backgroundColor: "#e2e8f0", color: "#475569" }
