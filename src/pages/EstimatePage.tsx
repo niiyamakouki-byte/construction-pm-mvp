@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   generateEstimate,
   listCategories,
@@ -7,8 +7,15 @@ import {
 import { generateEstimatePdf } from "../estimate/pdf-estimate.js";
 import type { Estimate, EstimateInput } from "../estimate/types.js";
 import { EstimatePageErrorBoundary } from "../components/PageErrorBoundaries.js";
+import {
+  calculateFromMargin,
+  simulateMultiple,
+} from "../lib/profit-calculator.js";
+import type { CostItem } from "../lib/profit-calculator.js";
 
-type SelectedItem = EstimateInput & { name: string; unit: string; unitPrice: number };
+type SelectedItem = EstimateInput & { name: string; unit: string; unitPrice: number; isLaborCost?: boolean };
+
+const SIMULATION_MARGINS = [20, 25, 30];
 
 function EstimatePageContent() {
   const [propertyName, setPropertyName] = useState("");
@@ -18,6 +25,61 @@ function EstimatePageContent() {
   const [estimate, setEstimate] = useState<Estimate | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pdfLoading, setPdfLoading] = useState(false);
+  const [targetMargin, setTargetMargin] = useState<string>("25");
+  const [includeLegalWelfare, setIncludeLegalWelfare] = useState(false);
+
+  const costItems: CostItem[] = selectedItems.map((i) => ({
+    code: i.code,
+    name: i.name,
+    unitPrice: i.unitPriceOverride ?? i.unitPrice,
+    quantity: i.quantity,
+    isLaborCost: i.isLaborCost ?? false,
+  }));
+
+  const hasCostItems = costItems.length > 0;
+
+  const marginResult = useMemo(() => {
+    if (!hasCostItems) return null;
+    const m = parseFloat(targetMargin);
+    if (isNaN(m) || m <= 0 || m >= 100) return null;
+    try {
+      return calculateFromMargin(costItems, m, includeLegalWelfare);
+    } catch {
+      return null;
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedItems, targetMargin, includeLegalWelfare, hasCostItems]);
+
+  const simPatterns = useMemo(() => {
+    if (!hasCostItems) return null;
+    try {
+      return simulateMultiple(costItems, SIMULATION_MARGINS, includeLegalWelfare);
+    } catch {
+      return null;
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedItems, includeLegalWelfare, hasCostItems]);
+
+  const handleApplyMargin = () => {
+    if (!marginResult) return;
+    // 見積金額を自動計算した旨を表示するため、物件名が入力済みなら見積生成へ
+    if (!propertyName.trim()) {
+      setError("物件名を入力してください");
+      return;
+    }
+    setError(null);
+    try {
+      const est = generateEstimate({
+        propertyName: propertyName.trim(),
+        clientName: clientName.trim() || "お客様",
+        items: selectedItems.map((i) => ({ code: i.code, quantity: i.quantity })),
+        notes: [`目標粗利率 ${targetMargin}% で算出（粗利額: ¥${marginResult.grossProfit.toLocaleString()}）`],
+      });
+      setEstimate(est);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "見積生成に失敗しました");
+    }
+  };
 
   const categories = listCategories();
 
@@ -312,16 +374,98 @@ function EstimatePageContent() {
               </li>
             ))}
           </ul>
+          {/* 粗利逆算パネル */}
+          <div className="mt-3 rounded-lg border border-slate-200 bg-white p-3 space-y-3">
+            <p className="text-xs font-bold text-slate-700">粗利逆算</p>
+
+            {/* 法定福利費チェック */}
+            <label className="flex items-center gap-2 text-xs text-slate-600 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={includeLegalWelfare}
+                onChange={(e) => setIncludeLegalWelfare(e.target.checked)}
+                className="h-4 w-4 rounded border-slate-300 accent-brand-500"
+              />
+              法定福利費を自動計上（労務費×15.35%）
+            </label>
+
+            {/* 目標粗利率入力 */}
+            <div className="flex items-center gap-2">
+              <label htmlFor="target-margin" className="text-xs text-slate-600 whitespace-nowrap">
+                目標粗利率
+              </label>
+              <input
+                id="target-margin"
+                type="number"
+                inputMode="decimal"
+                value={targetMargin}
+                onChange={(e) => setTargetMargin(e.target.value)}
+                min={1}
+                max={99}
+                step={1}
+                className="w-20 rounded-lg border border-slate-300 px-2 py-1.5 text-center text-sm tabular-nums focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 focus:outline-none"
+              />
+              <span className="text-xs text-slate-500">%</span>
+              {marginResult && (
+                <span className="text-xs text-emerald-700 font-semibold tabular-nums">
+                  → ¥{marginResult.estimatePrice.toLocaleString()}
+                  <span className="ml-1 font-normal text-slate-400">
+                    (粗利 ¥{marginResult.grossProfit.toLocaleString()})
+                  </span>
+                </span>
+              )}
+            </div>
+
+            {/* 松竹梅シミュレーション */}
+            {simPatterns && (
+              <div>
+                <p className="text-[10px] text-slate-400 mb-1">松竹梅シミュレーション</p>
+                <div className="grid grid-cols-3 gap-1.5">
+                  {simPatterns.map((p) => (
+                    <div
+                      key={p.label}
+                      className="rounded-lg border border-slate-100 bg-slate-50 p-2 text-center cursor-pointer hover:border-brand-300 hover:bg-brand-50 transition-colors"
+                      onClick={() => setTargetMargin(String(p.marginPercent))}
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => e.key === "Enter" && setTargetMargin(String(p.marginPercent))}
+                      aria-label={`${p.label}パターン 粗利${p.marginPercent}%`}
+                    >
+                      <p className="text-xs font-bold text-slate-700">{p.label}</p>
+                      <p className="text-[10px] text-slate-400">{p.marginPercent}%</p>
+                      <p className="text-xs font-semibold tabular-nums text-brand-700">
+                        ¥{p.estimatePrice.toLocaleString()}
+                      </p>
+                      <p className="text-[10px] text-emerald-600 tabular-nums">
+                        粗利 ¥{p.grossProfit.toLocaleString()}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
           <div className="responsive-form-actions mt-3 flex items-center justify-between gap-3 border-t border-brand-100 pt-3">
             <span className="text-xs text-slate-500">
               仮計: ¥{selectedItems.reduce((s, i) => s + i.unitPrice * i.quantity, 0).toLocaleString()}
             </span>
-            <button
-              onClick={handleGenerate}
-              className="rounded-lg bg-brand-500 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-brand-600 active:bg-brand-700 transition-colors"
-            >
-              見積書を生成
-            </button>
+            <div className="flex gap-2">
+              {marginResult && (
+                <button
+                  onClick={handleApplyMargin}
+                  className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700 active:bg-emerald-800 transition-colors"
+                >
+                  粗利逆算で生成
+                </button>
+              )}
+              <button
+                onClick={handleGenerate}
+                className="rounded-lg bg-brand-500 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-brand-600 active:bg-brand-700 transition-colors"
+              >
+                見積書を生成
+              </button>
+            </div>
           </div>
         </div>
       )}
