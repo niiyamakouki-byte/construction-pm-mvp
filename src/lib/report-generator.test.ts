@@ -4,7 +4,9 @@ import {
   buildDailyReportHtml,
   buildWeeklyReportHtml,
   buildProjectReportHtml,
+  buildInspectionReportHtml,
 } from "./report-generator.js";
+import { createDefaultChecklist } from "./safety-inspection.js";
 
 function makeProject(overrides?: Partial<Project>): Project {
   return {
@@ -217,5 +219,64 @@ describe("buildProjectReportHtml", () => {
   it("handles project with no tasks or expenses", () => {
     const html = buildProjectReportHtml({ project: makeProject(), tasks: [], expenses: [] });
     expect(html).toContain("プロジェクト報告書");
+  });
+});
+
+// ── buildInspectionReportHtml ─────────────────────────────────────────────
+
+describe("buildInspectionReportHtml", () => {
+  function makeChecklist() {
+    const partial = createDefaultChecklist("general");
+    return {
+      ...partial,
+      id: "chk-1",
+      projectId: "proj-1",
+      inspectedBy: "山田太郎",
+      date: "2025-03-10",
+    };
+  }
+
+  it("returns valid HTML with inspection data", () => {
+    const checklist = makeChecklist();
+    const html = buildInspectionReportHtml({ checklist });
+    expect(html).toContain("<!DOCTYPE html>");
+    expect(html).toContain("Safety Inspection Report");
+  });
+
+  it("includes corrective actions section when provided", () => {
+    const checklist = makeChecklist();
+    const html = buildInspectionReportHtml({
+      checklist,
+      correctiveActions: ["fall-protection: ガードレール設置 — 未完了", "ppe: ヘルメット着用確認"],
+    });
+    expect(html).toContain("是正項目");
+    expect(html).toContain("fall-protection");
+  });
+
+  it("includes photo section when photoUrls provided", () => {
+    const checklist = makeChecklist();
+    const html = buildInspectionReportHtml({
+      checklist,
+      photoUrls: ["https://example.com/photo1.jpg"],
+    });
+    expect(html).toContain("添付写真");
+    expect(html).toContain("https://example.com/photo1.jpg");
+  });
+
+  it("returns base HTML unchanged when no extras provided", () => {
+    const checklist = makeChecklist();
+    const html = buildInspectionReportHtml({ checklist });
+    expect(html).not.toContain("是正項目");
+    expect(html).not.toContain("添付写真");
+  });
+
+  it("escapes HTML in corrective action text", () => {
+    const checklist = makeChecklist();
+    const html = buildInspectionReportHtml({
+      checklist,
+      correctiveActions: ["<script>alert(1)</script>"],
+    });
+    expect(html).not.toContain("<script>");
+    expect(html).toContain("&lt;script&gt;");
   });
 });

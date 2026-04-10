@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useState } from "react";
 import type { InspectionChecklist, ChecklistItem, ChecklistItemStatus } from "../lib/safety-inspection.js";
 import { createDefaultChecklist, evaluateChecklist, generateInspectionReport } from "../lib/safety-inspection.js";
+import { generateInspectionReport as generateInspectionPdf } from "../lib/report-generator.js";
 import { useOrganizationContext } from "../contexts/OrganizationContext.js";
 import type { KyActivity, NearMissReport } from "../lib/safety-records.js";
 import { addKyActivity, addNearMissReport, listKyActivities, listNearMissReports } from "../lib/safety-records.js";
@@ -589,6 +590,31 @@ export function SafetyInspectionPage() {
     }
   }, [checklist]);
 
+  const [pdfExporting, setPdfExporting] = useState(false);
+
+  const handleExportPdf = useCallback(async () => {
+    if (!checklist) return;
+    setPdfExporting(true);
+    setExportStatus(null);
+    try {
+      const failedItems = checklist.items
+        .filter((item) => item.status === "fail")
+        .map((item) => `${item.category}: ${item.description}${item.notes ? ` — ${item.notes}` : ""}`);
+      const blob = await generateInspectionPdf({ checklist, correctiveActions: failedItems });
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = `安全点検報告書_${checklist.date}.pdf`;
+      anchor.click();
+      URL.revokeObjectURL(url);
+      setExportStatus("PDF報告書を出力しました");
+    } catch (err) {
+      setExportStatus(err instanceof Error ? err.message : "PDF出力に失敗しました");
+    } finally {
+      setPdfExporting(false);
+    }
+  }, [checklist]);
+
   const groupedItems = useMemo(() => {
     if (!checklist) return new Map<string, { item: ChecklistItem; index: number }[]>();
     const groups = new Map<string, { item: ChecklistItem; index: number }[]>();
@@ -784,13 +810,23 @@ export function SafetyInspectionPage() {
               {exportStatus && (
                 <p className="text-sm text-slate-500">{exportStatus}</p>
               )}
-              <button
-                type="button"
-                onClick={handleExportReport}
-                className="w-full rounded-xl bg-brand-700 px-4 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-brand-800"
-              >
-                HTML報告書を出力
-              </button>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={handleExportReport}
+                  className="flex-1 rounded-xl border border-brand-700 px-4 py-3 text-sm font-semibold text-brand-700 shadow-sm transition-colors hover:bg-brand-50"
+                >
+                  HTML報告書を出力
+                </button>
+                <button
+                  type="button"
+                  onClick={handleExportPdf}
+                  disabled={pdfExporting}
+                  className="flex-1 rounded-xl bg-brand-700 px-4 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-brand-800 disabled:opacity-60"
+                >
+                  {pdfExporting ? "生成中..." : "報告書PDF生成"}
+                </button>
+              </div>
             </>
           )}
         </>

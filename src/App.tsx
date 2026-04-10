@@ -23,6 +23,7 @@ import { SafetyInspectionPage } from "./pages/SafetyInspectionPage.js";
 import { ProcurementPage } from "./pages/ProcurementPage.js";
 import { SiteEntryPage } from "./pages/SiteEntryPage.js";
 import { AttendanceHistoryPage } from "./pages/AttendanceHistoryPage.js";
+import { ContractorPortalPage } from "./pages/ContractorPortalPage.js";
 import { CRMPage } from "./pages/CRMPage.js";
 import { ReportsPage } from "./pages/ReportsPage.js";
 import { OrderManagementPage } from "./pages/OrderManagementPage.js";
@@ -214,6 +215,7 @@ function AppShell() {
   const entryMatch = route.match(/^\/entry\/(.+)$/);
   const historyMatch = route.match(/^\/attendance-history\/(.+)$/);
   const reportsMatch = route.match(/^\/reports(?:\/(.+))?$/);
+  const portalMatch = route.match(/^\/portal\/([^/]+)(?:\/(.+))?$/);
   const projectId = projectDetailMatch?.[1]
     ? decodeURIComponent(projectDetailMatch[1])
     : null;
@@ -222,10 +224,13 @@ function AppShell() {
   const entryProjectId = entryMatch?.[1] ? decodeURIComponent(entryMatch[1]) : null;
   const historyProjectId = historyMatch?.[1] ? decodeURIComponent(historyMatch[1]) : null;
   const reportsProjectId = reportsMatch?.[1] ? decodeURIComponent(reportsMatch[1]) : undefined;
+  const portalProjectId = portalMatch?.[1] ? decodeURIComponent(portalMatch[1]) : null;
+  const portalCompany = portalMatch?.[2] ? decodeURIComponent(portalMatch[2]) : undefined;
 
   if (entryProjectId) return <SiteEntryPage projectId={entryProjectId} />;
   if (historyProjectId) return <AttendanceHistoryPage projectId={historyProjectId} />;
   if (reportsMatch) return <ReportsPage projectId={reportsProjectId} />;
+  if (portalProjectId) return <ContractorPortalPage projectId={portalProjectId} company={portalCompany} />;
   if (route === "/landing") return <LandingPage />;
   if (route === "/" || route === "") {
     navigate("/app");

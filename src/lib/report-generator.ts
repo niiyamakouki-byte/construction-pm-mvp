@@ -422,3 +422,60 @@ export async function generateProjectReport(
   const html = buildProjectReportHtml({ ...opts, project: opts.project });
   return htmlToBlob(html);
 }
+
+// ── Inspection Report ────────────────────────────────────────────────────
+
+import type { InspectionChecklist } from "./safety-inspection.js";
+import {
+  evaluateChecklist,
+  generateInspectionReport as buildInspectionHtml,
+} from "./safety-inspection.js";
+
+export type InspectionReportInput = {
+  checklist: InspectionChecklist;
+  photoUrls?: string[];
+  correctiveActions?: string[];
+};
+
+/**
+ * Build HTML string for an inspection report (with photos and corrective actions).
+ */
+export function buildInspectionReportHtml(input: InspectionReportInput): string {
+  const { checklist, photoUrls = [], correctiveActions = [] } = input;
+  const evaluation = evaluateChecklist(checklist);
+  const baseHtml = buildInspectionHtml(checklist);
+
+  // Inject photos and corrective action sections before closing </body>
+  let extras = "";
+
+  if (correctiveActions.length > 0) {
+    const items = correctiveActions
+      .map((a, i) => `<li style="padding:4px 0;">${escapeHtml(`${i + 1}. ${a}`)}</li>`)
+      .join("");
+    extras += `
+<h2 style="font-size:1.1em;margin-top:1.4em;border-left:4px solid #ef4444;padding-left:8px;">是正項目</h2>
+<ul style="padding-left:1.2em;margin:8px 0;">${items}</ul>`;
+  }
+
+  if (photoUrls.length > 0) {
+    const imgs = photoUrls
+      .map((url) => `<img src="${escapeHtml(url)}" style="max-width:200px;max-height:150px;object-fit:cover;border-radius:4px;border:1px solid #d1d5db;" alt="検査写真" />`)
+      .join("\n");
+    extras += `
+<h2 style="font-size:1.1em;margin-top:1.4em;border-left:4px solid #2563eb;padding-left:8px;">添付写真</h2>
+<div style="display:flex;flex-wrap:wrap;gap:8px;margin:8px 0;">${imgs}</div>`;
+  }
+
+  if (!extras) return baseHtml;
+  return baseHtml.replace("</body>", `${extras}\n</body>`);
+}
+
+/**
+ * Generate an inspection report PDF Blob (検査報告書).
+ */
+export async function generateInspectionReport(
+  input: InspectionReportInput,
+): Promise<Blob> {
+  const html = buildInspectionReportHtml(input);
+  return htmlToBlob(html);
+}
