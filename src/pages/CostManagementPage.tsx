@@ -17,6 +17,10 @@ import {
   type OverheadBreakdown,
 } from "../lib/cost-forecaster.js";
 import {
+  calculateEarnedValue,
+  type EarnedValueMetrics,
+} from "../lib/earned-value.js";
+import {
   calculateWaste,
   forecastNeeded,
   getDeliveries,
@@ -266,6 +270,13 @@ export function CostManagementPage() {
   const paymentSchedule = useMemo<PaymentScheduleEntry[]>(
     () => (selectedProjectId ? getPaymentSchedule(selectedProjectId) : []),
     [selectedProjectId],
+  );
+  const earnedValueMetrics = useMemo<EarnedValueMetrics | null>(
+    () =>
+      selectedProject && selectedProjectTasks.length > 0
+        ? calculateEarnedValue(selectedProjectTasks, selectedProject.budget ?? 0)
+        : null,
+    [selectedProject, selectedProjectTasks],
   );
   const outstandingAmount = useMemo<number>(
     () => (selectedProjectId ? calculateOutstanding(selectedProjectId) : 0),
@@ -598,6 +609,35 @@ export function CostManagementPage() {
           <StatCard label="受領請求" value={formatCurrency(summary.byBreakdown.invoicesReceived)} tone="border-slate-200 bg-white text-slate-900" />
         </div>
       </section>
+      {earnedValueMetrics ? (
+        <section className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm">
+          <div className="mb-4">
+            <p className="text-xs font-semibold tracking-[0.18em] text-slate-500">アーンドバリュー分析</p>
+            <h2 className="mt-1 text-xl font-bold text-slate-900">EVM 進捗指標</h2>
+          </div>
+          <div className="grid gap-3 md:grid-cols-3">
+            <StatCard label="EV（出来高）" value={formatCurrency(earnedValueMetrics.ev)} tone="border-emerald-200 bg-emerald-50 text-emerald-900" />
+            <StatCard label="PV（計画出来高）" value={formatCurrency(earnedValueMetrics.pv)} tone="border-blue-200 bg-blue-50 text-blue-900" />
+            <StatCard label="BAC（完成時予算）" value={formatCurrency(earnedValueMetrics.bac)} tone="border-slate-200 bg-slate-50 text-slate-900" />
+          </div>
+          <div className="mt-3 grid gap-3 md:grid-cols-2">
+            <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3">
+              <p className="text-xs text-slate-500">実績進捗率</p>
+              <p className="mt-1 text-2xl font-bold text-slate-900">{earnedValueMetrics.percentComplete.toFixed(1)}%</p>
+              <div className="mt-2 h-2 w-full rounded-full bg-slate-100">
+                <div className="h-full rounded-full bg-emerald-500 transition-all" style={{ width: `${earnedValueMetrics.percentComplete}%` }} />
+              </div>
+            </div>
+            <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3">
+              <p className="text-xs text-slate-500">計画進捗率</p>
+              <p className="mt-1 text-2xl font-bold text-slate-900">{earnedValueMetrics.plannedPercentComplete.toFixed(1)}%</p>
+              <div className="mt-2 h-2 w-full rounded-full bg-slate-100">
+                <div className="h-full rounded-full bg-blue-400 transition-all" style={{ width: `${earnedValueMetrics.plannedPercentComplete}%` }} />
+              </div>
+            </div>
+          </div>
+        </section>
+      ) : null}
       {projectCostRows.length === 0 ? (
         <div className="rounded-[28px] border border-dashed border-slate-300 bg-white px-6 py-12 text-center shadow-sm">
           <h2 className="text-xl font-bold text-slate-900">コスト項目はまだありません</h2>

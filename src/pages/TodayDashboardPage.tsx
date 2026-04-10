@@ -32,6 +32,13 @@ import {
 } from "../lib/weather.js";
 import { daysBetween } from "../components/gantt/utils.js";
 import {
+  createBudgetAlert,
+  createDeadlineAlert,
+  evaluateAlerts,
+  type TriggeredAlert,
+} from "../lib/alert-rules.js";
+import { buildProcurementAlerts, type ProcurementAlert } from "../lib/procurement-alerts.js";
+import {
   validatePhoto,
   getCategoryLabel,
   PhotoCategory,
@@ -495,6 +502,24 @@ function TodayDashboardPageContent() {
     today,
   ]);
 
+  // ── Alerts ───────────────────────────────────────────
+  const triggeredAlerts = useMemo<TriggeredAlert[]>(() => {
+    return allProjects.flatMap((p) => {
+      const spent = insightProject?.id === p.id
+        ? insightCostRows.reduce((s, r) => s + r.amount, 0)
+        : 0;
+      return evaluateAlerts(
+        [createBudgetAlert(p.id, 80), createDeadlineAlert(p.id, 7)],
+        { projectId: p.id, budget: p.budget ?? 0, spent, endDate: p.endDate },
+      );
+    });
+  }, [allProjects, insightProject, insightCostRows]);
+
+  const procurementAlerts = useMemo<ProcurementAlert[]>(
+    () => buildProcurementAlerts(allTasks, today),
+    [allTasks, today],
+  );
+
   // ── Render ───────────────────────────────────────────
   if (loading) {
     return <TodayDashboardSkeleton />;
@@ -912,6 +937,41 @@ function TodayDashboardPageContent() {
           </ul>
         )}
       </section>
+
+      {/* Budget & Deadline Alerts */}
+      {triggeredAlerts.length > 0 && (
+        <section>
+          <h2 className="mb-3 flex items-center gap-2 text-base font-bold text-slate-800">
+            <span className="text-amber-500">⚠</span> アラート ({triggeredAlerts.length})
+          </h2>
+          <ul className="space-y-2">
+            {triggeredAlerts.map((alert, i) => (
+              <li key={`${alert.rule.id}-${i}`} className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                {alert.message}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {/* Procurement Alerts */}
+      {procurementAlerts.length > 0 && (
+        <section>
+          <h2 className="mb-3 flex items-center gap-2 text-base font-bold text-slate-800">
+            <span>📦</span> 資材発注アラート ({procurementAlerts.length})
+          </h2>
+          <ul className="space-y-2">
+            {procurementAlerts.slice(0, 5).map((alert) => (
+              <li key={alert.taskId} className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm">
+                <p className="font-semibold text-blue-900">{alert.taskName}</p>
+                <p className="mt-0.5 text-blue-700">
+                  開始まで {alert.daysRemaining}日 · リードタイム {alert.leadTime}日
+                </p>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       {/* Navigation - only on desktop (bottom tab bar handles mobile) */}
       <div className="hidden pt-2 sm:block">

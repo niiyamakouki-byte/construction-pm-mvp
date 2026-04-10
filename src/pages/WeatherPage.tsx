@@ -12,6 +12,7 @@ import {
   type OpenWeatherMapDailyForecast,
 } from "../lib/weather.js";
 import { createProjectRepository } from "../stores/project-store.js";
+import { calculateRainDelay, type DailyForecast as WIForecast } from "../lib/weather-integration.js";
 
 const riskCardMap = {
   normal: {
@@ -50,10 +51,37 @@ function buildRiskSummary(days: OpenWeatherMapDailyForecast[]) {
   );
 }
 
-function ForecastDayCard({ day }: { day: OpenWeatherMapDailyForecast }) {
+function toWIForecast(day: OpenWeatherMapDailyForecast, date: string): WIForecast {
+  const pop = day.pop ?? 0;
+  const rain = day.rain ?? 0;
+  const precipMm = rain > 0 ? rain : pop * 20; // estimate from probability
+  const conditionMap: Record<string, WIForecast["condition"]> = {
+    Thunderstorm: "storm",
+    Drizzle: "rain",
+    Rain: pop >= 0.8 ? "heavy_rain" : "rain",
+    Snow: "snow",
+    Fog: "fog",
+    Mist: "fog",
+    Clear: "clear",
+    Clouds: "cloudy",
+  };
+  const mainWeather = day.weather[0]?.main ?? "Clear";
+  const condition: WIForecast["condition"] = conditionMap[mainWeather] ?? (pop >= 0.6 ? "rain" : "clear");
+  return {
+    date,
+    condition,
+    tempHigh: day.temp.max,
+    tempLow: day.temp.min,
+    precipitationMm: precipMm,
+    windSpeedKmh: day.wind_speed * 3.6,
+  };
+}
+
+function ForecastDayCard({ day, date }: { day: OpenWeatherMapDailyForecast; date: string }) {
   const risk = getDailyWeatherRisk(day);
   const riskStyle = riskCardMap[risk.level];
   const weather = day.weather[0];
+  const rainDelay = calculateRainDelay(toWIForecast(day, date));
 
   return (
     <article className={`rounded-[26px] border px-4 py-4 shadow-sm ${riskStyle.border} ${riskStyle.bg}`}>
@@ -107,6 +135,12 @@ function ForecastDayCard({ day }: { day: OpenWeatherMapDailyForecast }) {
           <p className="mt-1 text-xs text-slate-600">{risk.reasons.join(" / ")}</p>
         ) : (
           <p className="mt-1 text-xs text-slate-600">大きな天候制約は見込まれていません。</p>
+        )}
+        {rainDelay.delayHours > 0 && (
+          <p className="mt-2 text-xs font-semibold text-amber-700">
+            雨天遅延見込み: {rainDelay.delayHours}時間
+            {rainDelay.canWorkIndoors ? "（屋内作業に切替可）" : ""}
+          </p>
         )}
       </div>
     </article>
@@ -300,7 +334,7 @@ export function WeatherPage() {
 
           <section className="grid gap-3 lg:grid-cols-2">
             {selectedDays.map((day) => (
-              <ForecastDayCard key={day.dt} day={day} />
+              <ForecastDayCard key={day.dt} day={day} date={new Date(day.dt * 1000).toISOString().slice(0, 10)} />
             ))}
           </section>
         </>

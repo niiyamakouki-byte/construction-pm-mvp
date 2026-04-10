@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import type { Contractor } from "../domain/types.js";
 import { createContractorRepository } from "../stores/contractor-store.js";
 import { useOrganizationContext } from "../contexts/OrganizationContext.js";
+import { getAllRoles, getRoleLabel } from "../lib/user-roles.js";
 
 export function ContractorsPage() {
   const { organizationId } = useOrganizationContext();
@@ -17,6 +18,8 @@ export function ContractorsPage() {
   const [submitting, setSubmitting] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
+  const allRoles = useMemo(() => getAllRoles(), []);
+
   // Form state
   const [name, setName] = useState("");
   const [contactPerson, setContactPerson] = useState("");
@@ -24,6 +27,7 @@ export function ContractorsPage() {
   const [email, setEmail] = useState("");
   const [lineId, setLineId] = useState("");
   const [specialty, setSpecialty] = useState("");
+  const [role, setRole] = useState("");
 
   const loadData = useCallback(async () => {
     try {
@@ -48,6 +52,7 @@ export function ContractorsPage() {
     setEmail("");
     setLineId("");
     setSpecialty("");
+    setRole("");
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -176,6 +181,16 @@ export function ContractorsPage() {
               maxLength={100}
               className="rounded-lg border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 focus:outline-none"
             />
+            <select
+              value={role}
+              onChange={(e) => setRole(e.target.value)}
+              className="rounded-lg border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 focus:outline-none"
+            >
+              <option value="">権限ロール（任意）</option>
+              {allRoles.map((r) => (
+                <option key={r} value={r}>{getRoleLabel(r)}</option>
+              ))}
+            </select>
             <div className="flex justify-end gap-2 pt-1">
               <button
                 type="button"

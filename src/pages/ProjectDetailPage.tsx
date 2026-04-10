@@ -14,6 +14,7 @@ import {
   getPhaseLabel,
   evaluatePhaseCompletion,
 } from "../lib/construction-checklist.js";
+import { generateProjectQR, generateFieldModeUrl } from "../lib/qr-code.js";
 
 // ── Construction templates ────────────────────────────
 
@@ -962,6 +963,29 @@ export function ProjectDetailPage({ projectId }: { projectId: string }) {
             </>
           );
         })()}
+      </section>
+
+      {/* QR Code for field access */}
+      <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+        <h2 className="mb-3 text-base font-bold text-slate-800">現場QRコード</h2>
+        <div className="flex flex-col items-center gap-3 sm:flex-row sm:items-start">
+          <img
+            src={generateProjectQR(projectId)}
+            alt={`${project?.name ?? projectId} フィールドアクセス QR`}
+            width={120}
+            height={120}
+            className="rounded-lg border border-slate-200"
+          />
+          <div className="text-sm text-slate-600">
+            <p className="font-semibold text-slate-800">フィールドモードURL</p>
+            <p className="mt-1 break-all font-mono text-xs text-slate-500">
+              {generateFieldModeUrl(projectId, "https://app.genbahub.com")}
+            </p>
+            <p className="mt-2 text-xs text-slate-500">
+              現場でスキャンするとモバイル最適化ビューが開きます。
+            </p>
+          </div>
+        </div>
       </section>
     </div>
   );
