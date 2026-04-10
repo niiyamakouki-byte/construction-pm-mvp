@@ -8,6 +8,7 @@ import { navigate } from "../hooks/useHashRouter.js";
 import { useOrganizationContext } from "../contexts/OrganizationContext.js";
 import { filterScheduleTasks } from "../lib/cost-management.js";
 import { ProjectDetailTabs } from "../components/ProjectDetailTabs.js";
+import { ProjectChat } from "../components/ProjectChat.js";
 import {
   ConstructionPhase,
   getPhaseChecklist,
@@ -144,7 +145,13 @@ async function fetchWeather(
   return null;
 }
 
-export function ProjectDetailPage({ projectId }: { projectId: string }) {
+export function ProjectDetailPage({
+  projectId,
+  subPath,
+}: {
+  projectId: string;
+  subPath?: string | null;
+}) {
   const { organizationId } = useOrganizationContext();
   const projectRepository = useMemo(
     () => createProjectRepository(() => organizationId),
@@ -500,7 +507,20 @@ export function ProjectDetailPage({ projectId }: { projectId: string }) {
         )}
       </div>
 
-      <ProjectDetailTabs projectId={projectId} activeTab="overview" />
+      <ProjectDetailTabs
+        projectId={projectId}
+        activeTab={subPath === "chat" ? "chat" : "overview"}
+      />
+
+      {/* Chat tab */}
+      {subPath === "chat" && (
+        <div className="rounded-xl border border-slate-200 bg-white shadow-sm flex flex-col" style={{ minHeight: "60vh" }}>
+          <ProjectChat projectId={projectId} />
+        </div>
+      )}
+
+      {/* Overview tab content */}
+      {subPath !== "chat" && <>
 
       {/* Settings */}
       <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
@@ -1066,6 +1086,8 @@ export function ProjectDetailPage({ projectId }: { projectId: string }) {
           <p className="text-xs text-slate-400">本日の入退場記録はありません。</p>
         )}
       </section>
+
+      </>}
     </div>
   );
 }

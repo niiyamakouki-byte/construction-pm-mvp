@@ -133,6 +133,24 @@ export type Contractor = BaseEntity & {
   specialty?: string;
 };
 
+// ── ChatMessage / ChatRoom ───────────────────────────────
+
+export type ChatMessage = {
+  id: string;
+  projectId: string;
+  userId: string;
+  userName: string;
+  content: string;
+  timestamp: string;
+  attachments?: string[];
+};
+
+export type ChatRoom = {
+  projectId: string;
+  messages: ChatMessage[];
+  lastActivity: string;
+};
+
 // ── Notification ────────────────────────────────────
 
 export type NotificationType =

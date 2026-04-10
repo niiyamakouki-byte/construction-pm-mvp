@@ -194,10 +194,13 @@ function AppShell() {
   };
 
   const legalMatch = route.match(/^\/legal(?:#(.+))?$/);
-  const projectDetailMatch = route.match(/^\/project\/(.+)$/);
+  const projectDetailMatch = route.match(/^\/project\/([^/]+)(?:\/(.+))?$/);
   const ganttMatch = route.match(/^\/gantt(?:\/(.+))?$/);
   const entryMatch = route.match(/^\/entry\/(.+)$/);
-  const projectId = projectDetailMatch?.[1] ?? null;
+  const projectId = projectDetailMatch?.[1]
+    ? decodeURIComponent(projectDetailMatch[1])
+    : null;
+  const projectSubPath = projectDetailMatch?.[2] ?? null;
   const ganttProjectId = ganttMatch?.[1] ? decodeURIComponent(ganttMatch[1]) : null;
   const entryProjectId = entryMatch?.[1] ? decodeURIComponent(entryMatch[1]) : null;
 
@@ -298,7 +301,7 @@ function AppShell() {
     if (projectId) {
       return (
         <ErrorBoundary fallbackTitle="プロジェクト詳細エラー">
-          <ProjectDetailPage projectId={projectId} />
+          <ProjectDetailPage projectId={projectId} subPath={projectSubPath} />
         </ErrorBoundary>
       );
     }

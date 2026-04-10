@@ -1,8 +1,10 @@
 /**
  * Stock/Flow コミュニケーションサイドバー
  * - Stock (上部): 図面・資料の固定エリア
- * - Flow (下部): タイムラインチャット
+ * - Flow (下部): タイムラインチャット（ProjectChatで実データ管理）
  */
+
+import { ProjectChat } from "./ProjectChat.js";
 
 type StockItem = {
   id: string;
@@ -11,14 +13,6 @@ type StockItem = {
   thumbnailBg: string;
 };
 
-type FlowMessage = {
-  id: string;
-  author: string;
-  avatarInitial: string;
-  avatarColor: string;
-  text: string;
-  timestamp: string;
-};
 
 const MOCK_STOCK_ITEMS: StockItem[] = [
   { id: "1", name: "1F平面図_v3.pdf", type: "PDF", thumbnailBg: "#dbeafe" },
@@ -27,60 +21,11 @@ const MOCK_STOCK_ITEMS: StockItem[] = [
   { id: "4", name: "外観パース.png", type: "画像", thumbnailBg: "#fce7f3" },
 ];
 
-const MOCK_FLOW_MESSAGES: FlowMessage[] = [
-  {
-    id: "1",
-    author: "新山",
-    avatarInitial: "新",
-    avatarColor: "#2563eb",
-    text: "2Fの壁ボード、明日から開始でお願いします。",
-    timestamp: "09:12",
-  },
-  {
-    id: "2",
-    author: "鈴木電気",
-    avatarInitial: "鈴",
-    avatarColor: "#7c3aed",
-    text: "了解です。配線先行分は本日中に完了します。",
-    timestamp: "09:45",
-  },
-  {
-    id: "3",
-    author: "新山",
-    avatarInitial: "新",
-    avatarColor: "#2563eb",
-    text: "ユニットバスの搬入経路、確認しておいてください。",
-    timestamp: "10:30",
-  },
-  {
-    id: "4",
-    author: "田中内装",
-    avatarInitial: "田",
-    avatarColor: "#059669",
-    text: "搬入口のサイズ確認しました。問題なしです！",
-    timestamp: "11:05",
-  },
-  {
-    id: "5",
-    author: "新山",
-    avatarInitial: "新",
-    avatarColor: "#2563eb",
-    text: "タイル発注、リードタイム14日なので今週中に発注してください。",
-    timestamp: "14:22",
-  },
-  {
-    id: "6",
-    author: "佐藤設備",
-    avatarInitial: "佐",
-    avatarColor: "#d97706",
-    text: "承知しました。発注書を本日送ります。",
-    timestamp: "14:55",
-  },
-];
 
 type Props = {
   open: boolean;
   onClose: () => void;
+  projectId?: string;
 };
 
 function FileIcon({ type }: { type: string }) {
@@ -91,7 +36,7 @@ function FileIcon({ type }: { type: string }) {
   );
 }
 
-export function CommunicationSidebar({ open, onClose }: Props) {
+export function CommunicationSidebar({ open, onClose, projectId }: Props) {
   if (!open) return null;
 
   return (
@@ -172,47 +117,13 @@ export function CommunicationSidebar({ open, onClose }: Props) {
               チャット（Flow）
             </span>
           </div>
-          <div className="flex-1 overflow-y-auto px-4 py-3 flex flex-col gap-3">
-            {MOCK_FLOW_MESSAGES.map((msg) => (
-              <div key={msg.id} className="flex items-start gap-2.5">
-                <span
-                  className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white"
-                  style={{ backgroundColor: msg.avatarColor }}
-                >
-                  {msg.avatarInitial}
-                </span>
-                <div className="flex flex-col gap-0.5">
-                  <div className="flex items-baseline gap-1.5">
-                    <span className="text-xs font-semibold text-slate-700">{msg.author}</span>
-                    <span className="text-[10px] text-slate-400">{msg.timestamp}</span>
-                  </div>
-                  <div className="rounded-lg bg-slate-100 px-3 py-2 text-xs text-slate-700 max-w-[260px]">
-                    {msg.text}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-          {/* Message input placeholder */}
-          <div className="border-t border-slate-200 px-4 py-3">
-            <div className="flex items-center gap-2 rounded-lg border border-slate-300 bg-slate-50 px-3 py-2">
-              <input
-                type="text"
-                placeholder="メッセージを入力..."
-                className="flex-1 bg-transparent text-xs text-slate-600 placeholder:text-slate-400 focus:outline-none"
-                readOnly
-              />
-              <button
-                type="button"
-                className="flex h-6 w-6 items-center justify-center rounded-md bg-brand-500 text-white hover:bg-brand-600 transition-colors"
-                aria-label="送信"
-              >
-                <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.269 20.876L5.999 12zm0 0h7.5" />
-                </svg>
-              </button>
-            </div>
-          </div>
+          {projectId ? (
+            <ProjectChat projectId={projectId} />
+          ) : (
+            <p className="px-4 py-3 text-xs text-slate-400">
+              プロジェクトを選択するとチャットが利用できます。
+            </p>
+          )}
         </div>
       </div>
     </>
