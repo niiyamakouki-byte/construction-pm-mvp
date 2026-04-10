@@ -115,7 +115,7 @@ function AppShell() {
       icon: "☰",
       path: "/notifications",
       matchRoute: (currentRoute) =>
-        ["/today", "/invoice", "/estimate", "/contractors", "/notifications", "/help", "/node-schedule", "/cost-management", "/weather", "/safety", "/procurement", "/crm"].includes(currentRoute),
+        ["/today", "/invoice", "/estimate", "/contractors", "/notifications", "/help", "/node-schedule", "/cost-management", "/weather", "/safety", "/procurement", "/crm", "/reports"].includes(currentRoute) || currentRoute.startsWith("/reports/"),
     },
   ];
 
