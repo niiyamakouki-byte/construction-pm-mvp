@@ -32,7 +32,7 @@ function mondayOf(dateStr: string): string {
 }
 
 export function ReportsPage({ projectId }: { projectId?: string }) {
-  const { getOrganizationId } = useOrganizationContext();
+  const { organizationId } = useOrganizationContext();
   const [projects, setProjects] = useState<Project[]>([]);
   const [selectedProjectId, setSelectedProjectId] = useState<string>(projectId ?? "");
   const [reportType, setReportType] = useState<ReportType>("daily");
@@ -43,21 +43,21 @@ export function ReportsPage({ projectId }: { projectId?: string }) {
 
   // Load projects
   useEffect(() => {
-    const repo = createProjectRepository(getOrganizationId);
+    const repo = createProjectRepository(() => organizationId);
     repo.findAll().then((all) => {
       setProjects(all);
       if (!selectedProjectId && all.length > 0) {
         setSelectedProjectId(all[0].id);
       }
     }).catch(() => setError("案件の読み込みに失敗しました"));
-  }, [getOrganizationId, selectedProjectId]);
+  }, [organizationId, selectedProjectId]);
 
   const selectedProject = projects.find((p) => p.id === selectedProjectId) ?? null;
 
   const buildHtml = useCallback(async (): Promise<string> => {
     if (!selectedProject) return "";
 
-    const taskRepo = createTaskRepository(getOrganizationId);
+    const taskRepo = createTaskRepository(() => organizationId);
     const allTasks = await taskRepo.findAll();
     const tasks = allTasks.filter((t) => t.projectId === selectedProjectId) as Task[];
     const expenses: Expense[] = [];
@@ -69,7 +69,7 @@ export function ReportsPage({ projectId }: { projectId?: string }) {
       return buildWeeklyReportHtml({ project: selectedProject, startDate: mondayOf(date), tasks, expenses });
     }
     return buildProjectReportHtml({ project: selectedProject, tasks, expenses });
-  }, [selectedProject, selectedProjectId, reportType, date, getOrganizationId]);
+  }, [selectedProject, selectedProjectId, reportType, date, organizationId]);
 
   const handlePreview = useCallback(async () => {
     if (!selectedProject) return;
