@@ -25,6 +25,7 @@ import { SiteEntryPage } from "./pages/SiteEntryPage.js";
 import { AttendanceHistoryPage } from "./pages/AttendanceHistoryPage.js";
 import { CRMPage } from "./pages/CRMPage.js";
 import { ReportsPage } from "./pages/ReportsPage.js";
+import { OrderManagementPage } from "./pages/OrderManagementPage.js";
 import { ErrorBoundary } from "./components/ErrorBoundary.js";
 import { AuthGuard } from "./components/AuthGuard.js";
 import { OnboardingWizard, useOnboardingDone } from "./components/OnboardingWizard.js";
@@ -115,7 +116,7 @@ function AppShell() {
       icon: "☰",
       path: "/notifications",
       matchRoute: (currentRoute) =>
-        ["/today", "/invoice", "/estimate", "/contractors", "/notifications", "/help", "/node-schedule", "/cost-management", "/weather", "/safety", "/procurement", "/crm", "/reports"].includes(currentRoute) || currentRoute.startsWith("/reports/"),
+        ["/today", "/invoice", "/estimate", "/contractors", "/notifications", "/help", "/node-schedule", "/cost-management", "/weather", "/safety", "/procurement", "/orders", "/crm", "/reports"].includes(currentRoute) || currentRoute.startsWith("/reports/"),
     },
   ];
 
@@ -158,6 +159,7 @@ function AppShell() {
     },
     { key: "safety", label: "安全", icon: "🦺", path: "/safety", matchRoute: (currentRoute) => currentRoute === "/safety" },
     { key: "procurement", label: "発注", icon: "📦", path: "/procurement", matchRoute: (currentRoute) => currentRoute === "/procurement" },
+    { key: "orders", label: "受発注", icon: "🗒", path: "/orders", matchRoute: (currentRoute) => currentRoute === "/orders" },
     { key: "cost", label: "コスト", icon: "💹", path: "/cost-management", matchRoute: (currentRoute) => currentRoute === "/cost-management" },
     { key: "crm", label: "CRM", icon: "🤝", path: "/crm", matchRoute: (currentRoute) => currentRoute === "/crm" },
     {
@@ -293,6 +295,13 @@ function AppShell() {
       return (
         <ErrorBoundary fallbackTitle="発注管理エラー">
           <ProcurementPage />
+        </ErrorBoundary>
+      );
+    }
+    if (route === "/orders") {
+      return (
+        <ErrorBoundary fallbackTitle="受発注管理エラー">
+          <OrderManagementPage />
         </ErrorBoundary>
       );
     }
