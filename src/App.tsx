@@ -23,6 +23,8 @@ import { SafetyInspectionPage } from "./pages/SafetyInspectionPage.js";
 import { ProcurementPage } from "./pages/ProcurementPage.js";
 import { SiteEntryPage } from "./pages/SiteEntryPage.js";
 import { AttendanceHistoryPage } from "./pages/AttendanceHistoryPage.js";
+import { CRMPage } from "./pages/CRMPage.js";
+import { ReportsPage } from "./pages/ReportsPage.js";
 import { ErrorBoundary } from "./components/ErrorBoundary.js";
 import { AuthGuard } from "./components/AuthGuard.js";
 import { OnboardingWizard, useOnboardingDone } from "./components/OnboardingWizard.js";
@@ -113,7 +115,7 @@ function AppShell() {
       icon: "☰",
       path: "/notifications",
       matchRoute: (currentRoute) =>
-        ["/today", "/invoice", "/estimate", "/contractors", "/notifications", "/help", "/node-schedule", "/cost-management", "/weather", "/safety", "/procurement"].includes(currentRoute),
+        ["/today", "/invoice", "/estimate", "/contractors", "/notifications", "/help", "/node-schedule", "/cost-management", "/weather", "/safety", "/procurement", "/crm"].includes(currentRoute),
     },
   ];
 
@@ -157,6 +159,7 @@ function AppShell() {
     { key: "safety", label: "安全", icon: "🦺", path: "/safety", matchRoute: (currentRoute) => currentRoute === "/safety" },
     { key: "procurement", label: "発注", icon: "📦", path: "/procurement", matchRoute: (currentRoute) => currentRoute === "/procurement" },
     { key: "cost", label: "コスト", icon: "💹", path: "/cost-management", matchRoute: (currentRoute) => currentRoute === "/cost-management" },
+    { key: "crm", label: "CRM", icon: "🤝", path: "/crm", matchRoute: (currentRoute) => currentRoute === "/crm" },
     {
       key: "invoice",
       label: "請求",
@@ -177,6 +180,13 @@ function AppShell() {
       icon: "🕸",
       path: "/node-schedule",
       matchRoute: (currentRoute) => currentRoute === "/node-schedule",
+    },
+    {
+      key: "reports",
+      label: "報告書",
+      icon: "📄",
+      path: "/reports",
+      matchRoute: (currentRoute) => currentRoute === "/reports" || currentRoute.startsWith("/reports/"),
     },
   ];
 
@@ -201,6 +211,7 @@ function AppShell() {
   const ganttMatch = route.match(/^\/gantt(?:\/(.+))?$/);
   const entryMatch = route.match(/^\/entry\/(.+)$/);
   const historyMatch = route.match(/^\/attendance-history\/(.+)$/);
+  const reportsMatch = route.match(/^\/reports(?:\/(.+))?$/);
   const projectId = projectDetailMatch?.[1]
     ? decodeURIComponent(projectDetailMatch[1])
     : null;
@@ -208,9 +219,11 @@ function AppShell() {
   const ganttProjectId = ganttMatch?.[1] ? decodeURIComponent(ganttMatch[1]) : null;
   const entryProjectId = entryMatch?.[1] ? decodeURIComponent(entryMatch[1]) : null;
   const historyProjectId = historyMatch?.[1] ? decodeURIComponent(historyMatch[1]) : null;
+  const reportsProjectId = reportsMatch?.[1] ? decodeURIComponent(reportsMatch[1]) : undefined;
 
   if (entryProjectId) return <SiteEntryPage projectId={entryProjectId} />;
   if (historyProjectId) return <AttendanceHistoryPage projectId={historyProjectId} />;
+  if (reportsMatch) return <ReportsPage projectId={reportsProjectId} />;
   if (route === "/landing") return <LandingPage />;
   if (route === "/" || route === "") {
     navigate("/app");
@@ -294,6 +307,13 @@ function AppShell() {
       return (
         <ErrorBoundary fallbackTitle="業者管理エラー">
           <ContractorsPage />
+        </ErrorBoundary>
+      );
+    }
+    if (route === "/crm") {
+      return (
+        <ErrorBoundary fallbackTitle="CRMエラー">
+          <CRMPage />
         </ErrorBoundary>
       );
     }
