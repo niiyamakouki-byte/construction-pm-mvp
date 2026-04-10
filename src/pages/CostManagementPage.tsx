@@ -4,6 +4,14 @@ import { useOrganizationContext } from "../contexts/OrganizationContext.js";
 import { BudgetDashboard } from "../components/BudgetDashboard.js";
 import { createAppRepository } from "../infra/create-app-repository.js";
 import {
+  createChangeRequest,
+  getChangeRequests,
+  transitionStatus,
+  getApprovedCostTotal,
+  type ChangeRequest,
+  type ChangeRequestStatus,
+} from "../lib/change-request.js";
+import {
   buildProjectCostRows,
   getProjectBudgetSummary,
   getRemainingBudgetDetail,
@@ -248,6 +256,282 @@ function CategoryTable({ category, rows }: { category: string; rows: CostRow[] }
   );
 }
 
+// ── 変更指示タブ ──────────────────────────────────────────────────────────────
+
+const STATUS_LABELS: Record<ChangeRequestStatus, string> = {
+  申請中: "申請中",
+  見積中: "見積中",
+  施主確認中: "施主確認中",
+  承認済: "承認済",
+  却下: "却下",
+  実施済: "実施済",
+};
+
+const STATUS_NEXT: Record<ChangeRequestStatus, ChangeRequestStatus | null> = {
+  申請中: "見積中",
+  見積中: "施主確認中",
+  施主確認中: "承認済",
+  承認済: "実施済",
+  却下: null,
+  実施済: null,
+};
+
+const STATUS_TONE: Record<ChangeRequestStatus, string> = {
+  申請中: "bg-slate-100 text-slate-700",
+  見積中: "bg-blue-50 text-blue-700",
+  施主確認中: "bg-amber-50 text-amber-700",
+  承認済: "bg-emerald-50 text-emerald-700",
+  却下: "bg-red-50 text-red-700",
+  実施済: "bg-purple-50 text-purple-700",
+};
+
+function ChangeRequestTab({ projectId }: { projectId: string | null }) {
+  const [requests, setRequests] = useState<ChangeRequest[]>([]);
+  const [showForm, setShowForm] = useState(false);
+  const [form, setForm] = useState({
+    requestedBy: "",
+    description: "",
+    impactDescription: "",
+    originalEstimate: "",
+    revisedEstimate: "",
+  });
+
+  const reload = useCallback(() => {
+    setRequests(getChangeRequests(projectId ?? undefined));
+  }, [projectId]);
+
+  useEffect(() => {
+    reload();
+  }, [reload]);
+
+  const costDiff = useMemo(() => {
+    const orig = Number(form.originalEstimate) || 0;
+    const rev = Number(form.revisedEstimate) || 0;
+    return rev - orig;
+  }, [form.originalEstimate, form.revisedEstimate]);
+
+  const approvedTotal = useMemo(
+    () => (projectId ? getApprovedCostTotal(projectId) : 0),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [projectId, requests],
+  );
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!projectId) return;
+    createChangeRequest({
+      id: `cr-${Date.now()}`,
+      projectId,
+      requestedBy: form.requestedBy,
+      description: form.description,
+      impactDescription: form.impactDescription,
+      originalEstimate: Number(form.originalEstimate) || 0,
+      revisedEstimate: Number(form.revisedEstimate) || 0,
+    });
+    setForm({ requestedBy: "", description: "", impactDescription: "", originalEstimate: "", revisedEstimate: "" });
+    setShowForm(false);
+    reload();
+  }
+
+  function handleAdvance(id: string, next: ChangeRequestStatus) {
+    transitionStatus(id, next);
+    reload();
+  }
+
+  function handleReject(id: string) {
+    try {
+      transitionStatus(id, "却下");
+      reload();
+    } catch {
+      // already rejected or terminal
+    }
+  }
+
+  return (
+    <div className="space-y-4">
+      {/* サマリー */}
+      <section className="grid gap-3 md:grid-cols-3">
+        <StatCard label="変更指示件数" value={`${requests.length}件`} tone="border-slate-200 bg-white text-slate-900" />
+        <StatCard
+          label="承認済コスト増減"
+          value={(approvedTotal >= 0 ? "+" : "") + formatCurrency(approvedTotal)}
+          tone={approvedTotal > 0 ? "border-amber-200 bg-amber-50 text-amber-900" : approvedTotal < 0 ? "border-emerald-200 bg-emerald-50 text-emerald-900" : "border-slate-200 bg-white text-slate-900"}
+        />
+        <StatCard
+          label="未処理件数"
+          value={`${requests.filter((r) => r.status === "申請中" || r.status === "見積中").length}件`}
+          tone="border-blue-200 bg-blue-50 text-blue-900"
+        />
+      </section>
+
+      {/* 新規作成ボタン */}
+      <div className="flex justify-end">
+        <button
+          type="button"
+          onClick={() => setShowForm((v) => !v)}
+          className="rounded-2xl bg-brand-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-brand-700"
+        >
+          {showForm ? "キャンセル" : "+ 変更指示を追加"}
+        </button>
+      </div>
+
+      {/* 新規フォーム */}
+      {showForm && (
+        <section className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm">
+          <h2 className="text-lg font-bold text-slate-900">新規変更指示</h2>
+          <form onSubmit={handleSubmit} className="mt-4 space-y-3">
+            <div className="grid gap-3 md:grid-cols-2">
+              <div>
+                <label htmlFor="cr-requestedBy" className="block text-xs font-semibold text-slate-500">依頼者</label>
+                <input
+                  id="cr-requestedBy"
+                  type="text"
+                  required
+                  value={form.requestedBy}
+                  onChange={(e) => setForm((f) => ({ ...f, requestedBy: e.target.value }))}
+                  className="mt-1 w-full rounded-2xl border border-slate-300 bg-white px-4 py-2.5 text-sm"
+                  placeholder="施主 / 担当者"
+                />
+              </div>
+              <div>
+                <label htmlFor="cr-impactDescription" className="block text-xs font-semibold text-slate-500">影響内容</label>
+                <input
+                  id="cr-impactDescription"
+                  type="text"
+                  value={form.impactDescription}
+                  onChange={(e) => setForm((f) => ({ ...f, impactDescription: e.target.value }))}
+                  className="mt-1 w-full rounded-2xl border border-slate-300 bg-white px-4 py-2.5 text-sm"
+                  placeholder="工期・材料への影響"
+                />
+              </div>
+            </div>
+            <div>
+              <label htmlFor="cr-description" className="block text-xs font-semibold text-slate-500">変更内容</label>
+              <textarea
+                id="cr-description"
+                required
+                rows={2}
+                value={form.description}
+                onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
+                className="mt-1 w-full rounded-2xl border border-slate-300 bg-white px-4 py-2.5 text-sm"
+                placeholder="変更の詳細を記述してください"
+              />
+            </div>
+            <div className="grid gap-3 md:grid-cols-3">
+              <div>
+                <label htmlFor="cr-original" className="block text-xs font-semibold text-slate-500">元見積（円）</label>
+                <input
+                  id="cr-original"
+                  type="number"
+                  required
+                  min={0}
+                  value={form.originalEstimate}
+                  onChange={(e) => setForm((f) => ({ ...f, originalEstimate: e.target.value }))}
+                  className="mt-1 w-full rounded-2xl border border-slate-300 bg-white px-4 py-2.5 text-sm tabular-nums"
+                  placeholder="0"
+                />
+              </div>
+              <div>
+                <label htmlFor="cr-revised" className="block text-xs font-semibold text-slate-500">変更後見積（円）</label>
+                <input
+                  id="cr-revised"
+                  type="number"
+                  required
+                  min={0}
+                  value={form.revisedEstimate}
+                  onChange={(e) => setForm((f) => ({ ...f, revisedEstimate: e.target.value }))}
+                  className="mt-1 w-full rounded-2xl border border-slate-300 bg-white px-4 py-2.5 text-sm tabular-nums"
+                  placeholder="0"
+                />
+              </div>
+              <div className="flex flex-col justify-end">
+                <p className="text-xs font-semibold text-slate-500">差額（リアルタイム）</p>
+                <p className={`mt-1 text-xl font-bold tabular-nums ${costDiff > 0 ? "text-amber-700" : costDiff < 0 ? "text-emerald-700" : "text-slate-500"}`}>
+                  {costDiff > 0 ? "+" : ""}{formatCurrency(costDiff)}
+                </p>
+              </div>
+            </div>
+            <div className="flex justify-end gap-3">
+              <button type="button" onClick={() => setShowForm(false)} className="rounded-2xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50">
+                キャンセル
+              </button>
+              <button type="submit" className="rounded-2xl bg-brand-600 px-5 py-2 text-sm font-semibold text-white hover:bg-brand-700">
+                登録
+              </button>
+            </div>
+          </form>
+        </section>
+      )}
+
+      {/* 一覧 */}
+      {requests.length === 0 ? (
+        <div className="rounded-[28px] border border-dashed border-slate-300 bg-white px-6 py-12 text-center shadow-sm">
+          <p className="text-sm text-slate-500">変更指示はまだありません。「+ 変更指示を追加」から登録できます。</p>
+        </div>
+      ) : (
+        <section className="rounded-[28px] border border-slate-200 bg-white shadow-sm">
+          <div className="border-b border-slate-100 px-5 py-4">
+            <h2 className="text-lg font-bold text-slate-900">変更指示一覧</h2>
+          </div>
+          <div className="divide-y divide-slate-100">
+            {requests.map((req) => {
+              const next = STATUS_NEXT[req.status];
+              return (
+                <div key={req.id} className="px-5 py-4">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className={`rounded-full px-3 py-0.5 text-xs font-semibold ${STATUS_TONE[req.status]}`}>
+                          {STATUS_LABELS[req.status]}
+                        </span>
+                        <p className="font-semibold text-slate-900">{req.description}</p>
+                      </div>
+                      {req.impactDescription && (
+                        <p className="mt-1 text-xs text-slate-500">{req.impactDescription}</p>
+                      )}
+                      <div className="mt-2 flex flex-wrap gap-4 text-xs text-slate-500">
+                        <span>依頼者: {req.requestedBy}</span>
+                        <span>元見積: {formatCurrency(req.originalEstimate)}</span>
+                        <span>変更後: {formatCurrency(req.revisedEstimate)}</span>
+                        <span className={`font-bold tabular-nums ${req.costDifference > 0 ? "text-amber-700" : req.costDifference < 0 ? "text-emerald-700" : "text-slate-500"}`}>
+                          差額: {req.costDifference > 0 ? "+" : ""}{formatCurrency(req.costDifference)}
+                        </span>
+                        {req.approvedAt && (
+                          <span>承認日: {formatCostDate(req.approvedAt.slice(0, 10))}</span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex gap-2 flex-wrap">
+                      {next && (
+                        <button
+                          type="button"
+                          onClick={() => handleAdvance(req.id, next)}
+                          className="rounded-2xl bg-brand-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-brand-700"
+                        >
+                          {STATUS_LABELS[next]}へ
+                        </button>
+                      )}
+                      {(req.status === "申請中" || req.status === "見積中" || req.status === "施主確認中") && (
+                        <button
+                          type="button"
+                          onClick={() => handleReject(req.id)}
+                          className="rounded-2xl border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-700 hover:bg-red-100"
+                        >
+                          却下
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      )}
+    </div>
+  );
+}
+
 export function CostManagementPage() {
   const { organizationId } = useOrganizationContext();
   const projectRepository = useMemo(() => createProjectRepository(() => organizationId), [organizationId]);
@@ -265,6 +549,7 @@ export function CostManagementPage() {
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(readLastProjectId());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<"cost" | "change-request">("cost");
 
   const loadData = useCallback(async () => {
     try {
@@ -411,22 +696,40 @@ export function CostManagementPage() {
             <h1 className="mt-1 text-2xl font-bold text-slate-900">コスト管理</h1>
             <p className="mt-2 text-sm text-slate-500">案件ごとの予算、支払状況、カテゴリ別コストを一覧で確認できます。</p>
           </div>
-          <div className="w-full sm:w-80">
-            <label htmlFor="cost-project-select" className="block text-xs font-semibold tracking-[0.16em] text-slate-500">
-              案件選択
-            </label>
-            <select
-              id="cost-project-select"
-              value={selectedProjectId ?? ""}
-              onChange={(event) => setSelectedProjectId(event.target.value || null)}
-              className="mt-2 w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm font-medium text-slate-700"
-            >
-              {projects.map((project) => (
-                <option key={project.id} value={project.id}>
-                  {project.name}
-                </option>
-              ))}
-            </select>
+          <div className="flex flex-col gap-3 sm:w-auto sm:items-end">
+            <div className="w-full sm:w-80">
+              <label htmlFor="cost-project-select" className="block text-xs font-semibold tracking-[0.16em] text-slate-500">
+                案件選択
+              </label>
+              <select
+                id="cost-project-select"
+                value={selectedProjectId ?? ""}
+                onChange={(event) => setSelectedProjectId(event.target.value || null)}
+                className="mt-2 w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm font-medium text-slate-700"
+              >
+                {projects.map((project) => (
+                  <option key={project.id} value={project.id}>
+                    {project.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="flex rounded-2xl border border-slate-200 bg-slate-100 p-1 text-sm font-semibold">
+              <button
+                type="button"
+                onClick={() => setActiveTab("cost")}
+                className={`rounded-xl px-4 py-1.5 transition-colors ${activeTab === "cost" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700"}`}
+              >
+                コスト管理
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab("change-request")}
+                className={`rounded-xl px-4 py-1.5 transition-colors ${activeTab === "change-request" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700"}`}
+              >
+                変更指示
+              </button>
+            </div>
           </div>
         </div>
       </section>
@@ -435,6 +738,10 @@ export function CostManagementPage() {
           {error}
         </div>
       ) : null}
+      {activeTab === "change-request" ? (
+        <ChangeRequestTab projectId={selectedProjectId} />
+      ) : (
+        <>
       <section className="grid gap-3 md:grid-cols-3">
         <StatCard label="総予算" value={formatCurrency(budgetSummary.budget)} tone="border-slate-200 bg-white text-slate-900" />
         <StatCard label="総支出" value={formatCurrency(budgetSummary.spent)} tone="border-emerald-200 bg-emerald-50 text-emerald-900" />
@@ -741,6 +1048,8 @@ export function CostManagementPage() {
           {categoryGroups.filter((group) => group.rows.length > 0).map((group) => (
             <CategoryTable key={group.category} category={group.category} rows={group.rows} />
           ))}
+        </>
+      )}
         </>
       )}
     </div>
