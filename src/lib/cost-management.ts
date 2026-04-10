@@ -6,6 +6,7 @@ import type {
   Project,
   Task,
 } from "../domain/types.js";
+import { getTotalByStatus } from "./order-management.js";
 
 export const COST_CATEGORIES = ["労務費", "材料費", "外注費", "経費"] as const;
 
@@ -201,4 +202,46 @@ export function getProjectBudgetSummary(project: Project | null, costRows: CostR
     spent: paid,
     remaining: budget - paid,
   };
+}
+
+export type RemainingBudgetDetail = {
+  budget: number;
+  spent: number;
+  committedUndelivered: number;
+  remaining: number;
+  /** 0–100 percentage of budget used (spent + committed) */
+  usedPct: number;
+  alertLevel: "none" | "warning" | "danger";
+};
+
+/**
+ * Calculates "how much can we still spend" in real time.
+ * remaining = budget - spent - committed_undelivered
+ * warning  when remaining <= 20% of budget
+ * danger   when remaining <= 10% of budget
+ */
+export function getRemainingBudgetDetail(
+  project: Project | null,
+  costRows: CostRow[],
+): RemainingBudgetDetail {
+  const budget = project?.budget ?? 0;
+  const { paid } = summarizeCostRows(costRows);
+
+  const projectId = project?.id;
+  // Orders that have been placed but not yet received (発注済 + 納品待ち)
+  const committedUndelivered = projectId
+    ? getTotalByStatus("発注済", projectId) + getTotalByStatus("納品待ち", projectId)
+    : 0;
+
+  const remaining = budget - paid - committedUndelivered;
+  const usedPct = budget > 0 ? Math.round(((paid + committedUndelivered) / budget) * 100) : 0;
+
+  let alertLevel: RemainingBudgetDetail["alertLevel"] = "none";
+  if (budget > 0) {
+    const remainingPct = remaining / budget;
+    if (remainingPct <= 0.1) alertLevel = "danger";
+    else if (remainingPct <= 0.2) alertLevel = "warning";
+  }
+
+  return { budget, spent: paid, committedUndelivered, remaining, usedPct, alertLevel };
 }

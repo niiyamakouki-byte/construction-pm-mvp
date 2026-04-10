@@ -6,9 +6,11 @@ import { createAppRepository } from "../infra/create-app-repository.js";
 import {
   buildProjectCostRows,
   getProjectBudgetSummary,
+  getRemainingBudgetDetail,
   groupCostRowsByCategory,
   summarizeCostRows,
   type CostRow,
+  type RemainingBudgetDetail,
 } from "../lib/cost-management.js";
 import { readLastProjectId, writeLastProjectId } from "../lib/last-project.js";
 import {
@@ -115,6 +117,81 @@ function StatCard({
       <p className="text-xs font-semibold tracking-[0.16em]">{label}</p>
       <p className="mt-3 text-2xl font-bold tabular-nums">{value}</p>
     </div>
+  );
+}
+
+function RemainingBudgetCard({ detail }: { detail: RemainingBudgetDetail }) {
+  const alertTone =
+    detail.alertLevel === "danger"
+      ? "border-red-300 bg-red-50"
+      : detail.alertLevel === "warning"
+        ? "border-amber-300 bg-amber-50"
+        : "border-emerald-200 bg-emerald-50";
+  const valueTone =
+    detail.alertLevel === "danger"
+      ? "text-red-700"
+      : detail.alertLevel === "warning"
+        ? "text-amber-700"
+        : "text-emerald-800";
+  const barColor =
+    detail.alertLevel === "danger"
+      ? "bg-red-500"
+      : detail.alertLevel === "warning"
+        ? "bg-amber-400"
+        : "bg-emerald-500";
+
+  return (
+    <section className={`rounded-[28px] border p-5 shadow-sm ${alertTone}`}>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="text-xs font-semibold tracking-[0.18em] text-slate-500">実行予算残</p>
+          <p className={`mt-1 text-2xl font-bold tabular-nums ${valueTone}`}>
+            {new Intl.NumberFormat("ja-JP", { style: "currency", currency: "JPY", maximumFractionDigits: 0 }).format(
+              detail.remaining,
+            )}
+          </p>
+        </div>
+        {detail.alertLevel !== "none" && (
+          <span
+            className={`rounded-full px-3 py-1 text-xs font-semibold ${
+              detail.alertLevel === "danger"
+                ? "bg-red-100 text-red-700"
+                : "bg-amber-100 text-amber-700"
+            }`}
+          >
+            {detail.alertLevel === "danger" ? "残10%以下" : "残20%以下"}
+          </span>
+        )}
+      </div>
+      <div className="mt-3 h-2 w-full rounded-full bg-slate-200">
+        <div
+          className={`h-full rounded-full transition-all ${barColor}`}
+          style={{ width: `${Math.min(100, detail.usedPct)}%` }}
+        />
+      </div>
+      <div className="mt-3 grid grid-cols-3 gap-2 text-xs text-slate-600">
+        <div>
+          <p className="font-semibold text-slate-500">実績支出</p>
+          <p className="mt-0.5 tabular-nums font-bold text-slate-900">
+            {new Intl.NumberFormat("ja-JP", { style: "currency", currency: "JPY", maximumFractionDigits: 0 }).format(
+              detail.spent,
+            )}
+          </p>
+        </div>
+        <div>
+          <p className="font-semibold text-slate-500">発注済未納品</p>
+          <p className="mt-0.5 tabular-nums font-bold text-slate-900">
+            {new Intl.NumberFormat("ja-JP", { style: "currency", currency: "JPY", maximumFractionDigits: 0 }).format(
+              detail.committedUndelivered,
+            )}
+          </p>
+        </div>
+        <div>
+          <p className="font-semibold text-slate-500">使用率</p>
+          <p className="mt-0.5 tabular-nums font-bold text-slate-900">{detail.usedPct}%</p>
+        </div>
+      </div>
+    </section>
   );
 }
 
@@ -242,6 +319,10 @@ export function CostManagementPage() {
     () => getProjectBudgetSummary(selectedProject, projectCostRows),
     [projectCostRows, selectedProject],
   );
+  const remainingBudgetDetail = useMemo<RemainingBudgetDetail>(
+    () => getRemainingBudgetDetail(selectedProject, projectCostRows),
+    [projectCostRows, selectedProject],
+  );
   const categoryGroups = useMemo(() => groupCostRowsByCategory(projectCostRows), [projectCostRows]);
   const selectedProjectTasks = useMemo(
     () => tasks.filter((task) => task.projectId === selectedProjectId),
@@ -359,6 +440,7 @@ export function CostManagementPage() {
         <StatCard label="総支出" value={formatCurrency(budgetSummary.spent)} tone="border-emerald-200 bg-emerald-50 text-emerald-900" />
         <StatCard label="残予算" value={formatCurrency(budgetSummary.remaining)} tone="border-amber-200 bg-amber-50 text-amber-900" />
       </section>
+      <RemainingBudgetCard detail={remainingBudgetDetail} />
       <section className="grid gap-3 lg:grid-cols-2">
         <article className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm">
           <div className="flex items-start justify-between gap-3">
