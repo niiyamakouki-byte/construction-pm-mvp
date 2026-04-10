@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import {
   createPin,
   updatePin,
@@ -8,10 +8,22 @@ import {
   type DrawingPin,
   type PinStatus,
 } from "../lib/drawing-pins.js";
+import {
+  calibrateScale,
+  measureDistance,
+  measureArea,
+  loadScale,
+  saveScale,
+  type Point,
+} from "../lib/drawing-measure.js";
+
+type ViewerMode = "pin" | "calibrate" | "measure" | "area";
 
 type Props = {
   /** Drawing image URL */
   drawingUrl: string;
+  /** Drawing ID for persisting scale per drawing */
+  drawingId?: string;
   /** Initial pins (controlled or uncontrolled) */
   initialPins?: DrawingPin[];
   /** Called whenever pins change */
@@ -23,20 +35,62 @@ type PopoverState = {
   editing: boolean;
 };
 
-export function DrawingViewer({ drawingUrl, initialPins = [], onPinsChange }: Props) {
+type MeasureState =
+  | { stage: "idle" }
+  | { stage: "first"; first: Point }
+  | { stage: "done"; first: Point; second: Point; label: string };
+
+type AreaState =
+  | { stage: "collecting"; points: Point[] }
+  | { stage: "done"; points: Point[]; areaSqm: number };
+
+type CalibrateState =
+  | { stage: "idle" }
+  | { stage: "first"; first: Point }
+  | { stage: "dialog"; first: Point; second: Point };
+
+export function DrawingViewer({
+  drawingUrl,
+  drawingId = "default",
+  initialPins = [],
+  onPinsChange,
+}: Props) {
   const [pins, setPins] = useState<DrawingPin[]>(initialPins);
   const [popover, setPopover] = useState<PopoverState | null>(null);
-  const [addMode, setAddMode] = useState(false);
   const [draft, setDraft] = useState<Partial<DrawingPin>>({});
+  const [mode, setMode] = useState<ViewerMode>("pin");
+  const [scale, setScale] = useState<number | null>(null);
+  const [measureState, setMeasureState] = useState<MeasureState>({ stage: "idle" });
+  const [areaState, setAreaState] = useState<AreaState>({ stage: "collecting", points: [] });
+  const [calibrateState, setCalibrateState] = useState<CalibrateState>({ stage: "idle" });
+  const [calibrateInput, setCalibrateInput] = useState("");
+  const [pinchActive, setPinchActive] = useState(false);
   const imgRef = useRef<HTMLImageElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  // Load persisted scale on mount
+  useEffect(() => {
+    const saved = loadScale(drawingId);
+    if (saved !== null) setScale(saved);
+  }, [drawingId]);
 
   const notify = (next: DrawingPin[]) => {
     setPins(next);
     onPinsChange?.(next);
   };
 
-  const getRelativePos = useCallback((clientX: number, clientY: number): { x: number; y: number } | null => {
+  const getPixelPos = useCallback((clientX: number, clientY: number): Point | null => {
+    const el = imgRef.current;
+    if (!el) return null;
+    const rect = el.getBoundingClientRect();
+    const x = clientX - rect.left;
+    const y = clientY - rect.top;
+    if (x < 0 || x > rect.width || y < 0 || y > rect.height) return null;
+    return { x, y };
+  }, []);
+
+  const getRelativePos = useCallback((clientX: number, clientY: number): Point | null => {
     const el = imgRef.current;
     if (!el) return null;
     const rect = el.getBoundingClientRect();
@@ -46,19 +100,220 @@ export function DrawingViewer({ drawingUrl, initialPins = [], onPinsChange }: Pr
     return { x, y };
   }, []);
 
-  const handleImageClick = useCallback(
+  // Pinch detection
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    if (e.touches.length >= 2) {
+      setPinchActive(true);
+      return;
+    }
+    setPinchActive(false);
+  }, []);
+
+  const handleTouchEnd = useCallback((e: React.TouchEvent) => {
+    if (e.touches.length < 2) setPinchActive(false);
+  }, []);
+
+  const getEventPos = (e: React.MouseEvent | React.TouchEvent): { clientX: number; clientY: number } | null => {
+    if ("touches" in e) {
+      if (e.touches.length !== 1) return null;
+      const t = e.touches[0];
+      if (!t) return null;
+      return { clientX: t.clientX, clientY: t.clientY };
+    }
+    return { clientX: e.clientX, clientY: e.clientY };
+  };
+
+  const handleCanvasClick = useCallback(
     (e: React.MouseEvent | React.TouchEvent) => {
-      if (!addMode) return;
-      const clientX = "touches" in e ? e.touches[0]?.clientX ?? 0 : e.clientX;
-      const clientY = "touches" in e ? e.touches[0]?.clientY ?? 0 : e.clientY;
-      const pos = getRelativePos(clientX, clientY);
+      if (pinchActive) return;
+      const pos = getEventPos(e);
       if (!pos) return;
-      setDraft({ x: pos.x, y: pos.y, status: "未着手", comment: "", assignee: "", dueDate: "" });
-      setPopover({ pinId: "__new__", editing: true });
-      setAddMode(false);
+
+      if (mode === "pin") {
+        const rel = getRelativePos(pos.clientX, pos.clientY);
+        if (!rel) return;
+        setDraft({ x: rel.x, y: rel.y, status: "未着手", comment: "", assignee: "", dueDate: "" });
+        setPopover({ pinId: "__new__", editing: true });
+        return;
+      }
+
+      if (mode === "calibrate") {
+        const px = getPixelPos(pos.clientX, pos.clientY);
+        if (!px) return;
+        if (calibrateState.stage === "idle") {
+          setCalibrateState({ stage: "first", first: px });
+        } else if (calibrateState.stage === "first") {
+          setCalibrateState({ stage: "dialog", first: calibrateState.first, second: px });
+          setCalibrateInput("");
+        }
+        return;
+      }
+
+      if (mode === "measure") {
+        if (!scale) return;
+        const px = getPixelPos(pos.clientX, pos.clientY);
+        if (!px) return;
+        if (measureState.stage === "idle" || measureState.stage === "done") {
+          setMeasureState({ stage: "first", first: px });
+        } else if (measureState.stage === "first") {
+          const result = measureDistance(measureState.first, px, scale);
+          setMeasureState({ stage: "done", first: measureState.first, second: px, label: result.label });
+        }
+        return;
+      }
+
+      if (mode === "area") {
+        if (!scale) return;
+        const px = getPixelPos(pos.clientX, pos.clientY);
+        if (!px) return;
+        if (areaState.stage === "collecting") {
+          setAreaState({ stage: "collecting", points: [...areaState.points, px] });
+        }
+        return;
+      }
     },
-    [addMode, getRelativePos]
+    [mode, pinchActive, calibrateState, measureState, areaState, scale, getPixelPos, getRelativePos]
   );
+
+  // Draw overlays on canvas
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    const img = imgRef.current;
+    if (!canvas || !img) return;
+    const rect = img.getBoundingClientRect();
+    canvas.width = rect.width;
+    canvas.height = rect.height;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    if (mode === "calibrate") {
+      const drawPoint = (p: Point) => {
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 5, 0, Math.PI * 2);
+        ctx.fillStyle = "#f59e0b";
+        ctx.fill();
+        ctx.strokeStyle = "#fff";
+        ctx.lineWidth = 2;
+        ctx.stroke();
+      };
+      if (calibrateState.stage === "first") {
+        drawPoint(calibrateState.first);
+      } else if (calibrateState.stage === "dialog") {
+        drawPoint(calibrateState.first);
+        drawPoint(calibrateState.second);
+        ctx.beginPath();
+        ctx.moveTo(calibrateState.first.x, calibrateState.first.y);
+        ctx.lineTo(calibrateState.second.x, calibrateState.second.y);
+        ctx.strokeStyle = "#f59e0b";
+        ctx.lineWidth = 2;
+        ctx.setLineDash([6, 3]);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+    }
+
+    if (mode === "measure") {
+      const drawPoint = (p: Point) => {
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 5, 0, Math.PI * 2);
+        ctx.fillStyle = "#3b82f6";
+        ctx.fill();
+        ctx.strokeStyle = "#fff";
+        ctx.lineWidth = 2;
+        ctx.stroke();
+      };
+      if (measureState.stage === "first") {
+        drawPoint(measureState.first);
+      } else if (measureState.stage === "done") {
+        drawPoint(measureState.first);
+        drawPoint(measureState.second);
+        ctx.beginPath();
+        ctx.moveTo(measureState.first.x, measureState.first.y);
+        ctx.lineTo(measureState.second.x, measureState.second.y);
+        ctx.strokeStyle = "#3b82f6";
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        // dimension label
+        const mx = (measureState.first.x + measureState.second.x) / 2;
+        const my = (measureState.first.y + measureState.second.y) / 2;
+        ctx.font = "bold 13px sans-serif";
+        ctx.fillStyle = "#1e3a8a";
+        ctx.strokeStyle = "#fff";
+        ctx.lineWidth = 4;
+        ctx.strokeText(measureState.label, mx + 4, my - 6);
+        ctx.fillText(measureState.label, mx + 4, my - 6);
+      }
+    }
+
+    if (mode === "area") {
+      const points = areaState.stage === "collecting" ? areaState.points : areaState.points;
+      if (points.length > 0) {
+        ctx.beginPath();
+        ctx.moveTo(points[0]!.x, points[0]!.y);
+        for (let i = 1; i < points.length; i++) {
+          ctx.lineTo(points[i]!.x, points[i]!.y);
+        }
+        if (areaState.stage === "done") ctx.closePath();
+        ctx.strokeStyle = "#10b981";
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        if (areaState.stage === "done") {
+          ctx.fillStyle = "rgba(16,185,129,0.15)";
+          ctx.fill();
+          // area label
+          const cx = points.reduce((s, p) => s + p.x, 0) / points.length;
+          const cy = points.reduce((s, p) => s + p.y, 0) / points.length;
+          const label = `${areaState.areaSqm.toFixed(2)} ㎡`;
+          ctx.font = "bold 14px sans-serif";
+          ctx.fillStyle = "#064e3b";
+          ctx.strokeStyle = "#fff";
+          ctx.lineWidth = 4;
+          ctx.strokeText(label, cx, cy);
+          ctx.fillText(label, cx, cy);
+        }
+        points.forEach((p) => {
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, 4, 0, Math.PI * 2);
+          ctx.fillStyle = "#10b981";
+          ctx.fill();
+          ctx.strokeStyle = "#fff";
+          ctx.lineWidth = 1.5;
+          ctx.stroke();
+        });
+      }
+    }
+  }, [mode, calibrateState, measureState, areaState]);
+
+  const confirmCalibrate = () => {
+    if (calibrateState.stage !== "dialog") return;
+    const mm = parseFloat(calibrateInput);
+    if (isNaN(mm) || mm <= 0) return;
+    const newScale = calibrateScale(calibrateState.first, calibrateState.second, mm);
+    setScale(newScale);
+    saveScale(drawingId, newScale);
+    setCalibrateState({ stage: "idle" });
+    setCalibrateInput("");
+    setMode("measure");
+  };
+
+  const finalizeArea = () => {
+    if (areaState.stage !== "collecting" || areaState.points.length < 3 || !scale) return;
+    const areaSqm = measureArea(areaState.points, scale);
+    setAreaState({ stage: "done", points: areaState.points, areaSqm });
+  };
+
+  const resetArea = () => {
+    setAreaState({ stage: "collecting", points: [] });
+  };
+
+  const switchMode = (next: ViewerMode) => {
+    setMode(next);
+    setPopover(null);
+    if (next !== "calibrate") setCalibrateState({ stage: "idle" });
+    if (next !== "measure") setMeasureState({ stage: "idle" });
+    if (next !== "area") setAreaState({ stage: "collecting", points: [] });
+  };
 
   const handleSaveDraft = () => {
     if (draft.x == null || draft.y == null) return;
@@ -86,6 +341,15 @@ export function DrawingViewer({ drawingUrl, initialPins = [], onPinsChange }: Pr
 
   const activePin = popover?.pinId !== "__new__" ? pins.find((p) => p.id === popover?.pinId) : null;
 
+  const modeBtns: { key: ViewerMode; label: string }[] = [
+    { key: "pin", label: "ピン" },
+    { key: "calibrate", label: "縮尺設定" },
+    { key: "measure", label: "距離計測" },
+    { key: "area", label: "面積計測" },
+  ];
+
+  const noScaleWarning = (mode === "measure" || mode === "area") && !scale;
+
   return (
     <div className="flex flex-col gap-4 lg:flex-row" ref={containerRef}>
       {/* Drawing canvas area */}
@@ -94,14 +358,26 @@ export function DrawingViewer({ drawingUrl, initialPins = [], onPinsChange }: Pr
           ref={imgRef}
           src={drawingUrl}
           alt="図面"
-          className={`w-full ${addMode ? "cursor-crosshair" : "cursor-default"}`}
-          onClick={handleImageClick}
-          onTouchStart={handleImageClick}
+          className={`w-full ${mode !== "pin" ? "cursor-crosshair" : "cursor-default"}`}
+          onClick={mode === "pin" ? handleCanvasClick : undefined}
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
           draggable={false}
         />
 
+        {/* Measurement / calibration overlay canvas */}
+        {mode !== "pin" && (
+          <canvas
+            ref={canvasRef}
+            className="absolute inset-0 w-full h-full pointer-events-auto cursor-crosshair"
+            onClick={handleCanvasClick}
+            onTouchStart={(e) => { handleTouchStart(e); if (e.touches.length === 1) handleCanvasClick(e); }}
+            onTouchEnd={handleTouchEnd}
+          />
+        )}
+
         {/* Pin markers */}
-        {pins.map((pin) => (
+        {mode === "pin" && pins.map((pin) => (
           <button
             key={pin.id}
             type="button"
@@ -122,11 +398,43 @@ export function DrawingViewer({ drawingUrl, initialPins = [], onPinsChange }: Pr
           </button>
         ))}
 
-        {/* Add mode indicator */}
-        {addMode && (
+        {/* Mode indicator banners */}
+        {mode === "pin" && (
+          <div className="absolute inset-0 border-2 border-transparent rounded-2xl pointer-events-none flex items-start justify-center pt-3" />
+        )}
+        {mode === "calibrate" && calibrateState.stage === "idle" && (
+          <div className="absolute inset-0 border-2 border-amber-400 rounded-2xl pointer-events-none flex items-start justify-center pt-3">
+            <span className="bg-amber-500 text-white text-xs px-3 py-1 rounded-full shadow">1点目をタップ</span>
+          </div>
+        )}
+        {mode === "calibrate" && calibrateState.stage === "first" && (
+          <div className="absolute inset-0 border-2 border-amber-400 rounded-2xl pointer-events-none flex items-start justify-center pt-3">
+            <span className="bg-amber-500 text-white text-xs px-3 py-1 rounded-full shadow">2点目をタップ</span>
+          </div>
+        )}
+        {mode === "measure" && !noScaleWarning && (measureState.stage === "idle" || measureState.stage === "done") && (
           <div className="absolute inset-0 border-2 border-blue-400 rounded-2xl pointer-events-none flex items-start justify-center pt-3">
-            <span className="bg-blue-500 text-white text-xs px-3 py-1 rounded-full shadow">
-              タップしてピンを配置
+            <span className="bg-blue-500 text-white text-xs px-3 py-1 rounded-full shadow">1点目をタップ</span>
+          </div>
+        )}
+        {mode === "measure" && !noScaleWarning && measureState.stage === "first" && (
+          <div className="absolute inset-0 border-2 border-blue-400 rounded-2xl pointer-events-none flex items-start justify-center pt-3">
+            <span className="bg-blue-500 text-white text-xs px-3 py-1 rounded-full shadow">2点目をタップ</span>
+          </div>
+        )}
+        {mode === "area" && !noScaleWarning && (
+          <div className="absolute inset-0 border-2 border-emerald-400 rounded-2xl pointer-events-none flex items-start justify-center pt-3">
+            <span className="bg-emerald-500 text-white text-xs px-3 py-1 rounded-full shadow">
+              {areaState.stage === "done"
+                ? `面積: ${areaState.areaSqm.toFixed(2)} ㎡`
+                : `${areaState.points.length}点 — 3点以上で確定`}
+            </span>
+          </div>
+        )}
+        {noScaleWarning && (
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <span className="bg-slate-800/90 text-white text-sm px-4 py-2 rounded-2xl shadow">
+              まず縮尺を設定してください
             </span>
           </div>
         )}
@@ -134,52 +442,160 @@ export function DrawingViewer({ drawingUrl, initialPins = [], onPinsChange }: Pr
 
       {/* Sidebar */}
       <div className="flex w-full flex-col gap-3 lg:w-72">
-        <button
-          type="button"
-          onClick={() => { setAddMode((v) => !v); setPopover(null); }}
-          className={`rounded-2xl py-3 text-sm font-bold transition-colors ${
-            addMode
-              ? "bg-blue-600 text-white"
-              : "bg-slate-800 text-white hover:bg-slate-700"
-          }`}
-        >
-          {addMode ? "配置モード ON — キャンセル" : "＋ ピン追加"}
-        </button>
-
-        {/* Pin list */}
-        <div className="flex flex-col gap-2 overflow-y-auto max-h-[60vh]">
-          {pins.length === 0 && (
-            <p className="text-center text-sm text-slate-400 py-4">ピンがありません</p>
-          )}
-          {pins.map((pin, idx) => (
+        {/* Mode buttons */}
+        <div className="grid grid-cols-2 gap-2">
+          {modeBtns.map(({ key, label }) => (
             <button
-              key={pin.id}
+              key={key}
               type="button"
-              onClick={() => setPopover({ pinId: pin.id, editing: false })}
-              className="flex items-start gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-left shadow-sm hover:bg-slate-50 transition-colors"
+              onClick={() => switchMode(key)}
+              className={`rounded-2xl py-2.5 text-xs font-bold transition-colors ${
+                mode === key
+                  ? key === "calibrate"
+                    ? "bg-amber-500 text-white"
+                    : key === "measure"
+                    ? "bg-blue-600 text-white"
+                    : key === "area"
+                    ? "bg-emerald-600 text-white"
+                    : "bg-blue-600 text-white"
+                  : "bg-slate-800 text-white hover:bg-slate-700"
+              }`}
             >
-              <span
-                className="mt-0.5 h-3 w-3 flex-shrink-0 rounded-full"
-                style={{ backgroundColor: PIN_STATUS_COLORS[pin.status] }}
-              />
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-xs font-semibold text-slate-700">
-                  #{idx + 1} {pin.comment || "(コメントなし)"}
-                </p>
-                <p className="text-xs text-slate-400">
-                  {pin.assignee} {pin.dueDate ? `· ${pin.dueDate}` : ""}
-                </p>
-              </div>
-              <span className="shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-bold text-white" style={{ backgroundColor: PIN_STATUS_COLORS[pin.status] }}>
-                {pin.status}
-              </span>
+              {label}
             </button>
           ))}
         </div>
+
+        {/* Scale status */}
+        {scale !== null && (
+          <div className="rounded-xl bg-slate-50 border border-slate-200 px-3 py-2 text-xs text-slate-600">
+            縮尺: <span className="font-bold">{scale.toFixed(4)} px/mm</span>
+          </div>
+        )}
+
+        {/* Measure result */}
+        {mode === "measure" && measureState.stage === "done" && (
+          <div className="rounded-xl bg-blue-50 border border-blue-200 px-3 py-2 text-sm text-blue-800 font-bold text-center">
+            {measureState.label}
+            <button
+              type="button"
+              onClick={() => setMeasureState({ stage: "idle" })}
+              className="block w-full mt-1 text-xs font-normal text-blue-500"
+            >
+              クリアして再計測
+            </button>
+          </div>
+        )}
+
+        {/* Area actions */}
+        {mode === "area" && scale && (
+          <div className="flex gap-2">
+            {areaState.stage === "collecting" && areaState.points.length >= 3 && (
+              <button
+                type="button"
+                onClick={finalizeArea}
+                className="flex-1 rounded-2xl bg-emerald-600 py-2.5 text-sm font-bold text-white"
+              >
+                面積確定
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={resetArea}
+              className="flex-1 rounded-2xl border border-slate-200 py-2.5 text-sm text-slate-600"
+            >
+              リセット
+            </button>
+          </div>
+        )}
+
+        {/* Pin list (only in pin mode) */}
+        {mode === "pin" && (
+          <>
+            <button
+              type="button"
+              onClick={() => { setPopover(null); }}
+              className="rounded-2xl py-3 text-sm font-bold transition-colors bg-blue-600 text-white"
+              style={{ display: "none" }}
+            />
+            <div className="flex flex-col gap-2 overflow-y-auto max-h-[60vh]">
+              {pins.length === 0 && (
+                <p className="text-center text-sm text-slate-400 py-4">ピンがありません</p>
+              )}
+              {pins.map((pin, idx) => (
+                <button
+                  key={pin.id}
+                  type="button"
+                  onClick={() => setPopover({ pinId: pin.id, editing: false })}
+                  className="flex items-start gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-left shadow-sm hover:bg-slate-50 transition-colors"
+                >
+                  <span
+                    className="mt-0.5 h-3 w-3 flex-shrink-0 rounded-full"
+                    style={{ backgroundColor: PIN_STATUS_COLORS[pin.status] }}
+                  />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-xs font-semibold text-slate-700">
+                      #{idx + 1} {pin.comment || "(コメントなし)"}
+                    </p>
+                    <p className="text-xs text-slate-400">
+                      {pin.assignee} {pin.dueDate ? `· ${pin.dueDate}` : ""}
+                    </p>
+                  </div>
+                  <span className="shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-bold text-white" style={{ backgroundColor: PIN_STATUS_COLORS[pin.status] }}>
+                    {pin.status}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </>
+        )}
       </div>
 
-      {/* Popover */}
-      {popover && (
+      {/* Calibrate distance dialog */}
+      {mode === "calibrate" && calibrateState.stage === "dialog" && (
+        <div
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/30 sm:items-center"
+          onClick={() => setCalibrateState({ stage: "idle" })}
+        >
+          <div
+            className="w-full max-w-sm rounded-t-3xl sm:rounded-3xl bg-white p-5 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-base font-bold text-slate-800 mb-3">既知距離を入力</h3>
+            <label className="flex flex-col gap-1 text-xs font-medium text-slate-600">
+              実寸法 (mm)
+              <input
+                type="number"
+                value={calibrateInput}
+                onChange={(e) => setCalibrateInput(e.target.value)}
+                className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 focus:border-amber-400 focus:outline-none"
+                placeholder="例: 3000"
+                autoFocus
+                onKeyDown={(e) => { if (e.key === "Enter") confirmCalibrate(); }}
+              />
+            </label>
+            <div className="flex gap-2 mt-3">
+              <button
+                type="button"
+                onClick={confirmCalibrate}
+                className="flex-1 rounded-2xl bg-amber-500 py-2.5 text-sm font-bold text-white"
+              >
+                縮尺を設定
+              </button>
+              <button
+                type="button"
+                onClick={() => setCalibrateState({ stage: "idle" })}
+                className="flex-1 rounded-2xl border border-slate-200 py-2.5 text-sm text-slate-600"
+              >
+                キャンセル
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Pin Popover */}
+      {mode === "pin" && popover && (
         <div
           className="fixed inset-0 z-50 flex items-end justify-center bg-black/30 sm:items-center"
           onClick={() => setPopover(null)}

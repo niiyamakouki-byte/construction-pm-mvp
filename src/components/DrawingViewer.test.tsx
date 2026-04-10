@@ -24,9 +24,12 @@ describe("DrawingViewer", () => {
     expect(screen.getByAltText("図面")).toBeDefined();
   });
 
-  it("renders add pin button", () => {
+  it("renders mode selector buttons", () => {
     render(<DrawingViewer drawingUrl={DRAWING_URL} />);
-    expect(screen.getByText("＋ ピン追加")).toBeDefined();
+    expect(screen.getByText("ピン")).toBeDefined();
+    expect(screen.getByText("縮尺設定")).toBeDefined();
+    expect(screen.getByText("距離計測")).toBeDefined();
+    expect(screen.getByText("面積計測")).toBeDefined();
   });
 
   it("shows empty state when no pins", () => {
@@ -47,19 +50,18 @@ describe("DrawingViewer", () => {
     expect(pinBtn).toBeDefined();
   });
 
-  it("toggles add mode on button click", () => {
+  it("switches to calibrate mode on button click", () => {
     render(<DrawingViewer drawingUrl={DRAWING_URL} />);
-    const btn = screen.getByText("＋ ピン追加");
+    const btn = screen.getByText("縮尺設定");
     fireEvent.click(btn);
-    expect(screen.getByText(/配置モード ON/)).toBeDefined();
+    expect(screen.getByText(/1点目をタップ/)).toBeDefined();
   });
 
-  it("exits add mode on second click", () => {
+  it("switches back to pin mode", () => {
     render(<DrawingViewer drawingUrl={DRAWING_URL} />);
-    const btn = screen.getByText("＋ ピン追加");
-    fireEvent.click(btn);
-    fireEvent.click(screen.getByText(/配置モード ON/));
-    expect(screen.getByText("＋ ピン追加")).toBeDefined();
+    fireEvent.click(screen.getByText("縮尺設定"));
+    fireEvent.click(screen.getByText("ピン"));
+    expect(screen.getByText("ピンがありません")).toBeDefined();
   });
 
   it("opens popover when sidebar pin clicked", () => {
