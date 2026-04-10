@@ -10,19 +10,17 @@ import {
   getDealsByCustomer,
   getStageOrder,
   searchCustomers,
-  updateDeal,
-  _resetCRMStore,
   type Customer,
   type Deal,
   type DealStage,
 } from "../lib/crm-store.js";
 
-// Seed demo data once
+// Seed demo data only if store is empty
 let seeded = false;
 function seedDemoData() {
   if (seeded) return;
   seeded = true;
-  _resetCRMStore();
+  if (getAllCustomers().length > 0) return;
   const now = new Date().toISOString();
 
   const customers: Customer[] = [

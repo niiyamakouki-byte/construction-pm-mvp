@@ -6,7 +6,6 @@ import {
   calculateOverallProgress,
   calculateStageCompletion,
   canAdvanceStage,
-  getStageIndex,
 } from "../lib/project-flow.js";
 import type { ProjectStage, StageProgress } from "../lib/project-flow.js";
 
