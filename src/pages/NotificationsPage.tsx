@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import type { Notification, NotificationStatus } from "../domain/types.js";
 import { createNotificationRepository } from "../stores/notification-store.js";
 import { useOrganizationContext } from "../contexts/OrganizationContext.js";
+import { EmptyState } from "../components/EmptyState.js";
 
 const statusLabel: Record<NotificationStatus, string> = {
   pending: "未送信",
@@ -151,12 +152,10 @@ export function NotificationsPage() {
       )}
 
       {notifications.length === 0 ? (
-        <div className="rounded-xl border-2 border-dashed border-slate-200 bg-white p-10 text-center">
-          <p className="text-base font-bold text-slate-900">通知はありません</p>
-          <p className="mt-1 text-sm text-slate-500">
-            タスクの工程が確定・変更されると通知レコードが作成されます。
-          </p>
-        </div>
+        <EmptyState
+          title="通知はありません"
+          description="タスクの工程が確定・変更されると通知レコードが作成されます。"
+        />
       ) : (
         <div className="divide-y divide-slate-100 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
           {notifications.map((n) => (

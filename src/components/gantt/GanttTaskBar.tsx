@@ -7,6 +7,8 @@ type GanttTaskBarProps = {
   task: GanttTask;
   dragState: DragState | null;
   dragRef: React.MutableRefObject<DragState | null>;
+  /** Preview dates for this task when a dependency predecessor is being dragged */
+  cascadePreviewDates?: { startDate: string; endDate: string };
   connectMode: boolean;
   connectState: ConnectState | null;
   chartStart: string;
@@ -28,6 +30,7 @@ export function GanttTaskBar({
   task,
   dragState,
   dragRef: _dragRef,
+  cascadePreviewDates,
   chartStart,
   highlightedDates,
   today,
@@ -53,8 +56,34 @@ export function GanttTaskBar({
   const color = statusColor[task.status];
   const labelVisible = barWidth >= 96;
 
+  // Cascade ghost bar geometry
+  const ghostStartOffset = cascadePreviewDates
+    ? daysBetween(chartStart, cascadePreviewDates.startDate)
+    : null;
+  const ghostDuration = cascadePreviewDates
+    ? Math.max(1, daysBetween(cascadePreviewDates.startDate, cascadePreviewDates.endDate))
+    : null;
+  const ghostLeft = ghostStartOffset !== null ? ghostStartOffset * dayWidth : null;
+  const ghostWidth =
+    ghostDuration !== null ? Math.max(ghostDuration * dayWidth, dayWidth) : null;
+
   return (
     <div className="relative border-b border-slate-100 bg-white" style={{ height: rowHeight }}>
+      {/* Cascade ghost bar — shown when a predecessor is being dragged */}
+      {ghostLeft !== null && ghostWidth !== null && (
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute rounded-full opacity-50"
+          style={{
+            left: ghostLeft + 4,
+            top: 14,
+            width: Math.max(ghostWidth - 8, 24),
+            height: rowHeight - 28,
+            backgroundColor: color,
+            border: "2px dashed rgba(0,0,0,0.3)",
+          }}
+        />
+      )}
       {highlightedDates.map((date) => {
         const offset = daysBetween(chartStart, date.date);
         return (

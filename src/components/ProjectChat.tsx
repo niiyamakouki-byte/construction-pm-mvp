@@ -7,6 +7,7 @@ import {
   markAsRead,
   sendMessage,
 } from "../lib/chat-store.js";
+import { VoiceInput } from "./VoiceInput.js";
 
 type Props = {
   projectId: string;
@@ -498,6 +499,13 @@ export function ProjectChat({
             className="flex-1 resize-none bg-transparent text-xs text-slate-600 placeholder:text-slate-400 focus:outline-none max-h-24"
             disabled={submitting}
             aria-label="メッセージ入力"
+          />
+          <VoiceInput
+            disabled={submitting}
+            onTranscript={(text) => {
+              setInputValue((prev) => (prev ? `${prev} ${text}` : text));
+              setShowQuickReplies(false);
+            }}
           />
           <button
             type="submit"

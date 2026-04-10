@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { EmptyState } from "../components/EmptyState.js";
 import type { Contractor, Project } from "../domain/types.js";
 import { createContractorRepository } from "../stores/contractor-store.js";
 import { createProjectRepository } from "../stores/project-store.js";
@@ -124,9 +125,12 @@ export function TasksPage() {
       </div>
 
       {visibleTasks.length === 0 ? (
-        <div className="rounded-[24px] border border-dashed border-slate-300 bg-white px-6 py-10 text-center text-sm text-slate-500">
-          この案件に表示できるタスクはありません。
-        </div>
+        <EmptyState
+          title="タスクがありません"
+          description="この案件に表示できるタスクはありません。工程表からタスクを追加してください。"
+          actionLabel="工程表へ"
+          onAction={() => navigate("/gantt")}
+        />
       ) : null}
     </div>
   );

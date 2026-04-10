@@ -294,3 +294,21 @@ textarea::placeholder {
     width: min(10rem, 44vw);
   }
 }
+
+/* Ensure minimum 44px touch target for interactive elements on mobile */
+@media (max-width: 767px) {
+  .touch-target {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
+
+/* Voice input pulse animation when recording */
+@keyframes voicePulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+  50% { box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); }
+}
+
+.voice-recording {
+  animation: voicePulse 1.2s ease-in-out infinite;
+}

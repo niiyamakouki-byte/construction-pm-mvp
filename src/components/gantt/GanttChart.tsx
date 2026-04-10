@@ -5,6 +5,7 @@ import type {
   RefObject,
   TouchEvent as ReactTouchEvent,
 } from "react";
+import type { CascadePreview } from "../../hooks/useGanttDrag.js";
 import type { ChartLayout, ConnectState, DragState, GanttTask } from "./types.js";
 import type { Milestone, MilestoneStatus } from "../../lib/milestone-tracker.js";
 import { gantt } from "../../theme/index.js";
@@ -22,6 +23,7 @@ type Props = {
   chartLayout: ChartLayout;
   dragState: DragState | null;
   dragRef: MutableRefObject<DragState | null>;
+  cascadePreview?: CascadePreview;
   connectMode: boolean;
   connectState: ConnectState | null;
   milestones?: Milestone[];
@@ -46,6 +48,7 @@ export function GanttChart({
   chartLayout,
   dragState,
   dragRef,
+  cascadePreview,
   connectMode,
   connectState,
   milestones = [],
@@ -274,6 +277,7 @@ export function GanttChart({
                   task={row.task}
                   dragState={dragState}
                   dragRef={dragRef}
+                  cascadePreviewDates={cascadePreview?.get(row.task.id)}
                   connectMode={connectMode}
                   connectState={connectState}
                   chartStart={chartStart}

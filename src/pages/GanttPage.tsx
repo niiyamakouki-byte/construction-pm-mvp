@@ -467,7 +467,7 @@ function GanttPageContent({ initialProjectId = null }: GanttPageProps) {
     }
   }, [loadData, taskRepository]);
 
-  const { dragState, dragRef, startTaskDrag, startTaskResize } = useGanttDrag({
+  const { dragState, dragRef, cascadePreview, startTaskDrag, startTaskResize } = useGanttDrag({
     ganttTasks,
     contractors,
     dayWidth,
@@ -1005,6 +1005,7 @@ function GanttPageContent({ initialProjectId = null }: GanttPageProps) {
           chartLayout={chartLayout}
           dragState={dragState}
           dragRef={dragRef}
+          cascadePreview={cascadePreview}
           connectMode={connectMode}
           connectState={connectState}
           milestones={milestoneIndicators}

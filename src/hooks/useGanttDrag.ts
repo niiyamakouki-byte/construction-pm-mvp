@@ -40,6 +40,9 @@ const createDragState = (
 const LONG_PRESS_MS = 400;
 const SCROLL_TOLERANCE = 8; // px – if finger moves more than this, cancel long press
 
+/** Maps taskId -> preview dates for cascade-affected tasks during drag */
+export type CascadePreview = Map<string, { startDate: string; endDate: string }>;
+
 export function useGanttDrag({
   ganttTasks,
   contractors,
@@ -51,6 +54,7 @@ export function useGanttDrag({
   onDatesCommitted,
 }: UseGanttDragOptions) {
   const [dragState, setDragState] = useState<DragState | null>(null);
+  const [cascadePreview, setCascadePreview] = useState<CascadePreview>(new Map());
   const dragRef = useRef<DragState | null>(null);
   const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pendingDragRef = useRef<{ task: GanttTask; type: DragState["type"]; startX: number; startY: number } | null>(null);
@@ -171,6 +175,15 @@ export function useGanttDrag({
       const nextDrag = { ...drag, previewStartDate, previewEndDate };
       dragRef.current = nextDrag;
       setDragState(nextDrag);
+
+      // Compute cascade preview for dependent tasks
+      const preview = cascadeSchedule(
+        ganttTasks,
+        drag.taskId,
+        previewStartDate,
+        previewEndDate,
+      );
+      setCascadePreview(preview);
     };
 
     const handlePointerUp = async () => {
@@ -180,6 +193,7 @@ export function useGanttDrag({
 
       dragRef.current = null;
       setDragState(null);
+      setCascadePreview(new Map());
 
       if (
         drag.previewStartDate === drag.originalStartDate &&
@@ -284,6 +298,7 @@ export function useGanttDrag({
   return {
     dragState,
     dragRef,
+    cascadePreview,
     startTaskDrag,
     startTaskResize,
   };

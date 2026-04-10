@@ -130,7 +130,7 @@ function CategoryTable({ category, rows }: { category: string; rows: CostRow[] }
           {formatCurrency(rows.reduce((sum, row) => sum + row.amount, 0))}
         </p>
       </div>
-      <div className="overflow-x-auto">
+      <div className="responsive-table overflow-x-auto">
         <table className="min-w-full text-left">
           <thead className="bg-slate-50 text-xs font-semibold text-slate-500">
             <tr>
@@ -547,7 +547,7 @@ export function CostManagementPage() {
           )}
         </div>
         {paymentSchedule.length > 0 ? (
-          <div className="mt-4 overflow-x-auto">
+          <div className="responsive-table mt-4 overflow-x-auto">
             <table className="min-w-full text-left">
               <thead className="bg-slate-50 text-xs font-semibold text-slate-500">
                 <tr>
