@@ -27,7 +27,7 @@ vi.mock("../estimate/pdf-estimate.js", () => ({
 async function renderEstimatePage() {
   const { EstimatePage } = await import("../pages/EstimatePage.js");
   render(<EstimatePage />);
-  await screen.findByText("見積作成");
+  await screen.findByText("品目カタログ");
 }
 
 function getSelectedSection() {
@@ -176,7 +176,7 @@ describe("EstimatePage", () => {
     const user = userEvent.setup();
 
     render(<EstimatePage />);
-    await screen.findByText("見積作成");
+    await screen.findByText("品目カタログ");
 
     await user.type(screen.getByLabelText(/物件名/), "テスト物件");
     hasSelectedItems = false;

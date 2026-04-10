@@ -12,12 +12,326 @@ import {
   simulateMultiple,
 } from "../lib/profit-calculator.js";
 import type { CostItem } from "../lib/profit-calculator.js";
+import {
+  compareEstimates,
+  selectBestPrices,
+} from "../lib/estimate-comparison.js";
+import type { CompetitorEstimate, EstimateItem } from "../lib/estimate-comparison.js";
 
 type SelectedItem = EstimateInput & { name: string; unit: string; unitPrice: number; isLaborCost?: boolean };
 
 const SIMULATION_MARGINS = [20, 25, 30];
 
+type PageTab = "estimate" | "comparison";
+
+// フォーム入力用の業者見積データ
+type ContractorEstimateForm = {
+  contractorId: string;
+  contractorName: string;
+  itemInputs: { name: string; unitPrice: string; quantity: string }[];
+  submittedDate: string;
+};
+
+function buildCompetitorEstimate(form: ContractorEstimateForm): CompetitorEstimate {
+  const items: EstimateItem[] = form.itemInputs
+    .filter((i) => i.name.trim() && Number(i.unitPrice) > 0 && Number(i.quantity) > 0)
+    .map((i) => ({
+      name: i.name.trim(),
+      unitPrice: Number(i.unitPrice),
+      quantity: Number(i.quantity),
+      amount: Number(i.unitPrice) * Number(i.quantity),
+    }));
+  const totalAmount = items.reduce((s, i) => s + i.amount, 0);
+  return {
+    contractorId: form.contractorId,
+    contractorName: form.contractorName,
+    items,
+    totalAmount,
+    submittedDate: form.submittedDate,
+  };
+}
+
+function ComparisonTab() {
+  const [forms, setForms] = useState<ContractorEstimateForm[]>([
+    { contractorId: "c1", contractorName: "", itemInputs: [{ name: "", unitPrice: "", quantity: "1" }], submittedDate: "" },
+    { contractorId: "c2", contractorName: "", itemInputs: [{ name: "", unitPrice: "", quantity: "1" }], submittedDate: "" },
+  ]);
+  const [selectedBest, setSelectedBest] = useState<ReturnType<typeof selectBestPrices> | null>(null);
+
+  const validEstimates = forms
+    .filter((f) => f.contractorName.trim())
+    .map(buildCompetitorEstimate)
+    .filter((e) => e.items.length > 0);
+
+  const compResult = validEstimates.length >= 2 ? compareEstimates(validEstimates) : null;
+
+  const addContractor = () => {
+    setForms((prev) => [
+      ...prev,
+      {
+        contractorId: `c${prev.length + 1}`,
+        contractorName: "",
+        itemInputs: [{ name: "", unitPrice: "", quantity: "1" }],
+        submittedDate: "",
+      },
+    ]);
+  };
+
+  const removeContractor = (idx: number) => {
+    setForms((prev) => prev.filter((_, i) => i !== idx));
+    setSelectedBest(null);
+  };
+
+  const updateForm = (idx: number, patch: Partial<ContractorEstimateForm>) => {
+    setForms((prev) => prev.map((f, i) => (i === idx ? { ...f, ...patch } : f)));
+    setSelectedBest(null);
+  };
+
+  const addItemRow = (idx: number) => {
+    setForms((prev) =>
+      prev.map((f, i) =>
+        i === idx
+          ? { ...f, itemInputs: [...f.itemInputs, { name: "", unitPrice: "", quantity: "1" }] }
+          : f,
+      ),
+    );
+  };
+
+  const updateItemInput = (
+    formIdx: number,
+    itemIdx: number,
+    field: "name" | "unitPrice" | "quantity",
+    value: string,
+  ) => {
+    setForms((prev) =>
+      prev.map((f, i) =>
+        i === formIdx
+          ? {
+              ...f,
+              itemInputs: f.itemInputs.map((item, j) =>
+                j === itemIdx ? { ...item, [field]: value } : item,
+              ),
+            }
+          : f,
+      ),
+    );
+    setSelectedBest(null);
+  };
+
+  const handleSelectBest = () => {
+    if (!validEstimates.length) return;
+    setSelectedBest(selectBestPrices(validEstimates));
+  };
+
+  return (
+    <div className="mx-auto max-w-3xl space-y-4 px-4 pb-24">
+      <h2 className="text-lg font-bold text-slate-900">業者見積比較</h2>
+
+      {/* 業者入力フォーム群 */}
+      <div className="space-y-4">
+        {forms.map((form, formIdx) => (
+          <div
+            key={form.contractorId}
+            className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm space-y-3"
+          >
+            <div className="flex items-center justify-between gap-2">
+              <input
+                type="text"
+                value={form.contractorName}
+                onChange={(e) => updateForm(formIdx, { contractorName: e.target.value })}
+                placeholder={`業者名 ${formIdx + 1}`}
+                className="flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 focus:outline-none font-semibold"
+              />
+              <input
+                type="date"
+                value={form.submittedDate}
+                onChange={(e) => updateForm(formIdx, { submittedDate: e.target.value })}
+                className="rounded-lg border border-slate-300 px-2 py-2 text-xs focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 focus:outline-none"
+              />
+              {forms.length > 2 && (
+                <button
+                  onClick={() => removeContractor(formIdx)}
+                  className="flex h-9 w-9 items-center justify-center rounded text-slate-300 hover:text-red-500 hover:bg-red-50"
+                  aria-label="業者を削除"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M18 6L6 18M6 6l12 12" />
+                  </svg>
+                </button>
+              )}
+            </div>
+            <div className="space-y-1.5">
+              {form.itemInputs.map((item, itemIdx) => (
+                <div key={itemIdx} className="flex items-center gap-1.5">
+                  <input
+                    type="text"
+                    value={item.name}
+                    onChange={(e) => updateItemInput(formIdx, itemIdx, "name", e.target.value)}
+                    placeholder="品目名"
+                    className="flex-1 rounded-lg border border-slate-200 px-2 py-1.5 text-xs focus:ring-1 focus:ring-brand-500/20 focus:border-brand-500 focus:outline-none"
+                  />
+                  <input
+                    type="number"
+                    inputMode="numeric"
+                    value={item.unitPrice}
+                    onChange={(e) => updateItemInput(formIdx, itemIdx, "unitPrice", e.target.value)}
+                    placeholder="単価"
+                    min={0}
+                    className="w-24 rounded-lg border border-slate-200 px-2 py-1.5 text-xs text-right tabular-nums focus:ring-1 focus:ring-brand-500/20 focus:border-brand-500 focus:outline-none"
+                  />
+                  <input
+                    type="number"
+                    inputMode="numeric"
+                    value={item.quantity}
+                    onChange={(e) => updateItemInput(formIdx, itemIdx, "quantity", e.target.value)}
+                    placeholder="数量"
+                    min={1}
+                    className="w-16 rounded-lg border border-slate-200 px-2 py-1.5 text-xs text-center tabular-nums focus:ring-1 focus:ring-brand-500/20 focus:border-brand-500 focus:outline-none"
+                  />
+                </div>
+              ))}
+              <button
+                onClick={() => addItemRow(formIdx)}
+                className="mt-1 text-xs text-brand-600 hover:text-brand-700 font-medium"
+              >
+                + 品目追加
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="flex items-center gap-3">
+        <button
+          onClick={addContractor}
+          className="rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-600 hover:bg-slate-50"
+        >
+          + 業者追加
+        </button>
+        {validEstimates.length >= 2 && (
+          <button
+            onClick={handleSelectBest}
+            className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700 active:bg-emerald-800 transition-colors"
+          >
+            最安自動選択
+          </button>
+        )}
+      </div>
+
+      {/* 横並び比較テーブル */}
+      {compResult && compResult.itemComparisons.length > 0 && (
+        <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+          <h3 className="px-4 py-3 text-sm font-bold text-slate-700 border-b border-slate-100 bg-slate-50/80">
+            品目別比較表
+          </h3>
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="border-b border-slate-200 text-slate-500">
+                  <th className="py-2 px-3 text-left font-medium">品目</th>
+                  {validEstimates.map((e) => (
+                    <th key={e.contractorId} className="py-2 px-3 text-right font-medium">
+                      {e.contractorName}
+                    </th>
+                  ))}
+                  <th className="py-2 px-3 text-right font-medium text-slate-400">平均単価</th>
+                </tr>
+              </thead>
+              <tbody>
+                {compResult.itemComparisons.map((ic) => (
+                  <tr key={ic.itemName} className="border-b border-slate-50">
+                    <td className="py-2 px-3 text-slate-700 font-medium">{ic.itemName}</td>
+                    {validEstimates.map((e) => {
+                      const priceEntry = ic.prices.find((p) => p.contractorId === e.contractorId);
+                      const isBest = e.contractorId === ic.bestContractorId;
+                      return (
+                        <td
+                          key={e.contractorId}
+                          className={`py-2 px-3 text-right tabular-nums font-semibold ${
+                            isBest ? "text-emerald-700 bg-emerald-50" : "text-slate-600"
+                          }`}
+                        >
+                          {priceEntry ? `¥${priceEntry.unitPrice.toLocaleString()}` : "—"}
+                        </td>
+                      );
+                    })}
+                    <td className="py-2 px-3 text-right tabular-nums text-slate-400">
+                      ¥{ic.avgUnitPrice.toLocaleString()}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+              <tfoot>
+                <tr className="border-t-2 border-slate-200 bg-slate-50/50">
+                  <td className="py-2 px-3 text-right text-slate-500 font-semibold">合計</td>
+                  {compResult.totalComparison.map((tc) => {
+                    const isBest = tc.contractorId === compResult.bestContractorId;
+                    return (
+                      <td
+                        key={tc.contractorId}
+                        className={`py-2 px-3 text-right tabular-nums font-bold ${
+                          isBest ? "text-emerald-700" : "text-slate-700"
+                        }`}
+                      >
+                        ¥{tc.totalAmount.toLocaleString()}
+                      </td>
+                    );
+                  })}
+                  <td />
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+          <p className="px-4 py-2 text-[10px] text-slate-400">緑ハイライト = 最安単価</p>
+        </div>
+      )}
+
+      {/* 最安自動選択結果 */}
+      {selectedBest && selectedBest.length > 0 && (
+        <div className="rounded-xl border border-emerald-200 bg-emerald-50/40 p-4 shadow-sm space-y-2">
+          <h3 className="text-sm font-bold text-emerald-800">採用結果（最安自動選択）</h3>
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="border-b border-emerald-200 text-slate-500">
+                  <th className="py-1.5 text-left font-medium">品目</th>
+                  <th className="py-1.5 text-left font-medium">採用業者</th>
+                  <th className="py-1.5 text-right font-medium">単価</th>
+                  <th className="py-1.5 text-right font-medium">数量</th>
+                  <th className="py-1.5 text-right font-medium">金額</th>
+                </tr>
+              </thead>
+              <tbody>
+                {selectedBest.map((sel) => (
+                  <tr key={sel.itemName} className="border-b border-emerald-100">
+                    <td className="py-1.5 text-slate-700 font-medium">{sel.itemName}</td>
+                    <td className="py-1.5 text-emerald-700 font-semibold">{sel.bestContractorName}</td>
+                    <td className="py-1.5 text-right tabular-nums">¥{sel.unitPrice.toLocaleString()}</td>
+                    <td className="py-1.5 text-right tabular-nums">{sel.quantity}</td>
+                    <td className="py-1.5 text-right tabular-nums font-bold text-emerald-700">
+                      ¥{sel.amount.toLocaleString()}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+              <tfoot>
+                <tr className="border-t-2 border-emerald-200">
+                  <td colSpan={4} className="py-1.5 text-right font-semibold text-slate-500">合計</td>
+                  <td className="py-1.5 text-right font-bold text-emerald-700 tabular-nums">
+                    ¥{selectedBest.reduce((s, sel) => s + sel.amount, 0).toLocaleString()}
+                  </td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function EstimatePageContent() {
+  const [activeTab, setActiveTab] = useState<PageTab>("estimate");
   const [propertyName, setPropertyName] = useState("");
   const [clientName, setClientName] = useState("");
   const [selectedItems, setSelectedItems] = useState<SelectedItem[]>([]);
@@ -151,7 +465,7 @@ function EstimatePageContent() {
   // Estimate result view
   if (estimate) {
     return (
-      <div className="mx-auto max-w-2xl px-4 pb-24">
+      <div className="mx-auto max-w-2xl px-4 pb-24" data-testid="estimate-result">
         <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <button
             onClick={() => setEstimate(null)}
@@ -277,6 +591,33 @@ function EstimatePageContent() {
   // Input form view
   return (
     <div className="mx-auto max-w-2xl space-y-4 px-4 pb-24">
+      {/* Tab switcher */}
+      <div className="flex gap-1 rounded-lg border border-slate-200 bg-slate-50 p-1">
+        <button
+          onClick={() => setActiveTab("estimate")}
+          className={`flex-1 rounded-md py-1.5 text-sm font-semibold transition-colors ${
+            activeTab === "estimate"
+              ? "bg-white text-slate-900 shadow-sm"
+              : "text-slate-500 hover:text-slate-700"
+          }`}
+        >
+          見積作成
+        </button>
+        <button
+          onClick={() => setActiveTab("comparison")}
+          className={`flex-1 rounded-md py-1.5 text-sm font-semibold transition-colors ${
+            activeTab === "comparison"
+              ? "bg-white text-slate-900 shadow-sm"
+              : "text-slate-500 hover:text-slate-700"
+          }`}
+        >
+          業者比較
+        </button>
+      </div>
+
+      {activeTab === "comparison" && <ComparisonTab />}
+      {activeTab === "estimate" && (
+        <>
       <h2 className="text-lg font-bold text-slate-900">見積作成</h2>
 
       {error && (
@@ -535,6 +876,8 @@ function EstimatePageContent() {
           ))}
         </div>
       </div>
+        </>
+      )}
     </div>
   );
 }
