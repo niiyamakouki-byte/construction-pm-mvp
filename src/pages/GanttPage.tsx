@@ -115,6 +115,9 @@ function GanttPageContent({ initialProjectId = null }: GanttPageProps) {
   const [canUndo, setCanUndo] = useState(() => undoStack.canUndo());
   const [showMilestones, setShowMilestones] = useState(true);
   const [showChanges, setShowChanges] = useState(false);
+  const [rainDialogOpen, setRainDialogOpen] = useState(false);
+  const [rainDate, setRainDate] = useState("");
+  const [rainAffected, setRainAffected] = useState<Map<string, { startDate: string; endDate: string }> | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const pinchRef = useRef<{
     distance: number;
@@ -590,6 +593,65 @@ function GanttPageContent({ initialProjectId = null }: GanttPageProps) {
     pinchRef.current = null;
   }, []);
 
+  const handleRainDateChange = useCallback((date: string) => {
+    setRainDate(date);
+    if (!date || selectedProjectTasks.length === 0) {
+      setRainAffected(null);
+      return;
+    }
+    // Find tasks that include the rain date
+    const affectedTask = selectedProjectTasks.find(
+      (task) => task.startDate <= date && task.endDate >= date,
+    );
+    if (!affectedTask) {
+      setRainAffected(new Map());
+      return;
+    }
+    const updates = cascadeSchedule(
+      selectedProjectTasks,
+      affectedTask.id,
+      affectedTask.startDate,
+      affectedTask.endDate,
+    );
+    // Include the directly affected task shifted by 1 day
+    const shifted = addDaysSkipWeekends(
+      affectedTask.endDate,
+      1,
+      affectedTask.projectIncludesWeekends,
+      affectedTask.includeWeekends,
+    );
+    updates.set(affectedTask.id, {
+      startDate: affectedTask.startDate,
+      endDate: shifted,
+    });
+    setRainAffected(updates);
+  }, [selectedProjectTasks]);
+
+  const handleRainApply = useCallback(async () => {
+    if (!rainAffected || rainAffected.size === 0) {
+      setRainDialogOpen(false);
+      return;
+    }
+    const now = new Date().toISOString();
+    try {
+      await Promise.all(
+        Array.from(rainAffected.entries()).map(([taskId, dates]) =>
+          taskRepository.update(taskId, {
+            startDate: dates.startDate,
+            dueDate: dates.endDate,
+            updatedAt: now,
+          }),
+        ),
+      );
+      setRainDialogOpen(false);
+      setRainDate("");
+      setRainAffected(null);
+      await loadData();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "工程の更新に失敗しました");
+    }
+  }, [loadData, rainAffected, taskRepository]);
+
   if (loading) return <GanttPageSkeleton />;
 
   if (error) {
@@ -656,6 +718,80 @@ function GanttPageContent({ initialProjectId = null }: GanttPageProps) {
           onChange={(updater) => setTaskDetail((current) => (current ? updater(current) : current))}
           onDelete={(taskId) => void handleTaskDelete(taskId)}
         />
+      ) : null}
+
+      {rainDialogOpen ? (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="雨天中止ダイアログ"
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-4 sm:items-center"
+        >
+          <div className="w-full max-w-md rounded-[28px] bg-white p-6 shadow-2xl">
+            <h2 className="text-lg font-bold text-slate-900">雨天中止の日程調整</h2>
+            <p className="mt-1 text-sm text-slate-500">
+              雨天で中止した日付を入力してください。影響タスクを1日後ろにずらします。
+            </p>
+            <div className="mt-4">
+              <label htmlFor="rain-date" className="block text-xs font-semibold tracking-[0.16em] text-slate-500">
+                雨天日
+              </label>
+              <input
+                id="rain-date"
+                type="date"
+                value={rainDate}
+                onChange={(e) => handleRainDateChange(e.target.value)}
+                className="mt-2 w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500"
+              />
+            </div>
+            {rainAffected !== null && (
+              <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+                {rainAffected.size === 0 ? (
+                  <p className="text-sm text-slate-500">この日に該当するタスクはありません。</p>
+                ) : (
+                  <>
+                    <p className="text-xs font-semibold tracking-[0.14em] text-slate-500">
+                      影響タスク ({rainAffected.size}件)
+                    </p>
+                    <ul className="mt-2 space-y-1">
+                      {Array.from(rainAffected.entries()).slice(0, 5).map(([taskId, dates]) => {
+                        const task = selectedProjectTasks.find((t) => t.id === taskId);
+                        return (
+                          <li key={taskId} className="flex items-center justify-between text-sm text-slate-700">
+                            <span className="truncate font-medium">{task?.name ?? taskId}</span>
+                            <span className="ml-2 shrink-0 tabular-nums text-xs text-slate-500">
+                              → {dates.endDate}
+                            </span>
+                          </li>
+                        );
+                      })}
+                      {rainAffected.size > 5 && (
+                        <li className="text-xs text-slate-400">他 {rainAffected.size - 5} 件...</li>
+                      )}
+                    </ul>
+                  </>
+                )}
+              </div>
+            )}
+            <div className="mt-5 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setRainDialogOpen(false)}
+                className="min-h-[44px] rounded-2xl border border-slate-200 bg-white px-5 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50"
+              >
+                キャンセル
+              </button>
+              <button
+                type="button"
+                disabled={!rainDate || (rainAffected?.size ?? -1) === 0}
+                onClick={() => void handleRainApply()}
+                className="min-h-[44px] rounded-2xl bg-brand-600 px-5 py-2 text-sm font-semibold text-white shadow-sm disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                変更を適用
+              </button>
+            </div>
+          </div>
+        </div>
       ) : null}
 
       <section className="rounded-[28px] bg-[linear-gradient(145deg,#fff8ef_0%,#f7fbff_55%,#eef6ff_100%)] px-4 py-5 shadow-sm ring-1 ring-slate-200 sm:px-6">
@@ -730,6 +866,13 @@ function GanttPageContent({ initialProjectId = null }: GanttPageProps) {
                   ? "接続先を選択"
                   : "接続元を選択"
                 : "依存関係を接続"}
+            </button>
+            <button
+              type="button"
+              onClick={() => { setRainDate(""); setRainAffected(null); setRainDialogOpen(true); }}
+              className="rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50"
+            >
+              雨天中止
             </button>
             <button
               type="button"

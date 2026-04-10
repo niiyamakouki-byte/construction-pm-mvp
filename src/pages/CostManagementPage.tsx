@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { CostItem, Expense, Project, Task } from "../domain/types.js";
 import { useOrganizationContext } from "../contexts/OrganizationContext.js";
+import { BudgetDashboard } from "../components/BudgetDashboard.js";
 import { createAppRepository } from "../infra/create-app-repository.js";
 import {
   buildProjectCostRows,
@@ -638,6 +639,16 @@ export function CostManagementPage() {
           </div>
         </section>
       ) : null}
+      <BudgetDashboard
+        projectName={selectedProject?.name ?? ""}
+        categories={[
+          { name: "人件費", estimated: Math.round((selectedProject?.budget ?? 0) * 0.4), actual: summary.byBreakdown.taskCost },
+          { name: "資材費", estimated: Math.round((selectedProject?.budget ?? 0) * 0.25), actual: summary.byBreakdown.materialCost },
+          { name: "機材費", estimated: Math.round((selectedProject?.budget ?? 0) * 0.1), actual: 0 },
+          { name: "外注費", estimated: Math.round((selectedProject?.budget ?? 0) * 0.15), actual: summary.byBreakdown.invoicesReceived },
+          { name: "諸経費", estimated: Math.round((selectedProject?.budget ?? 0) * 0.1), actual: summary.byBreakdown.changeOrderCost },
+        ]}
+      />
       {projectCostRows.length === 0 ? (
         <div className="rounded-[28px] border border-dashed border-slate-300 bg-white px-6 py-12 text-center shadow-sm">
           <h2 className="text-xl font-bold text-slate-900">コスト項目はまだありません</h2>
