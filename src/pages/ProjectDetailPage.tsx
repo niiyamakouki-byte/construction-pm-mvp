@@ -8,6 +8,8 @@ import { navigate } from "../hooks/useHashRouter.js";
 import { useOrganizationContext } from "../contexts/OrganizationContext.js";
 import { filterScheduleTasks } from "../lib/cost-management.js";
 import { ProjectDetailTabs } from "../components/ProjectDetailTabs.js";
+import { ProjectFlowWidget } from "../components/ProjectFlowWidget.js";
+import { createInitialStageProgresses } from "../lib/project-flow.js";
 import { ProjectChat } from "../components/ProjectChat.js";
 import {
   ConstructionPhase,
@@ -521,6 +523,12 @@ export function ProjectDetailPage({
 
       {/* Overview tab content */}
       {subPath !== "chat" && <>
+
+      {/* Project Flow */}
+      <ProjectFlowWidget
+        currentStage="inquiry"
+        stageProgresses={createInitialStageProgresses()}
+      />
 
       {/* Settings */}
       <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
