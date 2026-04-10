@@ -24,7 +24,6 @@ import {
 import {
   getPaymentSchedule,
   calculateOutstanding,
-  type Payment,
   type PaymentScheduleEntry,
 } from "../lib/payment-tracker.js";
 import { daysBetween } from "../components/gantt/utils.js";

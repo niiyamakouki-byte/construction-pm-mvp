@@ -48,7 +48,7 @@ export function SafetyInspectionPage() {
     const today = new Date().toISOString().slice(0, 10);
     const newChecklist: InspectionChecklist = {
       id: `insp-${organizationId}-${Date.now()}`,
-      projectId: organizationId,
+      projectId: organizationId ?? "",
       inspectedBy: inspectorName || "未記入",
       date: today,
       ...template,

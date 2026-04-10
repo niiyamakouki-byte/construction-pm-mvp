@@ -13,8 +13,6 @@ import {
   getPhaseChecklist,
   getPhaseLabel,
   evaluatePhaseCompletion,
-  type ChecklistItem,
-  type PhaseCompletionResult,
 } from "../lib/construction-checklist.js";
 
 // ── Construction templates ────────────────────────────
