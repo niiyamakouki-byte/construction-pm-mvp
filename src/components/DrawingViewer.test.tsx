@@ -3,6 +3,11 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { DrawingViewer } from "./DrawingViewer.js";
 import { createPin, type DrawingPin } from "../lib/drawing-pins.js";
 
+// Mock htmlToBlob to avoid jsPDF in tests
+vi.mock("../lib/report-generator.js", () => ({
+  htmlToBlob: vi.fn().mockResolvedValue(new Blob(["pdf"], { type: "application/pdf" })),
+}));
+
 afterEach(cleanup);
 
 const DRAWING_URL = "https://example.com/drawing.png";
@@ -132,5 +137,28 @@ describe("DrawingViewer", () => {
     expect(screen.getByText(/ピン1/)).toBeDefined();
     expect(screen.getByText(/ピン2/)).toBeDefined();
     expect(screen.getByText(/ピン3/)).toBeDefined();
+  });
+
+  it("renders 指摘一覧PDF button", () => {
+    render(<DrawingViewer drawingUrl={DRAWING_URL} />);
+    expect(screen.getByLabelText("指摘一覧PDF")).toBeDefined();
+  });
+
+  it("shows incomplete count badge when there are open pins", () => {
+    const pins = [
+      makePin({ status: "未着手" }),
+      makePin({ status: "対応中" }),
+      makePin({ status: "完了" }),
+    ];
+    render(<DrawingViewer drawingUrl={DRAWING_URL} initialPins={pins} />);
+    // Two incomplete pins → badge shows "2"
+    expect(screen.getByText("2")).toBeDefined();
+  });
+
+  it("hides badge when all pins are complete", () => {
+    const pins = [makePin({ status: "完了" }), makePin({ status: "完了" })];
+    render(<DrawingViewer drawingUrl={DRAWING_URL} initialPins={pins} />);
+    // Badge should not render
+    expect(screen.queryByText("2")).toBeNull();
   });
 });

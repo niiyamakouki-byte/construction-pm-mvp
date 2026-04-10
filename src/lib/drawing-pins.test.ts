@@ -17,6 +17,7 @@ import {
   deletePin,
   loadPins,
   savePins,
+  generatePinReport,
   type DrawingPin,
 } from "./drawing-pins.js";
 
@@ -78,6 +79,53 @@ describe("deletePin", () => {
     const result = deletePin([a, b], a.id);
     expect(result).toHaveLength(1);
     expect(result[0]?.id).toBe(b.id);
+  });
+});
+
+describe("generatePinReport", () => {
+  const p1 = makePin({ comment: "亀裂あり", assignee: "田中", dueDate: "2025-05-01", status: "未着手" });
+  const p2 = makePin({ comment: "塗装剥がれ", assignee: "鈴木", dueDate: "", status: "完了" });
+
+  it("returns an HTML string with the project and drawing name", () => {
+    const html = generatePinReport([p1], "テスト現場", "1F平面図");
+    expect(html).toContain("テスト現場");
+    expect(html).toContain("1F平面図");
+  });
+
+  it("includes all pins by default", () => {
+    const html = generatePinReport([p1, p2], "現場A", "図面B");
+    expect(html).toContain("亀裂あり");
+    expect(html).toContain("塗装剥がれ");
+  });
+
+  it("filters incomplete pins when incompleteOnly is true", () => {
+    const html = generatePinReport([p1, p2], "現場A", "図面B", { incompleteOnly: true });
+    expect(html).toContain("亀裂あり");
+    expect(html).not.toContain("塗装剥がれ");
+  });
+
+  it("shows correct count in header", () => {
+    const html = generatePinReport([p1, p2], "現場A", "図面B", { incompleteOnly: true });
+    expect(html).toContain("1件");
+  });
+
+  it("shows empty state when no pins match filter", () => {
+    const html = generatePinReport([p2], "現場A", "図面B", { incompleteOnly: true });
+    expect(html).toContain("指摘事項なし");
+  });
+
+  it("escapes HTML special characters in comment", () => {
+    const pin = makePin({ comment: '<script>alert("xss")</script>', status: "未着手" });
+    const html = generatePinReport([pin], "現場", "図面");
+    expect(html).not.toContain("<script>");
+    expect(html).toContain("&lt;script&gt;");
+  });
+
+  it("includes position as percentage", () => {
+    const pin = makePin({ x: 0.25, y: 0.75 });
+    const html = generatePinReport([pin], "現場", "図面");
+    expect(html).toContain("25.0%");
+    expect(html).toContain("75.0%");
   });
 });
 

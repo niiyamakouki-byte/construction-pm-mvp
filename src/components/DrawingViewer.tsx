@@ -3,11 +3,13 @@ import {
   createPin,
   updatePin,
   deletePin,
+  generatePinReport,
   PIN_STATUS_COLORS,
   PIN_STATUSES,
   type DrawingPin,
   type PinStatus,
 } from "../lib/drawing-pins.js";
+import { htmlToBlob } from "../lib/report-generator.js";
 import {
   calibrateScale,
   measureDistance,
@@ -31,6 +33,10 @@ type Props = {
   onPinsChange?: (pins: DrawingPin[]) => void;
   /** Optional second drawing URL for diff mode */
   compareDrawingUrl?: string;
+  /** Project name used in the PDF report header */
+  projectName?: string;
+  /** Drawing name used in the PDF report header */
+  drawingName?: string;
 };
 
 type PopoverState = {
@@ -58,6 +64,8 @@ export function DrawingViewer({
   initialPins = [],
   onPinsChange,
   compareDrawingUrl,
+  projectName = "プロジェクト",
+  drawingName = "図面",
 }: Props) {
   const [pins, setPins] = useState<DrawingPin[]>(initialPins);
   const [popover, setPopover] = useState<PopoverState | null>(null);
@@ -433,6 +441,19 @@ export function DrawingViewer({
 
   const activePin = popover?.pinId !== "__new__" ? pins.find((p) => p.id === popover?.pinId) : null;
 
+  const incompletePins = pins.filter((p) => p.status !== "完了");
+
+  const handleDownloadReport = async (incompleteOnly: boolean) => {
+    const html = generatePinReport(pins, projectName, drawingName, { incompleteOnly });
+    const blob = await htmlToBlob(html);
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `指摘一覧_${drawingName}.pdf`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   const modeBtns: { key: ViewerMode; label: string }[] = [
     { key: "pin", label: "ピン" },
     { key: "calibrate", label: "縮尺設定" },
@@ -707,6 +728,20 @@ export function DrawingViewer({
               className="rounded-2xl py-3 text-sm font-bold transition-colors bg-blue-600 text-white"
               style={{ display: "none" }}
             />
+            {/* PDF report download button */}
+            <button
+              type="button"
+              onClick={() => handleDownloadReport(true)}
+              className="relative rounded-2xl bg-red-600 py-2.5 text-xs font-bold text-white hover:bg-red-700 transition-colors"
+              aria-label="指摘一覧PDF"
+            >
+              指摘一覧PDF
+              {incompletePins.length > 0 && (
+                <span className="absolute -top-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-yellow-400 text-[10px] font-bold text-slate-900">
+                  {incompletePins.length}
+                </span>
+              )}
+            </button>
             <div className="flex flex-col gap-2 overflow-y-auto max-h-[60vh]">
               {pins.length === 0 && (
                 <p className="text-center text-sm text-slate-400 py-4">ピンがありません</p>
