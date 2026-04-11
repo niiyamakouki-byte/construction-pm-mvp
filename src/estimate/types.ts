@@ -79,3 +79,15 @@ export type EstimateRequest = {
   items: EstimateInput[];
   notes?: string[];
 };
+
+/** Phase4フィードバック用: 見積修正履歴 */
+export type EstimateRevision = {
+  /** 修正前の見積行 */
+  originalItems: EstimateLine[];
+  /** 修正後の見積行 */
+  revisedItems: EstimateLine[];
+  /** レビュアーコメント */
+  reviewerNote: string;
+  /** 修正日時 (ISO 8601) */
+  timestamp: string;
+};

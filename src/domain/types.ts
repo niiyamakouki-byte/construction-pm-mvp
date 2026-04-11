@@ -111,9 +111,10 @@ export type DailyReport = BaseEntity & {
   authorId?: string;
 };
 
-// ── Estimate ────────────────────────────────────────
+// ── EstimateLineItem ─────────────────────────────────
 
-export type Estimate = BaseEntity & {
+/** 工事見積の1行項目 (domain entity)。見積書全体は src/estimate/types.ts の Estimate を参照 */
+export type EstimateLineItem = BaseEntity & {
   projectId: string;
   itemName: string;
   quantity: number;

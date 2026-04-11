@@ -13,7 +13,7 @@ const DEFAULT_AREA_SQM = 10;
  *
  * スコアリングルール:
  *   - 面積明示(畳/㎡/坪) → +2
- *   - 品目コード直接マッチ → +2
+ *   - 品目コード直接マッチ (キーワード4文字以上→+2, 2文字以下→+1)
  *   - NLキーワード完全マッチ → +1
  *   - 数量がデフォルト値(1) → -1
  *   - 面積がデフォルト(10㎡) → -2
@@ -46,8 +46,10 @@ export function calculateConfidence(
 
   // 品目コード直接マッチ（quantityBasisが"テキストから抽出"でない場合は積算による確定コード）
   // codeが存在し、自動追加でない品目はコード直接マッチとみなす
+  // キーワード長で加点を区別: 4文字以上→+2, 3文字→+1, 2文字以下→+1
   if (item.code && item.matchedKeyword !== "(自動追加)") {
-    score += 2;
+    const kwLen = item.matchedKeyword?.length ?? 0;
+    score += kwLen >= 4 ? 2 : 1;
   }
 
   // NLキーワード完全マッチ（matchedKeywordが設定されている）

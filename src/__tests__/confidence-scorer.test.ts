@@ -54,6 +54,29 @@ describe("calculateConfidence", () => {
   });
 });
 
+describe("calculateConfidence - keyword length scoring", () => {
+  it("キーワード4文字以上 → コードマッチ+2", () => {
+    const item = makeItem({ matchedKeyword: "壁紙張替" }); // 4文字
+    const score = calculateConfidence(item, { hasExplicitArea: false, detectedAreaSqm: null, hasUnmatched: false });
+    // base=3, +2(code, kw>=4), +1(kw match), -2(no area) = 4
+    expect(score).toBe(4);
+  });
+
+  it("キーワード2文字以下 → コードマッチ+1", () => {
+    const item = makeItem({ matchedKeyword: "床" }); // 1文字
+    const score = calculateConfidence(item, { hasExplicitArea: false, detectedAreaSqm: null, hasUnmatched: false });
+    // base=3, +1(code, kw<=2), +1(kw match), -2(no area) = 3
+    expect(score).toBe(3);
+  });
+
+  it("キーワード3文字 → コードマッチ+1", () => {
+    const item = makeItem({ matchedKeyword: "フロア" }); // 3文字
+    const score = calculateConfidence(item, { hasExplicitArea: false, detectedAreaSqm: null, hasUnmatched: false });
+    // base=3, +1(code, kw=3), +1(kw match), -2(no area) = 3
+    expect(score).toBe(3);
+  });
+});
+
 describe("scoreToStars", () => {
   it("score=5 → ★★★★★", () => {
     expect(scoreToStars(5)).toBe("★★★★★");

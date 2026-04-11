@@ -221,6 +221,8 @@ type KeywordRule = {
   defaultCount?: number;
   /** このルールがマッチした場合、指定コードのマッチをブロックする */
   excludes?: string[];
+  /** 材料ロス率 (例: 0.10 = 10%)。未設定時はオプションの materialLossRate を参照 */
+  lossRate?: number;
 };
 
 /**
@@ -247,16 +249,16 @@ const KEYWORD_RULES: KeywordRule[] = [
 
   // --- 内装・仕上げ ---
   { keywords: ["間仕切り", "パーティション新設"], code: "IN-002", areaType: "wall" },
-  { keywords: ["クロス", "壁紙", "壁紙張替"], code: "IN-005", areaType: "wall" },
-  { keywords: ["1000番", "高級クロス", "アクセントクロス"], code: "IN-006", areaType: "wall" },
-  { keywords: ["塗装", "ペンキ", "EP塗装"], code: "IN-007", areaType: "wall" },
-  { keywords: ["タイルカーペット"], code: "IN-008", areaType: "floor" },
-  { keywords: ["フローリング", "床張替", "床張り替え"], code: "IN-009", areaType: "floor" },
-  { keywords: ["長尺シート", "長尺"], code: "IN-010", areaType: "floor" },
-  { keywords: ["フロアタイル"], code: "IN-011", areaType: "floor" },
+  { keywords: ["クロス", "壁紙", "壁紙張替"], code: "IN-005", areaType: "wall", lossRate: 0.12 },
+  { keywords: ["1000番", "高級クロス", "アクセントクロス"], code: "IN-006", areaType: "wall", lossRate: 0.10 },
+  { keywords: ["塗装", "ペンキ", "EP塗装"], code: "IN-007", areaType: "wall", lossRate: 0.07 },
+  { keywords: ["タイルカーペット"], code: "IN-008", areaType: "floor", lossRate: 0.05 },
+  { keywords: ["フローリング", "床張替", "床張り替え"], code: "IN-009", areaType: "floor", lossRate: 0.10 },
+  { keywords: ["長尺シート", "長尺"], code: "IN-010", areaType: "floor", lossRate: 0.10 },
+  { keywords: ["フロアタイル"], code: "IN-011", areaType: "floor", lossRate: 0.08 },
   { keywords: ["巾木"], code: "IN-012", areaType: "perimeter" },
-  { keywords: ["岩綿吸音板", "ロックウール吸音板", "システム天井"], code: "IN-014", areaType: "ceiling" },
-  { keywords: ["天井張替", "天井仕上げ", "天井"], code: "IN-015", areaType: "ceiling" },
+  { keywords: ["岩綿吸音板", "ロックウール吸音板", "システム天井"], code: "IN-014", areaType: "ceiling", lossRate: 0.05 },
+  { keywords: ["天井張替", "天井仕上げ", "天井"], code: "IN-015", areaType: "ceiling", lossRate: 0.05 },
 
   // --- 電気 ---
   { keywords: ["コンセント新設", "コンセント追加"], code: "EL-001", areaType: "count", defaultCount: 2 },
@@ -338,6 +340,10 @@ export type ParsedEstimateItem = EstimateInput & {
   itemName: string;
   /** 数量の算出根拠 */
   quantityBasis: string;
+  /** 適用されたロス率 (例: 0.10 = 10%)。0 は未適用 */
+  lossRate: number;
+  /** ロス込み所要数量 = quantity * (1 + lossRate) */
+  requiredQuantity: number;
 };
 
 export type ParseResult = {
@@ -460,23 +466,28 @@ export function parseNaturalLanguage(
     let quantity: number;
     let basis: string;
 
+    // ロス率の決定: ルール固有値 > オプション全体値 > 0
+    // ※ effectiveLossRate は requiredQuantity 計算用。quantity（積算数量）自体は変えない
+    const effectiveLossRate = rule.lossRate ?? materialLossRate;
+
     // ロス率の適用判定（面積/周長ベースの仕上げ材に適用、解体・一式・個数には不要）
-    const applyLoss = materialLossRate > 0 &&
+    // 旧来の materialLossRate による quantity 変更は維持する（後方互換）
+    const applyLossToQty = materialLossRate > 0 &&
       (rule.areaType === "floor" || rule.areaType === "wall" ||
        rule.areaType === "ceiling" || rule.areaType === "perimeter");
 
     switch (rule.areaType) {
       case "floor": {
         const raw = floorArea;
-        quantity = Math.ceil(applyLoss ? raw * (1 + materialLossRate) : raw);
-        basis = `床面積 ${floorArea}㎡` + (applyLoss ? ` (ロス${(materialLossRate * 100).toFixed(0)}%込)` : "");
+        quantity = Math.ceil(applyLossToQty ? raw * (1 + materialLossRate) : raw);
+        basis = `床面積 ${floorArea}㎡` + (applyLossToQty ? ` (ロス${(materialLossRate * 100).toFixed(0)}%込)` : "");
         break;
       }
       case "wall": {
         // 間仕切り系の品目で寸法表記がある場合、寸法から直接面積を算出
         const useDirectWall = partitionCodes.has(rule.code) && dimensionWallArea != null;
         const effectiveWallArea = useDirectWall ? dimensionWallArea! : wallArea;
-        quantity = Math.ceil(applyLoss ? effectiveWallArea * (1 + materialLossRate) : effectiveWallArea);
+        quantity = Math.ceil(applyLossToQty ? effectiveWallArea * (1 + materialLossRate) : effectiveWallArea);
         basis = useDirectWall
           ? `壁面積 ${dimensionWallArea}㎡ (${dimensions!.width}m × ${dimensions!.height}m)`
           : `壁面積 ${wallArea}㎡ (周長${perimeter}m × 天井高${ceilingHeight}m)`;
@@ -484,22 +495,22 @@ export function parseNaturalLanguage(
         // 壁仕上げ（クロス・塗装等）で間仕切りとセットかつ両面の場合、面積を2倍
         if (!partitionCodes.has(rule.code) && bothSides && dimensionWallArea != null) {
           const doubled = dimensionWallArea * 2;
-          quantity = Math.ceil(applyLoss ? doubled * (1 + materialLossRate) : doubled);
+          quantity = Math.ceil(applyLossToQty ? doubled * (1 + materialLossRate) : doubled);
           basis = `壁面積 ${doubled}㎡ (${dimensionWallArea}㎡ × 両面)`;
         }
-        if (applyLoss) basis += ` (ロス${(materialLossRate * 100).toFixed(0)}%込)`;
+        if (applyLossToQty) basis += ` (ロス${(materialLossRate * 100).toFixed(0)}%込)`;
         break;
       }
       case "ceiling": {
         const raw = ceilingArea;
-        quantity = Math.ceil(applyLoss ? raw * (1 + materialLossRate) : raw);
-        basis = `天井面積 ${ceilingArea}㎡` + (applyLoss ? ` (ロス${(materialLossRate * 100).toFixed(0)}%込)` : "");
+        quantity = Math.ceil(applyLossToQty ? raw * (1 + materialLossRate) : raw);
+        basis = `天井面積 ${ceilingArea}㎡` + (applyLossToQty ? ` (ロス${(materialLossRate * 100).toFixed(0)}%込)` : "");
         break;
       }
       case "perimeter": {
         const raw = perimeter;
-        quantity = Math.ceil(applyLoss ? raw * (1 + materialLossRate) : raw);
-        basis = `周長 ${perimeter}m` + (applyLoss ? ` (ロス${(materialLossRate * 100).toFixed(0)}%込)` : "");
+        quantity = Math.ceil(applyLossToQty ? raw * (1 + materialLossRate) : raw);
+        basis = `周長 ${perimeter}m` + (applyLossToQty ? ` (ロス${(materialLossRate * 100).toFixed(0)}%込)` : "");
         break;
       }
       case "count": {
@@ -527,12 +538,18 @@ export function parseNaturalLanguage(
     const masterItem = findMasterItemByCode(rule.code);
     if (!masterItem) continue;
 
+    // 面積/周長ベース品目にのみロス率を設定
+    const isAreaBased = rule.areaType === "floor" || rule.areaType === "wall" ||
+      rule.areaType === "ceiling" || rule.areaType === "perimeter";
+    const appliedLossRate = isAreaBased ? effectiveLossRate : 0;
     items.push({
       code: rule.code,
       quantity,
       matchedKeyword: matchedKw,
       itemName: masterItem.name,
       quantityBasis: basis,
+      lossRate: appliedLossRate,
+      requiredQuantity: Math.ceil(quantity * (1 + appliedLossRate)),
     });
 
     matchedKeywords.add(matchedKw);
@@ -555,6 +572,8 @@ export function parseNaturalLanguage(
         matchedKeyword: "(自動追加)",
         itemName: mi.name,
         quantityBasis: "一式 (自動追加)",
+        lossRate: 0,
+        requiredQuantity: 1,
       });
     }
   }
@@ -563,12 +582,15 @@ export function parseNaturalLanguage(
   if (includeCleaning && !items.some((i) => i.code === "OH-006")) {
     const mi = findMasterItemByCode("OH-006");
     if (mi) {
+      const cleanQty = Math.ceil(floorArea);
       items.push({
         code: "OH-006",
-        quantity: Math.ceil(floorArea),
+        quantity: cleanQty,
         matchedKeyword: "(自動追加)",
         itemName: mi.name,
         quantityBasis: `床面積 ${floorArea}㎡ (自動追加)`,
+        lossRate: 0,
+        requiredQuantity: cleanQty,
       });
     }
   }

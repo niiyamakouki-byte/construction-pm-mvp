@@ -480,4 +480,50 @@ describe("nl-estimate-parser", () => {
       expect(carpet!.quantity).toBe(20);
     });
   });
+
+  describe("lossRate and requiredQuantity fields", () => {
+    it("クロス系 (IN-005) は lossRate=0.12 を持つ", () => {
+      const result = parseNaturalLanguage("20㎡のクロス張替え");
+      const kurosu = result.items.find((i) => i.code === "IN-005");
+      expect(kurosu).toBeDefined();
+      expect(kurosu!.lossRate).toBe(0.12);
+    });
+
+    it("フローリング (IN-009) は lossRate=0.10 を持つ", () => {
+      const result = parseNaturalLanguage("20㎡のフローリング");
+      const floor = result.items.find((i) => i.code === "IN-009");
+      expect(floor).toBeDefined();
+      expect(floor!.lossRate).toBe(0.10);
+    });
+
+    it("タイルカーペット (IN-008) は lossRate=0.05 を持つ", () => {
+      const result = parseNaturalLanguage("20㎡のタイルカーペット");
+      const carpet = result.items.find((i) => i.code === "IN-008");
+      expect(carpet).toBeDefined();
+      expect(carpet!.lossRate).toBe(0.05);
+    });
+
+    it("requiredQuantity = ceil(quantity * (1 + lossRate))", () => {
+      const result = parseNaturalLanguage("20㎡のフローリング");
+      const floor = result.items.find((i) => i.code === "IN-009");
+      expect(floor).toBeDefined();
+      // quantity=20, lossRate=0.10 → 20 * 1.10 = 22
+      expect(floor!.requiredQuantity).toBe(22);
+    });
+
+    it("個数系品目 (エアコン等) は lossRate=0", () => {
+      const result = parseNaturalLanguage("エアコン2台");
+      const ac = result.items.find((i) => i.code === "HV-001");
+      expect(ac).toBeDefined();
+      expect(ac!.lossRate).toBe(0);
+      expect(ac!.requiredQuantity).toBe(ac!.quantity);
+    });
+
+    it("塗装 (IN-007) は lossRate=0.07 を持つ", () => {
+      const result = parseNaturalLanguage("30㎡の塗装");
+      const paint = result.items.find((i) => i.code === "IN-007");
+      expect(paint).toBeDefined();
+      expect(paint!.lossRate).toBe(0.07);
+    });
+  });
 });
