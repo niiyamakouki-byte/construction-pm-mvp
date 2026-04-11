@@ -11,7 +11,9 @@
 import { parseNaturalLanguage } from "./nl-estimate-parser";
 import { generateEstimate } from "./estimate-generator";
 import type { Estimate, EstimateInput } from "./types";
-import type { ParseResult } from "./nl-estimate-parser";
+import type { ParseResult, ParsedEstimateItem } from "./nl-estimate-parser";
+import { calculateConfidence, scoreToStars } from "../lib/confidence-scorer";
+import { detectAnomalies } from "../lib/anomaly-detector";
 
 /** Discord出力結果 */
 export type DiscordEstimateResult = {
@@ -54,16 +56,37 @@ export function formatEstimateForDiscord(estimate: Estimate, parseResult: ParseR
   lines.push(`> 検出: ${formatDetectionLine(parseResult)}`);
   lines.push("");
 
+  // 確信度スコア計算用のオプション
+  const hasExplicitArea = !!(parseResult.detectedTatami || parseResult.detectedArea);
+  const detectedAreaSqm = parseResult.detectedArea?.sqm ?? null;
+  const hasUnmatched = parseResult.unmatched.length > 0;
+
+  // ParsedEstimateItem の code → confidence マップ
+  const confidenceMap = new Map<string, string>();
+  for (const item of parseResult.items) {
+    const score = calculateConfidence(item, { hasExplicitArea, detectedAreaSqm, hasUnmatched });
+    confidenceMap.set(item.code, scoreToStars(score));
+  }
+
+  // 異常検出
+  const alerts = detectAnomalies(parseResult.items, {
+    totalAmount: estimate.total,
+    areaSqm: detectedAreaSqm ?? undefined,
+  });
+
   // 明細テーブル
-  lines.push("| 品目 | 数量 | 単価 | 金額 |");
-  lines.push("|:-----|-----:|-----:|-----:|");
+  lines.push("| 品目 | 数量 | 単価 | 金額 | 確信度 |");
+  lines.push("|:-----|-----:|-----:|-----:|:------:|");
 
   for (const section of estimate.sections) {
     // セクションヘッダー行
-    lines.push(`| **${section.categoryName}** | | | |`);
+    lines.push(`| **${section.categoryName}** | | | | |`);
     for (const line of section.lines) {
+      // セクション内品目に対応するコードを items から逆引き
+      const matchedItem = parseResult.items.find((i) => i.itemName === line.name);
+      const stars = matchedItem ? (confidenceMap.get(matchedItem.code) ?? "★★★☆☆") : "★★★☆☆";
       lines.push(
-        `| ${line.name} | ${line.quantity}${line.unit} | ${formatYen(line.unitPrice)} | ${formatYen(line.amount)} |`,
+        `| ${line.name} | ${line.quantity}${line.unit} | ${formatYen(line.unitPrice)} | ${formatYen(line.amount)} | ${stars} |`,
       );
     }
   }
@@ -88,6 +111,14 @@ export function formatEstimateForDiscord(estimate: Estimate, parseResult: ParseR
     lines.push(
       `> \u26A0\uFE0F 未対応: ${parseResult.unmatched.map((u) => `「${u}」`).join("、")}`,
     );
+  }
+
+  // 異常検出アラート
+  if (alerts.length > 0) {
+    lines.push("");
+    for (const alert of alerts) {
+      lines.push(`> \u26A0\uFE0F ${alert.message}`);
+    }
   }
 
   // フッター
