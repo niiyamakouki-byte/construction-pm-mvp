@@ -9,6 +9,7 @@
 import type { HealthScore } from "../lib/project-health.js";
 import type { ForecastReport } from "../lib/cost-forecaster.js";
 import type { SiteEntryRecord } from "../lib/site-entry-log.js";
+import type { RiskAlert } from "../lib/risk-predictor.js";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -35,6 +36,7 @@ export type CockpitDashboardProps = {
   forecast: ForecastReport | null;
   todayEntries: SiteEntryRecord[];
   projects: ProjectCockpitSummary[];
+  riskAlerts?: RiskAlert[];
 };
 
 // ── Helpers ────────────────────────────────────────────────────────────────
@@ -296,6 +298,110 @@ function WorkersCard({ entries }: { entries: SiteEntryRecord[] }) {
   );
 }
 
+// ── Alert helpers ──────────────────────────────────────────────────────────
+
+function alertBgColor(severity: RiskAlert["severity"]): string {
+  switch (severity) {
+    case "critical": return "rgba(239,68,68,0.08)";
+    case "high":     return "rgba(249,115,22,0.07)";
+    case "medium":   return "rgba(234,179,8,0.07)";
+    case "low":      return "rgba(34,197,94,0.06)";
+  }
+}
+
+function alertBorderColor(severity: RiskAlert["severity"]): string {
+  switch (severity) {
+    case "critical": return "rgba(239,68,68,0.35)";
+    case "high":     return "rgba(249,115,22,0.30)";
+    case "medium":   return "rgba(234,179,8,0.30)";
+    case "low":      return "rgba(34,197,94,0.25)";
+  }
+}
+
+function alertTextColor(severity: RiskAlert["severity"]): string {
+  switch (severity) {
+    case "critical": return "#dc2626";
+    case "high":     return "#ea580c";
+    case "medium":   return "#ca8a04";
+    case "low":      return "#16a34a";
+  }
+}
+
+function alertSeverityLabel(severity: RiskAlert["severity"]): string {
+  switch (severity) {
+    case "critical": return "緊急";
+    case "high":     return "高";
+    case "medium":   return "中";
+    case "low":      return "低";
+  }
+}
+
+function alertTypeLabel(type: RiskAlert["type"]): string {
+  switch (type) {
+    case "budget":   return "予算";
+    case "schedule": return "工程";
+    case "safety":   return "安全";
+    case "resource": return "資源";
+  }
+}
+
+/** リスクアラートカード */
+function RiskAlertsCard({ alerts }: { alerts: RiskAlert[] }) {
+  if (alerts.length === 0) {
+    return (
+      <div className="rounded-xl border border-emerald-100 bg-emerald-50/40 p-4 backdrop-blur-sm">
+        <p className="text-xs font-semibold text-slate-500">AIリスク予測</p>
+        <p className="mt-1 text-sm text-emerald-600 font-semibold">リスクなし — 順調です</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="rounded-xl border border-slate-100 bg-white/60 p-4 backdrop-blur-sm">
+      <div className="flex items-center justify-between mb-3">
+        <p className="text-sm font-bold text-slate-700">AIリスク予測</p>
+        <span className="text-xs text-slate-500">{alerts.length}件</span>
+      </div>
+      <div className="space-y-2">
+        {alerts.map((alert, i) => {
+          const color = alertTextColor(alert.severity);
+          return (
+            <div
+              key={i}
+              className="rounded-lg p-3"
+              style={{
+                background: alertBgColor(alert.severity),
+                border: `1px solid ${alertBorderColor(alert.severity)}`,
+              }}
+            >
+              <div className="flex items-start gap-2">
+                {/* Severity badge */}
+                <span
+                  className="shrink-0 rounded px-1.5 py-0.5 text-[10px] font-bold"
+                  style={{ background: `${color}18`, color }}
+                >
+                  {alertSeverityLabel(alert.severity)}
+                </span>
+                {/* Type badge */}
+                <span className="shrink-0 rounded px-1.5 py-0.5 text-[10px] font-semibold bg-slate-100 text-slate-600">
+                  {alertTypeLabel(alert.type)}
+                </span>
+                {/* Message */}
+                <p className="flex-1 text-xs font-semibold" style={{ color }}>
+                  {alert.message}
+                </p>
+              </div>
+              <p className="mt-1.5 text-[11px] text-slate-500 pl-1">
+                {alert.recommendation}
+              </p>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 /** CEO俯瞰カード */
 function CeoOverviewCard({
   projects,
@@ -418,6 +524,7 @@ export function CockpitDashboard({
   forecast,
   todayEntries,
   projects,
+  riskAlerts = [],
 }: CockpitDashboardProps) {
   return (
     <div className="space-y-3">
@@ -434,6 +541,9 @@ export function CockpitDashboard({
           </div>
         </div>
       </div>
+
+      {/* Risk alerts */}
+      <RiskAlertsCard alerts={riskAlerts} />
 
       {/* Workers card */}
       <WorkersCard entries={todayEntries} />
