@@ -29,6 +29,7 @@ export function sendMessage(
 ): ChatMessage {
   const room = getOrCreateRoom(projectId);
   const now = new Date().toISOString();
+  const mentions = extractMentions(content);
   const msg: ChatMessage = {
     id: `chat-${nextId++}`,
     projectId,
@@ -39,6 +40,7 @@ export function sendMessage(
     type: type ?? "text",
     readBy: [],
     ...(attachments && attachments.length > 0 ? { attachments } : {}),
+    ...(mentions.length > 0 ? { mentions } : {}),
   };
   room.messages.push(msg);
   room.lastActivity = now;
@@ -108,6 +110,30 @@ export function getUnreadCount(projectId: string, lastRead: string): number {
   const room = rooms.get(projectId);
   if (!room) return 0;
   return room.messages.filter((m) => m.timestamp > lastRead).length;
+}
+
+/**
+ * Extract @username mentions from a message text.
+ * Matches @<word> where word consists of non-whitespace characters.
+ * Returns deduplicated list of usernames (without the @ prefix).
+ */
+export function extractMentions(text: string): string[] {
+  const matches = text.match(/@(\S+)/g);
+  if (!matches) return [];
+  const names = matches.map((m) => m.slice(1));
+  return [...new Set(names)];
+}
+
+/**
+ * Return all messages in a project that mention the given userId (matched against mentions array).
+ */
+export function getMentionsForUser(
+  projectId: string,
+  userId: string,
+): ChatMessage[] {
+  const room = rooms.get(projectId);
+  if (!room) return [];
+  return room.messages.filter((m) => m.mentions?.includes(userId));
 }
 
 /** Reset store (for testing) */

@@ -165,6 +165,8 @@ export type ChatMessage = {
   /** User IDs who have read this message */
   readBy?: string[];
   attachments?: string[];
+  /** Usernames mentioned in the message (e.g. ["新山", "鈴木"]) */
+  mentions?: string[];
 };
 
 export type ChatRoom = {
