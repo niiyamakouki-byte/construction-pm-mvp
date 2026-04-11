@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   addCustomer,
   addDeal,
@@ -15,7 +15,7 @@ import {
   type DealStage,
 } from "../lib/crm-store.js";
 
-// Seed demo data only if store is empty
+// Seed demo data only if store is empty (called inside useEffect, not at module level)
 let seeded = false;
 function seedDemoData() {
   if (seeded) return;
@@ -38,8 +38,6 @@ function seedDemoData() {
   customers.forEach(addCustomer);
   deals.forEach(addDeal);
 }
-
-seedDemoData();
 
 const currencyFmt = new Intl.NumberFormat("ja-JP", { style: "currency", currency: "JPY", maximumFractionDigits: 0 });
 function fmt(v: number) { return currencyFmt.format(v); }
@@ -68,6 +66,9 @@ export function CRMPage() {
   const [tab, setTab] = useState<Tab>("pipeline");
   const [refresh, setRefresh] = useState(0);
   const bump = useCallback(() => setRefresh((n) => n + 1), []);
+
+  // Seed demo data on first render, not at module level
+  useEffect(() => { seedDemoData(); }, []);
 
   const customers = useMemo(() => getAllCustomers(), [refresh]);
   const deals = useMemo(() => getAllDeals(), [refresh]);
