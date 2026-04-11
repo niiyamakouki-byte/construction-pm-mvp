@@ -8,7 +8,7 @@
 // ── 定数 ────────────────────────────────────────────────────────────────────
 
 /** CALS/EC 標準フォルダ構成 */
-import { escapeHtml } from "./utils/escape-html";
+import { escapeHtml, escapeXml } from "./utils/escape-html";
 export const CALS_FOLDER_STRUCTURE = {
   PHOTO: "写真フォルダ",
   DRAWING: "図面フォルダ",
@@ -53,15 +53,6 @@ export type ValidationResult = {
 
 function generateId(): string {
   return `ED-${Date.now()}-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
-}
-
-function escapeXml(value: string): string {
-  return value
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&apos;");
 }
 
 /** XML tag name sanitizer — strips characters not valid in XML names. */
