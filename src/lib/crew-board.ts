@@ -58,7 +58,7 @@ export function addCrewMember(
     id: `member-${memberCounter}`,
   };
   members.push(newMember);
-  return newMember;
+  return { ...newMember, skills: [...newMember.skills] };
 }
 
 export function updateCrewMember(
@@ -74,8 +74,8 @@ export function updateCrewMember(
   if (patch.company !== undefined) member.company = patch.company.trim();
   if (patch.jobType !== undefined) member.jobType = patch.jobType;
   if (patch.phone !== undefined) member.phone = patch.phone;
-  if (patch.skills !== undefined) member.skills = patch.skills;
-  return member;
+  if (patch.skills !== undefined) member.skills = [...patch.skills];
+  return { ...member, skills: [...member.skills] };
 }
 
 export function getCrewMember(id: string): CrewMember | null {
@@ -119,12 +119,16 @@ export function moveAssignment(
   newProjectId?: string,
   newProjectName?: string,
 ): CrewAssignment | null {
-  const assignment = assignments.find((a) => a.id === id);
-  if (!assignment) return null;
-  assignment.date = newDate;
-  if (newProjectId !== undefined) assignment.projectId = newProjectId;
-  if (newProjectName !== undefined) assignment.projectName = newProjectName;
-  return assignment;
+  const index = assignments.findIndex((a) => a.id === id);
+  if (index === -1) return null;
+  const updated: CrewAssignment = {
+    ...assignments[index],
+    date: newDate,
+    ...(newProjectId !== undefined && { projectId: newProjectId }),
+    ...(newProjectName !== undefined && { projectName: newProjectName }),
+  };
+  assignments[index] = updated;
+  return { ...updated };
 }
 
 // ---------------------------------------------------------------------------
@@ -282,7 +286,8 @@ function escapeHtml(text: string): string {
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
 }
 
 // ---------------------------------------------------------------------------

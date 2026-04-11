@@ -158,7 +158,7 @@ export function generateBatchBlackboards(rows: CSVRow[]): {
       workType: row.工種.trim(),
       location: row.撮影箇所.trim(),
       shootDate: row.撮影日.trim(),
-      condition: [row.天気, row.備考].filter(Boolean).join(" / ") || row.施工者.trim(),
+      condition: [row.天気, row.備考].filter(Boolean).join(" / "),
     });
   }
 

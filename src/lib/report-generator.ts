@@ -27,6 +27,24 @@ import {
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
+/**
+ * Validate that a URL is safe to use in an img src attribute.
+ * Allows http, https, and data:image schemes only.
+ * Returns the original URL if valid, or an empty string if rejected.
+ */
+function sanitizePhotoUrl(url: string): string {
+  try {
+    const trimmed = url.trim();
+    // Allow data:image/* URIs
+    if (/^data:image\//i.test(trimmed)) return trimmed;
+    const parsed = new URL(trimmed);
+    if (parsed.protocol === "https:" || parsed.protocol === "http:") return trimmed;
+  } catch {
+    // Invalid URL — reject
+  }
+  return "";
+}
+
 function escapeHtml(value: unknown): string {
   return String(value ?? "")
     .replace(/&/g, "&amp;")
@@ -94,26 +112,41 @@ export async function htmlToBlob(html: string): Promise<Blob> {
     container.innerHTML = html;
     document.body.appendChild(container);
 
-    doc.html(container, {
-      callback(pdf) {
-        document.body.removeChild(container);
-        const blob = pdf.output("blob");
-        resolve(blob);
-      },
-      x: 20,
-      y: 20,
-      width: 555,
-      windowWidth: 794,
-      autoPaging: "text",
-    });
-
-    // Safety timeout
-    setTimeout(() => {
+    const cleanup = () => {
       if (document.body.contains(container)) {
         document.body.removeChild(container);
       }
+    };
+
+    // Safety timeout
+    const timeoutId = setTimeout(() => {
+      cleanup();
       reject(new Error("htmlToBlob timed out"));
     }, 30_000);
+
+    try {
+      doc.html(container, {
+        callback(pdf) {
+          clearTimeout(timeoutId);
+          cleanup();
+          try {
+            const blob = pdf.output("blob");
+            resolve(blob);
+          } catch (err) {
+            reject(err);
+          }
+        },
+        x: 20,
+        y: 20,
+        width: 555,
+        windowWidth: 794,
+        autoPaging: "text",
+      });
+    } catch (err) {
+      clearTimeout(timeoutId);
+      cleanup();
+      reject(err);
+    }
   });
 }
 
@@ -174,8 +207,13 @@ export function buildDailyReportHtml(input: DailyReportInput): string {
 
   const photoSection = photoUrls.length > 0
     ? photoUrls
-        .map((url) => `<img src="${escapeHtml(url)}" alt="現場写真" style="max-width:280px;margin:4px;border:1px solid #e2e8f0;" />`)
-        .join("\n")
+        .map((url) => {
+          const safe = sanitizePhotoUrl(url);
+          if (!safe) return "";
+          return `<img src="${escapeHtml(safe)}" alt="現場写真" style="max-width:280px;margin:4px;border:1px solid #e2e8f0;" />`;
+        })
+        .filter(Boolean)
+        .join("\n") || "<p>写真なし</p>"
     : "<p>写真なし</p>";
 
   const issuesList = issues.length > 0
@@ -574,7 +612,12 @@ export function buildInspectionReportHtml(input: InspectionReportInput): string 
 
   if (photoUrls.length > 0) {
     const imgs = photoUrls
-      .map((url) => `<img src="${escapeHtml(url)}" style="max-width:200px;max-height:150px;object-fit:cover;border-radius:4px;border:1px solid #d1d5db;" alt="検査写真" />`)
+      .map((url) => {
+        const safe = sanitizePhotoUrl(url);
+        if (!safe) return "";
+        return `<img src="${escapeHtml(safe)}" style="max-width:200px;max-height:150px;object-fit:cover;border-radius:4px;border:1px solid #d1d5db;" alt="検査写真" />`;
+      })
+      .filter(Boolean)
       .join("\n");
     extras += `
 <h2 style="font-size:1.1em;margin-top:1.4em;border-left:4px solid #2563eb;padding-left:8px;">添付写真</h2>
