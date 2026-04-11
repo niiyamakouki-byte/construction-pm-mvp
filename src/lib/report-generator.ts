@@ -423,6 +423,121 @@ export async function generateProjectReport(
   return htmlToBlob(html);
 }
 
+// ── Monthly Report ────────────────────────────────────────────────────────
+
+export type MonthlyReportData = {
+  /** 工事概要 */
+  overview?: string;
+  /** 月初進捗率 (0-100) */
+  progressStart?: number;
+  /** 月末進捗率 (0-100) */
+  progressEnd?: number;
+  /** 完了タスク数 */
+  completedTasks?: number;
+  /** 写真枚数 */
+  photoCount?: number;
+  /** 是正件数 */
+  correctiveCount?: number;
+  /** 安全記録メモ */
+  safetyNotes?: string;
+  /** 出勤日数合計 */
+  workDays?: number;
+  /** 主要イベント */
+  majorEvents?: string[];
+  /** 翌月の予定 */
+  nextMonthPlan?: string[];
+};
+
+const MONTHLY_PRINT_STYLES = `
+  @page { size: A4 portrait; margin: 20mm; }
+  @media print {
+    body { margin: 0; font-size: 11px; }
+    .page-break { page-break-before: always; }
+  }
+`;
+
+export function buildMonthlyReportHtml(
+  projectId: string,
+  year: number,
+  month: number,
+  project: { name: string; budget?: number },
+  data: MonthlyReportData,
+): string {
+  const {
+    overview = "",
+    progressStart = 0,
+    progressEnd = 0,
+    completedTasks = 0,
+    photoCount = 0,
+    correctiveCount = 0,
+    safetyNotes = "",
+    workDays = 0,
+    majorEvents = [],
+    nextMonthPlan = [],
+  } = data;
+
+  const monthLabel = `${year}年${month}月`;
+  const progressDelta = progressEnd - progressStart;
+
+  const eventItems =
+    majorEvents.length > 0
+      ? majorEvents.map((e) => `<li>${escapeHtml(e)}</li>`).join("")
+      : "<li>特記事項なし</li>";
+
+  const planItems =
+    nextMonthPlan.length > 0
+      ? nextMonthPlan.map((p) => `<li>${escapeHtml(p)}</li>`).join("")
+      : "<li>未定</li>";
+
+  const body = `
+  <h1>月報</h1>
+  <div class="meta">
+    <div class="meta-item"><span class="label">現場名:</span><span class="value">${escapeHtml(project.name)}</span></div>
+    <div class="meta-item"><span class="label">対象月:</span><span class="value">${escapeHtml(monthLabel)}</span></div>
+    <div class="meta-item"><span class="label">プロジェクトID:</span><span class="value">${escapeHtml(projectId)}</span></div>
+  </div>
+
+  <h2>工事概要</h2>
+  <p>${overview ? escapeHtml(overview) : "記載なし"}</p>
+
+  <h2>月間サマリー</h2>
+  <table>
+    <thead><tr><th>指標</th><th>値</th></tr></thead>
+    <tbody>
+      <tr><td>月初進捗率</td><td>${formatPercent(progressStart)}</td></tr>
+      <tr><td>月末進捗率</td><td>${formatPercent(progressEnd)}</td></tr>
+      <tr><td>月間進捗増加</td><td>${progressDelta >= 0 ? "+" : ""}${formatPercent(progressDelta)}</td></tr>
+      <tr><td>完了タスク数</td><td>${completedTasks} 件</td></tr>
+      <tr><td>写真枚数</td><td>${photoCount} 枚</td></tr>
+      <tr><td>是正件数</td><td>${correctiveCount} 件</td></tr>
+      <tr><td>出勤日数</td><td>${workDays} 日</td></tr>
+    </tbody>
+  </table>
+
+  <h2>安全記録</h2>
+  <p>${safetyNotes ? escapeHtml(safetyNotes) : "特記事項なし"}</p>
+
+  <h2>主要イベント</h2>
+  <ul>${eventItems}</ul>
+
+  <h2>翌月の予定</h2>
+  <ul>${planItems}</ul>
+`;
+
+  const styles = BASE_STYLES + MONTHLY_PRINT_STYLES;
+  return `<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <title>${escapeHtml(`月報 - ${project.name} - ${monthLabel}`)}</title>
+  <style>${styles}</style>
+</head>
+<body>
+${body}
+</body>
+</html>`;
+}
+
 // ── Inspection Report ────────────────────────────────────────────────────
 
 import type { InspectionChecklist } from "./safety-inspection.js";
