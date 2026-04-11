@@ -24,6 +24,7 @@ import { ProcurementPage } from "./pages/ProcurementPage.js";
 import { SiteEntryPage } from "./pages/SiteEntryPage.js";
 import { AttendanceHistoryPage } from "./pages/AttendanceHistoryPage.js";
 import { ContractorPortalPage } from "./pages/ContractorPortalPage.js";
+import { ClientViewerPage } from "./pages/ClientViewerPage.js";
 import { SelectionBoardPage } from "./pages/SelectionBoardPage.js";
 import { MoodBoardPage } from "./pages/MoodBoardPage.js";
 import { CRMPage } from "./pages/CRMPage.js";
@@ -221,6 +222,7 @@ function AppShell() {
   const portalMatch = route.match(/^\/portal\/([^/]+)(?:\/(.+))?$/);
   const selectionMatch = route.match(/^\/selection\/([^/]+)$/);
   const moodBoardMatch = route.match(/^\/mood-board\/([^/]+)$/);
+  const clientMatch = route.match(/^\/client\/([^/]+)$/);
   const projectId = projectDetailMatch?.[1]
     ? decodeURIComponent(projectDetailMatch[1])
     : null;
@@ -233,8 +235,10 @@ function AppShell() {
   const portalCompany = portalMatch?.[2] ? decodeURIComponent(portalMatch[2]) : undefined;
   const selectionProjectId = selectionMatch?.[1] ? decodeURIComponent(selectionMatch[1]) : null;
   const moodBoardProjectId = moodBoardMatch?.[1] ? decodeURIComponent(moodBoardMatch[1]) : null;
+  const clientProjectId = clientMatch?.[1] ? decodeURIComponent(clientMatch[1]) : null;
 
-  // 認証不要ページ（入退場キオスク+協力会社ポータル+施主セレクション）
+  // 認証不要ページ（入退場キオスク+協力会社ポータル+施主セレクション+施主ビューア）
+  if (clientProjectId) return <ClientViewerPage projectId={clientProjectId} />;
   if (entryProjectId) return <SiteEntryPage projectId={entryProjectId} />;
   if (portalProjectId) return <ContractorPortalPage projectId={portalProjectId} company={portalCompany} />;
   if (selectionProjectId) return <SelectionBoardPage projectId={selectionProjectId} />;
