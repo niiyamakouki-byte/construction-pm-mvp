@@ -63,6 +63,11 @@ function escapeXml(value: string): string {
     .replace(/'/g, "&apos;");
 }
 
+/** XML tag name sanitizer — strips characters not valid in XML names. */
+function sanitizeTagName(name: string): string {
+  return name.replace(/[^A-Za-z0-9_-]/g, "");
+}
+
 function escapeHtml(value: unknown): string {
   return String(value ?? "")
     .replace(/&/g, "&amp;")
@@ -171,7 +176,7 @@ export function generateDeliveryFileList(pkg: DeliveryPackage): string {
             `      <DELIVERY_NAME>${escapeXml(f.deliveryName)}</DELIVERY_NAME>\n` +
             `      <CATEGORY>${escapeXml(f.category)}</CATEGORY>\n` +
             Object.entries(f.metadata)
-              .map(([k, v]) => `      <${escapeXml(k)}>${escapeXml(v)}</${escapeXml(k)}>`)
+              .map(([k, v]) => `      <META key="${escapeXml(sanitizeTagName(k))}" value="${escapeXml(v)}"/>`)
               .join("\n") +
             (Object.keys(f.metadata).length > 0 ? "\n" : "") +
             `    </FILE>`,

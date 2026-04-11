@@ -1,16 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-
-function makeMockStorage(): Storage {
-  const store = new Map<string, string>();
-  return {
-    getItem: (key: string) => store.get(key) ?? null,
-    setItem: (key: string, value: string) => { store.set(key, value); },
-    removeItem: (key: string) => { store.delete(key); },
-    clear: () => { store.clear(); },
-    get length() { return store.size; },
-    key: (index: number) => [...store.keys()][index] ?? null,
-  };
-}
+import { describe, it, expect, beforeEach } from "vitest";
 
 import {
   linkPhotoToPin,
@@ -20,13 +8,14 @@ import {
   getPhotoCompletionRate,
   unlinkPhoto,
   buildPhotoLinkReportHtml,
+  _resetForTest,
   type DrawingPhotoLink,
 } from "./drawing-photo-link.js";
 
 const DRAWING_ID = "drawing-001";
 
 beforeEach(() => {
-  vi.stubGlobal("localStorage", makeMockStorage());
+  _resetForTest();
 });
 
 // ── linkPhotoToPin ────────────────────────────────────────────────────────────

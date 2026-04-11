@@ -240,7 +240,8 @@ describe("generateDeliveryFileList — INDEX_D.XML", () => {
   it("metadataの内容がXML要素として出力される", () => {
     const pkg = makePkg();
     const xml = generateDeliveryFileList(pkg);
-    expect(xml).toContain("<shootDate>2024-04-01</shootDate>");
+    expect(xml).toContain('<META key="shootDate" value="2024-04-01"/>');
+
   });
 
   it("特殊文字がXMLエスケープされる", () => {

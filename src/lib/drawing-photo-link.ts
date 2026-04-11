@@ -11,7 +11,8 @@ export type DrawingPhotoLink = {
   note: string;
 };
 
-const STORAGE_KEY_PREFIX = "drawing_photo_links_";
+// In-memory store (matches pattern of other lib modules in this codebase)
+const store = new Map<string, DrawingPhotoLink[]>();
 
 // ── Internal helpers ────────────────────────────────────────────────────────
 
@@ -25,17 +26,17 @@ function escapeHtml(value: unknown): string {
 }
 
 function loadLinks(drawingId: string): DrawingPhotoLink[] {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY_PREFIX + drawingId);
-    if (!raw) return [];
-    return JSON.parse(raw) as DrawingPhotoLink[];
-  } catch {
-    return [];
-  }
+  return store.get(drawingId) ?? [];
 }
 
 function saveLinks(drawingId: string, links: DrawingPhotoLink[]): void {
-  localStorage.setItem(STORAGE_KEY_PREFIX + drawingId, JSON.stringify(links));
+  store.set(drawingId, links);
+}
+
+// ── Reset (for testing) ──────────────────────────────────────────────────────
+
+export function _resetForTest(): void {
+  store.clear();
 }
 
 // ── Public API ───────────────────────────────────────────────────────────────
