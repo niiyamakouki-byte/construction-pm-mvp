@@ -1,4 +1,5 @@
 /** 引合粗利管理ライブラリ（ANDPAD蒸留 P1-4） */
+import { escapeHtml } from "./utils/escape-html";
 
 export type DealPhase =
   | '引合'
@@ -237,14 +238,6 @@ export function getMonthlyProfitTrend(): MonthlyProfitTrend[] {
 
 // ─── 帳票 ────────────────────────────────────────────────────
 
-function escapeHtml(text: string): string {
-  return text
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
-}
 
 function formatYen(amount: number): string {
   return `¥${amount.toLocaleString('ja-JP')}`;

@@ -1,6 +1,7 @@
 /**
  * Drawing pin data management for construction drawing viewer.
  */
+import { escapeHtml } from "./utils/escape-html";
 
 export type PinStatus = "未着手" | "対応中" | "完了";
 
@@ -59,14 +60,6 @@ export function savePins(drawingId: string, pins: DrawingPin[]): void {
 
 // ── Report generation ────────────────────────────────────────────────────────
 
-function escapeHtml(value: unknown): string {
-  return String(value ?? "")
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
-}
 
 export type PinReportOptions = {
   /** When true, only output pins that are not "完了" */

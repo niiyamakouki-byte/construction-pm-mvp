@@ -8,6 +8,7 @@
 // ── 定数 ────────────────────────────────────────────────────────────────────
 
 /** CALS/EC 標準フォルダ構成 */
+import { escapeHtml } from "./utils/escape-html";
 export const CALS_FOLDER_STRUCTURE = {
   PHOTO: "写真フォルダ",
   DRAWING: "図面フォルダ",
@@ -68,14 +69,6 @@ function sanitizeTagName(name: string): string {
   return name.replace(/[^A-Za-z0-9_-]/g, "");
 }
 
-function escapeHtml(value: unknown): string {
-  return String(value ?? "")
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
-}
 
 /**
  * 規定ファイル名を生成する。

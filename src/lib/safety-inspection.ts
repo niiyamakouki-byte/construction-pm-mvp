@@ -3,6 +3,7 @@
  * Provides checklist creation, evaluation, and HTML report generation
  * for construction site safety inspections.
  */
+import { escapeHtml } from "./utils/escape-html";
 
 export type ChecklistItemStatus = "pass" | "fail" | "na";
 
@@ -213,10 +214,3 @@ ${criticalSection}
 </html>`;
 }
 
-function escapeHtml(str: string): string {
-  return str
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
-}

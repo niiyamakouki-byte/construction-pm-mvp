@@ -2,6 +2,7 @@
  * CCUS（建設キャリアアップシステム）連携モジュール for GenbaHub.
  * 技能者情報の管理、入退場記録、レベル判定、統計、帳票生成を提供する。
  */
+import { escapeHtml } from "./utils/escape-html";
 
 // ── Types ──────────────────────────────────────────
 
@@ -240,9 +241,6 @@ export function getCCUSStats(projectId: string): CCUSStats {
 
 // ── HTML Report ────────────────────────────────────
 
-function escapeHtml(value: unknown): string {
-  return String(value ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-}
 
 const LEVEL_LABELS: Record<SkillLevel, string> = {
   1: "レベル1（初級）",

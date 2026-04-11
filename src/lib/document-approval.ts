@@ -2,6 +2,7 @@
  * 資料承認ワークフロー — ANDPAD蒸留
  * 見積書・図面・仕様書等の資料を提出→審査→承認/却下/差戻しの6ステータスで管理する。
  */
+import { escapeHtml } from "./utils/escape-html";
 
 export type ApprovalStatus =
   | "draft"
@@ -60,14 +61,6 @@ function now(): string {
   return new Date().toISOString();
 }
 
-function escapeHtml(value: unknown): string {
-  return String(value ?? "")
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
-}
 
 // ── ステータス遷移定義 ────────────────────────────────────────────────────────
 

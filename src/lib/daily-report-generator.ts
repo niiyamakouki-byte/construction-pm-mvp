@@ -1,4 +1,5 @@
 import type { DailyReport, Project, Task, Contractor } from "../domain/types.js";
+import { escapeHtml } from "./utils/escape-html";
 
 export type DailyReportInput = {
   project: Project;
@@ -24,13 +25,6 @@ export type DailyReportData = {
   notes: string;
 };
 
-function escapeHtml(text: string): string {
-  return text
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
-}
 
 /**
  * Gather data for a daily construction report.

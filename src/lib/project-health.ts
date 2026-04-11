@@ -14,6 +14,7 @@ import {
   type ProgressTask,
 } from "./earned-value.js";
 import { detectGaps, validateSchedule } from "./schedule-validator.js";
+import { escapeHtml } from "./utils/escape-html";
 
 export type CategoryRating = {
   category: "schedule" | "cost" | "quality" | "risk";
@@ -207,13 +208,6 @@ export function assessProjectHealth(input: HealthAssessmentInput): HealthScore {
   };
 }
 
-function escapeHtml(str: string): string {
-  return str
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
-}
 
 /**
  * Generate a printable HTML health report.

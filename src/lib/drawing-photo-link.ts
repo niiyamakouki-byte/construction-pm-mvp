@@ -1,6 +1,7 @@
 /**
  * Drawing photo link management — ties photos to drawing pins (SPIDERPLUS-style).
  */
+import { escapeHtml } from "./utils/escape-html";
 
 export type DrawingPhotoLink = {
   id: string;
@@ -16,14 +17,6 @@ const store = new Map<string, DrawingPhotoLink[]>();
 
 // ── Internal helpers ────────────────────────────────────────────────────────
 
-function escapeHtml(value: unknown): string {
-  return String(value ?? "")
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
-}
 
 function loadLinks(drawingId: string): DrawingPhotoLink[] {
   return store.get(drawingId) ?? [];

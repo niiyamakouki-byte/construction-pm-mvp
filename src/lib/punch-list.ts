@@ -1,3 +1,4 @@
+import { escapeHtml } from "./utils/escape-html";
 export type PunchListPriority = "low" | "medium" | "high" | "critical";
 
 export type PunchListStatus =
@@ -106,13 +107,6 @@ function cloneItem(item: PunchListItem): PunchListItem {
   };
 }
 
-function escapeHtml(text: string): string {
-  return text
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
-}
 
 export function createPunchListItem(input: CreatePunchListItemInput): PunchListItem {
   const createdAt = input.createdAt ?? getNow();

@@ -2,6 +2,7 @@
  * Electronic contract management — draft, send, sign, and archive contracts.
  * Includes 電子帳簿保存法対応 timestamp generation (mock) and search.
  */
+import { escapeHtml } from "./utils/escape-html";
 
 export type ContractStatus =
   | "draft"
@@ -271,10 +272,3 @@ ${rows}
 </table>`;
 }
 
-function escapeHtml(s: string): string {
-  return s
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
-}

@@ -1,6 +1,7 @@
 /**
  * Photo organization and photo report generation for construction projects.
  */
+import { escapeHtml } from "./utils/escape-html";
 
 export type PhotoMetadata = {
   id: string;
@@ -16,13 +17,6 @@ export type PhotoGroup<K extends string = string> = {
   photos: PhotoMetadata[];
 };
 
-function escapeHtml(text: string): string {
-  return text
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
-}
 
 function toDateKey(capturedAt: string): string {
   return capturedAt.slice(0, 10); // "YYYY-MM-DD"

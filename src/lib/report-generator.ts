@@ -45,14 +45,6 @@ function sanitizePhotoUrl(url: string): string {
   return "";
 }
 
-function escapeHtml(value: unknown): string {
-  return String(value ?? "")
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
-}
 
 function formatCurrency(value: number): string {
   return `¥${value.toLocaleString("ja-JP")}`;
@@ -579,6 +571,7 @@ ${body}
 // ── Inspection Report ────────────────────────────────────────────────────
 
 import type { InspectionChecklist } from "./safety-inspection.js";
+import { escapeHtml } from "./utils/escape-html";
 import {
   evaluateChecklist,
   generateInspectionReport as buildInspectionHtml,

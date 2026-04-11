@@ -1,3 +1,4 @@
+import { escapeHtml } from "./utils/escape-html";
 export type MeetingAttendee = {
   name: string;
   company?: string;
@@ -62,13 +63,6 @@ function getNow(): string {
   return new Date().toISOString();
 }
 
-function escapeHtml(text: string): string {
-  return text
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
-}
 
 function cloneMeeting(meeting: MeetingMinutes): MeetingMinutes {
   return {

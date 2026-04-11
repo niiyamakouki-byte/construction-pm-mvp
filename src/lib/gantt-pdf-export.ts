@@ -1,6 +1,7 @@
 import type { Project, Task, TaskStatus } from "../domain/types.js";
 import { addDays, daysBetween, formatScheduleDate } from "../components/gantt/utils.js";
 import { isHoliday } from "./japanese-holidays.js";
+import { escapeHtml } from "./utils/escape-html";
 
 type ExportTask = Task & { endDate?: string };
 
@@ -16,14 +17,6 @@ const barColors: Record<TaskStatus, { bg: string; fill: string }> = {
   done: { bg: "#86efac", fill: "#16a34a" },
 };
 
-function escapeHtml(value: unknown): string {
-  return String(value ?? "")
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#39;");
-}
 
 function formatOptionalDate(value: string | undefined): string {
   return value ? formatScheduleDate(value) : "未設定";

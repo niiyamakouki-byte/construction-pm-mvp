@@ -7,6 +7,7 @@
  */
 
 import type { PhotoCategory } from "./photo-classifier.js";
+import { escapeHtml } from "./utils/escape-html";
 
 // ── Data types ────────────────────────────────────────────────────────────
 
@@ -55,14 +56,6 @@ export type PhotoLedgerInput = {
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
-function escapeHtml(value: unknown): string {
-  return String(value ?? "")
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
-}
 
 function formatDateJa(date: string | undefined): string {
   if (!date) return "未記入";

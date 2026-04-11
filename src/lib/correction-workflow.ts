@@ -2,6 +2,7 @@
  * 是正指示ワークフロー — ANDPAD/SPIDERPLUS蒸留
  * 図面ピン指摘から是正→承認の4ステップワークフローを管理する。
  */
+import { escapeHtml } from "./utils/escape-html";
 
 export type CorrectionStatus =
   | "open"
@@ -57,14 +58,6 @@ function now(): string {
   return new Date().toISOString();
 }
 
-function escapeHtml(value: unknown): string {
-  return String(value ?? "")
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
-}
 
 // ── ステータス遷移定義 ────────────────────────────────────────────────────────
 

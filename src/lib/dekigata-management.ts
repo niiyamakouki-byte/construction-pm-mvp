@@ -2,6 +2,7 @@
  * 出来形管理モジュール — 蔵衛門蒸留
  * 国土交通省出来形管理基準に準拠した計測値管理・合否判定・帳票生成。
  */
+import { escapeHtml } from "./utils/escape-html";
 
 // ── 型定義 ────────────────────────────────────────────────────────────────────
 
@@ -80,14 +81,6 @@ function now(): string {
   return new Date().toISOString();
 }
 
-function escapeHtml(value: unknown): string {
-  return String(value ?? "")
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
-}
 
 /**
  * 許容差判定: actualValue が designValue ± tolerance 内なら pass、外なら fail。

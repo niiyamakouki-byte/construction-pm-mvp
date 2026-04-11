@@ -3,6 +3,7 @@
  * Calendar-style crew assignment management — who goes to which site, when.
  * Distilled from ANDPAD's "Board" feature.
  */
+import { escapeHtml } from "./utils/escape-html";
 
 export type JobType =
   | "大工"
@@ -281,14 +282,6 @@ function buildDateList(startDate: string, endDate: string): string[] {
   return result;
 }
 
-function escapeHtml(text: string): string {
-  return text
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
-}
 
 // ---------------------------------------------------------------------------
 // Reset (for testing)

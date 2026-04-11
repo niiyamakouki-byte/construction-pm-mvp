@@ -8,6 +8,7 @@ import {
   serializeTask,
 } from "../serialization.js";
 import { created, html, noContent, ok } from "../responses.js";
+import { escapeHtml } from "../../lib/utils/escape-html";
 import {
   ApiError,
   type ApiChangeOrderRecord,
@@ -51,14 +52,6 @@ const changeOrderStatusLabels = {
   rejected: "却下",
 } as const;
 
-function escapeHtml(value: unknown): string {
-  return String(value ?? "")
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#39;");
-}
 
 function formatDate(value: string | undefined | null): string {
   return value ? escapeHtml(value) : "未設定";

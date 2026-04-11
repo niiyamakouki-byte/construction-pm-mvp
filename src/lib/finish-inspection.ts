@@ -2,6 +2,7 @@
  * 仕上検査モジュール — ANDPAD/SPIDERPLUS蒸留
  * 部屋単位の仕上検査管理。図面ピン・是正ワークフローと連携。
  */
+import { escapeHtml } from "./utils/escape-html";
 
 // ── 内装特化カテゴリ ──────────────────────────────────────────────────────────
 
@@ -98,14 +99,6 @@ function now(): string {
   return new Date().toISOString();
 }
 
-function escapeHtml(value: unknown): string {
-  return String(value ?? "")
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
-}
 
 function findOrThrow(id: string): RoomInspection {
   const item = inspections.get(id);

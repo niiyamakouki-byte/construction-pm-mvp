@@ -2,6 +2,7 @@
  * 歩掛管理モジュール — ANDPAD蒸留
  * 内装工事の各作業における計画人工・実績人工の管理と差分分析。
  */
+import { escapeHtml } from "./utils/escape-html";
 
 // ── 型定義 ────────────────────────────────────────────────────────────────────
 
@@ -90,14 +91,6 @@ const records = new Map<string, BugakariRecord>();
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
-function escapeHtml(value: unknown): string {
-  return String(value ?? "")
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
-}
 
 function calcCosts(plannedManDays: number, actualManDays: number | null, unitPrice: number): {
   plannedCost: number;

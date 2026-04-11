@@ -1,3 +1,4 @@
+import { escapeHtml } from "./utils/escape-html";
 export type WarrantyClaimStatus =
   | "submitted"
   | "approved"
@@ -64,13 +65,6 @@ function cloneWarrantyItem(item: WarrantyItem): WarrantyItem {
   };
 }
 
-function escapeHtml(text: string): string {
-  return text
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
-}
 
 function diffDays(start: string, end: string): number {
   const msPerDay = 1000 * 60 * 60 * 24;
