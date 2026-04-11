@@ -114,11 +114,11 @@ export function getUnreadCount(projectId: string, lastRead: string): number {
 
 /**
  * Extract @username mentions from a message text.
- * Matches @<word> where word consists of non-whitespace characters.
+ * Matches @<word> where word consists of Unicode letters, digits, and underscores.
  * Returns deduplicated list of usernames (without the @ prefix).
  */
 export function extractMentions(text: string): string[] {
-  const matches = text.match(/@(\S+)/g);
+  const matches = text.match(/@([\p{L}\p{N}_]+)/gu);
   if (!matches) return [];
   const names = matches.map((m) => m.slice(1));
   return [...new Set(names)];
