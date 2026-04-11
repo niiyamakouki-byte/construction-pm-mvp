@@ -192,7 +192,7 @@ export function SiteEntryPage({ projectId }: { projectId: string }) {
   const isEntered = currentRecord !== null && !currentRecord.exitTime;
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-slate-100 select-none">
+    <div className="flex flex-col sm:flex-row h-screen w-screen overflow-hidden bg-slate-100 select-none">
       {/* Flash overlay */}
       {flash && (
         <div
@@ -385,7 +385,7 @@ export function SiteEntryPage({ projectId }: { projectId: string }) {
       </div>
 
       {/* Right panel: IN/OUT + clock */}
-      <div className="flex flex-col items-center justify-between w-72 shrink-0 bg-slate-800 p-6">
+      <div className="flex flex-col items-center justify-between w-full sm:w-72 sm:shrink-0 bg-slate-800 p-6">
         {/* Clock */}
         <div className="text-center">
           <button
