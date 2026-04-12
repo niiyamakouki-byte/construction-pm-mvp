@@ -15,6 +15,8 @@ import {
   getOverdueCorrections,
   getCorrectionStats,
   buildCorrectionReportHtml,
+  getCorrectionsByAssignee,
+  buildDamageReportHtml,
   type CorrectionItem,
 } from "../lib/correction-workflow.js";
 
@@ -277,5 +279,103 @@ describe("是正指示ワークフロー", () => {
     expect(html).not.toContain("<script>");
     expect(html).toContain("&lt;script&gt;");
     expect(html).toContain("&lt;Test&gt;");
+  });
+
+  // ── 業者別グループ化 ──────────────────────────────────────────────────────────
+
+  it("getCorrectionsByAssignee: 業者別にグループ化される", () => {
+    makeItem({ projectId: "proj-a", assignee: "山田電気" });
+    makeItem({ projectId: "proj-a", assignee: "山田電気" });
+    makeItem({ projectId: "proj-a", assignee: "田中内装" });
+    const grouped = getCorrectionsByAssignee("proj-a");
+    expect(grouped["山田電気"]).toHaveLength(2);
+    expect(grouped["田中内装"]).toHaveLength(1);
+  });
+
+  it("getCorrectionsByAssignee: 別プロジェクトのデータは含まない", () => {
+    makeItem({ projectId: "proj-a", assignee: "山田電気" });
+    makeItem({ projectId: "proj-b", assignee: "山田電気" });
+    const grouped = getCorrectionsByAssignee("proj-a");
+    expect(grouped["山田電気"]).toHaveLength(1);
+  });
+
+  it("getCorrectionsByAssignee: データなしは空オブジェクトを返す", () => {
+    const grouped = getCorrectionsByAssignee("no-such-project");
+    expect(Object.keys(grouped)).toHaveLength(0);
+  });
+
+  // ── ダメ帳HTML ────────────────────────────────────────────────────────────────
+
+  it("buildDamageReportHtml: ヘッダー情報（工事名・業者名・発行日・是正期限）を含む", () => {
+    makeItem({ projectId: "proj-d", assignee: "田中内装", dueDate: "2026-05-15" });
+    const html = buildDamageReportHtml("proj-d", "KDX南青山ビル", "田中内装");
+    expect(html).toContain("<!DOCTYPE html>");
+    expect(html).toContain("KDX南青山ビル");
+    expect(html).toContain("田中内装");
+    expect(html).toContain("2026-05-15");
+    expect(html).toContain("発行日");
+    expect(html).toContain("是正期限");
+  });
+
+  it("buildDamageReportHtml: 指定期限を優先して使用する", () => {
+    makeItem({ projectId: "proj-d2", assignee: "田中内装", dueDate: "2026-05-15" });
+    const html = buildDamageReportHtml("proj-d2", "テスト現場", "田中内装", "2026-06-30");
+    expect(html).toContain("2026-06-30");
+    expect(html).not.toContain("2026-05-15");
+  });
+
+  it("buildDamageReportHtml: 一覧に指摘内容・場所・ステータス・写真有無・コメント数を含む", () => {
+    const item = makeItem({
+      projectId: "proj-d3",
+      assignee: "山田電気",
+      title: "照明スイッチ不具合",
+      description: "3F廊下",
+      photos: { before: ["before.jpg"] },
+    });
+    notifyAssignee(item.id);
+    startCorrection(item.id);
+    const html = buildDamageReportHtml("proj-d3", "テスト現場", "山田電気");
+    expect(html).toContain("照明スイッチ不具合");
+    expect(html).toContain("3F廊下");
+    expect(html).toContain("対応中");
+    expect(html).toContain("あり");
+    expect(html).toContain("コメント");
+  });
+
+  it("buildDamageReportHtml: フッターに未対応/対応中/完了の件数サマリを含む", () => {
+    const a = makeItem({ projectId: "proj-d4", assignee: "佐藤設備" }); // open
+    const b = makeItem({ projectId: "proj-d4", assignee: "佐藤設備" }); // in_progress
+    notifyAssignee(b.id);
+    startCorrection(b.id);
+    const c = makeItem({ projectId: "proj-d4", assignee: "佐藤設備" }); // approved
+    notifyAssignee(c.id);
+    startCorrection(c.id);
+    submitCorrection(c.id);
+    approveCorrection(c.id);
+    void a;
+    const html = buildDamageReportHtml("proj-d4", "テスト現場", "佐藤設備");
+    expect(html).toContain("未対応:");
+    expect(html).toContain("対応中:");
+    expect(html).toContain("完了:");
+    // open=1, in_progress=1, completed=1
+    expect(html).toMatch(/未対応:.*1件/s);
+    expect(html).toMatch(/対応中:.*1件/s);
+    expect(html).toMatch(/完了:.*1件/s);
+  });
+
+  it("buildDamageReportHtml: 業者にデータなしは「是正指示なし」を表示", () => {
+    makeItem({ projectId: "proj-d5", assignee: "他業者" });
+    const html = buildDamageReportHtml("proj-d5", "テスト現場", "存在しない業者");
+    expect(html).toContain("是正指示なし");
+    expect(html).toContain("未対応:");
+  });
+
+  it("buildDamageReportHtml: HTMLエスケープが適用される", () => {
+    makeItem({ projectId: "proj-d6", assignee: "<Evil>", title: "<script>hack()</script>" });
+    const html = buildDamageReportHtml("proj-d6", "<Proj>", "<Evil>");
+    expect(html).not.toContain("<script>");
+    expect(html).toContain("&lt;script&gt;");
+    expect(html).toContain("&lt;Evil&gt;");
+    expect(html).toContain("&lt;Proj&gt;");
   });
 });
