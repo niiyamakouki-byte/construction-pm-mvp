@@ -396,3 +396,258 @@ export function buildProfitDashboardHtml(): string {
 export function clearDeals(): void {
   deals.length = 0;
 }
+
+// ─── 3軸ダッシュボード ────────────────────────────────────────
+
+export type ThreeAxisSummary = {
+  /** 過去実績: 完工+請求済+入金済の粗利合計 */
+  pastActual: {
+    deals: DealProfit[];
+    totalActualRevenue: number;
+    totalActualCost: number;
+    totalActualGrossProfit: number;
+    grossProfitRate: number;
+    byPhase: { phase: DealPhase; count: number; totalGrossProfit: number }[];
+  };
+  /** 今月着地: 今月updatedAtの施工中/受注案件の見込粗利 */
+  thisMonthLanding: {
+    deals: DealProfit[];
+    totalEstimatedRevenue: number;
+    totalEstimatedGrossProfit: number;
+    grossProfitRate: number;
+    byPhase: { phase: DealPhase; count: number; totalGrossProfit: number }[];
+  };
+  /** 来月見込: それ以外のアクティブ案件パイプライン */
+  nextMonthPipeline: {
+    deals: DealProfit[];
+    totalEstimatedRevenue: number;
+    totalEstimatedGrossProfit: number;
+    grossProfitRate: number;
+    byPhase: { phase: DealPhase; count: number; totalGrossProfit: number }[];
+  };
+  /** 粗利率前月比トレンド（+/-/0） */
+  trendDirection: 'up' | 'down' | 'flat';
+  trendDiff: number; // percentage points
+};
+
+/** 今月のYYYY-MMを返す（テストでDI可能にするため引数で受ける） */
+function getCurrentMonth(now?: Date): string {
+  const d = now ?? new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+}
+
+/** 前月のYYYY-MMを返す */
+function getPrevMonth(now?: Date): string {
+  const d = now ?? new Date();
+  const prev = new Date(d.getFullYear(), d.getMonth() - 1, 1);
+  return `${prev.getFullYear()}-${String(prev.getMonth() + 1).padStart(2, '0')}`;
+}
+
+function phaseSummary(
+  phaseDeals: DealProfit[],
+  grossFn: (d: DealProfit) => number,
+): { phase: DealPhase; count: number; totalGrossProfit: number }[] {
+  const map = new Map<DealPhase, { count: number; totalGrossProfit: number }>();
+  for (const d of phaseDeals) {
+    const prev = map.get(d.phase) ?? { count: 0, totalGrossProfit: 0 };
+    map.set(d.phase, {
+      count: prev.count + 1,
+      totalGrossProfit: prev.totalGrossProfit + grossFn(d),
+    });
+  }
+  return [...map.entries()].map(([phase, v]) => ({ phase, ...v }));
+}
+
+/** 3軸ダッシュボード用サマリを計算 */
+export function calcThreeAxisSummary(
+  allDeals: DealProfit[],
+  now?: Date,
+): ThreeAxisSummary {
+  const currentMonth = getCurrentMonth(now);
+  const prevMonth = getPrevMonth(now);
+
+  // 過去実績
+  const pastDeals = allDeals.filter((d) =>
+    (COMPLETED_PHASES as string[]).includes(d.phase),
+  );
+  const pastRevenue = pastDeals.reduce(
+    (s, d) => s + d.actualRevenue + changeOrderRevenueDelta(d),
+    0,
+  );
+  const pastCost = pastDeals.reduce(
+    (s, d) => s + d.actualCost + changeOrderCostDelta(d),
+    0,
+  );
+  const pastGP = pastRevenue - pastCost;
+
+  // 今月着地: 今月updatedAtの施工中/受注案件
+  const landingPhases: DealPhase[] = ['受注', '施工中'];
+  const thisMonthDeals = allDeals.filter(
+    (d) =>
+      (landingPhases as string[]).includes(d.phase) &&
+      d.updatedAt.slice(0, 7) === currentMonth,
+  );
+  const thisRevenue = thisMonthDeals.reduce((s, d) => s + d.estimatedRevenue, 0);
+  const thisGP = thisMonthDeals.reduce((s, d) => s + getGrossProfit(d), 0);
+
+  // 来月見込: アクティブ案件のうち今月着地に含まれない案件
+  const thisMonthIds = new Set(thisMonthDeals.map((d) => d.id));
+  const nextDeals = allDeals.filter(
+    (d) =>
+      (ACTIVE_PHASES as string[]).includes(d.phase) &&
+      !thisMonthIds.has(d.id),
+  );
+  const nextRevenue = nextDeals.reduce((s, d) => s + d.estimatedRevenue, 0);
+  const nextGP = nextDeals.reduce((s, d) => s + getGrossProfit(d), 0);
+
+  // 前月比トレンド（完了案件の月次粗利率で比較）
+  const completedByMonth = new Map<string, DealProfit[]>();
+  for (const d of pastDeals) {
+    const m = d.updatedAt.slice(0, 7);
+    if (!completedByMonth.has(m)) completedByMonth.set(m, []);
+    completedByMonth.get(m)!.push(d);
+  }
+  function monthRate(month: string): number | null {
+    const ds = completedByMonth.get(month);
+    if (!ds || ds.length === 0) return null;
+    const rev = ds.reduce((s, d) => s + d.actualRevenue + changeOrderRevenueDelta(d), 0);
+    const cost = ds.reduce((s, d) => s + d.actualCost + changeOrderCostDelta(d), 0);
+    return rev > 0 ? ((rev - cost) / rev) * 100 : null;
+  }
+  const curRate = monthRate(currentMonth);
+  const prevRate = monthRate(prevMonth);
+  let trendDirection: ThreeAxisSummary['trendDirection'] = 'flat';
+  let trendDiff = 0;
+  if (curRate !== null && prevRate !== null) {
+    trendDiff = curRate - prevRate;
+    if (trendDiff > 0.05) trendDirection = 'up';
+    else if (trendDiff < -0.05) trendDirection = 'down';
+  }
+
+  return {
+    pastActual: {
+      deals: pastDeals,
+      totalActualRevenue: pastRevenue,
+      totalActualCost: pastCost,
+      totalActualGrossProfit: pastGP,
+      grossProfitRate: pastRevenue > 0 ? (pastGP / pastRevenue) * 100 : 0,
+      byPhase: phaseSummary(pastDeals, getActualGrossProfit),
+    },
+    thisMonthLanding: {
+      deals: thisMonthDeals,
+      totalEstimatedRevenue: thisRevenue,
+      totalEstimatedGrossProfit: thisGP,
+      grossProfitRate: thisRevenue > 0 ? (thisGP / thisRevenue) * 100 : 0,
+      byPhase: phaseSummary(thisMonthDeals, getGrossProfit),
+    },
+    nextMonthPipeline: {
+      deals: nextDeals,
+      totalEstimatedRevenue: nextRevenue,
+      totalEstimatedGrossProfit: nextGP,
+      grossProfitRate: nextRevenue > 0 ? (nextGP / nextRevenue) * 100 : 0,
+      byPhase: phaseSummary(nextDeals, getGrossProfit),
+    },
+    trendDirection,
+    trendDiff,
+  };
+}
+
+/** 3軸ダッシュボードHTMLを生成 */
+export function buildThreeAxisDashboardHtml(
+  allDeals: DealProfit[],
+  now?: Date,
+): string {
+  const s = calcThreeAxisSummary(allDeals, now);
+
+  const trendArrow =
+    s.trendDirection === 'up' ? '▲' : s.trendDirection === 'down' ? '▼' : '─';
+  const trendColor =
+    s.trendDirection === 'up' ? '#16a34a' : s.trendDirection === 'down' ? '#dc2626' : '#6b7280';
+  const trendLabel =
+    s.trendDirection === 'up'
+      ? `${trendArrow} +${s.trendDiff.toFixed(1)}pt`
+      : s.trendDirection === 'down'
+        ? `${trendArrow} ${s.trendDiff.toFixed(1)}pt`
+        : `${trendArrow} 前月比変化なし`;
+
+  function phaseRows(
+    rows: { phase: DealPhase; count: number; totalGrossProfit: number }[],
+  ): string {
+    if (rows.length === 0) return '<tr><td colspan="3">—</td></tr>';
+    return rows
+      .map(
+        (r) =>
+          `<tr><td>${escapeHtml(r.phase)}</td><td>${r.count}</td><td>${formatYen(r.totalGrossProfit)}</td></tr>`,
+      )
+      .join('\n');
+  }
+
+  return `<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <title>粗利3軸ダッシュボード</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 24px; color: #1f2937; }
+    h1 { font-size: 1.5rem; margin-bottom: 8px; }
+    h2 { font-size: 1.1rem; margin-top: 24px; margin-bottom: 8px; }
+    h3 { font-size: 0.95rem; margin-top: 16px; margin-bottom: 4px; color: #374151; }
+    .axes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin-top: 16px; }
+    .axis-card { border: 1px solid #d1d5db; border-radius: 8px; padding: 16px; background: #f9fafb; }
+    .axis-title { font-size: 0.8rem; font-weight: bold; text-transform: uppercase; color: #6b7280; letter-spacing: 0.05em; }
+    .axis-value { font-size: 1.5rem; font-weight: bold; margin-top: 6px; }
+    .axis-sub { font-size: 0.85rem; color: #6b7280; margin-top: 2px; }
+    .trend { font-size: 1rem; font-weight: bold; color: ${trendColor}; }
+    table { width: 100%; border-collapse: collapse; margin-top: 6px; font-size: 0.85rem; }
+    th, td { border: 1px solid #e5e7eb; padding: 6px 8px; text-align: left; }
+    th { background: #374151; color: white; }
+    @media print { body { margin: 0; } }
+  </style>
+</head>
+<body>
+  <h1>粗利3軸ダッシュボード</h1>
+  <p class="trend">粗利率前月比: ${escapeHtml(trendLabel)}</p>
+
+  <div class="axes">
+    <!-- 過去実績 -->
+    <div class="axis-card">
+      <div class="axis-title">過去実績</div>
+      <div class="axis-value">${formatYen(s.pastActual.totalActualGrossProfit)}</div>
+      <div class="axis-sub">粗利率 ${formatRate(s.pastActual.grossProfitRate)} / ${s.pastActual.deals.length}件</div>
+      <div class="axis-sub">売上 ${formatYen(s.pastActual.totalActualRevenue)}</div>
+      <h3>フェーズ別内訳</h3>
+      <table>
+        <thead><tr><th>フェーズ</th><th>件数</th><th>実績粗利</th></tr></thead>
+        <tbody>${phaseRows(s.pastActual.byPhase)}</tbody>
+      </table>
+    </div>
+
+    <!-- 今月着地 -->
+    <div class="axis-card">
+      <div class="axis-title">今月着地</div>
+      <div class="axis-value">${formatYen(s.thisMonthLanding.totalEstimatedGrossProfit)}</div>
+      <div class="axis-sub">粗利率 ${formatRate(s.thisMonthLanding.grossProfitRate)} / ${s.thisMonthLanding.deals.length}件</div>
+      <div class="axis-sub">見積売上 ${formatYen(s.thisMonthLanding.totalEstimatedRevenue)}</div>
+      <h3>フェーズ別内訳</h3>
+      <table>
+        <thead><tr><th>フェーズ</th><th>件数</th><th>見込粗利</th></tr></thead>
+        <tbody>${phaseRows(s.thisMonthLanding.byPhase)}</tbody>
+      </table>
+    </div>
+
+    <!-- 来月見込 -->
+    <div class="axis-card">
+      <div class="axis-title">来月見込</div>
+      <div class="axis-value">${formatYen(s.nextMonthPipeline.totalEstimatedGrossProfit)}</div>
+      <div class="axis-sub">粗利率 ${formatRate(s.nextMonthPipeline.grossProfitRate)} / ${s.nextMonthPipeline.deals.length}件</div>
+      <div class="axis-sub">パイプライン ${formatYen(s.nextMonthPipeline.totalEstimatedRevenue)}</div>
+      <h3>フェーズ別内訳</h3>
+      <table>
+        <thead><tr><th>フェーズ</th><th>件数</th><th>見込粗利</th></tr></thead>
+        <tbody>${phaseRows(s.nextMonthPipeline.byPhase)}</tbody>
+      </table>
+    </div>
+  </div>
+</body>
+</html>`;
+}

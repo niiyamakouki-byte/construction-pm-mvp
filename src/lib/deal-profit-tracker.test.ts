@@ -2,6 +2,8 @@ import { afterEach, describe, expect, it } from "vitest";
 import {
   addChangeOrder,
   buildProfitDashboardHtml,
+  buildThreeAxisDashboardHtml,
+  calcThreeAxisSummary,
   clearDeals,
   createDeal,
   getActivePipeline,
@@ -264,5 +266,124 @@ describe("buildProfitDashboardHtml", () => {
     const html = buildProfitDashboardHtml();
     expect(html).not.toContain("<script>alert(1)</script>");
     expect(html).toContain("&lt;script&gt;");
+  });
+});
+
+// ─── 3軸ダッシュボード ────────────────────────────────────────
+
+const NOW = new Date("2026-04-12T00:00:00Z");
+
+describe("calcThreeAxisSummary", () => {
+  it("過去実績に完工・請求済・入金済案件が集計される", () => {
+    const deals: DealProfit[] = [
+      makeDeal({ id: "c1", phase: "完工", actualRevenue: 1000000, actualCost: 700000, updatedAt: "2026-03-01T00:00:00Z" }),
+      makeDeal({ id: "c2", phase: "入金済", actualRevenue: 500000, actualCost: 350000, updatedAt: "2026-03-20T00:00:00Z" }),
+      makeDeal({ id: "a1", phase: "施工中", estimatedRevenue: 800000, estimatedCost: 560000, updatedAt: "2026-04-10T00:00:00Z" }),
+    ];
+    const s = calcThreeAxisSummary(deals, NOW);
+    expect(s.pastActual.deals).toHaveLength(2);
+    expect(s.pastActual.totalActualRevenue).toBe(1500000);
+    expect(s.pastActual.totalActualGrossProfit).toBe(450000);
+    expect(s.pastActual.grossProfitRate).toBeCloseTo(30, 1);
+  });
+
+  it("今月着地に今月updatedAtの受注/施工中案件が集計される", () => {
+    const deals: DealProfit[] = [
+      makeDeal({ id: "t1", phase: "施工中", estimatedRevenue: 2000000, estimatedCost: 1400000, updatedAt: "2026-04-05T00:00:00Z" }),
+      makeDeal({ id: "t2", phase: "受注", estimatedRevenue: 600000, estimatedCost: 420000, updatedAt: "2026-04-01T00:00:00Z" }),
+      makeDeal({ id: "t3", phase: "施工中", estimatedRevenue: 400000, estimatedCost: 280000, updatedAt: "2026-03-28T00:00:00Z" }),
+    ];
+    const s = calcThreeAxisSummary(deals, NOW);
+    expect(s.thisMonthLanding.deals).toHaveLength(2);
+    expect(s.thisMonthLanding.totalEstimatedRevenue).toBe(2600000);
+    expect(s.thisMonthLanding.totalEstimatedGrossProfit).toBe(780000);
+  });
+
+  it("来月見込に今月着地以外のアクティブ案件が集計される", () => {
+    const deals: DealProfit[] = [
+      makeDeal({ id: "n1", phase: "引合", estimatedRevenue: 500000, estimatedCost: 350000, updatedAt: "2026-03-01T00:00:00Z" }),
+      makeDeal({ id: "n2", phase: "商談中", estimatedRevenue: 300000, estimatedCost: 210000, updatedAt: "2026-03-15T00:00:00Z" }),
+      makeDeal({ id: "t1", phase: "施工中", estimatedRevenue: 800000, estimatedCost: 560000, updatedAt: "2026-04-08T00:00:00Z" }),
+    ];
+    const s = calcThreeAxisSummary(deals, NOW);
+    expect(s.nextMonthPipeline.deals).toHaveLength(2);
+    expect(s.nextMonthPipeline.totalEstimatedRevenue).toBe(800000);
+  });
+
+  it("前月比トレンドが上昇の場合upを返す", () => {
+    // 前月(2026-03): 粗利率20%、今月(2026-04): 粗利率30%
+    const deals: DealProfit[] = [
+      makeDeal({ id: "p1", phase: "入金済", actualRevenue: 1000000, actualCost: 800000, updatedAt: "2026-03-01T00:00:00Z" }),
+      makeDeal({ id: "p2", phase: "入金済", actualRevenue: 1000000, actualCost: 700000, updatedAt: "2026-04-01T00:00:00Z" }),
+    ];
+    const s = calcThreeAxisSummary(deals, NOW);
+    expect(s.trendDirection).toBe("up");
+    expect(s.trendDiff).toBeGreaterThan(0);
+  });
+
+  it("前月比トレンドが下降の場合downを返す", () => {
+    // 前月(2026-03): 粗利率30%、今月(2026-04): 粗利率20%
+    const deals: DealProfit[] = [
+      makeDeal({ id: "p1", phase: "入金済", actualRevenue: 1000000, actualCost: 700000, updatedAt: "2026-03-01T00:00:00Z" }),
+      makeDeal({ id: "p2", phase: "入金済", actualRevenue: 1000000, actualCost: 800000, updatedAt: "2026-04-01T00:00:00Z" }),
+    ];
+    const s = calcThreeAxisSummary(deals, NOW);
+    expect(s.trendDirection).toBe("down");
+    expect(s.trendDiff).toBeLessThan(0);
+  });
+
+  it("前月データなしの場合flatを返す", () => {
+    const deals: DealProfit[] = [
+      makeDeal({ id: "p1", phase: "入金済", actualRevenue: 1000000, actualCost: 700000, updatedAt: "2026-04-01T00:00:00Z" }),
+    ];
+    const s = calcThreeAxisSummary(deals, NOW);
+    expect(s.trendDirection).toBe("flat");
+  });
+
+  it("案件ゼロでもエラーなく動作する", () => {
+    const s = calcThreeAxisSummary([], NOW);
+    expect(s.pastActual.deals).toHaveLength(0);
+    expect(s.thisMonthLanding.deals).toHaveLength(0);
+    expect(s.nextMonthPipeline.deals).toHaveLength(0);
+    expect(s.trendDirection).toBe("flat");
+  });
+});
+
+describe("buildThreeAxisDashboardHtml", () => {
+  it("有効なHTMLを返す", () => {
+    const html = buildThreeAxisDashboardHtml([], NOW);
+    expect(html).toContain("<!DOCTYPE html>");
+    expect(html).toContain("粗利3軸ダッシュボード");
+  });
+
+  it("3軸のタイトルが含まれる", () => {
+    const html = buildThreeAxisDashboardHtml([], NOW);
+    expect(html).toContain("過去実績");
+    expect(html).toContain("今月着地");
+    expect(html).toContain("来月見込");
+  });
+
+  it("粗利率前月比トレンドが表示される", () => {
+    const deals: DealProfit[] = [
+      makeDeal({ id: "p1", phase: "入金済", actualRevenue: 1000000, actualCost: 700000, updatedAt: "2026-03-01T00:00:00Z" }),
+      makeDeal({ id: "p2", phase: "入金済", actualRevenue: 1000000, actualCost: 600000, updatedAt: "2026-04-01T00:00:00Z" }),
+    ];
+    const html = buildThreeAxisDashboardHtml(deals, NOW);
+    expect(html).toContain("粗利率前月比");
+    expect(html).toContain("▲");
+  });
+
+  it("HTMLインジェクションをエスケープする", () => {
+    const deals: DealProfit[] = [
+      makeDeal({ id: "x1", phase: "入金済", actualRevenue: 500000, actualCost: 350000, updatedAt: "2026-04-01T00:00:00Z" }),
+    ];
+    // フェーズ名はDealPhase型で固定なので、XSSはトレンドラベルやフェーズ表示のみ対象
+    const html = buildThreeAxisDashboardHtml(deals, NOW);
+    expect(html).not.toContain("<script>");
+  });
+
+  it("案件ゼロでも全3軸が¥0で表示される", () => {
+    const html = buildThreeAxisDashboardHtml([], NOW);
+    expect(html.match(/¥0/g)?.length).toBeGreaterThanOrEqual(3);
   });
 });
