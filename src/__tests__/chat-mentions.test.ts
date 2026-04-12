@@ -28,10 +28,24 @@ describe("chat-mentions", () => {
       expect(extractMentions("メンションなしのテキスト")).toEqual([]);
     });
 
-    it("ignores email-like patterns correctly — treats as mention", () => {
-      // @foo in any context is captured; caller decides semantics
-      const result = extractMentions("send to @user123");
-      expect(result).toEqual(["user123"]);
+    it("does not extract email addresses as mentions", () => {
+      expect(extractMentions("user@example.com に送る")).toEqual([]);
+    });
+
+    it("does not extract email local-part when followed by domain", () => {
+      expect(extractMentions("contact niiyama@laporta.co.jp")).toEqual([]);
+    });
+
+    it("extracts mention adjacent to punctuation — @田中、", () => {
+      expect(extractMentions("@田中、お願いします")).toEqual(["田中"]);
+    });
+
+    it("extracts mention adjacent to Japanese period — @鈴木。", () => {
+      expect(extractMentions("確認して@鈴木。ありがとう")).toEqual(["鈴木"]);
+    });
+
+    it("extracts consecutive mentions — @田中 @鈴木", () => {
+      expect(extractMentions("@田中 @鈴木 両方お願い")).toEqual(["田中", "鈴木"]);
     });
 
     it("handles mention at end of sentence", () => {
