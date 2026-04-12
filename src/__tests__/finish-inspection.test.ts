@@ -13,6 +13,8 @@ import {
   getInspectionProgress,
   getProjectInspectionSummary,
   buildFinishInspectionHtml,
+  getCrossProjectSummary,
+  buildCrossProjectInspectionHtml,
   type RoomInspection,
   type FinishInspectionItem,
 } from "../lib/finish-inspection.js";
@@ -266,5 +268,96 @@ describe("仕上検査モジュール", () => {
     const html = buildFinishInspectionHtml("proj-ng", "NG現場");
     expect(html).toContain("NG: </span><span");
     expect(html).toContain("2件");
+  });
+
+  // ── 案件横断サマリー ──────────────────────────────────────────────────────────
+
+  it("getCrossProjectSummary: 複数プロジェクトの集計が正しい", () => {
+    const r1 = makeRoom({ projectId: "cross-1" });
+    addInspectionItem(r1.id, makeItem({ status: "ok" }));
+    addInspectionItem(r1.id, makeItem({ status: "ng" }));
+
+    const r2 = makeRoom({ projectId: "cross-2" });
+    addInspectionItem(r2.id, makeItem({ status: "ok" }));
+    addInspectionItem(r2.id, makeItem({ status: "ok" }));
+    addInspectionItem(r2.id, makeItem({ status: "na" }));
+
+    const summaries = getCrossProjectSummary(
+      ["cross-1", "cross-2"],
+      { "cross-1": "KDX南青山", "cross-2": "アルペジオ" },
+    );
+
+    expect(summaries).toHaveLength(2);
+    const s1 = summaries.find((s) => s.projectId === "cross-1")!;
+    expect(s1.projectName).toBe("KDX南青山");
+    expect(s1.roomCount).toBe(1);
+    expect(s1.totalItems).toBe(2);
+    expect(s1.okCount).toBe(1);
+    expect(s1.ngCount).toBe(1);
+    expect(s1.naCount).toBe(0);
+    expect(s1.completionRate).toBeCloseTo(0.5);
+
+    const s2 = summaries.find((s) => s.projectId === "cross-2")!;
+    expect(s2.okCount).toBe(2);
+    expect(s2.naCount).toBe(1);
+    expect(s2.completionRate).toBeCloseTo(2 / 3);
+  });
+
+  it("getCrossProjectSummary: データなしプロジェクトは全0・completionRate=0", () => {
+    const summaries = getCrossProjectSummary(["empty-x"], { "empty-x": "空プロジェクト" });
+    expect(summaries).toHaveLength(1);
+    const s = summaries[0]!;
+    expect(s.roomCount).toBe(0);
+    expect(s.totalItems).toBe(0);
+    expect(s.completionRate).toBe(0);
+  });
+
+  it("getCrossProjectSummary: projectNames未指定はIDをそのまま使う", () => {
+    const summaries = getCrossProjectSummary(["proj-noname"]);
+    expect(summaries[0]!.projectName).toBe("proj-noname");
+  });
+
+  it("buildCrossProjectInspectionHtml: NG件数の多い順にソートされる", () => {
+    const r1 = makeRoom({ projectId: "sort-1" });
+    addInspectionItem(r1.id, makeItem({ status: "ng" })); // 1 NG
+
+    const r2 = makeRoom({ projectId: "sort-2" });
+    addInspectionItem(r2.id, makeItem({ status: "ng" }));
+    addInspectionItem(r2.id, makeItem({ status: "ng" }));
+    addInspectionItem(r2.id, makeItem({ status: "ng" })); // 3 NG
+
+    const summaries = getCrossProjectSummary(
+      ["sort-1", "sort-2"],
+      { "sort-1": "プロジェクトA", "sort-2": "プロジェクトB" },
+    );
+    const html = buildCrossProjectInspectionHtml(summaries);
+
+    // プロジェクトBがNGが多いので先に来るはず
+    const posA = html.indexOf("プロジェクトA");
+    const posB = html.indexOf("プロジェクトB");
+    expect(posB).toBeLessThan(posA);
+  });
+
+  it("buildCrossProjectInspectionHtml: 完了率バーと%が含まれる", () => {
+    const r1 = makeRoom({ projectId: "bar-1" });
+    addInspectionItem(r1.id, makeItem({ status: "ok" }));
+    addInspectionItem(r1.id, makeItem({ status: "ok" }));
+    addInspectionItem(r1.id, makeItem({ status: "ok" }));
+    addInspectionItem(r1.id, makeItem({ status: "ng" })); // 75%
+
+    const summaries = getCrossProjectSummary(["bar-1"], { "bar-1": "バー現場" });
+    const html = buildCrossProjectInspectionHtml(summaries);
+
+    expect(html).toContain("<!DOCTYPE html>");
+    expect(html).toContain("バー現場");
+    expect(html).toContain("75%");
+    expect(html).toContain("width:75%");
+    expect(html).toContain("border-radius:4px");
+  });
+
+  it("buildCrossProjectInspectionHtml: データなしは「データなし」を表示", () => {
+    const html = buildCrossProjectInspectionHtml([]);
+    expect(html).toContain("データなし");
+    expect(html).toContain("対象案件数: 0件");
   });
 });

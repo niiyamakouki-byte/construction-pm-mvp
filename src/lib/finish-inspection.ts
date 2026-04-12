@@ -89,6 +89,17 @@ export type ProjectInspectionSummary = {
   totalNa: number;
 };
 
+export type CrossProjectInspectionSummary = {
+  projectId: string;
+  projectName: string;
+  roomCount: number;
+  totalItems: number;
+  okCount: number;
+  ngCount: number;
+  naCount: number;
+  completionRate: number; // 0–1: okCount / (okCount + ngCount + naCount)
+};
+
 // ── In-memory store ──────────────────────────────────────────────────────────
 
 const inspections = new Map<string, RoomInspection>();
@@ -286,6 +297,118 @@ export function getProjectInspectionSummary(projectId: string): ProjectInspectio
     totalNg,
     totalNa,
   };
+}
+
+/**
+ * 複数プロジェクトの検査状況サマリーを取得する。
+ * projectNames は projectId → 表示名のマップ。名前が未指定のプロジェクトはIDをそのまま使う。
+ */
+export function getCrossProjectSummary(
+  projectIds: string[],
+  projectNames: Record<string, string> = {},
+): CrossProjectInspectionSummary[] {
+  return projectIds.map((projectId) => {
+    const rooms = getInspectionsByProject(projectId);
+    const progresses = rooms.map((r) => getInspectionProgress(r));
+
+    const roomCount = rooms.length;
+    const totalItems = progresses.reduce((s, p) => s + p.total, 0);
+    const okCount = progresses.reduce((s, p) => s + p.ok, 0);
+    const ngCount = progresses.reduce((s, p) => s + p.ng, 0);
+    const naCount = progresses.reduce((s, p) => s + p.na, 0);
+    const completionRate = totalItems > 0 ? okCount / totalItems : 0;
+
+    return {
+      projectId,
+      projectName: projectNames[projectId] ?? projectId,
+      roomCount,
+      totalItems,
+      okCount,
+      ngCount,
+      naCount,
+      completionRate,
+    };
+  });
+}
+
+/**
+ * 案件横断の検査ステータス一覧HTMLテーブルを生成する。
+ * NG件数が多い順にソート。完了率は%バーで表示。
+ */
+export function buildCrossProjectInspectionHtml(
+  summaries: CrossProjectInspectionSummary[],
+): string {
+  const sorted = [...summaries].sort((a, b) => b.ngCount - a.ngCount);
+
+  const generatedAt = new Date().toLocaleDateString("ja-JP", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  });
+
+  const rows =
+    sorted.length > 0
+      ? sorted
+          .map((s) => {
+            const pct = Math.round(s.completionRate * 100);
+            const barColor = pct >= 80 ? "#22c55e" : pct >= 50 ? "#f59e0b" : "#ef4444";
+            return `<tr>
+              <td>${escapeHtml(s.projectName)}</td>
+              <td style="text-align:center">${s.roomCount}</td>
+              <td style="text-align:center">${s.totalItems}</td>
+              <td style="text-align:center;color:#22c55e;font-weight:700">${s.okCount}</td>
+              <td style="text-align:center;color:#ef4444;font-weight:700">${s.ngCount}</td>
+              <td style="text-align:center;color:#94a3b8">${s.naCount}</td>
+              <td style="min-width:120px">
+                <div style="display:flex;align-items:center;gap:6px;">
+                  <div style="flex:1;background:#e2e8f0;border-radius:4px;height:10px;overflow:hidden;">
+                    <div style="width:${pct}%;background:${barColor};height:100%;border-radius:4px;"></div>
+                  </div>
+                  <span style="font-size:0.85em;white-space:nowrap">${pct}%</span>
+                </div>
+              </td>
+            </tr>`;
+          })
+          .join("\n")
+      : `<tr><td colspan="7" style="text-align:center;color:#94a3b8">データなし</td></tr>`;
+
+  return `<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <title>案件横断 検査ステータス一覧</title>
+  <style>
+    body { font-family: "Hiragino Sans", "Yu Gothic", sans-serif; margin: 20px; color: #333; font-size: 13px; }
+    h1 { font-size: 1.4em; border-bottom: 2px solid #1e293b; padding-bottom: 6px; margin-bottom: 12px; }
+    .meta { font-size: 0.85em; color: #64748b; margin-bottom: 14px; }
+    table { border-collapse: collapse; width: 100%; }
+    th, td { border: 1px solid #cbd5e1; padding: 5px 10px; text-align: left; vertical-align: middle; }
+    th { background: #f1f5f9; font-weight: 600; }
+    tr:nth-child(even) { background: #f8fafc; }
+    @media print { body { margin: 0; } }
+  </style>
+</head>
+<body>
+  <h1>案件横断 検査ステータス一覧</h1>
+  <div class="meta">出力日: ${generatedAt} ／ 対象案件数: ${sorted.length}件 ／ NG件数の多い順</div>
+  <table>
+    <thead>
+      <tr>
+        <th>プロジェクト名</th>
+        <th style="width:60px">部屋数</th>
+        <th style="width:80px">検査項目数</th>
+        <th style="width:50px">OK</th>
+        <th style="width:50px">NG</th>
+        <th style="width:50px">NA</th>
+        <th style="width:160px">完了率</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${rows}
+    </tbody>
+  </table>
+</body>
+</html>`;
 }
 
 // ── 検査テンプレート ──────────────────────────────────────────────────────────
