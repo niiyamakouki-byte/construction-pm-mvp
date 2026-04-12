@@ -288,6 +288,167 @@ export function getProjectInspectionSummary(projectId: string): ProjectInspectio
   };
 }
 
+// ── 検査テンプレート ──────────────────────────────────────────────────────────
+
+export type TemplateItem = {
+  category: FinishCategory;
+  description: string;
+  checkPoints: string[];
+};
+
+export type InspectionTemplate = {
+  name: string;
+  category: string;
+  items: TemplateItem[];
+};
+
+export const INTERIOR_INSPECTION_TEMPLATES: InspectionTemplate[] = [
+  {
+    name: "クロス仕上げ検査",
+    category: "クロス",
+    items: [
+      {
+        category: "クロス",
+        description: "浮き・剥がれ",
+        checkPoints: ["全面を手で押さえて浮きを確認", "端部・継ぎ目の剥がれを確認"],
+      },
+      {
+        category: "クロス",
+        description: "ジョイント処理",
+        checkPoints: ["ジョイント部の隙間がないこと", "重なりが均一であること"],
+      },
+      {
+        category: "クロス",
+        description: "パテ跡",
+        checkPoints: ["パテ跡が透けて見えないこと", "凹凸がないこと"],
+      },
+      {
+        category: "クロス",
+        description: "コーナー処理",
+        checkPoints: ["コーナー部が直角に仕上がっていること", "シワ・ヨレがないこと"],
+      },
+      {
+        category: "壁仕上",
+        description: "出隅・入隅",
+        checkPoints: ["出隅の角が均一であること", "入隅の隙間がないこと"],
+      },
+      {
+        category: "設備",
+        description: "スイッチ・コンセント廻り",
+        checkPoints: ["プレート廻りに隙間がないこと", "切り込みが正確であること"],
+      },
+    ],
+  },
+  {
+    name: "塗装仕上げ検査",
+    category: "塗装",
+    items: [
+      {
+        category: "塗装",
+        description: "ムラ・タレ",
+        checkPoints: ["光の角度を変えてムラを確認", "タレ跡がないこと"],
+      },
+      {
+        category: "塗装",
+        description: "ハケ目",
+        checkPoints: ["ハケ目が残っていないこと", "ローラー跡が均一であること"],
+      },
+      {
+        category: "塗装",
+        description: "見切り処理",
+        checkPoints: ["見切り線が直線であること", "はみ出しがないこと"],
+      },
+      {
+        category: "塗装",
+        description: "養生跡",
+        checkPoints: ["養生テープの糊残りがないこと", "周囲の汚れがないこと"],
+      },
+      {
+        category: "塗装",
+        description: "色合い",
+        checkPoints: ["指定色と一致していること", "面内で色ムラがないこと"],
+      },
+      {
+        category: "塗装",
+        description: "塗膜厚",
+        checkPoints: ["規定の塗り回数が守られていること", "下地が透けて見えないこと"],
+      },
+    ],
+  },
+  {
+    name: "床仕上げ検査",
+    category: "床仕上",
+    items: [
+      {
+        category: "床仕上",
+        description: "レベル確認",
+        checkPoints: ["水平器で水平を確認", "踏んで沈みがないこと"],
+      },
+      {
+        category: "床仕上",
+        description: "ジョイント処理",
+        checkPoints: ["ジョイント部の隙間がないこと", "段差がないこと"],
+      },
+      {
+        category: "巾木",
+        description: "巾木取付",
+        checkPoints: ["巾木が密着していること", "コーナー部の合わせが正確であること"],
+      },
+      {
+        category: "床仕上",
+        description: "CF巻き上げ",
+        checkPoints: ["巻き上げ高さが均一であること", "剥がれがないこと"],
+      },
+      {
+        category: "床仕上",
+        description: "フローリング隙間",
+        checkPoints: ["フローリング間の隙間が均一であること", "反りがないこと"],
+      },
+      {
+        category: "床仕上",
+        description: "タイル目地",
+        checkPoints: ["目地幅が均一であること", "目地材の充填が十分であること"],
+      },
+    ],
+  },
+];
+
+/**
+ * テンプレートから部屋検査を自動生成する。
+ */
+export function createInspectionFromTemplate(
+  projectId: string,
+  roomName: string,
+  templateName: string,
+): RoomInspection {
+  const template = INTERIOR_INSPECTION_TEMPLATES.find((t) => t.name === templateName);
+  if (!template) {
+    throw new Error(`InspectionTemplate "${templateName}" not found`);
+  }
+
+  const today = new Date().toISOString().slice(0, 10);
+  const inspection = createRoomInspection({
+    projectId,
+    roomName,
+    floor: "",
+    inspectionDate: today,
+    inspector: "",
+  });
+
+  let current = inspection;
+  for (const templateItem of template.items) {
+    current = addInspectionItem(current.id, {
+      category: templateItem.category,
+      description: `${templateItem.description}（${templateItem.checkPoints.join(" / ")}）`,
+      status: "na",
+      photos: [],
+      comment: "",
+    });
+  }
+
+  return current;
+}
+
 // ── 帳票 ─────────────────────────────────────────────────────────────────────
 
 const STATUS_LABELS: Record<RoomInspectionStatus, string> = {
