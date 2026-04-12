@@ -46,7 +46,12 @@ export type PhotoLedgerMetadata = {
   categories: PhotoCategory[];
 };
 
-export type PhotoLedgerLayout = 1 | 2 | 4 | 6;
+export type PhotoLedgerLayout =
+  | 1 | 2 | 4 | 6
+  | "3-per-page"
+  | "2-landscape"
+  | "1-with-detail"
+  | "comparison";
 
 export type PhotoLedgerInput = {
   cover: PhotoLedgerCoverInfo;
@@ -168,6 +173,74 @@ const LEDGER_STYLES = `
     grid-template-rows: 1fr 1fr;
     gap: 6px;
   }
+  .photo-grid-3-per-page {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto auto;
+    gap: 8px;
+  }
+  .photo-grid-3-per-page .photo-cell:first-child {
+    grid-column: 1 / -1;
+  }
+  .photo-grid-2-landscape {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  .photo-grid-1-with-detail {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+  .photo-grid-comparison {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .comparison-labels {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 4px;
+  }
+  .comparison-label {
+    text-align: center;
+    font-weight: 700;
+    font-size: 0.9em;
+    padding: 4px;
+    background: #1e293b;
+    color: #fff;
+    border-radius: 2px;
+  }
+  .detail-info-panel {
+    border: 1px solid #cbd5e1;
+    padding: 10px 12px;
+    margin-top: 8px;
+    background: #f8fafc;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px 16px;
+  }
+  .detail-info-row {
+    display: flex;
+    gap: 6px;
+    align-items: flex-start;
+  }
+  .detail-info-label {
+    color: #64748b;
+    min-width: 4em;
+    flex-shrink: 0;
+    font-weight: 600;
+  }
+  .detail-info-value {
+    font-weight: 500;
+  }
+  .detail-comment-row {
+    grid-column: 1 / -1;
+    border-top: 1px solid #e2e8f0;
+    padding-top: 6px;
+    margin-top: 4px;
+  }
   .photo-cell {
     border: 1px solid #cbd5e1;
     background: #f8fafc;
@@ -184,6 +257,11 @@ const LEDGER_STYLES = `
   .photo-grid-2 .photo-cell img  { height: 88mm; }
   .photo-grid-4 .photo-cell img  { height: 55mm; }
   .photo-grid-6 .photo-cell img  { height: 48mm; }
+  .photo-grid-3-per-page .photo-cell:first-child img { height: 90mm; }
+  .photo-grid-3-per-page .photo-cell:not(:first-child) img { height: 70mm; }
+  .photo-grid-2-landscape .photo-cell img { height: 100mm; }
+  .photo-grid-1-with-detail .photo-cell img { height: 140mm; }
+  .photo-grid-comparison .photo-cell img { height: 105mm; }
   .photo-caption {
     padding: 4px 6px;
     border-top: 1px solid #e2e8f0;
@@ -263,14 +341,58 @@ ${tableRows}
 
 // ── Photo cell ─────────────────────────────────────────────────────────────
 
+function placeholderHeight(layout: PhotoLedgerLayout): string {
+  if (layout === 1) return "180mm";
+  if (layout === 2) return "88mm";
+  if (layout === 4) return "55mm";
+  if (layout === 6) return "48mm";
+  if (layout === "3-per-page") return "70mm";
+  if (layout === "2-landscape") return "100mm";
+  if (layout === "1-with-detail") return "140mm";
+  if (layout === "comparison") return "105mm";
+  return "55mm";
+}
+
 function buildPhotoCellHtml(entry: PhotoLedgerEntry | null, layout: PhotoLedgerLayout): string {
   if (!entry) {
     return `<div class="photo-cell">
-  <div class="photo-placeholder photo-grid-${layout}" style="height:${
-    layout === 1 ? "180mm" : layout === 2 ? "88mm" : layout === 4 ? "55mm" : "48mm"
-  };display:flex;align-items:center;justify-content:center;color:#94a3b8;">
+  <div class="photo-placeholder" style="height:${placeholderHeight(layout)};display:flex;align-items:center;justify-content:center;color:#94a3b8;">
     （空欄）
   </div>
+</div>`;
+  }
+
+  // 1-with-detail: single photo + expanded detail panel
+  if (layout === "1-with-detail") {
+    const detailRows = [
+      ["工種", entry.blackboardData?.workType ?? ""],
+      ["部位", entry.blackboardData?.location ?? ""],
+      ["状況", entry.blackboardData?.condition ?? ""],
+      ["区分", entry.category],
+      ["撮影日", entry.shootDate],
+    ]
+      .filter(([, v]) => v)
+      .map(([label, value]) =>
+        `    <div class="detail-info-row"><span class="detail-info-label">${escapeHtml(label)}</span>` +
+        `<span class="detail-info-value">${escapeHtml(value)}</span></div>`,
+      )
+      .join("\n");
+
+    const commentRow = entry.comment
+      ? `  <div class="detail-info-row detail-comment-row">` +
+        `<span class="detail-info-label">備考</span>` +
+        `<span class="detail-info-value">${escapeHtml(entry.comment)}</span></div>`
+      : "";
+
+    return `<div class="photo-cell">
+  <img src="${escapeHtml(entry.photoUrl)}" alt="${escapeHtml(entry.category)}写真" loading="lazy" />
+  <div class="photo-caption">
+    <div class="caption-row"><span class="caption-label">日付</span><span class="caption-value">${escapeHtml(entry.shootDate)}</span></div>
+  </div>
+</div>
+<div class="detail-info-panel">
+${detailRows}
+${commentRow}
 </div>`;
   }
 
@@ -316,11 +438,22 @@ function buildLedgerPages(
   }
 
   const pages: string[] = [];
-  const perPage = layout;
+
+  // Determine items per page for each layout
+  const perPageMap: Record<string, number> = {
+    "3-per-page": 3,
+    "2-landscape": 2,
+    "1-with-detail": 1,
+    "comparison": 2,
+  };
+  const perPage: number = typeof layout === "number" ? layout : (perPageMap[layout] ?? 1);
+
+  // CSS grid class name derived from layout
+  const gridClass = typeof layout === "number" ? `photo-grid-${layout}` : `photo-grid-${layout}`;
 
   for (let i = 0; i < entries.length; i += perPage) {
     const pageEntries = entries.slice(i, i + perPage);
-    // Pad to fill grid
+    // Pad to fill grid (not needed for 1-with-detail but harmless)
     while (pageEntries.length < perPage) pageEntries.push(null as unknown as PhotoLedgerEntry);
 
     const pageNum = Math.floor(i / perPage) + 1;
@@ -330,12 +463,20 @@ function buildLedgerPages(
       .map((e) => buildPhotoCellHtml(e, layout))
       .join("\n");
 
+    // comparison layout gets Before/After labels above the grid
+    const comparisonLabels = layout === "comparison"
+      ? `  <div class="comparison-labels">
+    <div class="comparison-label">Before（施工前）</div>
+    <div class="comparison-label">After（施工後）</div>
+  </div>\n`
+      : "";
+
     pages.push(`<div class="ledger-page">
   <div class="page-header">
     <div class="page-header-title">${escapeHtml(coverInfo.projectName)} — 写真台帳</div>
     <div class="page-header-meta">第 ${pageNum} / ${totalPages} 頁</div>
   </div>
-  <div class="photo-grid-${layout}">
+${comparisonLabels}  <div class="${gridClass}">
 ${cells}
   </div>
   <div class="page-footer">${escapeHtml(coverInfo.projectName)} 写真台帳 — ${pageNum}/${totalPages}</div>

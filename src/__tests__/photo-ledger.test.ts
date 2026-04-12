@@ -245,6 +245,172 @@ describe("buildPhotoLedgerMetadata — CALS/EC メタデータ", () => {
   });
 });
 
+// ── Layout: 3-per-page ────────────────────────────────────────────────────
+
+describe("レイアウト: 3枚/ページ（3-per-page）", () => {
+  it("photo-grid-3-per-page クラスが含まれる", () => {
+    const html = buildPhotoLedgerHtml({
+      cover: baseCover,
+      entries: Array.from({ length: 3 }, () => makeEntry()),
+      layout: "3-per-page",
+    });
+    expect(html).toContain("photo-grid-3-per-page");
+  });
+
+  it("3枚で1ページ生成される", () => {
+    const entries = Array.from({ length: 3 }, () => makeEntry());
+    const html = buildPhotoLedgerHtml({ cover: baseCover, entries, layout: "3-per-page" });
+    const matches = html.match(/class="ledger-page"/g);
+    expect(matches).toHaveLength(1);
+  });
+
+  it("4枚で2ページ生成される", () => {
+    const entries = Array.from({ length: 4 }, () => makeEntry());
+    const html = buildPhotoLedgerHtml({ cover: baseCover, entries, layout: "3-per-page" });
+    const matches = html.match(/class="ledger-page"/g);
+    expect(matches).toHaveLength(2);
+  });
+
+  it("写真のキャプション情報が含まれる", () => {
+    const html = buildPhotoLedgerHtml({
+      cover: baseCover,
+      entries: [makeEntry({ comment: "3枚レイアウトテスト" })],
+      layout: "3-per-page",
+    });
+    expect(html).toContain("3枚レイアウトテスト");
+  });
+});
+
+// ── Layout: 2-landscape ───────────────────────────────────────────────────
+
+describe("レイアウト: 2枚横長（2-landscape）", () => {
+  it("photo-grid-2-landscape クラスが含まれる", () => {
+    const html = buildPhotoLedgerHtml({
+      cover: baseCover,
+      entries: Array.from({ length: 2 }, () => makeEntry()),
+      layout: "2-landscape",
+    });
+    expect(html).toContain("photo-grid-2-landscape");
+  });
+
+  it("2枚で1ページ生成される", () => {
+    const entries = Array.from({ length: 2 }, () => makeEntry());
+    const html = buildPhotoLedgerHtml({ cover: baseCover, entries, layout: "2-landscape" });
+    const matches = html.match(/class="ledger-page"/g);
+    expect(matches).toHaveLength(1);
+  });
+
+  it("3枚で2ページ生成される", () => {
+    const entries = Array.from({ length: 3 }, () => makeEntry());
+    const html = buildPhotoLedgerHtml({ cover: baseCover, entries, layout: "2-landscape" });
+    const matches = html.match(/class="ledger-page"/g);
+    expect(matches).toHaveLength(2);
+  });
+});
+
+// ── Layout: 1-with-detail ─────────────────────────────────────────────────
+
+describe("レイアウト: 1枚+詳細情報欄（1-with-detail）", () => {
+  it("photo-grid-1-with-detail クラスが含まれる", () => {
+    const html = buildPhotoLedgerHtml({
+      cover: baseCover,
+      entries: [makeEntry()],
+      layout: "1-with-detail",
+    });
+    expect(html).toContain("photo-grid-1-with-detail");
+  });
+
+  it("detail-info-panel が含まれる", () => {
+    const html = buildPhotoLedgerHtml({
+      cover: baseCover,
+      entries: [makeEntry()],
+      layout: "1-with-detail",
+    });
+    expect(html).toContain("detail-info-panel");
+  });
+
+  it("電子黒板データが詳細パネルに含まれる", () => {
+    const html = buildPhotoLedgerHtml({
+      cover: baseCover,
+      entries: [
+        makeEntry({
+          blackboardData: {
+            workType: "クロス張り詳細",
+            location: "3F 会議室",
+            condition: "施工後",
+          },
+        }),
+      ],
+      layout: "1-with-detail",
+    });
+    expect(html).toContain("クロス張り詳細");
+    expect(html).toContain("3F 会議室");
+    expect(html).toContain("施工後");
+  });
+
+  it("1枚で1ページ、3枚で3ページ生成される", () => {
+    const entries = Array.from({ length: 3 }, () => makeEntry());
+    const html = buildPhotoLedgerHtml({ cover: baseCover, entries, layout: "1-with-detail" });
+    const matches = html.match(/class="ledger-page"/g);
+    expect(matches).toHaveLength(3);
+  });
+
+  it("備考コメントが詳細パネルに含まれる", () => {
+    const html = buildPhotoLedgerHtml({
+      cover: baseCover,
+      entries: [makeEntry({ comment: "詳細レイアウトコメントテスト" })],
+      layout: "1-with-detail",
+    });
+    expect(html).toContain("詳細レイアウトコメントテスト");
+  });
+});
+
+// ── Layout: comparison ────────────────────────────────────────────────────
+
+describe("レイアウト: Before/After比較（comparison）", () => {
+  it("photo-grid-comparison クラスが含まれる", () => {
+    const html = buildPhotoLedgerHtml({
+      cover: baseCover,
+      entries: Array.from({ length: 2 }, () => makeEntry()),
+      layout: "comparison",
+    });
+    expect(html).toContain("photo-grid-comparison");
+  });
+
+  it("Before/Afterラベルが含まれる", () => {
+    const html = buildPhotoLedgerHtml({
+      cover: baseCover,
+      entries: Array.from({ length: 2 }, () => makeEntry()),
+      layout: "comparison",
+    });
+    expect(html).toContain("Before（施工前）");
+    expect(html).toContain("After（施工後）");
+  });
+
+  it("2枚で1ページ生成される", () => {
+    const entries = Array.from({ length: 2 }, () => makeEntry());
+    const html = buildPhotoLedgerHtml({ cover: baseCover, entries, layout: "comparison" });
+    const matches = html.match(/class="ledger-page"/g);
+    expect(matches).toHaveLength(1);
+  });
+
+  it("4枚で2ページ生成される", () => {
+    const entries = Array.from({ length: 4 }, () => makeEntry());
+    const html = buildPhotoLedgerHtml({ cover: baseCover, entries, layout: "comparison" });
+    const matches = html.match(/class="ledger-page"/g);
+    expect(matches).toHaveLength(2);
+  });
+
+  it("comparison-label クラスが含まれる", () => {
+    const html = buildPhotoLedgerHtml({
+      cover: baseCover,
+      entries: [makeEntry()],
+      layout: "comparison",
+    });
+    expect(html).toContain("comparison-label");
+  });
+});
+
 // ── エッジケース ──────────────────────────────────────────────────────────
 
 describe("エッジケース", () => {
