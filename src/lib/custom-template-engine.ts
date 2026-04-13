@@ -85,8 +85,8 @@ function generateId(): string {
 
 /** Safe stack-based arithmetic evaluator for +,-,*,/,() — no eval/Function */
 function safeEvaluate(expr: string): number {
-  const tokens = expr.match(/(\d+\.?\d*|\.\d+|[+\-*/()])/g);
-  if (!tokens) return 0;
+  const tokens: string[] = expr.match(/(\d+\.?\d*|\.\d+|[+\-*/()])/g) ?? [];
+  if (tokens.length === 0) return 0;
   let pos = 0;
   function peek() { return tokens[pos]; }
   function consume() { return tokens[pos++]; }
