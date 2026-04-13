@@ -17,6 +17,9 @@ import {
   buildCorrectionReportHtml,
   getCorrectionsByAssignee,
   buildDamageReportHtml,
+  addCorrectionPhoto,
+  getCorrectionsByCategory,
+  buildFilteredCorrectionReportHtml,
   type CorrectionItem,
 } from "../lib/correction-workflow.js";
 
@@ -376,6 +379,292 @@ describe("是正指示ワークフロー", () => {
     expect(html).not.toContain("<script>");
     expect(html).toContain("&lt;script&gt;");
     expect(html).toContain("&lt;Evil&gt;");
+    expect(html).toContain("&lt;Proj&gt;");
+  });
+
+  // ── addCorrectionPhoto ────────────────────────────────────────────────────────
+
+  it("addCorrectionPhoto: before写真を追加できる", () => {
+    const item = makeItem();
+    const updated = addCorrectionPhoto(item.id, "before", "https://example.com/before.jpg");
+    expect(updated.correctionPhotos?.before).toBe("https://example.com/before.jpg");
+    expect(updated.correctionPhotos?.during).toBeUndefined();
+    expect(updated.correctionPhotos?.after).toBeUndefined();
+  });
+
+  it("addCorrectionPhoto: during写真を追加できる", () => {
+    const item = makeItem();
+    addCorrectionPhoto(item.id, "before", "before.jpg");
+    const updated = addCorrectionPhoto(item.id, "during", "during.jpg");
+    expect(updated.correctionPhotos?.before).toBe("before.jpg");
+    expect(updated.correctionPhotos?.during).toBe("during.jpg");
+  });
+
+  it("addCorrectionPhoto: after写真を追加できる", () => {
+    const item = makeItem();
+    const updated = addCorrectionPhoto(item.id, "after", "after.jpg");
+    expect(updated.correctionPhotos?.after).toBe("after.jpg");
+  });
+
+  it("addCorrectionPhoto: 既存フェーズを上書きできる", () => {
+    const item = makeItem();
+    addCorrectionPhoto(item.id, "before", "old.jpg");
+    const updated = addCorrectionPhoto(item.id, "before", "new.jpg");
+    expect(updated.correctionPhotos?.before).toBe("new.jpg");
+  });
+
+  it("addCorrectionPhoto: 存在しないIDは例外を投げる", () => {
+    expect(() => addCorrectionPhoto("nonexistent", "before", "photo.jpg")).toThrow("not found");
+  });
+
+  // ── getCorrectionsByCategory ──────────────────────────────────────────────────
+
+  it("getCorrectionsByCategory: 検査区分でフィルタリングできる", () => {
+    createCorrection({
+      projectId: "proj-cat",
+      title: "タイル浮き",
+      description: "テスト",
+      assignee: "鈴木",
+      reporter: "我妻",
+      photos: {},
+      dueDate: "2026-05-01",
+      inspectionCategory: "仕上検査",
+    });
+    createCorrection({
+      projectId: "proj-cat",
+      title: "配筋間隔",
+      description: "テスト",
+      assignee: "田中",
+      reporter: "我妻",
+      photos: {},
+      dueDate: "2026-05-01",
+      inspectionCategory: "配筋検査",
+    });
+    createCorrection({
+      projectId: "proj-cat",
+      title: "区分なし",
+      description: "テスト",
+      assignee: "佐藤",
+      reporter: "我妻",
+      photos: {},
+      dueDate: "2026-05-01",
+    });
+    expect(getCorrectionsByCategory("proj-cat", "仕上検査")).toHaveLength(1);
+    expect(getCorrectionsByCategory("proj-cat", "配筋検査")).toHaveLength(1);
+    expect(getCorrectionsByCategory("proj-cat", "設備検査")).toHaveLength(0);
+  });
+
+  it("getCorrectionsByCategory: 別プロジェクトのデータは含まない", () => {
+    createCorrection({
+      projectId: "proj-c1",
+      title: "防水テスト",
+      description: "テスト",
+      assignee: "鈴木",
+      reporter: "我妻",
+      photos: {},
+      dueDate: "2026-05-01",
+      inspectionCategory: "防水検査",
+    });
+    createCorrection({
+      projectId: "proj-c2",
+      title: "防水テスト2",
+      description: "テスト",
+      assignee: "鈴木",
+      reporter: "我妻",
+      photos: {},
+      dueDate: "2026-05-01",
+      inspectionCategory: "防水検査",
+    });
+    expect(getCorrectionsByCategory("proj-c1", "防水検査")).toHaveLength(1);
+  });
+
+  // ── buildFilteredCorrectionReportHtml ────────────────────────────────────────
+
+  it("buildFilteredCorrectionReportHtml: ステータスでフィルタリングしてHTMLを生成する", () => {
+    createCorrection({
+      projectId: "proj-f1",
+      title: "open指摘",
+      description: "テスト",
+      assignee: "鈴木",
+      reporter: "我妻",
+      photos: {},
+      dueDate: "2026-05-01",
+    });
+    const item2 = createCorrection({
+      projectId: "proj-f1",
+      title: "approved指摘",
+      description: "テスト",
+      assignee: "田中",
+      reporter: "我妻",
+      photos: {},
+      dueDate: "2026-05-01",
+    });
+    notifyAssignee(item2.id);
+    startCorrection(item2.id);
+    submitCorrection(item2.id);
+    approveCorrection(item2.id);
+
+    const html = buildFilteredCorrectionReportHtml("proj-f1", "KDX南青山", { status: "open" });
+    expect(html).toContain("open指摘");
+    expect(html).not.toContain("approved指摘");
+    expect(html).toContain("絞込条件");
+    expect(html).toContain("未対応");
+  });
+
+  it("buildFilteredCorrectionReportHtml: 業者でフィルタリングできる", () => {
+    createCorrection({
+      projectId: "proj-f2",
+      title: "鈴木指摘",
+      description: "テスト",
+      assignee: "鈴木電気",
+      reporter: "我妻",
+      photos: {},
+      dueDate: "2026-05-01",
+    });
+    createCorrection({
+      projectId: "proj-f2",
+      title: "田中指摘",
+      description: "テスト",
+      assignee: "田中内装",
+      reporter: "我妻",
+      photos: {},
+      dueDate: "2026-05-01",
+    });
+    const html = buildFilteredCorrectionReportHtml("proj-f2", "テスト現場", { assignee: "鈴木電気" });
+    expect(html).toContain("鈴木指摘");
+    expect(html).not.toContain("田中指摘");
+  });
+
+  it("buildFilteredCorrectionReportHtml: 検査区分でフィルタリングできる", () => {
+    createCorrection({
+      projectId: "proj-f3",
+      title: "外装指摘",
+      description: "テスト",
+      assignee: "鈴木",
+      reporter: "我妻",
+      photos: {},
+      dueDate: "2026-05-01",
+      inspectionCategory: "外装検査",
+    });
+    createCorrection({
+      projectId: "proj-f3",
+      title: "安全指摘",
+      description: "テスト",
+      assignee: "田中",
+      reporter: "我妻",
+      photos: {},
+      dueDate: "2026-05-01",
+      inspectionCategory: "安全検査",
+    });
+    const html = buildFilteredCorrectionReportHtml("proj-f3", "テスト現場", { category: "外装検査" });
+    expect(html).toContain("外装指摘");
+    expect(html).not.toContain("安全指摘");
+    expect(html).toContain("外装検査");
+  });
+
+  it("buildFilteredCorrectionReportHtml: 優先度でフィルタリングできる", () => {
+    createCorrection({
+      projectId: "proj-f4",
+      title: "緊急指摘",
+      description: "テスト",
+      assignee: "鈴木",
+      reporter: "我妻",
+      photos: {},
+      dueDate: "2026-05-01",
+      priority: "urgent",
+    });
+    createCorrection({
+      projectId: "proj-f4",
+      title: "通常指摘",
+      description: "テスト",
+      assignee: "田中",
+      reporter: "我妻",
+      photos: {},
+      dueDate: "2026-05-01",
+      priority: "normal",
+    });
+    const html = buildFilteredCorrectionReportHtml("proj-f4", "テスト現場", { priority: "urgent" });
+    expect(html).toContain("緊急指摘");
+    expect(html).not.toContain("通常指摘");
+    expect(html).toContain("緊急");
+  });
+
+  it("buildFilteredCorrectionReportHtml: 複合フィルタが機能する", () => {
+    createCorrection({
+      projectId: "proj-f5",
+      title: "対象指摘",
+      description: "テスト",
+      assignee: "鈴木電気",
+      reporter: "我妻",
+      photos: {},
+      dueDate: "2026-05-01",
+      inspectionCategory: "設備検査",
+      priority: "high",
+    });
+    createCorrection({
+      projectId: "proj-f5",
+      title: "非対象（業者違い）",
+      description: "テスト",
+      assignee: "田中内装",
+      reporter: "我妻",
+      photos: {},
+      dueDate: "2026-05-01",
+      inspectionCategory: "設備検査",
+      priority: "high",
+    });
+    const html = buildFilteredCorrectionReportHtml("proj-f5", "テスト現場", {
+      assignee: "鈴木電気",
+      category: "設備検査",
+      priority: "high",
+    });
+    expect(html).toContain("対象指摘");
+    expect(html).not.toContain("非対象（業者違い）");
+  });
+
+  it("buildFilteredCorrectionReportHtml: 該当なしは「該当なし」を表示する", () => {
+    makeItem({ projectId: "proj-f6" });
+    const html = buildFilteredCorrectionReportHtml("proj-f6", "テスト現場", { status: "approved" });
+    expect(html).toContain("該当なし");
+  });
+
+  it("buildFilteredCorrectionReportHtml: フィルタなしは全件出力する", () => {
+    createCorrection({
+      projectId: "proj-f7",
+      title: "指摘A",
+      description: "テスト",
+      assignee: "鈴木",
+      reporter: "我妻",
+      photos: {},
+      dueDate: "2026-05-01",
+    });
+    createCorrection({
+      projectId: "proj-f7",
+      title: "指摘B",
+      description: "テスト",
+      assignee: "田中",
+      reporter: "我妻",
+      photos: {},
+      dueDate: "2026-05-01",
+    });
+    const html = buildFilteredCorrectionReportHtml("proj-f7", "テスト現場", {});
+    expect(html).toContain("指摘A");
+    expect(html).toContain("指摘B");
+    expect(html).toContain("2件");
+  });
+
+  it("buildFilteredCorrectionReportHtml: HTMLエスケープが適用される", () => {
+    createCorrection({
+      projectId: "proj-f8",
+      title: "<script>xss()</script>",
+      description: "テスト",
+      assignee: "<Evil>",
+      reporter: "我妻",
+      photos: {},
+      dueDate: "2026-05-01",
+    });
+    const html = buildFilteredCorrectionReportHtml("proj-f8", "<Proj>", { assignee: "<Evil>" });
+    expect(html).not.toContain("<script>");
+    expect(html).toContain("&lt;script&gt;");
     expect(html).toContain("&lt;Proj&gt;");
   });
 });

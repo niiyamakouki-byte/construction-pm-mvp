@@ -24,6 +24,23 @@ export type CorrectionPhotos = {
   after?: string[];
 };
 
+export type InspectionCategory =
+  | "仕上検査"
+  | "配筋検査"
+  | "設備検査"
+  | "防水検査"
+  | "外装検査"
+  | "安全検査"
+  | "その他";
+
+export type CorrectionPriority = "urgent" | "high" | "normal" | "low";
+
+export type CorrectionPhasePhotos = {
+  before?: string;
+  during?: string;
+  after?: string;
+};
+
 export type CorrectionItem = {
   id: string;
   projectId: string;
@@ -38,6 +55,9 @@ export type CorrectionItem = {
   createdAt: string; // ISO datetime
   updatedAt: string; // ISO datetime
   comments: CorrectionComment[];
+  inspectionCategory?: InspectionCategory;
+  correctionPhotos?: CorrectionPhasePhotos;
+  priority?: CorrectionPriority;
 };
 
 export type CorrectionStats = {
@@ -363,6 +383,152 @@ export function buildDamageReportHtml(
     <div class="summary-item in-progress"><span class="label">対応中:</span><span class="value">${inProgressCount}件</span></div>
     <div class="summary-item completed"><span class="label">完了:</span><span class="value">${completedCount}件</span></div>
   </div>
+</body>
+</html>`;
+}
+
+/**
+ * 是正中写真（before/during/after）を追加・更新する（SPIDERPLUS蒸留）。
+ * 既存の correctionPhotos を保持しつつ指定フェーズのみ上書きする。
+ */
+export function addCorrectionPhoto(
+  id: string,
+  phase: "before" | "during" | "after",
+  photoUrl: string,
+): CorrectionItem {
+  const item = findOrThrow(id);
+  const correctionPhotos: CorrectionPhasePhotos = {
+    ...item.correctionPhotos,
+    [phase]: photoUrl,
+  };
+  const next = { ...item, correctionPhotos, updatedAt: now() };
+  corrections.set(id, next);
+  return { ...next };
+}
+
+/**
+ * 検査区分でフィルタリングして是正一覧を返す（SPIDERPLUS蒸留）。
+ */
+export function getCorrectionsByCategory(
+  projectId: string,
+  category: InspectionCategory,
+): CorrectionItem[] {
+  return getCorrectionsByProject(projectId).filter(
+    (c) => c.inspectionCategory === category,
+  );
+}
+
+export type CorrectionReportFilters = {
+  status?: CorrectionStatus;
+  assignee?: string;
+  category?: InspectionCategory;
+  priority?: CorrectionPriority;
+};
+
+const PRIORITY_LABELS: Record<CorrectionPriority, string> = {
+  urgent: "緊急",
+  high: "高",
+  normal: "通常",
+  low: "低",
+};
+
+/**
+ * フィルタ条件（ステータス/業者/区分/優先度）を指定してHTML帳票を生成する（SPIDERPLUS蒸留）。
+ */
+export function buildFilteredCorrectionReportHtml(
+  projectId: string,
+  projectName: string,
+  filters: CorrectionReportFilters,
+): string {
+  let items = getCorrectionsByProject(projectId);
+
+  if (filters.status !== undefined) {
+    items = items.filter((c) => c.status === filters.status);
+  }
+  if (filters.assignee !== undefined) {
+    items = items.filter((c) => c.assignee === filters.assignee);
+  }
+  if (filters.category !== undefined) {
+    items = items.filter((c) => c.inspectionCategory === filters.category);
+  }
+  if (filters.priority !== undefined) {
+    items = items.filter((c) => c.priority === filters.priority);
+  }
+
+  const generatedAt = new Date().toLocaleDateString("ja-JP", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  });
+
+  const filterSummaryParts: string[] = [];
+  if (filters.status) filterSummaryParts.push(`ステータス: ${STATUS_LABELS[filters.status]}`);
+  if (filters.assignee) filterSummaryParts.push(`業者: ${filters.assignee}`);
+  if (filters.category) filterSummaryParts.push(`検査区分: ${filters.category}`);
+  if (filters.priority) filterSummaryParts.push(`優先度: ${PRIORITY_LABELS[filters.priority]}`);
+  const filterSummary = filterSummaryParts.length > 0 ? filterSummaryParts.join(" / ") : "なし";
+
+  const rowsHtml =
+    items.length > 0
+      ? items
+          .map(
+            (item, idx) =>
+              `<tr>
+                <td style="text-align:center">${idx + 1}</td>
+                <td>${escapeHtml(item.title)}</td>
+                <td>${escapeHtml(item.assignee)}</td>
+                <td>${escapeHtml(item.inspectionCategory ?? "—")}</td>
+                <td>${escapeHtml(item.priority ? PRIORITY_LABELS[item.priority] : "—")}</td>
+                <td>${escapeHtml(item.dueDate || "—")}</td>
+                <td><span style="font-weight:700;color:${STATUS_COLORS[item.status]}">${STATUS_LABELS[item.status]}</span></td>
+              </tr>`,
+          )
+          .join("\n")
+      : `<tr><td colspan="7" style="text-align:center;color:#94a3b8">該当なし</td></tr>`;
+
+  return `<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <title>是正指示（絞込）- ${escapeHtml(projectName)}</title>
+  <style>
+    body { font-family: "Hiragino Sans", "Yu Gothic", sans-serif; margin: 20px; color: #333; font-size: 13px; }
+    h1 { font-size: 1.4em; border-bottom: 2px solid #1e293b; padding-bottom: 6px; margin-bottom: 12px; }
+    .meta { display: flex; flex-wrap: wrap; gap: 1.5em; margin: 8px 0 14px; font-size: 0.9em; }
+    .meta-item .label { color: #64748b; }
+    .meta-item .value { font-weight: 600; }
+    .filter-bar { background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 4px; padding: 8px 14px; margin-bottom: 12px; font-size: 0.88em; color: #475569; }
+    table { border-collapse: collapse; width: 100%; margin-top: 8px; }
+    th, td { border: 1px solid #cbd5e1; padding: 5px 10px; text-align: left; vertical-align: top; }
+    th { background: #f1f5f9; font-weight: 600; }
+    tr:nth-child(even) { background: #f8fafc; }
+    @media print { body { margin: 0; } }
+  </style>
+</head>
+<body>
+  <h1>是正指示一覧（絞込出力）</h1>
+  <div class="meta">
+    <div class="meta-item"><span class="label">現場名: </span><span class="value">${escapeHtml(projectName)}</span></div>
+    <div class="meta-item"><span class="label">件数: </span><span class="value">${items.length}件</span></div>
+    <div class="meta-item"><span class="label">出力日: </span><span class="value">${generatedAt}</span></div>
+  </div>
+  <div class="filter-bar">絞込条件: ${escapeHtml(filterSummary)}</div>
+  <table>
+    <thead>
+      <tr>
+        <th style="width:40px">No.</th>
+        <th>タイトル</th>
+        <th style="width:80px">担当者</th>
+        <th style="width:90px">検査区分</th>
+        <th style="width:60px">優先度</th>
+        <th style="width:90px">期日</th>
+        <th style="width:70px">ステータス</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${rowsHtml}
+    </tbody>
+  </table>
 </body>
 </html>`;
 }
