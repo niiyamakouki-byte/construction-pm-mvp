@@ -4,7 +4,6 @@ import {
   listCategories,
   listItemsByCategory,
 } from "../estimate/estimate-generator.js";
-import { generateEstimatePdf } from "../estimate/pdf-estimate.js";
 import type { Estimate, EstimateInput } from "../estimate/types.js";
 import { EstimatePageErrorBoundary } from "../components/PageErrorBoundaries.js";
 import {
@@ -688,6 +687,7 @@ function EstimatePageContent() {
     if (!estimate) return;
     setPdfLoading(true);
     try {
+      const { generateEstimatePdf } = await import("../estimate/pdf-estimate.js");
       const blob = await generateEstimatePdf(estimate);
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");

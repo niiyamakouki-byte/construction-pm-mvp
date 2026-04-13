@@ -1,37 +1,38 @@
-import { useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts.js";
 import { KeyboardShortcutHelp } from "./components/KeyboardShortcutHelp.js";
-import { ProjectListPage } from "./pages/ProjectListPage.js";
-import { TodayDashboardPage } from "./pages/TodayDashboardPage.js";
-import { ProjectDetailPage } from "./pages/ProjectDetailPage.js";
-import { GanttPage } from "./pages/GanttPage.js";
-import { NodeSchedulePage } from "./pages/NodeSchedulePage.js";
-import { InvoicePage } from "./pages/InvoicePage.js";
-import { EstimatePage } from "./pages/EstimatePage.js";
-import { ContractorsPage } from "./pages/ContractorsPage.js";
-import { NotificationsPage } from "./pages/NotificationsPage.js";
-import { HelpPage } from "./pages/HelpPage.js";
-import { LandingPage } from "./pages/LandingPage.js";
-import { LoginPage } from "./pages/LoginPage.js";
-import { SignupPage } from "./pages/SignupPage.js";
-import { LegalPages } from "./pages/LegalPages.js";
-import { PricingPage } from "./pages/PricingPage.js";
-import { TasksPage } from "./pages/TasksPage.js";
-import { CostManagementPage } from "./pages/CostManagementPage.js";
-import { WeatherPage } from "./pages/WeatherPage.js";
-import { SafetyInspectionPage } from "./pages/SafetyInspectionPage.js";
-import { ProcurementPage } from "./pages/ProcurementPage.js";
-import { SiteEntryPage } from "./pages/SiteEntryPage.js";
-import { AttendanceHistoryPage } from "./pages/AttendanceHistoryPage.js";
-import { ContractorPortalPage } from "./pages/ContractorPortalPage.js";
-import { ClientViewerPage } from "./pages/ClientViewerPage.js";
-import { SelectionBoardPage } from "./pages/SelectionBoardPage.js";
-import { MoodBoardPage } from "./pages/MoodBoardPage.js";
-import { CRMPage } from "./pages/CRMPage.js";
-import { ReportsPage } from "./pages/ReportsPage.js";
-import { OrderManagementPage } from "./pages/OrderManagementPage.js";
-import { InvoiceManagementPage } from "./pages/InvoiceManagementPage.js";
-import { CrossProjectGanttPage } from "./pages/CrossProjectGanttPage.js";
+
+const ProjectListPage = lazy(() => import("./pages/ProjectListPage.js").then((m) => ({ default: m.ProjectListPage })));
+const TodayDashboardPage = lazy(() => import("./pages/TodayDashboardPage.js").then((m) => ({ default: m.TodayDashboardPage })));
+const ProjectDetailPage = lazy(() => import("./pages/ProjectDetailPage.js").then((m) => ({ default: m.ProjectDetailPage })));
+const GanttPage = lazy(() => import("./pages/GanttPage.js").then((m) => ({ default: m.GanttPage })));
+const NodeSchedulePage = lazy(() => import("./pages/NodeSchedulePage.js").then((m) => ({ default: m.NodeSchedulePage })));
+const InvoicePage = lazy(() => import("./pages/InvoicePage.js").then((m) => ({ default: m.InvoicePage })));
+const EstimatePage = lazy(() => import("./pages/EstimatePage.js").then((m) => ({ default: m.EstimatePage })));
+const ContractorsPage = lazy(() => import("./pages/ContractorsPage.js").then((m) => ({ default: m.ContractorsPage })));
+const NotificationsPage = lazy(() => import("./pages/NotificationsPage.js").then((m) => ({ default: m.NotificationsPage })));
+const HelpPage = lazy(() => import("./pages/HelpPage.js").then((m) => ({ default: m.HelpPage })));
+const LandingPage = lazy(() => import("./pages/LandingPage.js").then((m) => ({ default: m.LandingPage })));
+const LoginPage = lazy(() => import("./pages/LoginPage.js").then((m) => ({ default: m.LoginPage })));
+const SignupPage = lazy(() => import("./pages/SignupPage.js").then((m) => ({ default: m.SignupPage })));
+const LegalPages = lazy(() => import("./pages/LegalPages.js").then((m) => ({ default: m.LegalPages })));
+const PricingPage = lazy(() => import("./pages/PricingPage.js").then((m) => ({ default: m.PricingPage })));
+const TasksPage = lazy(() => import("./pages/TasksPage.js").then((m) => ({ default: m.TasksPage })));
+const CostManagementPage = lazy(() => import("./pages/CostManagementPage.js").then((m) => ({ default: m.CostManagementPage })));
+const WeatherPage = lazy(() => import("./pages/WeatherPage.js").then((m) => ({ default: m.WeatherPage })));
+const SafetyInspectionPage = lazy(() => import("./pages/SafetyInspectionPage.js").then((m) => ({ default: m.SafetyInspectionPage })));
+const ProcurementPage = lazy(() => import("./pages/ProcurementPage.js").then((m) => ({ default: m.ProcurementPage })));
+const SiteEntryPage = lazy(() => import("./pages/SiteEntryPage.js").then((m) => ({ default: m.SiteEntryPage })));
+const AttendanceHistoryPage = lazy(() => import("./pages/AttendanceHistoryPage.js").then((m) => ({ default: m.AttendanceHistoryPage })));
+const ContractorPortalPage = lazy(() => import("./pages/ContractorPortalPage.js").then((m) => ({ default: m.ContractorPortalPage })));
+const ClientViewerPage = lazy(() => import("./pages/ClientViewerPage.js").then((m) => ({ default: m.ClientViewerPage })));
+const SelectionBoardPage = lazy(() => import("./pages/SelectionBoardPage.js").then((m) => ({ default: m.SelectionBoardPage })));
+const MoodBoardPage = lazy(() => import("./pages/MoodBoardPage.js").then((m) => ({ default: m.MoodBoardPage })));
+const CRMPage = lazy(() => import("./pages/CRMPage.js").then((m) => ({ default: m.CRMPage })));
+const ReportsPage = lazy(() => import("./pages/ReportsPage.js").then((m) => ({ default: m.ReportsPage })));
+const OrderManagementPage = lazy(() => import("./pages/OrderManagementPage.js").then((m) => ({ default: m.OrderManagementPage })));
+const InvoiceManagementPage = lazy(() => import("./pages/InvoiceManagementPage.js").then((m) => ({ default: m.InvoiceManagementPage })));
+const CrossProjectGanttPage = lazy(() => import("./pages/CrossProjectGanttPage.js").then((m) => ({ default: m.CrossProjectGanttPage })));
 import { ErrorBoundary } from "./components/ErrorBoundary.js";
 import { AuthGuard } from "./components/AuthGuard.js";
 import { OnboardingWizard, useOnboardingDone } from "./components/OnboardingWizard.js";
@@ -238,23 +239,25 @@ function AppShell() {
   const moodBoardProjectId = moodBoardMatch?.[1] ? decodeURIComponent(moodBoardMatch[1]) : null;
   const clientProjectId = clientMatch?.[1] ? decodeURIComponent(clientMatch[1]) : null;
 
+  const pageFallback = <div className="flex items-center justify-center py-20 text-slate-400 text-sm">読み込み中...</div>;
+
   // 認証不要ページ（入退場キオスク+協力会社ポータル+施主セレクション+施主ビューア）
-  if (clientProjectId) return <ClientViewerPage projectId={clientProjectId} />;
-  if (entryProjectId) return <SiteEntryPage projectId={entryProjectId} />;
-  if (portalProjectId) return <ContractorPortalPage projectId={portalProjectId} company={portalCompany} />;
-  if (selectionProjectId) return <SelectionBoardPage projectId={selectionProjectId} />;
-  if (route === "/landing") return <LandingPage />;
+  if (clientProjectId) return <Suspense fallback={pageFallback}><ClientViewerPage projectId={clientProjectId} /></Suspense>;
+  if (entryProjectId) return <Suspense fallback={pageFallback}><SiteEntryPage projectId={entryProjectId} /></Suspense>;
+  if (portalProjectId) return <Suspense fallback={pageFallback}><ContractorPortalPage projectId={portalProjectId} company={portalCompany} /></Suspense>;
+  if (selectionProjectId) return <Suspense fallback={pageFallback}><SelectionBoardPage projectId={selectionProjectId} /></Suspense>;
+  if (route === "/landing") return <Suspense fallback={pageFallback}><LandingPage /></Suspense>;
   if (route === "/" || route === "") {
     navigate("/app");
     return null;
   }
-  if (route === "/login") return <LoginPage />;
-  if (route === "/signup") return <SignupPage />;
+  if (route === "/login") return <Suspense fallback={pageFallback}><LoginPage /></Suspense>;
+  if (route === "/signup") return <Suspense fallback={pageFallback}><SignupPage /></Suspense>;
   if (legalMatch) {
     const section = legalMatch[1] as "tokushoho" | "privacy" | "tos" | undefined;
-    return <LegalPages section={section} />;
+    return <Suspense fallback={pageFallback}><LegalPages section={section} /></Suspense>;
   }
-  if (route === "/pricing") return <PricingPage />;
+  if (route === "/pricing") return <Suspense fallback={pageFallback}><PricingPage /></Suspense>;
 
   const renderPage = () => {
     if (moodBoardProjectId) {
@@ -499,7 +502,9 @@ function AppShell() {
         <NotificationBanner refreshKey={route} />
 
         <main id="main-content" key={route} className="page-enter mx-auto max-w-6xl px-4 py-5 pb-24 sm:py-6">
-          {renderPage()}
+          <Suspense fallback={pageFallback}>
+            {renderPage()}
+          </Suspense>
         </main>
 
         <nav
