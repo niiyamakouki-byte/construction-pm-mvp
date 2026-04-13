@@ -24,7 +24,7 @@ function makeEntry(overrides: Partial<PhotoLedgerEntry> = {}): PhotoLedgerEntry 
   return {
     photoUrl: "https://example.com/photo.jpg",
     shootDate: "2024-04-15",
-    category: "内装",
+    category: "interior_finish",
     comment: "施工前の状況",
     blackboardData: {
       workType: "クロス張り",
@@ -165,9 +165,9 @@ describe("写真キャプション", () => {
   it("カテゴリがキャプションに含まれる", () => {
     const html = buildPhotoLedgerHtml({
       cover: baseCover,
-      entries: [makeEntry({ category: "外観" })],
+      entries: [makeEntry({ category: "exterior" })],
     });
-    expect(html).toContain("外観");
+    expect(html).toContain("exterior");
   });
 
   it("電子黒板データ（工種・部位・状況）が含まれる", () => {
@@ -227,16 +227,16 @@ describe("buildPhotoLedgerMetadata — CALS/EC メタデータ", () => {
 
   it("カテゴリが重複なしでリストアップされる", () => {
     const entries = [
-      makeEntry({ category: "外観" }),
-      makeEntry({ category: "内装" }),
-      makeEntry({ category: "外観" }),
-      makeEntry({ category: "設備" }),
+      makeEntry({ category: "exterior" }),
+      makeEntry({ category: "interior_finish" }),
+      makeEntry({ category: "exterior" }),
+      makeEntry({ category: "equipment" }),
     ];
     const meta = buildPhotoLedgerMetadata({ cover: baseCover, entries });
     expect(meta.categories).toHaveLength(3);
-    expect(meta.categories).toContain("外観");
-    expect(meta.categories).toContain("内装");
-    expect(meta.categories).toContain("設備");
+    expect(meta.categories).toContain("exterior");
+    expect(meta.categories).toContain("interior_finish");
+    expect(meta.categories).toContain("equipment");
   });
 
   it("createdAtがISO日時形式である", () => {

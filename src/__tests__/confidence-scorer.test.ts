@@ -9,6 +9,8 @@ function makeItem(overrides: Partial<ParsedEstimateItem> = {}): ParsedEstimateIt
     matchedKeyword: "壁紙",
     itemName: "クロス張り(量産品)",
     quantityBasis: "壁面積 30㎡",
+    lossRate: 0,
+    requiredQuantity: 30,
     ...overrides,
   };
 }

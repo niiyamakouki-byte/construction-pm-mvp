@@ -504,7 +504,7 @@ describe("chaos: photo-ledger", () => {
     const entries = Array.from({ length: 1000 }, (_, i) => ({
       photoUrl: `https://example.com/photo-${i}.jpg`,
       shootDate: "2026-04-12",
-      category: "着工前" as const,
+      category: "progress" as const,
       comment: `写真${i}のコメント`,
     }));
     const input: PhotoLedgerInput = {
@@ -526,7 +526,7 @@ describe("chaos: photo-ledger", () => {
         {
           photoUrl: "https://example.com/photo.jpg",
           shootDate: "2026-04-12",
-          category: "施工中" as const,
+          category: "progress" as const,
           comment: xssComment,
         },
       ],
@@ -548,7 +548,7 @@ describe("chaos: photo-ledger", () => {
         {
           photoUrl: "https://example.com/photo.jpg",
           shootDate: "2026-04-12",
-          category: "完成" as const,
+          category: "other" as const,
         },
       ],
       layout: 1,
@@ -564,12 +564,12 @@ describe("chaos: photo-ledger", () => {
         {
           photoUrl: "https://example.com/a.jpg",
           shootDate: "2026-04-12",
-          category: "着工前" as const,
+          category: "progress" as const,
         },
         {
           photoUrl: "https://example.com/b.jpg",
           shootDate: "2026-04-12",
-          category: "着工前" as const,
+          category: "progress" as const,
         },
       ],
       layout: 2,

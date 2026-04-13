@@ -39,10 +39,12 @@ const baseTask: Task = {
   id: "task-1",
   projectId: "proj-1",
   name: "基礎工事",
+  description: "",
   status: "in_progress",
   progress: 50,
   dueDate: "2025-02-01",
   assigneeId: "tanaka",
+  dependencies: [],
   createdAt: "2025-01-01T00:00:00.000Z",
   updatedAt: "2025-01-01T00:00:00.000Z",
 };

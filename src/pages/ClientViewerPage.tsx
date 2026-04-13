@@ -96,7 +96,7 @@ function TodayWork({ notices }: { notices: ChatMessage[] }) {
         <ul className="space-y-2">
           {notices.map((msg) => (
             <li key={msg.id} className="rounded-xl bg-blue-50 px-4 py-3 text-sm text-slate-700">
-              {msg.body}
+              {msg.content}
             </li>
           ))}
         </ul>
@@ -127,7 +127,7 @@ function UpcomingTasks({ tasks }: { tasks: Task[] }) {
               <span className="shrink-0 text-xs font-medium text-slate-500">
                 {t.startDate ? formatDate(t.startDate) : "—"}
               </span>
-              <span className="text-sm text-slate-700">{t.title}</span>
+              <span className="text-sm text-slate-700">{t.name}</span>
             </li>
           ))}
         </ul>
@@ -287,7 +287,7 @@ export function ClientViewerPage({ projectId }: { projectId: string }) {
   useEffect(() => {
     const projRepo = createProjectRepository();
     const taskRepo = createTaskRepository();
-    Promise.all([projRepo.findById(projectId), taskRepo.findAll(projectId)]).then(
+    Promise.all([projRepo.findById(projectId), taskRepo.findAll()]).then(
       ([p, t]) => {
         setProject(p ?? null);
         setTasks(t);
@@ -309,7 +309,8 @@ export function ClientViewerPage({ projectId }: { projectId: string }) {
   const allPhotos = useMemo<string[]>(() => {
     const urls: string[] = [];
     for (const t of tasks) {
-      if (t.photoUrls) urls.push(...t.photoUrls);
+      const photos = (t as Task & { photoUrls?: string[] }).photoUrls;
+      if (photos) urls.push(...photos);
     }
     return urls.reverse();
   }, [tasks]);

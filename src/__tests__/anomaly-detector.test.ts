@@ -9,6 +9,8 @@ function makeItem(code: string, name: string = code): ParsedEstimateItem {
     matchedKeyword: name,
     itemName: name,
     quantityBasis: "テスト",
+    lossRate: 0,
+    requiredQuantity: 10,
   };
 }
 
