@@ -3,6 +3,8 @@
  * Provides ANDPAD-style 引合粗利管理 functionality.
  */
 
+import { createRepository } from './repository/index.js';
+
 export type Customer = {
   id: string;
   name: string;
@@ -183,3 +185,6 @@ export function _resetCRMStore(): void {
   customers.clear();
   deals.clear();
 }
+
+// Repository-pattern accessor (for gradual migration to Supabase)
+export const customerRepository = createRepository<Customer>('customers');
