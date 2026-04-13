@@ -287,7 +287,7 @@ export function SiteEntryPage({ projectId }: { projectId: string }) {
       )}
 
       {/* Left panel: worker list */}
-      <div className="flex flex-col w-0 flex-1 bg-white border-r border-slate-200">
+      <div className="flex flex-col w-full sm:w-0 sm:flex-1 min-h-0 flex-1 bg-white border-r border-slate-200">
         {/* Search / filter bar */}
         <div className="flex items-center gap-3 px-4 py-3 border-b border-slate-200 bg-slate-50">
           <span className="text-sm font-bold text-slate-600 shrink-0">
