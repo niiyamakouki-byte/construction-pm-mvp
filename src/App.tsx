@@ -31,6 +31,7 @@ import { CRMPage } from "./pages/CRMPage.js";
 import { ReportsPage } from "./pages/ReportsPage.js";
 import { OrderManagementPage } from "./pages/OrderManagementPage.js";
 import { InvoiceManagementPage } from "./pages/InvoiceManagementPage.js";
+import { CrossProjectGanttPage } from "./pages/CrossProjectGanttPage.js";
 import { ErrorBoundary } from "./components/ErrorBoundary.js";
 import { AuthGuard } from "./components/AuthGuard.js";
 import { OnboardingWizard, useOnboardingDone } from "./components/OnboardingWizard.js";
@@ -273,6 +274,13 @@ function AppShell() {
       return (
         <ErrorBoundary fallbackTitle="案件一覧エラー">
           <ProjectListPage />
+        </ErrorBoundary>
+      );
+    }
+    if (route === "/cross-project-gantt") {
+      return (
+        <ErrorBoundary fallbackTitle="全案件ガントチャートエラー">
+          <CrossProjectGanttPage />
         </ErrorBoundary>
       );
     }
