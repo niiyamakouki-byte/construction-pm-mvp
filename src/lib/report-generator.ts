@@ -568,6 +568,152 @@ ${body}
 </html>`;
 }
 
+// ── Construction Plan ────────────────────────────────────────────────────
+
+export type ConstructionPlanData = {
+  /** 工事名称 */
+  projectName: string;
+  /** 施工業者 */
+  contractor: string;
+  /** 発注者 */
+  client: string;
+  /** 工期 */
+  constructionPeriod: string;
+  /** 工事概要 */
+  workScope: string;
+  /** 安全対策 */
+  safetyMeasures: string[];
+  /** 品質計画 */
+  qualityPlan: string;
+  /** 工程概要 */
+  schedule: string;
+  /** 環境対策 */
+  environmentalMeasures: string[];
+  /** 緊急連絡先 */
+  emergencyContacts: Array<{ name: string; role: string; phone: string }>;
+};
+
+const CONSTRUCTION_PLAN_STYLES = `
+  @page { size: A4 portrait; margin: 20mm; }
+  body { font-family: "Hiragino Sans", "Yu Gothic", sans-serif; margin: 0; color: #333; font-size: 12px; }
+  .plan-title { font-size: 1.6em; font-weight: 700; text-align: center; border-bottom: 3px double #1e293b; padding-bottom: 8px; margin-bottom: 16px; }
+  .plan-header { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+  .plan-header th, .plan-header td { border: 1px solid #94a3b8; padding: 6px 12px; }
+  .plan-header th { background: #f1f5f9; font-weight: 600; width: 8em; white-space: nowrap; }
+  h2 { font-size: 1.1em; margin-top: 1.6em; margin-bottom: 6px; background: #1e293b; color: #fff; padding: 4px 10px; }
+  .section-body { border: 1px solid #cbd5e1; padding: 10px 14px; margin-bottom: 4px; min-height: 2em; line-height: 1.7; }
+  table.data-table { border-collapse: collapse; width: 100%; margin-top: 4px; }
+  table.data-table th, table.data-table td { border: 1px solid #cbd5e1; padding: 5px 10px; text-align: left; }
+  table.data-table th { background: #f1f5f9; font-weight: 600; }
+  ul.measure-list { margin: 0; padding-left: 1.4em; line-height: 1.8; }
+  .seal-row { display: flex; gap: 20px; justify-content: flex-end; margin-top: 24px; }
+  .seal-box { border: 1px solid #94a3b8; width: 70px; height: 70px; display: flex; align-items: center; justify-content: center; font-size: 0.8em; color: #64748b; }
+  @media print {
+    body { margin: 0; }
+    .page-break { page-break-before: always; }
+  }
+`;
+
+export function buildConstructionPlanHtml(data: ConstructionPlanData): string {
+  const {
+    projectName,
+    contractor,
+    client,
+    constructionPeriod,
+    workScope,
+    safetyMeasures,
+    qualityPlan,
+    schedule,
+    environmentalMeasures,
+    emergencyContacts,
+  } = data;
+
+  const safetyItems =
+    safetyMeasures.length > 0
+      ? `<ul class="measure-list">${safetyMeasures.map((m) => `<li>${escapeHtml(m)}</li>`).join("")}</ul>`
+      : "<p>記載なし</p>";
+
+  const envItems =
+    environmentalMeasures.length > 0
+      ? `<ul class="measure-list">${environmentalMeasures.map((m) => `<li>${escapeHtml(m)}</li>`).join("")}</ul>`
+      : "<p>記載なし</p>";
+
+  const contactRows =
+    emergencyContacts.length > 0
+      ? emergencyContacts
+          .map(
+            (c) =>
+              `<tr><td>${escapeHtml(c.role)}</td><td>${escapeHtml(c.name)}</td><td>${escapeHtml(c.phone)}</td></tr>`,
+          )
+          .join("\n")
+      : `<tr><td colspan="3">登録なし</td></tr>`;
+
+  const body = `
+  <div class="plan-title">施 工 計 画 書</div>
+
+  <table class="plan-header">
+    <tbody>
+      <tr><th>工事名称</th><td>${escapeHtml(projectName)}</td></tr>
+      <tr><th>発注者</th><td>${escapeHtml(client)}</td></tr>
+      <tr><th>施工業者</th><td>${escapeHtml(contractor)}</td></tr>
+      <tr><th>工期</th><td>${escapeHtml(constructionPeriod)}</td></tr>
+    </tbody>
+  </table>
+
+  <div class="seal-row">
+    <div class="seal-box">作成者印</div>
+    <div class="seal-box">確認者印</div>
+    <div class="seal-box">承認者印</div>
+  </div>
+
+  <h2>1. 工事概要</h2>
+  <div class="section-body">${escapeHtml(workScope)}</div>
+
+  <h2>2. 施工体制</h2>
+  <div class="section-body">
+    <table class="data-table">
+      <thead><tr><th>役割</th><th>担当者/連絡先</th></tr></thead>
+      <tbody>
+        <tr><td>施工業者</td><td>${escapeHtml(contractor)}</td></tr>
+        <tr><td>発注者</td><td>${escapeHtml(client)}</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2>3. 工程計画</h2>
+  <div class="section-body">${escapeHtml(schedule)}</div>
+
+  <h2>4. 品質管理計画</h2>
+  <div class="section-body">${escapeHtml(qualityPlan)}</div>
+
+  <h2>5. 安全管理計画</h2>
+  <div class="section-body">${safetyItems}</div>
+
+  <h2>6. 環境対策</h2>
+  <div class="section-body">${envItems}</div>
+
+  <h2>7. 緊急時対応</h2>
+  <div class="section-body">
+    <table class="data-table">
+      <thead><tr><th>役割</th><th>氏名</th><th>電話番号</th></tr></thead>
+      <tbody>${contactRows}</tbody>
+    </table>
+  </div>
+`;
+
+  return `<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <title>${escapeHtml(`施工計画書 - ${projectName}`)}</title>
+  <style>${CONSTRUCTION_PLAN_STYLES}</style>
+</head>
+<body>
+${body}
+</body>
+</html>`;
+}
+
 // ── Inspection Report ────────────────────────────────────────────────────
 
 import type { InspectionChecklist } from "./safety-inspection.js";

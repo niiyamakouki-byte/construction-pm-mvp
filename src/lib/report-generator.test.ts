@@ -5,6 +5,8 @@ import {
   buildWeeklyReportHtml,
   buildProjectReportHtml,
   buildInspectionReportHtml,
+  buildConstructionPlanHtml,
+  type ConstructionPlanData,
 } from "./report-generator.js";
 import { createDefaultChecklist } from "./safety-inspection.js";
 
@@ -278,5 +280,97 @@ describe("buildInspectionReportHtml", () => {
     });
     expect(html).not.toContain("<script>");
     expect(html).toContain("&lt;script&gt;");
+  });
+});
+
+// ── buildConstructionPlanHtml ─────────────────────────────────────────────
+
+describe("buildConstructionPlanHtml", () => {
+  function makePlanData(overrides?: Partial<ConstructionPlanData>): ConstructionPlanData {
+    return {
+      projectName: "南青山オフィス内装工事",
+      contractor: "株式会社ラポルタ",
+      client: "株式会社テスト商事",
+      constructionPeriod: "2025年4月1日〜2025年6月30日",
+      workScope: "オフィス内装工事一式（床・壁・天井・電気設備）",
+      safetyMeasures: ["KY活動の実施（毎朝）", "安全帯着用徹底", "墜落防止対策"],
+      qualityPlan: "社内品質基準に基づく各工程検査を実施する。",
+      schedule: "第1フェーズ: 解体・下地工事（4月）、第2フェーズ: 仕上げ工事（5〜6月）",
+      environmentalMeasures: ["廃材の分別回収", "騒音・振動の低減対策"],
+      emergencyContacts: [
+        { name: "新山光輝", role: "現場責任者", phone: "090-0000-0001" },
+        { name: "安全管理係", role: "安全担当", phone: "090-0000-0002" },
+      ],
+      ...overrides,
+    };
+  }
+
+  it("returns valid HTML with doctype and 施工計画書 title", () => {
+    const html = buildConstructionPlanHtml(makePlanData());
+    expect(html).toContain("<!DOCTYPE html>");
+    expect(html).toContain("施工計画書");
+    expect(html).toContain("南青山オフィス内装工事");
+  });
+
+  it("includes all seven required sections", () => {
+    const html = buildConstructionPlanHtml(makePlanData());
+    expect(html).toContain("1. 工事概要");
+    expect(html).toContain("2. 施工体制");
+    expect(html).toContain("3. 工程計画");
+    expect(html).toContain("4. 品質管理計画");
+    expect(html).toContain("5. 安全管理計画");
+    expect(html).toContain("6. 環境対策");
+    expect(html).toContain("7. 緊急時対応");
+  });
+
+  it("renders header table with contractor, client, and constructionPeriod", () => {
+    const html = buildConstructionPlanHtml(makePlanData());
+    expect(html).toContain("株式会社ラポルタ");
+    expect(html).toContain("株式会社テスト商事");
+    expect(html).toContain("2025年4月1日〜2025年6月30日");
+  });
+
+  it("renders safety measures as list items", () => {
+    const html = buildConstructionPlanHtml(makePlanData());
+    expect(html).toContain("KY活動の実施（毎朝）");
+    expect(html).toContain("安全帯着用徹底");
+    expect(html).toContain("墜落防止対策");
+  });
+
+  it("renders environmental measures as list items", () => {
+    const html = buildConstructionPlanHtml(makePlanData());
+    expect(html).toContain("廃材の分別回収");
+    expect(html).toContain("騒音・振動の低減対策");
+  });
+
+  it("renders emergency contacts table with name, role, and phone", () => {
+    const html = buildConstructionPlanHtml(makePlanData());
+    expect(html).toContain("新山光輝");
+    expect(html).toContain("現場責任者");
+    expect(html).toContain("090-0000-0001");
+    expect(html).toContain("安全担当");
+  });
+
+  it("shows 登録なし when emergencyContacts is empty", () => {
+    const html = buildConstructionPlanHtml(makePlanData({ emergencyContacts: [] }));
+    expect(html).toContain("登録なし");
+  });
+
+  it("includes A4 portrait print CSS", () => {
+    const html = buildConstructionPlanHtml(makePlanData());
+    expect(html).toContain("A4 portrait");
+    expect(html).toContain("@media print");
+  });
+
+  it("escapes HTML in project name", () => {
+    const html = buildConstructionPlanHtml(makePlanData({ projectName: "<script>xss</script>" }));
+    expect(html).not.toContain("<script>");
+    expect(html).toContain("&lt;script&gt;");
+  });
+
+  it("escapes HTML in safety measures", () => {
+    const html = buildConstructionPlanHtml(makePlanData({ safetyMeasures: ['<img src=x onerror="alert(1)">'] }));
+    expect(html).not.toContain("<img src=x");
+    expect(html).toContain("&lt;img");
   });
 });
