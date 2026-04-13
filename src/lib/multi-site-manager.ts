@@ -131,7 +131,8 @@ function generateReportId(siteId: string): string {
 }
 
 function calcLaborCost(workers: DailyReportWorker[]): number {
-  return workers.reduce((sum, w) => sum + w.hours * w.dailyRate, 0);
+  // dailyRate = 日当。hoursは記録用で労務費計算には使わない
+  return workers.reduce((sum, w) => sum + w.dailyRate, 0);
 }
 
 function calcMaterialCost(materials: DailyReportMaterial[]): number {

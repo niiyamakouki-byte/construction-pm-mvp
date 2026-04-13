@@ -117,8 +117,8 @@ describe("addDailyReport", () => {
     const reportInput = makeReport(site.id, new Date(), 8, 20_000, 50_000, 20);
     const { updatedSite, report } = addDailyReport(site, reportInput);
 
-    // labor: 8h × 20,000 = 160,000 / material: 50,000
-    expect(updatedSite.actualCost).toBe(210_000);
+    // labor: dailyRate 20,000 / material: 50,000
+    expect(updatedSite.actualCost).toBe(70_000);
     expect(updatedSite.currentDay).toBe(1);
     expect(report.siteId).toBe(site.id);
     expect(report.id).toBeTruthy();
@@ -136,8 +136,8 @@ describe("addDailyReport", () => {
     const { updatedSite: s1 } = addDailyReport(site, makeReport(site.id, new Date(), 8, 10_000, 30_000, 20));
     const { updatedSite: s2 } = addDailyReport(s1, makeReport(site.id, new Date(), 8, 10_000, 30_000, 40));
 
-    // each day: 8×10000 + 30000 = 110,000 → 2 days = 220,000
-    expect(s2.actualCost).toBe(220_000);
+    // each day: dailyRate 10,000 + material 30,000 = 40,000 → 2 days = 80,000
+    expect(s2.actualCost).toBe(80_000);
     expect(s2.currentDay).toBe(2);
   });
 });
@@ -161,11 +161,11 @@ describe("calculateSiteProfit", () => {
     const summary = calculateSiteProfit(site, reports);
 
     expect(summary.budget).toBe(budget);
-    expect(summary.laborCost).toBe(2_000_000); // 8×25000×10
+    expect(summary.laborCost).toBe(250_000); // dailyRate 25000×10
     expect(summary.materialCost).toBe(1_500_000); // 150000×10
-    expect(summary.totalCost).toBe(3_500_000);
-    expect(summary.grossProfit).toBe(1_500_000);
-    expect(summary.grossMargin).toBeCloseTo(30, 1);
+    expect(summary.totalCost).toBe(1_750_000); // 250000 + 1500000
+    expect(summary.grossProfit).toBe(3_250_000);
+    expect(summary.grossMargin).toBeCloseTo(65, 1);
     expect(summary.progressRate).toBe(100); // max of reports
   });
 
@@ -219,13 +219,13 @@ describe("getMultiSiteDashboard", () => {
         id: "r1",
         siteId: site.id,
         date: new Date(),
-        workers: [{ name: "A", company: "C", hours: 10, dailyRate: 20_000 }],
+        workers: [{ name: "A", company: "C", hours: 10, dailyRate: 150_000 }],
         materials: [{ name: "M", quantity: 1, unitPrice: 0, amount: 0 }],
         weather: "sunny",
         progress: 80,
       },
     ];
-    // labor = 10×20000 = 200,000 > budget 100,000
+    // labor = dailyRate 150,000 > budget 100,000
     const dashboard = getMultiSiteDashboard([site], reports);
     const hasOverBudget = dashboard.alerts.some((a) => a.includes("予算超過"));
     expect(hasOverBudget).toBe(true);
@@ -394,9 +394,9 @@ describe("getDailyReportSummary", () => {
     });
 
     expect(summary.totalReports).toBe(2);
-    expect(summary.totalLaborCost).toBe(160_000); // (8×10000)×2
+    expect(summary.totalLaborCost).toBe(20_000); // dailyRate 10000×2
     expect(summary.totalMaterialCost).toBe(50_000); // 20000+30000
-    expect(summary.totalCost).toBe(210_000);
+    expect(summary.totalCost).toBe(70_000);
     expect(summary.avgProgress).toBe(30); // (20+40)/2
     expect(summary.weatherBreakdown["sunny"]).toBe(1);
     expect(summary.weatherBreakdown["rain"]).toBe(1);

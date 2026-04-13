@@ -196,6 +196,7 @@ export function calculateMonthlyPayment(
   months: number,
   annualRate: number,
 ): number {
+  if (months <= 0) return totalAmount;
   if (annualRate === 0) return Math.round(totalAmount / months);
   const monthlyRate = annualRate / 12;
   const payment =

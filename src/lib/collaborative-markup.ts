@@ -372,16 +372,17 @@ export function getMarkupSummary(session: MarkupSession): MarkupSummary {
 
 export function exportMarkupsCSV(session: MarkupSession): string {
   const header = "id,page,type,content,author,status,date";
+  const csvEscape = (s: string) =>
+    s.includes(",") || s.includes('"') || s.includes("\n")
+      ? `"${s.replace(/"/g, '""')}"`
+      : s;
   const rows = session.markups.map((m) => {
-    const content = m.content.includes(",")
-      ? `"${m.content.replace(/"/g, '""')}"`
-      : m.content;
     return [
       m.id,
       m.pageNumber,
       m.type,
-      content,
-      m.author,
+      csvEscape(m.content),
+      csvEscape(m.author),
       m.status,
       m.createdAt.toISOString(),
     ].join(",");

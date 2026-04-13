@@ -83,6 +83,40 @@ function generateId(): string {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 }
 
+/** Safe stack-based arithmetic evaluator for +,-,*,/,() — no eval/Function */
+function safeEvaluate(expr: string): number {
+  const tokens = expr.match(/(\d+\.?\d*|\.\d+|[+\-*/()])/g);
+  if (!tokens) return 0;
+  let pos = 0;
+  function peek() { return tokens[pos]; }
+  function consume() { return tokens[pos++]; }
+  function parseExpr(): number {
+    let left = parseTerm();
+    while (pos < tokens.length && (peek() === "+" || peek() === "-")) {
+      const op = consume();
+      const right = parseTerm();
+      left = op === "+" ? left + right : left - right;
+    }
+    return left;
+  }
+  function parseTerm(): number {
+    let left = parseFactor();
+    while (pos < tokens.length && (peek() === "*" || peek() === "/")) {
+      const op = consume();
+      const right = parseFactor();
+      left = op === "*" ? left * right : right !== 0 ? left / right : 0;
+    }
+    return left;
+  }
+  function parseFactor(): number {
+    if (peek() === "(") { consume(); const val = parseExpr(); if (peek() === ")") consume(); return val; }
+    if (peek() === "-") { consume(); return -parseFactor(); }
+    const t = consume();
+    return t ? parseFloat(t) || 0 : 0;
+  }
+  return parseExpr();
+}
+
 function validateFieldDefinition(field: FieldDefinition): void {
   if (!field.id || typeof field.id !== "string") {
     throw new Error(`Field id must be a non-empty string`);
@@ -508,18 +542,17 @@ export function evaluateCalculationFields(
     if (!field.calculationFormula) continue;
     try {
       let formula = field.calculationFormula;
-      // Replace field references with their numeric values
+      // Replace field references with their numeric values (escape field IDs for regex safety)
       for (const f of template.fields) {
         if (f.id === field.id) continue;
         const fieldVal = newData[f.id];
         const num = fieldVal !== undefined ? Number(fieldVal) : 0;
-        // Replace whole-word occurrences of the field id
-        formula = formula.replace(new RegExp(`\\b${f.id}\\b`, "g"), String(isNaN(num) ? 0 : num));
+        const escapedId = f.id.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        formula = formula.replace(new RegExp(`\\b${escapedId}\\b`, "g"), String(isNaN(num) ? 0 : num));
       }
-      // Only allow safe characters: digits, operators, parentheses, whitespace, dots
+      // Safe stack-based evaluator for +,-,*,/,() on numeric tokens (no Function/eval)
       if (/^[\d\s+\-*/().]+$/.test(formula)) {
-        // eslint-disable-next-line no-new-func
-        const result = Function(`"use strict"; return (${formula})`)();
+        const result = safeEvaluate(formula);
         newData[field.id] = typeof result === "number" && isFinite(result) ? result : 0;
       } else {
         newData[field.id] = 0;
