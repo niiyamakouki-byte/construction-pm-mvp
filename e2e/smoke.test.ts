@@ -10,20 +10,19 @@ test("トップページにアクセスできる", async ({ page }) => {
 
 test("ログインフォームが表示される（AuthGuard）", async ({ page }) => {
   await page.goto("/#/login");
-  // メールアドレス入力欄
-  await expect(page.locator('input[type="email"]')).toBeVisible();
+  // メールアドレス入力欄（#email で一意に特定）
+  await expect(page.locator("#email")).toBeVisible();
   // パスワード入力欄
   await expect(page.locator('input[type="password"]')).toBeVisible();
   // ログインボタン
   await expect(page.locator('button[type="submit"]')).toBeVisible();
 });
 
-test("Supabase未設定時はAuthGuardをスキップしてダッシュボードが表示される", async ({ page }) => {
-  // Supabase env が未設定の場合、AuthGuard は children をそのまま返す
-  // その状態で /#/app にアクセスするとプロジェクト一覧ページが表示される
+test("AuthGuardが未認証ユーザーをログインページにリダイレクトする", async ({ page }) => {
+  // Supabase が設定済みでセッションなしの場合、AuthGuard は /login にリダイレクトする
   await page.goto("/#/app");
-  // GenbaHub ヘッダーが見える
+  // GenbaHub ブランドが見える（ログインページのロゴ）
   await expect(page.locator("text=GenbaHub")).toBeVisible();
-  // ボトムナビまたはメインナビが存在する
-  await expect(page.locator("nav")).toBeVisible();
+  // ログインフォームが表示されている（リダイレクト後）
+  await expect(page.locator("#email")).toBeVisible();
 });
