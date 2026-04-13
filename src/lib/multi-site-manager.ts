@@ -4,6 +4,7 @@
  */
 
 import { escapeHtml } from "./utils/escape-html";
+import { csvEscape } from "./utils/csv-escape";
 
 // ── Types ────────────────────────────────────────────────
 
@@ -618,14 +619,6 @@ ${rows}
 }
 
 // ── CSV export ───────────────────────────────────────────
-
-function csvEscape(value: unknown): string {
-  const str = String(value ?? "");
-  if (str.includes(",") || str.includes('"') || str.includes("\n")) {
-    return `"${str.replace(/"/g, '""')}"`;
-  }
-  return str;
-}
 
 /**
  * Export daily reports to CSV string.

@@ -1,6 +1,7 @@
 /** BuildApp内装蒸留 — BIM連携内装積算自動化 */
 
 import { escapeHtml } from "./utils/escape-html.js";
+import { csvEscape } from "./utils/csv-escape.js";
 
 // ─── Types ──────────────────────────────────────────────────────
 
@@ -757,12 +758,6 @@ export function exportTakeoffCSV(summary: TakeoffSummary): string {
   return lines.join("\n");
 }
 
-function csvEscape(value: string): string {
-  if (value.includes(",") || value.includes('"') || value.includes("\n")) {
-    return `"${value.replace(/"/g, '""')}"`;
-  }
-  return value;
-}
 
 // ─── Comparison ───────────────────────────────────────────────────
 

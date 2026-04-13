@@ -3,6 +3,7 @@
  * VR/360度リモート施工管理。定点撮影比較・遠隔巡回・アバターロボット監視。
  */
 import { escapeHtml } from "./utils/escape-html";
+import { csvEscape } from "./utils/csv-escape";
 
 // ── 型定義 ────────────────────────────────────────────────────────────────────
 
@@ -482,12 +483,6 @@ export function buildInspectionReportHtml(report: RemoteInspectionReport): strin
 
 // ── CSV export ────────────────────────────────────────────────────────────────
 
-function csvEscape(value: string): string {
-  if (value.includes(",") || value.includes('"') || value.includes("\n")) {
-    return `"${value.replace(/"/g, '""')}"`;
-  }
-  return value;
-}
 
 /**
  * 指摘一覧をCSV文字列に変換する。

@@ -1,6 +1,7 @@
 /** 複数案シミュレーション（松竹梅見積）ライブラリ — ATLUS蒸留 */
 
 import { escapeHtml } from "./utils/escape-html.js";
+import { csvEscape } from "./utils/csv-escape.js";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -399,13 +400,6 @@ export function exportComparisonCSV(result: MultiScenarioResult): string {
   return header + dataRows + "\n" + footerRow + "\n";
 }
 
-/** CSV セル用エスケープ */
-function csvEscape(value: string): string {
-  if (value.includes(",") || value.includes('"') || value.includes("\n")) {
-    return `"${value.replace(/"/g, '""')}"`;
-  }
-  return value;
-}
 
 // ── Scenario manipulation ─────────────────────────────────────────────────────
 
