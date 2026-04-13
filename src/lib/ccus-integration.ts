@@ -350,3 +350,215 @@ export function _resetCCUSStore(): void {
   workerCounter = 0;
   entryCounter = 0;
 }
+
+// ── Extended CCUS types (Buildee蒸留) ─────────────
+
+/**
+ * 技能者の保有資格情報（建設キャリアアップシステム）
+ */
+export type CCUSCertification = {
+  name: string;
+  certNumber: string;
+  issueDate: string;       // YYYY-MM-DD
+  expiryDate: string;      // YYYY-MM-DD
+  category: "safety" | "skill" | "special";
+};
+
+/**
+ * CCUS技能者プロフィール（Buildee蒸留版）
+ * registeredWorker と連携しつつ資格・現場履歴を保持する。
+ */
+export type CCUSWorkerProfile = {
+  id: string;
+  name: string;
+  ccusId: string;
+  certifications: CCUSCertification[];
+  currentGrade: 1 | 2 | 3 | 4;
+  registeredSince: string; // YYYY-MM-DD
+  siteHistory: CCUSSiteHistory[];
+};
+
+export type CCUSSiteHistory = {
+  projectId: string;
+  entryTimestamp: string;  // ISO datetime
+  exitTimestamp?: string;  // ISO datetime
+};
+
+// ── In-memory store for profiles ──────────────────
+
+const profiles: CCUSWorkerProfile[] = [];
+let profileCounter = 0;
+
+// ── Profile functions ──────────────────────────────
+
+/**
+ * 技能者をCCUSプロフィールとして登録する。
+ */
+export function registerWorkerCCUS(
+  worker: Omit<CCUSWorkerProfile, "id" | "siteHistory" | "currentGrade">,
+): CCUSWorkerProfile {
+  if (!/^\d{14}$/.test(worker.ccusId)) {
+    throw new Error("ccusId は14桁の数字で入力してください");
+  }
+  if (!worker.name.trim()) throw new Error("name は必須です");
+
+  profileCounter += 1;
+  const profile: CCUSWorkerProfile = {
+    ...worker,
+    id: `ccus-profile-${profileCounter}`,
+    name: worker.name.trim(),
+    siteHistory: [],
+    currentGrade: calculateWorkerGrade_internal(worker.certifications, worker.registeredSince),
+  };
+  profiles.push(profile);
+  return profile;
+}
+
+/**
+ * CCUS技能者IDで技能者プロフィールを検索する。
+ */
+export function lookupWorkerCCUS(ccusId: string): CCUSWorkerProfile | null {
+  return profiles.find((p) => p.ccusId === ccusId) ?? null;
+}
+
+/**
+ * 現場入場を記録する（プロフィール版）。
+ */
+export function recordSiteEntry(
+  ccusId: string,
+  projectId: string,
+  timestamp: string,
+): CCUSWorkerProfile {
+  const profile = lookupWorkerCCUS(ccusId);
+  if (!profile) throw new Error(`技能者プロフィールが見つかりません: ccusId=${ccusId}`);
+  if (!projectId) throw new Error("projectId は必須です");
+
+  profile.siteHistory.push({ projectId, entryTimestamp: timestamp });
+  return profile;
+}
+
+/**
+ * 現場退場を記録する（プロフィール版）。直近の未退場レコードに exitTimestamp を設定する。
+ */
+export function recordSiteExit(
+  ccusId: string,
+  projectId: string,
+  timestamp: string,
+): CCUSWorkerProfile {
+  const profile = lookupWorkerCCUS(ccusId);
+  if (!profile) throw new Error(`技能者プロフィールが見つかりません: ccusId=${ccusId}`);
+
+  // 同じプロジェクトの最新の未退場レコードを探す
+  const openRecord = [...profile.siteHistory]
+    .reverse()
+    .find((h) => h.projectId === projectId && !h.exitTimestamp);
+  if (!openRecord) throw new Error(`入場記録が見つかりません: ccusId=${ccusId}, projectId=${projectId}`);
+
+  openRecord.exitTimestamp = timestamp;
+  return profile;
+}
+
+/**
+ * 技能者の現場入退場履歴を返す。
+ */
+export function getWorkerSiteHistory(ccusId: string): CCUSSiteHistory[] {
+  const profile = lookupWorkerCCUS(ccusId);
+  return profile ? [...profile.siteHistory] : [];
+}
+
+/**
+ * 指定日数以内に期限切れになる資格があるか確認する。
+ * 期限切れ直前の資格リストを返す。
+ */
+export function checkCertificationExpiry(
+  ccusId: string,
+  daysThreshold: number,
+): CCUSCertification[] {
+  const profile = lookupWorkerCCUS(ccusId);
+  if (!profile) return [];
+
+  const now = new Date();
+  const thresholdMs = daysThreshold * 24 * 60 * 60 * 1000;
+  return profile.certifications.filter((cert) => {
+    const expiry = new Date(cert.expiryDate);
+    const diff = expiry.getTime() - now.getTime();
+    return diff >= 0 && diff <= thresholdMs;
+  });
+}
+
+/**
+ * 複数技能者の資格期限一括チェック。
+ * 閾値以内に期限切れになる技能者→資格のマップを返す。
+ */
+export function getExpiringCertifications(
+  workers: CCUSWorkerProfile[],
+  daysThreshold: number,
+): Map<string, CCUSCertification[]> {
+  const result = new Map<string, CCUSCertification[]>();
+  for (const worker of workers) {
+    const expiring = checkCertificationExpiry(worker.ccusId, daysThreshold);
+    if (expiring.length > 0) {
+      result.set(worker.ccusId, expiring);
+    }
+  }
+  return result;
+}
+
+/**
+ * CCUSグレード（1-4）を資格と経験から算出する。
+ * 内部ヘルパー（プロフィール登録時にも使用）。
+ */
+function calculateWorkerGrade_internal(
+  certifications: CCUSCertification[],
+  registeredSince: string,
+): 1 | 2 | 3 | 4 {
+  const experienceYears =
+    (new Date().getTime() - new Date(registeredSince).getTime()) /
+    (365.25 * 24 * 60 * 60 * 1000);
+
+  const certNames = certifications.map((c) => c.name.toLowerCase());
+
+  const hasGrade4 = certNames.some(
+    (c) =>
+      c.includes("1級施工管理技士") ||
+      c.includes("一級施工管理技士") ||
+      c.includes("一級建築士") ||
+      c.includes("1級建築士"),
+  );
+  if (hasGrade4 || experienceYears >= 10) return 4;
+
+  const hasGrade3 = certNames.some(
+    (c) =>
+      c.includes("2級施工管理技士") ||
+      c.includes("二級施工管理技士") ||
+      c.includes("二級建築士") ||
+      c.includes("2級建築士"),
+  );
+  if (hasGrade3 || experienceYears >= 5) return 3;
+
+  const hasGrade2 = certNames.some(
+    (c) =>
+      c.includes("技能士") ||
+      c.includes("職業訓練指導員") ||
+      c.includes("技能検定"),
+  );
+  if (hasGrade2 || experienceYears >= 3) return 2;
+
+  return 1;
+}
+
+/**
+ * CCUS技能者IDからグレード（1-4）を算出する（公開版）。
+ */
+export function calculateWorkerGrade(ccusId: string): 1 | 2 | 3 | 4 {
+  const profile = lookupWorkerCCUS(ccusId);
+  if (!profile) throw new Error(`技能者プロフィールが見つかりません: ccusId=${ccusId}`);
+  return calculateWorkerGrade_internal(profile.certifications, profile.registeredSince);
+}
+
+// ── Profile reset (for testing) ───────────────────
+
+export function _resetCCUSProfiles(): void {
+  profiles.length = 0;
+  profileCounter = 0;
+}
