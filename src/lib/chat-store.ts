@@ -3,6 +3,7 @@
  */
 
 import type { ChatMessage, ChatRoom, MessageType } from "../domain/types.js";
+import { createRepository } from "./repository/index.js";
 
 // In-memory store keyed by projectId
 const rooms: Map<string, ChatRoom> = new Map();
@@ -143,5 +144,8 @@ export function _resetChatStore(): void {
   rooms.clear();
   nextId = 1;
 }
+
+// Repository-pattern accessor (for gradual migration to Supabase)
+export const chatMessageRepository = createRepository<ChatMessage>('chat_messages');
 
 export type { MessageType };
