@@ -3,12 +3,23 @@ import { useAuth } from "../contexts/AuthContext.js";
 import { navigate } from "../hooks/useHashRouter.js";
 import { hasSupabaseEnv } from "../infra/supabase-client.js";
 
+declare global {
+  interface Window {
+    __E2E_BYPASS_AUTH__?: boolean;
+  }
+}
+
 type Props = {
   children: ReactNode;
 };
 
 export function AuthGuard({ children }: Props) {
   const { session, loading } = useAuth();
+
+  // E2E test bypass: only effective when explicitly set on window by test runner (localhost only)
+  if (typeof window !== "undefined" && window.__E2E_BYPASS_AUTH__ === true) {
+    return <>{children}</>;
+  }
 
   if (!hasSupabaseEnv()) {
     return <>{children}</>;
