@@ -4,6 +4,7 @@
  */
 
 import { escapeHtml } from "./utils/escape-html.js";
+import { createRepository } from "./repository/index.js";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -684,3 +685,7 @@ export function cloneTemplate(
     updatedAt: now,
   };
 }
+
+// Repository-pattern accessors (for gradual migration to Supabase)
+export const templateRepository = createRepository<CustomTemplate>('custom_templates');
+export const templateRecordRepository = createRepository<TemplateRecord>('template_records');

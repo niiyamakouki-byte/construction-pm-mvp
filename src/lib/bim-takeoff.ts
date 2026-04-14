@@ -2,6 +2,7 @@
 
 import { escapeHtml } from "./utils/escape-html.js";
 import { csvEscape } from "./utils/csv-escape.js";
+import { createRepository } from "./repository/index.js";
 
 // ─── Types ──────────────────────────────────────────────────────
 
@@ -831,3 +832,6 @@ export function compareTakeoffs(
 // ─── Re-export summary builder ────────────────────────────────────
 
 export { buildSummary as buildTakeoffSummary };
+
+// Repository-pattern accessor (for gradual migration to Supabase)
+export const takeoffRepository = createRepository<BIMModel>('bim_models');

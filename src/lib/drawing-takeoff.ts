@@ -4,6 +4,8 @@
  * Pure logic only; no UI or Canvas dependencies.
  */
 
+import { createRepository } from "./repository/index.js";
+
 // ── Types ────────────────────────────────────────────────────────────────────
 
 export type TakeoffPoint = { x: number; y: number };
@@ -369,3 +371,6 @@ export function calculateCostEstimate(
   }
   return total;
 }
+
+// Repository-pattern accessor (for gradual migration to Supabase)
+export const takeoffSessionRepository = createRepository<TakeoffSession>('takeoff_sessions');

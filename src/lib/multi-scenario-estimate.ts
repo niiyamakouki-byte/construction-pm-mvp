@@ -2,6 +2,7 @@
 
 import { escapeHtml } from "./utils/escape-html.js";
 import { csvEscape } from "./utils/csv-escape.js";
+import { createRepository } from "./repository/index.js";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -457,3 +458,6 @@ export function mergeScenarioItems(
 
   return result;
 }
+
+// Repository-pattern accessor (for gradual migration to Supabase)
+export const scenarioRepository = createRepository<Scenario>('scenarios');

@@ -4,6 +4,7 @@
  * テンプレートを現場をまたいで再利用する機能を提供する。
  */
 import { escapeHtml } from "./utils/escape-html";
+import { createRepository } from "./repository/index.js";
 
 // ── Types ──────────────────────────────────────────
 
@@ -242,3 +243,6 @@ export function _resetSafetyDocStore(): void {
   templates.length = 0;
   templateCounter = 0;
 }
+
+// Repository-pattern accessor (for gradual migration to Supabase)
+export const safetyDocTemplateRepository = createRepository<SafetyDocTemplate>('safety_doc_templates');

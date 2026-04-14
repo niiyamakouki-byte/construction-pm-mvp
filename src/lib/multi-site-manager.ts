@@ -5,6 +5,7 @@
 
 import { escapeHtml } from "./utils/escape-html";
 import { csvEscape } from "./utils/csv-escape";
+import { createRepository } from "./repository/index.js";
 
 // ── Types ────────────────────────────────────────────────
 
@@ -754,3 +755,7 @@ export function forecastCashflow(
 
   return result;
 }
+
+// Repository-pattern accessors (for gradual migration to Supabase)
+export const siteRepository = createRepository<Site>('sites');
+export const dailyReportRepository = createRepository<DailyReport>('daily_reports');

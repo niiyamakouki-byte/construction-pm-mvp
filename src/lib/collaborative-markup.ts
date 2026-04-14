@@ -4,6 +4,7 @@
  */
 import { escapeHtml } from "./utils/escape-html";
 import { csvEscape } from "./utils/csv-escape";
+import { createRepository } from "./repository/index.js";
 
 // ---- Types ----------------------------------------------------------------
 
@@ -497,3 +498,6 @@ export function mergeMarkupSessions(sessions: MarkupSession[]): MarkupSession {
 
   return merged;
 }
+
+// Repository-pattern accessor (for gradual migration to Supabase)
+export const markupSessionRepository = createRepository<MarkupSession>('markup_sessions');

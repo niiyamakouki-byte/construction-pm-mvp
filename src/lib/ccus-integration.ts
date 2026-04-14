@@ -3,6 +3,7 @@
  * 技能者情報の管理、入退場記録、レベル判定、統計、帳票生成を提供する。
  */
 import { escapeHtml } from "./utils/escape-html";
+import { createRepository } from "./repository/index.js";
 
 // ── Types ──────────────────────────────────────────
 
@@ -562,3 +563,6 @@ export function _resetCCUSProfiles(): void {
   profiles.length = 0;
   profileCounter = 0;
 }
+
+// Repository-pattern accessor (for gradual migration to Supabase)
+export const ccusWorkerRepository = createRepository<CCUSWorkerProfile>('ccus_workers');

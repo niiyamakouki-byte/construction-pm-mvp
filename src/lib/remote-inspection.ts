@@ -4,6 +4,7 @@
  */
 import { escapeHtml } from "./utils/escape-html";
 import { csvEscape } from "./utils/csv-escape";
+import { createRepository } from "./repository/index.js";
 
 // ── 型定義 ────────────────────────────────────────────────────────────────────
 
@@ -587,3 +588,6 @@ export function suggestInspectionFrequency(
   }
   return { frequencyDays: 10, reason: "標準工程につき10日ごとの確認を推奨", phase: currentPhase };
 }
+
+// Repository-pattern accessor (for gradual migration to Supabase)
+export const inspectionRepository = createRepository<RemoteInspection>('remote_inspections');

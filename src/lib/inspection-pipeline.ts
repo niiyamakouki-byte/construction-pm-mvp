@@ -3,6 +3,7 @@
  * 検査員がタブレットで記録した結果から報告書を自動生成する。
  */
 import { escapeHtml } from "./utils/escape-html";
+import { createRepository } from "./repository/index.js";
 
 // ── 型定義 ────────────────────────────────────────────────────────────────────
 
@@ -582,3 +583,6 @@ function computeItemStats(items: InspectionCheckItem[]): InspectionItemStats {
 
   return { pass, fail, na, pending, total, passRate };
 }
+
+// Repository-pattern accessor (for gradual migration to Supabase)
+export const inspectionRecordRepository = createRepository<InspectionRecord>('inspection_records');

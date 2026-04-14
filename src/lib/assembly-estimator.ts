@@ -1,6 +1,7 @@
 /** PlanSwift蒸留 — アセンブリ積算 + 業種別テンプレート */
 
 import { escapeHtml } from "./utils/escape-html";
+import { createRepository } from "./repository/index.js";
 
 // ─── Types ──────────────────────────────────────────────────────
 
@@ -789,3 +790,6 @@ export function exportAssemblyCSV(result: AssemblyEstimateResult): string {
 
   return lines.join("\n");
 }
+
+// Repository-pattern accessor (for gradual migration to Supabase)
+export const assemblyRepository = createRepository<Assembly>('assemblies');

@@ -4,6 +4,7 @@
  * Increasing conversion for renovation projects by showing payment options at estimate time.
  */
 import { escapeHtml } from "./utils/escape-html";
+import { createRepository } from "./repository/index.js";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -694,3 +695,6 @@ export function getContractStats(contracts: ElectronicContract[]): ContractStats
     conversionRate,
   };
 }
+
+// Repository-pattern accessor (for gradual migration to Supabase)
+export const contractRepository = createRepository<ElectronicContract>('contracts');

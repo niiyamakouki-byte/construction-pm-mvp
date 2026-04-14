@@ -5,6 +5,7 @@
  */
 
 import { escapeHtml } from "./utils/escape-html.js";
+import { createRepository } from "./repository/index.js";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -787,3 +788,6 @@ export function classifyPhotoBatch(
     ...classifyPhoto(f.fileName, { capturedAt: f.capturedAt, exifData: f.exifData }),
   }));
 }
+
+// Repository-pattern accessor (for gradual migration to Supabase)
+export const photoAlbumRepository = createRepository<PhotoAlbum>('photo_albums');
