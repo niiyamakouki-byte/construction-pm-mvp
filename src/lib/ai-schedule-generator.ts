@@ -447,15 +447,21 @@ export function generateSchedule(
 function topologicalSort(tasks: GeneratedTask[]): GeneratedTask[] {
   const taskById = new Map(tasks.map((t) => [t.id, t]));
   const visited = new Set<string>();
+  const visiting = new Set<string>();
   const result: GeneratedTask[] = [];
 
   function visit(task: GeneratedTask): void {
     if (visited.has(task.id)) return;
-    visited.add(task.id);
+    if (visiting.has(task.id)) {
+      throw new Error("Circular dependency detected");
+    }
+    visiting.add(task.id);
     for (const depId of task.dependencies) {
       const dep = taskById.get(depId);
       if (dep) visit(dep);
     }
+    visiting.delete(task.id);
+    visited.add(task.id);
     result.push(task);
   }
 

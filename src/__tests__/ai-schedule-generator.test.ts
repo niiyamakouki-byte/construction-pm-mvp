@@ -477,6 +477,34 @@ describe("getScheduleSummary", () => {
   });
 });
 
+// ─── Topological Sort: Cycle Detection ───────────────────────────────────────
+
+describe("topologicalSort (cycle detection)", () => {
+  it("throws 'Circular dependency detected' when a cycle exists", () => {
+    // Build a schedule where t1 → t2 → t1 (circular)
+    // We do this by generating a schedule and then manually injecting a cycle
+    // via constraints that would create a circular dependency.
+    // Since topologicalSort is internal, we test through generateSchedule
+    // with custom pace + constraints that form a cycle.
+    const customPace: PaceData[] = [
+      { category: "demolition", taskName: "工事A", unitArea: 10, daysPerUnit: 1, crewSize: 1 },
+      { category: "framing", taskName: "工事B", unitArea: 10, daysPerUnit: 1, crewSize: 1 },
+    ];
+    // 工事A must start after 工事B, AND 工事B must start after 工事A → cycle
+    const constraints: import("../lib/ai-schedule-generator.js").ScheduleConstraint[] = [
+      { type: "must_start_after", taskA: "工事B", taskB: "工事A" },
+      { type: "must_start_after", taskA: "工事A", taskB: "工事B" },
+    ];
+    expect(() =>
+      generateSchedule(
+        makeSpec({ projectType: "interior_only" }),
+        customPace,
+        constraints,
+      ),
+    ).toThrow("Circular dependency detected");
+  });
+});
+
 // ─── Edge Cases ───────────────────────────────────────────────────────────────
 
 describe("edge cases", () => {
