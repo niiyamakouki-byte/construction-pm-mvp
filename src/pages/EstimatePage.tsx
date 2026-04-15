@@ -16,12 +16,20 @@ import {
   selectBestPrices,
 } from "../lib/estimate-comparison.js";
 import type { CompetitorEstimate, EstimateItem } from "../lib/estimate-comparison.js";
+import costMasterRaw from "../estimate/cost-master.json";
+import { PDFDraftTab } from "./EstimatePage/PDFDraftTab.js";
+import type { CostMasterItem } from "../lib/pdf-to-estimate/types.js";
 
 type SelectedItem = EstimateInput & { name: string; unit: string; unitPrice: number; isLaborCost?: boolean };
 
 const SIMULATION_MARGINS = [20, 25, 30];
 
-type PageTab = "estimate" | "comparison" | "matsubamebushi";
+type PageTab = "estimate" | "comparison" | "matsubamebushi" | "pdf_draft";
+
+// cost-master のフラット化（pdf-to-estimate パイプライン用）
+const PDF_COST_MASTER: CostMasterItem[] = (
+  costMasterRaw as { categories: { items: CostMasterItem[] }[] }
+).categories.flatMap((cat) => cat.items);
 
 // フォーム入力用の業者見積データ
 type ContractorEstimateForm = {
@@ -863,10 +871,23 @@ function EstimatePageContent() {
         >
           松竹梅
         </button>
+        <button
+          onClick={() => setActiveTab("pdf_draft")}
+          className={`flex-1 rounded-md py-1.5 text-sm font-semibold transition-colors ${
+            activeTab === "pdf_draft"
+              ? "bg-white text-slate-900 shadow-sm"
+              : "text-slate-500 hover:text-slate-700"
+          }`}
+        >
+          PDF由来ドラフト
+        </button>
       </div>
 
       {activeTab === "comparison" && <ComparisonTab />}
       {activeTab === "matsubamebushi" && <MatsubamebushiTab />}
+      {activeTab === "pdf_draft" && (
+        <PDFDraftTab costMaster={PDF_COST_MASTER} />
+      )}
       {activeTab === "estimate" && (
         <>
       <h2 className="text-lg font-bold text-slate-900">見積作成</h2>
