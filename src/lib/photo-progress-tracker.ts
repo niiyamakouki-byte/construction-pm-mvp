@@ -57,10 +57,15 @@ function expectedRate(task: GeneratedTask, asOf: Date): number {
   return (now - start) / (end - start);
 }
 
-/** True if the task is active (overlaps with) the window [asOf-lookahead, asOf] */
-function taskOverlapsAsOf(task: GeneratedTask, asOf: Date): boolean {
-  // A task is considered "active" if it has started and not yet finished
-  return task.startDate <= asOf && task.endDate >= task.startDate;
+/**
+ * True if the task should be considered for reconciliation given asOf.
+ * Includes: tasks currently active, and tasks finished within `lookbackDays`.
+ * Excludes: tasks that finished long before asOf (already past, no point flagging).
+ */
+function taskRelevantForReconcile(task: GeneratedTask, asOf: Date, lookbackDays: number): boolean {
+  if (task.startDate > asOf) return false; // not started yet
+  const cutoff = addCalendarDays(asOf, -lookbackDays);
+  return task.endDate >= cutoff;
 }
 
 // ─── Core Functions ───────────────────────────────────────────────────────────
@@ -78,14 +83,22 @@ export function reconcileWithSchedule(
   progress: TradeProgress[],
   schedule: GeneratedSchedule,
   asOf: Date,
+  options?: { lookbackDays?: number; progressMaxAgeDays?: number },
 ): ScheduleDelta[] {
   const DELAY_THRESHOLD = 0.1; // 10pt差でアラート
+  const lookbackDays = options?.lookbackDays ?? 30;
+  const progressMaxAgeDays = options?.progressMaxAgeDays;
+  const progressCutoff =
+    progressMaxAgeDays != null ? addCalendarDays(asOf, -progressMaxAgeDays) : null;
   const deltas: ScheduleDelta[] = [];
 
   for (const p of progress) {
-    // Find tasks of the matching trade that are active as of asOf
+    // Stale progress is ignored — too old to be informative (opt-in via progressMaxAgeDays)
+    if (progressCutoff && p.capturedAt < progressCutoff) continue;
+
+    // Find tasks of the matching trade that are active or recently finished
     const matchingTasks = schedule.tasks.filter(
-      (t) => t.category === p.trade && taskOverlapsAsOf(t, asOf),
+      (t) => t.category === p.trade && taskRelevantForReconcile(t, asOf, lookbackDays),
     );
 
     for (const task of matchingTasks) {

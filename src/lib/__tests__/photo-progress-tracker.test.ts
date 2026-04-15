@@ -117,6 +117,60 @@ describe("reconcileWithSchedule", () => {
     expect(result[0].deltaDays).toBeLessThanOrEqual(5);
   });
 
+  it("excludes stale progress when progressMaxAgeDays is set", () => {
+    const task = makeTask({
+      id: "t1",
+      name: "塗装",
+      startDate: new Date("2025-04-01"),
+      endDate: new Date("2025-04-20"),
+      durationDays: 20,
+    });
+    const schedule = makeSchedule([task]);
+    const oldProgress = makeProgress({
+      trade: "painting",
+      completionRate: 0.1,
+      capturedAt: new Date("2025-04-05"),
+    });
+    const asOf = new Date("2025-04-15");
+
+    const withFilter = reconcileWithSchedule([oldProgress], schedule, asOf, {
+      progressMaxAgeDays: 3,
+    });
+    expect(withFilter).toHaveLength(0);
+
+    const withoutFilter = reconcileWithSchedule([oldProgress], schedule, asOf);
+    expect(withoutFilter.length).toBeGreaterThan(0);
+  });
+
+  it("excludes long-completed tasks beyond lookbackDays", () => {
+    const task = makeTask({
+      id: "t1",
+      name: "古い塗装",
+      startDate: new Date("2025-03-01"),
+      endDate: new Date("2025-03-10"),
+      durationDays: 10,
+    });
+    const schedule = makeSchedule([task]);
+    const progress = [
+      makeProgress({
+        trade: "painting",
+        completionRate: 0.5,
+        capturedAt: new Date("2025-04-15"),
+      }),
+    ];
+    const asOf = new Date("2025-04-15");
+
+    const withTightLookback = reconcileWithSchedule(progress, schedule, asOf, {
+      lookbackDays: 7,
+    });
+    expect(withTightLookback).toHaveLength(0);
+
+    const withWideLookback = reconcileWithSchedule(progress, schedule, asOf, {
+      lookbackDays: 60,
+    });
+    expect(withWideLookback.length).toBeGreaterThan(0);
+  });
+
   it("does not match tasks of different trades", () => {
     const task = makeTask({
       id: "t1",
