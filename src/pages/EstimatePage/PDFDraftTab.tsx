@@ -7,7 +7,8 @@ import { useRef, useState } from "react";
 import { classifyInteriorElements } from "../../lib/pdf-to-estimate/interior-semantic.js";
 import { takeoffFromInterior } from "../../lib/pdf-to-estimate/quantity-takeoff-from-pdf.js";
 import { composeEstimate } from "../../lib/pdf-to-estimate/estimate-composer.js";
-import type { DrawingModel, EstimateDraft, EstimateLine, CostMasterItem } from "../../lib/pdf-to-estimate/types.js";
+import type { DrawingModel, EstimateDraft, EstimateLine, CostMasterItem, WallType } from "../../lib/pdf-to-estimate/types.js";
+import { WALL_TYPE_RULES } from "../../lib/pdf-to-estimate/types.js";
 
 const TAX_RATE = 0.1;
 
@@ -31,6 +32,18 @@ function rowBg(confidence: number): string {
 
 // ─── Component ────────────────────────────────────────────────────
 
+// 壁タイプ選択肢（「自動」+ 7種）
+const WALL_TYPE_OPTIONS: Array<{ value: WallType | "auto"; label: string }> = [
+  { value: "auto",          label: "自動（推定）" },
+  { value: "LGS45",        label: "LGS45 — ふかせない壁（メイン）" },
+  { value: "LGS65",        label: "LGS65 — 一般間仕切り（メイン）" },
+  { value: "LGS50",        label: "LGS50 — 補助" },
+  { value: "LGS75",        label: "LGS75 — 補助" },
+  { value: "LGS90",        label: "LGS90 — 遮音・耐火強化" },
+  { value: "LGS100",       label: "LGS100 — 遮音・耐火強化" },
+  { value: "LGS20_runner", label: "LGS20 ランナー — 天井補強・梁型" },
+];
+
 type EditOverrides = Record<string, { unitPrice: string; quantity: string }>;
 
 type Props = {
@@ -45,6 +58,7 @@ export function PDFDraftTab({ costMaster, onSave }: Props) {
   const [loading, setLoading] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [overrides, setOverrides] = useState<EditOverrides>({});
+  const [selectedWallType, setSelectedWallType] = useState<WallType | "auto">("auto");
 
   const readFileAsText = (file: File): Promise<string> =>
     new Promise((resolve, reject) => {
@@ -85,7 +99,12 @@ export function PDFDraftTab({ costMaster, onSave }: Props) {
       }
 
       const takeoff = takeoffFromInterior(elements);
-      const result = composeEstimate(takeoff, costMaster, model);
+      const result = composeEstimate(takeoff, costMaster, model, {
+        wallTypeOverride: selectedWallType !== "auto" ? selectedWallType : undefined,
+        wallTypeInferenceHints: selectedWallType === "auto"
+          ? { texts: model.texts.map((t) => t.text) }
+          : undefined,
+      });
       setDraft(result);
     } catch (e) {
       setError(e instanceof Error ? e.message : "処理中にエラーが発生しました");
@@ -160,6 +179,24 @@ export function PDFDraftTab({ costMaster, onSave }: Props) {
           pdf-vector-extractor が出力した DrawingModel JSON をアップロードすると、
           内装要素を自動抽出して見積ドラフトを生成します。
         </p>
+
+        {/* 壁タイプ選択 */}
+        <div className="flex items-center gap-3">
+          <label htmlFor="wall-type-select" className="text-xs font-medium text-slate-600 whitespace-nowrap">
+            壁タイプ
+          </label>
+          <select
+            id="wall-type-select"
+            value={selectedWallType}
+            onChange={(e) => setSelectedWallType(e.target.value as WallType | "auto")}
+            className="flex-1 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs text-slate-700 focus:border-brand-400 focus:outline-none"
+            data-testid="wall-type-select"
+          >
+            {WALL_TYPE_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>{opt.label}</option>
+            ))}
+          </select>
+        </div>
 
         {error && (
           <div
@@ -385,19 +422,38 @@ export function PDFDraftTab({ costMaster, onSave }: Props) {
       </div>
 
       {/* Assembly templates reference */}
-      <div className="rounded-lg border border-slate-100 bg-slate-50/40 px-4 py-3">
+      <div className="rounded-lg border border-slate-100 bg-slate-50/40 px-4 py-3 space-y-2">
+        <div className="flex items-center gap-3">
+          <p className="text-xs font-semibold text-slate-600 whitespace-nowrap">壁タイプ変更</p>
+          <select
+            value={selectedWallType}
+            onChange={(e) => setSelectedWallType(e.target.value as WallType | "auto")}
+            className="flex-1 rounded border border-slate-300 bg-white px-2 py-1 text-xs text-slate-700 focus:border-brand-400 focus:outline-none"
+            data-testid="wall-type-select-result"
+          >
+            {WALL_TYPE_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>{opt.label}</option>
+            ))}
+          </select>
+        </div>
         <p className="text-xs font-semibold text-slate-600 mb-1.5">使用アセンブリテンプレート</p>
         <div className="flex flex-wrap gap-1.5">
-          {["壁: LGS+PB+クロス", "床: フロアタイル", "天井: 軽鉄下地+石膏ボード", "建具: 木製フラッシュ", "巾木: ビニル"].map(
-            (label) => (
-              <span
-                key={label}
-                className="rounded bg-slate-200 px-2 py-0.5 text-[10px] text-slate-600"
-              >
-                {label}
-              </span>
-            ),
-          )}
+          {[
+            selectedWallType === "auto"
+              ? "壁: 自動推定（LGS+PB+クロス）"
+              : `壁: ${selectedWallType}（${WALL_TYPE_RULES[selectedWallType as WallType].usage}）`,
+            "床: フロアタイル",
+            "天井: 軽鉄下地+石膏ボード",
+            "建具: 木製フラッシュ",
+            "巾木: ビニル",
+          ].map((label) => (
+            <span
+              key={label}
+              className="rounded bg-slate-200 px-2 py-0.5 text-[10px] text-slate-600"
+            >
+              {label}
+            </span>
+          ))}
         </div>
       </div>
     </div>

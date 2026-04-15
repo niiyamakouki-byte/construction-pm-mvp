@@ -148,3 +148,132 @@ export type InteriorAssembly = {
   window: AssemblyLineSpec[];
   skirting: AssemblyLineSpec[];
 };
+
+// ─── LGS壁タイプ ─────────────────────────────────────────────────
+//
+// 光輝さん（ラポルタ代表）の現場知見:
+//   LGS20ランナー: 天井補強・梁型・GLボンド不可壁の下地（3用途）
+//   LGS45:        ふかせない壁（壁厚制約が強い） ← メイン
+//   LGS65:        一般間仕切り（最頻出）           ← メイン
+//   LGS50/75:     補助的利用（中頻度）
+//   LGS90/100:    遮音・耐火強化（稀）
+
+export type WallType =
+  | "LGS20_runner"
+  | "LGS45"
+  | "LGS50"
+  | "LGS65"
+  | "LGS75"
+  | "LGS90"
+  | "LGS100";
+
+export interface WallTypeRule {
+  type: WallType;
+  /** 下地本体の公称厚み（mm） */
+  nominalThicknessMm: number;
+  /** 仕上げ込みの総壁厚 典型範囲 [min, max] mm */
+  typicalWallThicknessMm: [number, number];
+  /** 用途説明（日本語） */
+  usage: string;
+  /** cost-masterベースのデフォルトアセンブリ（壁面のみ） */
+  defaultAssembly: InteriorAssembly["wall"];
+  /**
+   * 推定優先度。高いほど優先採用。
+   * LGS45/65 = 10（メイン）, LGS50/75 = 3（補助）, LGS20/90/100 = 1〜2（稀）
+   */
+  priority: number;
+}
+
+/**
+ * LGS壁タイプ別ルール定義。
+ * cost-master IN-001（LGS間仕切り65型 ¥5,500/㎡）をベースに
+ * 厚みに応じた係数でコスト調整:
+ *   LGS20_runner: 軽量（0.60） / LGS45: やや薄（0.85） / LGS65: 標準（1.00）
+ *   LGS75: 標準+（1.08） / LGS90/100: 遮音強化（1.20/1.30）
+ */
+export const WALL_TYPE_RULES: Record<WallType, WallTypeRule> = {
+  LGS20_runner: {
+    type: "LGS20_runner",
+    nominalThicknessMm: 20,
+    typicalWallThicknessMm: [30, 60],
+    usage: "天井補強・梁型・GLボンド不可の壁下地",
+    priority: 2,
+    defaultAssembly: [
+      { costMasterCode: "IN-001", quantityFactor: 0.60 }, // ランナー材のみ・軽量
+      { costMasterCode: "IN-003", quantityFactor: 1.0 },
+      { costMasterCode: "IN-005", quantityFactor: 1.05 },
+    ],
+  },
+  LGS45: {
+    type: "LGS45",
+    nominalThicknessMm: 45,
+    typicalWallThicknessMm: [75, 95],
+    usage: "ふかせない壁（壁厚制約強）",
+    priority: 10, // ← メイン用途
+    defaultAssembly: [
+      { costMasterCode: "IN-001", quantityFactor: 0.85 }, // 65型より薄い分コスト低
+      { costMasterCode: "IN-003", quantityFactor: 1.0 },
+      { costMasterCode: "IN-005", quantityFactor: 1.05 },
+    ],
+  },
+  LGS50: {
+    type: "LGS50",
+    nominalThicknessMm: 50,
+    typicalWallThicknessMm: [80, 100],
+    usage: "補助",
+    priority: 3,
+    defaultAssembly: [
+      { costMasterCode: "IN-001", quantityFactor: 0.90 },
+      { costMasterCode: "IN-003", quantityFactor: 1.0 },
+      { costMasterCode: "IN-005", quantityFactor: 1.05 },
+    ],
+  },
+  LGS65: {
+    type: "LGS65",
+    nominalThicknessMm: 65,
+    typicalWallThicknessMm: [95, 115],
+    usage: "一般間仕切り（メイン）",
+    priority: 10, // ← メイン用途
+    defaultAssembly: [
+      { costMasterCode: "IN-001", quantityFactor: 1.0 }, // IN-001 = LGS65型 標準
+      { costMasterCode: "IN-003", quantityFactor: 1.0 },
+      { costMasterCode: "IN-005", quantityFactor: 1.05 },
+    ],
+  },
+  LGS75: {
+    type: "LGS75",
+    nominalThicknessMm: 75,
+    typicalWallThicknessMm: [105, 125],
+    usage: "補助",
+    priority: 3,
+    defaultAssembly: [
+      { costMasterCode: "IN-001", quantityFactor: 1.08 },
+      { costMasterCode: "IN-003", quantityFactor: 1.0 },
+      { costMasterCode: "IN-005", quantityFactor: 1.05 },
+    ],
+  },
+  LGS90: {
+    type: "LGS90",
+    nominalThicknessMm: 90,
+    typicalWallThicknessMm: [120, 140],
+    usage: "遮音・耐火強化（稀）",
+    priority: 1,
+    defaultAssembly: [
+      { costMasterCode: "IN-001", quantityFactor: 1.20 },
+      { costMasterCode: "IN-003", quantityFactor: 1.0 },
+      { costMasterCode: "IN-005", quantityFactor: 1.05 },
+    ],
+  },
+  LGS100: {
+    type: "LGS100",
+    nominalThicknessMm: 100,
+    typicalWallThicknessMm: [130, 150],
+    usage: "遮音・耐火強化（稀）",
+    priority: 1,
+    defaultAssembly: [
+      { costMasterCode: "IN-001", quantityFactor: 1.30 },
+      { costMasterCode: "IN-004", quantityFactor: 1.0 }, // 二重張り（遮音）
+      { costMasterCode: "IN-005", quantityFactor: 1.05 },
+    ],
+  },
+};

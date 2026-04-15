@@ -140,3 +140,63 @@ describe("composeEstimate", () => {
     expect(cloth?.quantity).toBeCloseTo(10.5, 2);
   });
 });
+
+// ─── 壁タイプ拡張テスト ───────────────────────────────────────────
+
+const EXTENDED_COST_MASTER: CostMasterItem[] = [
+  ...TEST_COST_MASTER,
+  { code: "IN-004", name: "石膏ボード張り（二重張り）", unit: "㎡", unitPrice: 4200 },
+];
+
+describe("composeEstimate — wallType options", () => {
+  it("wallTypeOverride: LGS45 は IN-001 quantityFactor 0.85 で LGS65 より金額が下がる", () => {
+    const takeoff = makeTakeoff([
+      makeTakeoffItem({ category: "壁", item: "壁仕上げ面積", quantity: 20 }),
+    ]);
+    const draftDefault = composeEstimate(takeoff, TEST_COST_MASTER, makeDrawing());
+    const draftLGS45 = composeEstimate(takeoff, TEST_COST_MASTER, makeDrawing(), {
+      wallTypeOverride: "LGS45",
+    });
+    // LGS45 の IN-001 係数(0.85) < LGS65(1.0) なので合計が小さい
+    expect(draftLGS45.totalExcludingTax).toBeLessThan(draftDefault.totalExcludingTax);
+  });
+
+  it("wallTypeOverride: LGS100 は notes に壁タイプ情報が含まれる", () => {
+    const takeoff = makeTakeoff([
+      makeTakeoffItem({ category: "壁", item: "壁仕上げ面積", quantity: 10 }),
+    ]);
+    const draft = composeEstimate(takeoff, EXTENDED_COST_MASTER, makeDrawing(), {
+      wallTypeOverride: "LGS100",
+    });
+    expect(draft.notes.some((n) => n.includes("LGS100"))).toBe(true);
+  });
+
+  it("wallTypeInferenceHints: テキスト「LGS45」で LGS45 アセンブリが採用される", () => {
+    const takeoff = makeTakeoff([
+      makeTakeoffItem({ category: "壁", item: "壁仕上げ面積", quantity: 20 }),
+    ]);
+    const draftInferred = composeEstimate(takeoff, TEST_COST_MASTER, makeDrawing(), {
+      wallTypeInferenceHints: { texts: ["スタッド LGS45"] },
+    });
+    const draftDefault = composeEstimate(takeoff, TEST_COST_MASTER, makeDrawing());
+    // LGS45(0.85) → LGS65(1.0) より安い
+    expect(draftInferred.totalExcludingTax).toBeLessThan(draftDefault.totalExcludingTax);
+  });
+
+  it("wallTypeOverride は assemblyTemplate より優先される", () => {
+    const customAssembly = {
+      ...DEFAULT_ASSEMBLY,
+      wall: [{ costMasterCode: "IN-001", quantityFactor: 9.99 }], // 意図的に高い係数
+    };
+    const takeoff = makeTakeoff([
+      makeTakeoffItem({ category: "壁", item: "壁仕上げ面積", quantity: 10 }),
+    ]);
+    const draft = composeEstimate(takeoff, TEST_COST_MASTER, makeDrawing(), {
+      assemblyTemplate: customAssembly,
+      wallTypeOverride: "LGS65",
+    });
+    // wallTypeOverride が優先 → quantityFactor 1.0 で計算
+    const lgsLine = draft.lines.find((l) => l.code === "IN-001");
+    expect(lgsLine?.quantity).toBeCloseTo(10, 1);
+  });
+});

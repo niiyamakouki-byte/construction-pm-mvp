@@ -19,7 +19,10 @@ import type {
   InteriorAssembly,
   AssemblyLineSpec,
   TakeoffSource,
+  WallType,
 } from "./types.js";
+import { WALL_TYPE_RULES } from "./types.js";
+import { inferWallType } from "./wall-type-inference.js";
 
 // ─── デフォルトアセンブリ定義 ──────────────────────────────────────
 
@@ -93,15 +96,47 @@ function buildLines(
 /**
  * QuantityTakeoff と cost-master から EstimateDraft を生成する。
  * drawingModel は出自情報としてドラフトに埋め込むのみ（計算には使わない）。
+ *
+ * 壁タイプ解決順:
+ *   1. options.wallTypeOverride（UI手動指定）
+ *   2. options.wallTypeInferenceHints によるテキスト/厚み推定
+ *   3. options.assemblyTemplate（カスタムアセンブリ直接指定）
+ *   4. DEFAULT_ASSEMBLY（後方互換）
  */
 export function composeEstimate(
   takeoff: QuantityTakeoff,
   costMaster: CostMasterItem[],
   drawingModel: DrawingModel,
-  options?: { assemblyTemplate?: InteriorAssembly },
+  options?: {
+    assemblyTemplate?: InteriorAssembly;
+    /** UI で手動選択した壁タイプ（最優先） */
+    wallTypeOverride?: WallType;
+    /** 推定ヒント（テキスト群 or 壁厚） */
+    wallTypeInferenceHints?: { texts?: string[]; thicknessMm?: number };
+  },
 ): EstimateDraft {
-  const assembly = options?.assemblyTemplate ?? DEFAULT_ASSEMBLY;
+  // 壁アセンブリ解決
+  let assembly: InteriorAssembly;
+  let wallTypeNote: string | null = null;
+
+  if (options?.wallTypeOverride) {
+    const rule = WALL_TYPE_RULES[options.wallTypeOverride];
+    assembly = { ...DEFAULT_ASSEMBLY, wall: rule.defaultAssembly };
+    wallTypeNote = `壁タイプ: ${options.wallTypeOverride}（手動指定）— ${rule.usage}`;
+  } else if (options?.wallTypeInferenceHints) {
+    const hints = options.wallTypeInferenceHints;
+    const result = inferWallType({
+      nearbyTexts: hints.texts,
+      measuredThicknessMm: hints.thicknessMm,
+    });
+    const rule = WALL_TYPE_RULES[result.type];
+    assembly = { ...DEFAULT_ASSEMBLY, wall: rule.defaultAssembly };
+    wallTypeNote = `壁タイプ: ${result.type}（推定 confidence ${Math.round(result.confidence * 100)}%）— ${result.reason}`;
+  } else {
+    assembly = options?.assemblyTemplate ?? DEFAULT_ASSEMBLY;
+  }
   const notes: string[] = [];
+  if (wallTypeNote) notes.push(wallTypeNote);
   const allLines: EstimateLine[] = [];
 
   for (const item of takeoff.items) {
