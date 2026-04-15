@@ -33,6 +33,7 @@ const ReportsPage = lazy(() => import("./pages/ReportsPage.js").then((m) => ({ d
 const OrderManagementPage = lazy(() => import("./pages/OrderManagementPage.js").then((m) => ({ default: m.OrderManagementPage })));
 const InvoiceManagementPage = lazy(() => import("./pages/InvoiceManagementPage.js").then((m) => ({ default: m.InvoiceManagementPage })));
 const CrossProjectGanttPage = lazy(() => import("./pages/CrossProjectGanttPage.js").then((m) => ({ default: m.CrossProjectGanttPage })));
+const ProgressReviewPage = lazy(() => import("./pages/ProgressReviewPage.js").then((m) => ({ default: m.ProgressReviewPage })));
 import { ErrorBoundary } from "./components/ErrorBoundary.js";
 import { AuthGuard } from "./components/AuthGuard.js";
 import { OnboardingWizard, useOnboardingDone } from "./components/OnboardingWizard.js";
@@ -284,6 +285,13 @@ function AppShell() {
       return (
         <ErrorBoundary fallbackTitle="全案件ガントチャートエラー">
           <CrossProjectGanttPage />
+        </ErrorBoundary>
+      );
+    }
+    if (route === "/progress-review") {
+      return (
+        <ErrorBoundary fallbackTitle="進捗レビューエラー">
+          <ProgressReviewPage />
         </ErrorBoundary>
       );
     }

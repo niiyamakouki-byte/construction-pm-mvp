@@ -13,6 +13,11 @@ import { GanttChart } from "../components/gantt/GanttChart.js";
 import { QuickAddForm } from "../components/gantt/QuickAddForm.js";
 import { TaskEditModal } from "../components/gantt/TaskEditModal.js";
 import type { ChartLayout, GanttTask, QuickAddState, TaskDetailState } from "../components/gantt/types.js";
+import type { GeneratedSchedule, GeneratedTask } from "../lib/ai-schedule-generator.js";
+import { getDefaultPaceData } from "../lib/ai-schedule-generator.js";
+import { monteCarloSchedule, identifyDrivingPaths } from "../lib/schedule-risk-forecaster.js";
+import { parseScheduleCommand, applyScheduleEdit } from "../lib/schedule-chat-editor.js";
+import type { ScheduleEdit } from "../lib/schedule-chat-editor.js";
 import {
   addDays,
   addDaysBySchedule,
@@ -55,6 +60,250 @@ const projectStatusTone: Record<ProjectStatus, string> = {
   completed: "bg-slate-100 text-slate-700 ring-slate-200",
   on_hold: "bg-amber-50 text-amber-700 ring-amber-200",
 };
+
+// ─── GanttTask → GeneratedSchedule アダプター ─────────────────────────────────
+
+function ganttTasksToGeneratedSchedule(
+  tasks: GanttTask[],
+  projectId: string,
+  projectName: string,
+): GeneratedSchedule {
+  const genTasks: GeneratedTask[] = tasks.map((t) => {
+    const startDate = t.startDate ? new Date(t.startDate) : new Date();
+    const endDate = t.endDate ? new Date(t.endDate) : new Date();
+    const durationDays = Math.max(1, Math.round((endDate.getTime() - startDate.getTime()) / 86400000) + 1);
+    return {
+      id: t.id,
+      name: t.name,
+      category: "other" as const,
+      startDate,
+      endDate,
+      durationDays,
+      dependencies: t.dependencies ?? [],
+      crewSize: 1,
+    };
+  });
+
+  const validDates = genTasks.filter((t) => !isNaN(t.startDate.getTime()));
+  const startDate = validDates.length > 0
+    ? validDates.reduce((min, t) => t.startDate < min ? t.startDate : min, validDates[0].startDate)
+    : new Date();
+  const endDate = validDates.length > 0
+    ? validDates.reduce((max, t) => t.endDate > max ? t.endDate : max, validDates[0].endDate)
+    : new Date();
+
+  return {
+    projectId,
+    projectName,
+    tasks: genTasks,
+    totalDays: Math.max(1, Math.round((endDate.getTime() - startDate.getTime()) / 86400000) + 1),
+    startDate,
+    endDate,
+    criticalPath: [],
+    generatedAt: new Date(),
+  };
+}
+
+// ─── リスクパネル（nPlan統合）────────────────────────────────────────────────
+
+type RiskPanelProps = {
+  schedule: GeneratedSchedule;
+  highlightedTaskIds: string[];
+  onHighlight: (ids: string[]) => void;
+};
+
+function RiskPanel({ schedule, highlightedTaskIds, onHighlight }: RiskPanelProps) {
+  const [running, setRunning] = useState(false);
+  const [result, setResult] = useState<ReturnType<typeof identifyDrivingPaths> | null>(null);
+  const [projectEndP50, setProjectEndP50] = useState<Date | null>(null);
+  const [projectEndP80, setProjectEndP80] = useState<Date | null>(null);
+  const [projectEndP95, setProjectEndP95] = useState<Date | null>(null);
+
+  const handleRun = useCallback(() => {
+    if (schedule.tasks.length === 0) return;
+    setRunning(true);
+    // setTimeout で非同期に実行してUIブロックを避ける
+    setTimeout(() => {
+      try {
+        const history = getDefaultPaceData();
+        const forecast = monteCarloSchedule(schedule, history, 1000);
+        const paths = identifyDrivingPaths(schedule, forecast, history, 3);
+        setResult(paths);
+        setProjectEndP50(forecast.projectEndP50);
+        setProjectEndP80(forecast.projectEndP80);
+        setProjectEndP95(forecast.projectEndP95);
+      } finally {
+        setRunning(false);
+      }
+    }, 0);
+  }, [schedule]);
+
+  const fmtDate = (d: Date) => `${d.getMonth() + 1}/${d.getDate()}`;
+  const pathColors = ["bg-red-500", "bg-amber-500", "bg-yellow-400"] as const;
+
+  return (
+    <div className="rounded-2xl bg-white/90 px-4 py-4 ring-1 ring-slate-200">
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div>
+          <p className="text-xs font-semibold tracking-[0.18em] text-slate-500">schedule-risk-forecaster</p>
+          <h2 className="mt-1 text-sm font-bold text-slate-900">リスク予測（モンテカルロ）</h2>
+        </div>
+        <button
+          type="button"
+          onClick={handleRun}
+          disabled={running || schedule.tasks.length === 0}
+          className="rounded-2xl bg-brand-600 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-brand-700 disabled:opacity-50 transition-colors"
+        >
+          {running ? "計算中..." : "リスク計算"}
+        </button>
+      </div>
+
+      {result && projectEndP50 && projectEndP80 && projectEndP95 && (
+        <div className="mt-3 space-y-3">
+          <div className="flex flex-wrap gap-2 text-xs font-semibold">
+            <span className="rounded-full bg-blue-50 px-3 py-1 text-blue-700">P50: {fmtDate(projectEndP50)}</span>
+            <span className="rounded-full bg-amber-50 px-3 py-1 text-amber-700">P80: {fmtDate(projectEndP80)}</span>
+            <span className="rounded-full bg-red-50 px-3 py-1 text-red-700">P95: {fmtDate(projectEndP95)}</span>
+          </div>
+          <div className="space-y-2">
+            {result.map((path, idx) => {
+              const isHighlighted = path.taskIds.every((id) => highlightedTaskIds.includes(id));
+              return (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() => onHighlight(isHighlighted ? [] : path.taskIds)}
+                  className={`w-full rounded-xl px-3 py-2 text-left text-xs transition-colors ${
+                    isHighlighted ? "bg-red-50 ring-2 ring-red-400" : "bg-slate-50 hover:bg-slate-100"
+                  }`}
+                >
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className={`inline-block h-2.5 w-2.5 rounded-full ${pathColors[idx] ?? "bg-slate-400"}`} />
+                    <span className="font-semibold text-slate-700">
+                      {Math.round(path.probability * 100)}% クリティカル / 平均 {path.expectedDelay.toFixed(1)}日遅延
+                    </span>
+                  </div>
+                  <p className="text-slate-500 leading-relaxed">{path.explanation}</p>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {!result && !running && (
+        <p className="mt-3 text-sm text-slate-500">「リスク計算」を押すとモンテカルロ1000回でクリティカルパスを分析します。</p>
+      )}
+    </div>
+  );
+}
+
+// ─── チャット編集パネル（PROCOLLA統合）───────────────────────────────────────
+
+type ChatEdit = { text: string; edits: ScheduleEdit[]; appliedAt: Date };
+
+type ChatEditorPanelProps = {
+  schedule: GeneratedSchedule;
+  onScheduleChange: (next: GeneratedSchedule) => void;
+};
+
+function ChatEditorPanel({ schedule, onScheduleChange }: ChatEditorPanelProps) {
+  const [input, setInput] = useState("");
+  const [history, setHistory] = useState<ChatEdit[]>([]);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleSubmit = useCallback((e: React.FormEvent | React.KeyboardEvent) => {
+    e.preventDefault();
+    const text = input.trim();
+    if (!text) return;
+    setError(null);
+    try {
+      const edits = parseScheduleCommand(text, schedule);
+      if (edits.length === 0) {
+        setError("コマンドを認識できませんでした。例: 「塗装を2日後ろ倒し」");
+        return;
+      }
+      const next = applyScheduleEdit(schedule, edits);
+      const entry: ChatEdit = { text, edits, appliedAt: new Date() };
+      setHistory((prev) => [entry, ...prev]);
+      onScheduleChange(next);
+      setInput("");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "適用エラー");
+    }
+  }, [input, schedule, onScheduleChange]);
+
+  const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      handleSubmit(e);
+    }
+  }, [handleSubmit]);
+
+  const handleUndo = useCallback(() => {
+    if (history.length === 0) return;
+    // undo: pop last entry and re-apply remaining from original
+    setHistory((prev) => prev.slice(1));
+    setError(null);
+  }, [history]);
+
+  const fmtTime = (d: Date) => `${d.getHours()}:${String(d.getMinutes()).padStart(2, "0")}`;
+
+  return (
+    <div className="rounded-2xl bg-white/90 px-4 py-4 ring-1 ring-slate-200">
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <p className="text-xs font-semibold tracking-[0.18em] text-slate-500">schedule-chat-editor</p>
+          <h2 className="mt-1 text-sm font-bold text-slate-900">自然言語で工程を編集</h2>
+        </div>
+        {history.length > 0 && (
+          <button
+            type="button"
+            onClick={handleUndo}
+            className="rounded-2xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition-colors"
+          >
+            ↩ Undo
+          </button>
+        )}
+      </div>
+
+      <form onSubmit={handleSubmit} className="mt-3 flex gap-2">
+        <input
+          type="text"
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={handleKeyDown}
+          placeholder="例: 塗装を2日後ろ倒し、清掃を前倒し"
+          className="flex-1 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500"
+        />
+        <button
+          type="submit"
+          disabled={!input.trim()}
+          className="rounded-xl bg-brand-600 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-brand-700 disabled:opacity-50 transition-colors"
+        >
+          適用
+        </button>
+      </form>
+
+      {error && (
+        <p className="mt-2 text-xs font-medium text-red-600">{error}</p>
+      )}
+
+      {history.length > 0 && (
+        <div className="mt-3 space-y-1.5 max-h-40 overflow-y-auto">
+          {history.map((entry, idx) => (
+            <div key={idx} className="rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-600">
+              <span className="text-slate-400 mr-2">{fmtTime(entry.appliedAt)}</span>
+              <span className="font-medium">{entry.text}</span>
+              <span className="ml-2 text-slate-400">({entry.edits.length}件適用)</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 
 function buildProjectPeriod(project: Project, tasks: GanttTask[]) {
   const rangeStart = [project.startDate, ...tasks.map((task) => task.startDate)].sort()[0] ?? project.startDate;
@@ -118,6 +367,10 @@ function GanttPageContent({ initialProjectId = null }: GanttPageProps) {
   const [rainDialogOpen, setRainDialogOpen] = useState(false);
   const [rainDate, setRainDate] = useState("");
   const [rainAffected, setRainAffected] = useState<Map<string, { startDate: string; endDate: string }> | null>(null);
+  const [showRiskPanel, setShowRiskPanel] = useState(false);
+  const [showChatPanel, setShowChatPanel] = useState(false);
+  const [riskHighlightIds, setRiskHighlightIds] = useState<string[]>([]);
+  const [chatSchedule, setChatSchedule] = useState<GeneratedSchedule | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const pinchRef = useRef<{
     distance: number;
@@ -891,6 +1144,38 @@ function GanttPageContent({ initialProjectId = null }: GanttPageProps) {
             >
               {pdfExporting ? "出力中..." : "PDF出力"}
             </button>
+            <button
+              type="button"
+              onClick={() => {
+                setShowRiskPanel((v) => !v);
+                if (!chatSchedule) {
+                  setChatSchedule(ganttTasksToGeneratedSchedule(selectedProjectTasks, selectedProject.id, selectedProject.name));
+                }
+              }}
+              className={`rounded-2xl px-4 py-3 text-sm font-semibold transition-colors ${
+                showRiskPanel
+                  ? "bg-red-600 text-white shadow-sm"
+                  : "bg-white text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50"
+              }`}
+            >
+              リスク予測
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setShowChatPanel((v) => !v);
+                if (!chatSchedule) {
+                  setChatSchedule(ganttTasksToGeneratedSchedule(selectedProjectTasks, selectedProject.id, selectedProject.name));
+                }
+              }}
+              className={`rounded-2xl px-4 py-3 text-sm font-semibold transition-colors ${
+                showChatPanel
+                  ? "bg-violet-600 text-white shadow-sm"
+                  : "bg-white text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50"
+              }`}
+            >
+              指示で編集
+            </button>
           </div>
         </div>
 
@@ -1032,6 +1317,24 @@ function GanttPageContent({ initialProjectId = null }: GanttPageProps) {
           onTimelineTouchMove={handleTimelineTouchMove}
           onTimelineTouchEnd={handleTimelineTouchEnd}
         />
+      )}
+
+      {(showRiskPanel || showChatPanel) && chatSchedule && (
+        <div className="mt-4 grid gap-3 lg:grid-cols-2">
+          {showRiskPanel && (
+            <RiskPanel
+              schedule={chatSchedule}
+              highlightedTaskIds={riskHighlightIds}
+              onHighlight={setRiskHighlightIds}
+            />
+          )}
+          {showChatPanel && (
+            <ChatEditorPanel
+              schedule={chatSchedule}
+              onScheduleChange={setChatSchedule}
+            />
+          )}
+        </div>
       )}
 
       <button
