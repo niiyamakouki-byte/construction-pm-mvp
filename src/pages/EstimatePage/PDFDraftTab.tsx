@@ -92,6 +92,16 @@ export function PDFDraftTab({ costMaster, onSave }: Props) {
         return;
       }
 
+      // Required field validation — guard against runtime crashes from incomplete DrawingModel
+      if (!Array.isArray(model.texts)) {
+        setError("図面データが不完全です（textsフィールドがありません）");
+        return;
+      }
+      if (typeof model.page_index !== "number") {
+        setError("図面データが不完全です（page_indexフィールドがありません）");
+        return;
+      }
+
       const elements = classifyInteriorElements(model);
       if (elements.length === 0) {
         setError("内装要素が検出されませんでした（図面データを確認してください）");
