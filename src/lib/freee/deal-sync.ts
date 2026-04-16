@@ -108,11 +108,58 @@ export async function syncProjectToFreee(
 
 /**
  * 複数案件を一括同期する。
+ * 重複チェックの listDeals を 1 回だけ呼んで使い回すことで N+1 問題を回避する。
  */
 export async function syncProjectsToFreee(
   client: FreeeClient,
   companyId: number,
   projects: Project[],
 ): Promise<SyncResult[]> {
-  return Promise.all(projects.map((p) => syncProjectToFreee(client, companyId, p)));
+  if (!client.isConfigured()) {
+    return projects.map((p) => ({
+      projectId: p.id,
+      status: "skipped" as const,
+      message: "FREEE_ACCESS_TOKEN が未設定のためスキップ",
+    }));
+  }
+
+  let existingByRef: Map<string, { id: number }>;
+  try {
+    const existing = await client.listDeals(companyId);
+    existingByRef = new Map(
+      existing
+        .filter((d): d is typeof d & { ref_number: string } => !!d.ref_number)
+        .map((d) => [d.ref_number, { id: d.id }]),
+    );
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    return projects.map((p) => ({ projectId: p.id, status: "error" as const, message }));
+  }
+
+  return Promise.all(
+    projects.map(async (project): Promise<SyncResult> => {
+      const duplicate = existingByRef.get(project.id);
+      if (duplicate) {
+        return {
+          projectId: project.id,
+          status: "already_synced",
+          freeeDealsId: duplicate.id,
+          message: `freee deal ${duplicate.id} と照合済み`,
+        };
+      }
+
+      try {
+        const created = await client.createDeal(companyId, projectToDealInput(project));
+        return {
+          projectId: project.id,
+          status: "created",
+          freeeDealsId: created.id,
+          message: `freee deal ${created.id} を作成`,
+        };
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        return { projectId: project.id, status: "error", message };
+      }
+    }),
+  );
 }

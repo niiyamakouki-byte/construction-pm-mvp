@@ -70,8 +70,13 @@ export class FreeeClient {
     });
 
     if (!response.ok) {
+      // Avoid leaking response body (may contain token fragments / account info).
+      // Log full body to stderr for debugging, throw sanitized message to caller.
       const text = await response.text().catch(() => "");
-      throw new Error(`freee API error ${response.status}: ${text}`);
+      if (text && process.env["FREEE_DEBUG"] === "1") {
+        console.error(`[freee] ${method} ${path} ${response.status}: ${text}`);
+      }
+      throw new Error(`freee API error ${response.status}`);
     }
 
     return response.json() as Promise<T>;

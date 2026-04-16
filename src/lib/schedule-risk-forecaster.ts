@@ -32,12 +32,27 @@ export interface TaskPath {
   explanation: string;
 }
 
+// ─── Seeded PRNG (Mulberry32) — reproducible Monte Carlo runs ────────────────
+
+type Rng = () => number;
+
+function mulberry32(seed: number): Rng {
+  let a = seed >>> 0;
+  return () => {
+    a = (a + 0x6d2b79f5) >>> 0;
+    let t = a;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
 // ─── Box-Muller normal sample ─────────────────────────────────────────────────
 
-function sampleNormal(): number {
+function sampleNormal(rng: Rng = Math.random): number {
   // Box-Muller transform
-  const u1 = Math.random();
-  const u2 = Math.random();
+  const u1 = rng();
+  const u2 = rng();
   return Math.sqrt(-2 * Math.log(u1 + 1e-300)) * Math.cos(2 * Math.PI * u2);
 }
 
@@ -184,7 +199,9 @@ export function monteCarloSchedule(
   schedule: GeneratedSchedule,
   history: PaceData[],
   iterations = 1000,
+  seed?: number,
 ): ScheduleForecast {
+  const rng: Rng = seed !== undefined ? mulberry32(seed) : Math.random;
   const taskForecasts = new Map<string, DurationDistribution>();
   for (const task of schedule.tasks) {
     taskForecasts.set(task.id, forecastTaskDuration(task, history));
@@ -207,7 +224,7 @@ export function monteCarloSchedule(
       const sigma2 = Math.log(1 + (stdDev / mean) ** 2);
       const mu = Math.log(mean) - sigma2 / 2;
       const sigma = Math.sqrt(sigma2);
-      const sample = Math.exp(mu + sigma * sampleNormal());
+      const sample = Math.exp(mu + sigma * sampleNormal(rng));
       durationOverrides.set(task.id, Math.max(1, sample));
     }
 
@@ -250,7 +267,9 @@ export function identifyDrivingPaths(
   forecast: ScheduleForecast,
   history: PaceData[],
   topN = 3,
+  seed?: number,
 ): TaskPath[] {
+  const rng: Rng = seed !== undefined ? mulberry32(seed) : Math.random;
   const iterations = forecast.iterations;
   // key = JSON of task ID array (chain), value = {count, totalDelay}
   const pathCounts = new Map<string, { ids: string[]; count: number; totalDelay: number }>();
@@ -269,7 +288,7 @@ export function identifyDrivingPaths(
       const sigma2 = Math.log(1 + (stdDev / mean) ** 2);
       const mu = Math.log(mean) - sigma2 / 2;
       const sigma = Math.sqrt(sigma2);
-      const sample = Math.exp(mu + sigma * sampleNormal());
+      const sample = Math.exp(mu + sigma * sampleNormal(rng));
       durationOverrides.set(task.id, Math.max(1, sample));
     }
 
