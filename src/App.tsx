@@ -47,6 +47,7 @@ import { useHashRoute, navigate } from "./hooks/useHashRouter.js";
 import { useTheme } from "./hooks/useTheme.js";
 import { ThemeToggle } from "./components/ThemeToggle.js";
 import { MobileNav } from "./components/MobileNav.js";
+import { Navigation } from "./components/Navigation.js";
 import { NotificationBanner } from "./components/NotificationBanner.js";
 import { readLastProjectId } from "./lib/last-project.js";
 
@@ -124,7 +125,7 @@ function AppShell() {
       icon: "☰",
       path: "/notifications",
       matchRoute: (currentRoute) =>
-        ["/today", "/invoice", "/estimate", "/contractors", "/notifications", "/help", "/node-schedule", "/cost-management", "/weather", "/safety", "/procurement", "/orders", "/crm", "/reports", "/invoices"].includes(currentRoute) || currentRoute.startsWith("/reports/"),
+        ["/today", "/invoice", "/estimate", "/contractors", "/notifications", "/help", "/node-schedule", "/cost-management", "/weather", "/safety", "/procurement", "/orders", "/crm", "/reports", "/invoices", "/cross-project-gantt", "/progress-review"].includes(currentRoute) || currentRoute.startsWith("/reports/"),
     },
   ];
 
@@ -165,6 +166,8 @@ function AppShell() {
       path: "/estimate",
       matchRoute: (currentRoute) => currentRoute === "/estimate",
     },
+    { key: "cross-gantt", label: "全案件ガント", icon: "📅", path: "/cross-project-gantt", matchRoute: (currentRoute) => currentRoute === "/cross-project-gantt" },
+    { key: "progress-review", label: "進捗レビュー", icon: "📸", path: "/progress-review", matchRoute: (currentRoute) => currentRoute === "/progress-review" },
     { key: "safety", label: "安全", icon: "🦺", path: "/safety", matchRoute: (currentRoute) => currentRoute === "/safety" },
     { key: "procurement", label: "発注", icon: "📦", path: "/procurement", matchRoute: (currentRoute) => currentRoute === "/procurement" },
     { key: "orders", label: "受発注", icon: "🗒", path: "/orders", matchRoute: (currentRoute) => currentRoute === "/orders" },
@@ -430,17 +433,37 @@ function AppShell() {
 
         <header className="sticky top-0 z-30 border-b border-white/50 bg-white/90 text-slate-900 backdrop-blur">
           <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
-            <button
-              onClick={() => navigate("/app")}
-              className="flex items-center gap-3"
-              aria-label="GenbaHub ホームへ"
-            >
-              <LogoIcon />
-              <div className="text-left">
-                <span className="block text-lg font-bold tracking-tight">GenbaHub</span>
-                <span className="block text-[11px] text-slate-500">現場工程を最短で開く</span>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => navigate("/app")}
+                className="flex items-center gap-3"
+                aria-label="GenbaHub ホームへ"
+              >
+                <LogoIcon />
+                <div className="text-left">
+                  <span className="block text-lg font-bold tracking-tight">GenbaHub</span>
+                  <span className="block text-[11px] text-slate-500">現場工程を最短で開く</span>
+                </div>
+              </button>
+              <div className="relative hidden md:block">
+                <Navigation
+                  items={[
+                    { key: "today", label: "ダッシュボード", icon: "📊", path: "/today", active: route === "/today" },
+                    { key: "app", label: "案件一覧", icon: "📋", path: "/app", active: route === "/app" || route === "/" || route === "" },
+                    { key: "cross-gantt", label: "ガントチャート", icon: "📅", path: "/cross-project-gantt", active: route === "/cross-project-gantt" },
+                    { key: "tasks", label: "タスク", icon: "✅", path: "/tasks", active: route === "/tasks" },
+                    { key: "estimate", label: "見積", icon: "💰", path: "/estimate", active: route === "/estimate" },
+                    { key: "progress-review", label: "進捗レビュー", icon: "📸", path: "/progress-review", active: route === "/progress-review" },
+                    { key: "safety", label: "安全管理", icon: "🏗️", path: "/safety", active: route === "/safety" },
+                    { key: "crm", label: "CRM", icon: "👥", path: "/crm", active: route === "/crm" },
+                    { key: "contractors", label: "協力会社", icon: "🤝", path: "/contractors", active: route === "/contractors" },
+                    { key: "invoice", label: "請求書", icon: "🧾", path: "/invoice", active: route === "/invoice" },
+                    { key: "reports", label: "レポート", icon: "📈", path: "/reports", active: route === "/reports" || route.startsWith("/reports/") },
+                  ]}
+                  onNavigate={navigate}
+                />
               </div>
-            </button>
+            </div>
             <div className="flex items-center gap-2">
               <ThemeToggle theme={theme} onToggle={cycleTheme} />
               <MobileNav
