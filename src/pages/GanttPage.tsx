@@ -369,6 +369,19 @@ function GanttPageContent({ initialProjectId = null }: GanttPageProps) {
   const [rainAffected, setRainAffected] = useState<Map<string, { startDate: string; endDate: string }> | null>(null);
   const [showRiskPanel, setShowRiskPanel] = useState(false);
   const [showChatPanel, setShowChatPanel] = useState(false);
+
+  // ─── 工種フィルタ ──────────────────────────────────────────────────────────
+  const TRADE_CATEGORIES = ["painting", "framing", "electrical", "plumbing", "finishing", "other"] as const;
+  type TradeCategory = typeof TRADE_CATEGORIES[number];
+  const TRADE_CATEGORY_LABELS: Record<TradeCategory, string> = {
+    painting: "塗装",
+    framing: "軽鉄",
+    electrical: "電気",
+    plumbing: "配管",
+    finishing: "仕上",
+    other: "その他",
+  };
+  const [activeTrades, setActiveTrades] = useState<Set<TradeCategory>>(new Set(TRADE_CATEGORIES));
   const [riskHighlightIds, setRiskHighlightIds] = useState<string[]>([]);
   const [chatSchedule, setChatSchedule] = useState<GeneratedSchedule | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -473,6 +486,21 @@ function GanttPageContent({ initialProjectId = null }: GanttPageProps) {
   const selectedProjectTasks = useMemo(
     () => ganttTasks.filter((task) => task.projectId === selectedProjectId),
     [ganttTasks, selectedProjectId],
+  );
+
+  const resolveTradeCategory = useCallback((task: GanttTask): TradeCategory => {
+    const raw = (task.majorCategory ?? "").toLowerCase();
+    if (raw.includes("paint") || raw.includes("塗装")) return "painting";
+    if (raw.includes("fram") || raw.includes("軽鉄") || raw.includes("下地")) return "framing";
+    if (raw.includes("elect") || raw.includes("電気") || raw.includes("配線")) return "electrical";
+    if (raw.includes("plumb") || raw.includes("配管") || raw.includes("給排水")) return "plumbing";
+    if (raw.includes("finish") || raw.includes("仕上") || raw.includes("クロス") || raw.includes("床")) return "finishing";
+    return "other";
+  }, []);
+
+  const filteredProjectTasks = useMemo(
+    () => selectedProjectTasks.filter((task) => activeTrades.has(resolveTradeCategory(task))),
+    [selectedProjectTasks, activeTrades, resolveTradeCategory],
   );
 
   const selectedProjectPeriod = useMemo(() => {
@@ -1283,6 +1311,49 @@ function GanttPageContent({ initialProjectId = null }: GanttPageProps) {
             })}
           </div>
         </div>
+
+        {/* 工種フィルタ */}
+        <div className="mt-3 flex flex-wrap items-center gap-2" aria-label="工種フィルタ">
+          <button
+            type="button"
+            onClick={() => setActiveTrades(new Set(TRADE_CATEGORIES))}
+            className="rounded-full bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50 transition-colors"
+          >
+            全表示
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTrades(new Set())}
+            className="rounded-full bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50 transition-colors"
+          >
+            全非表示
+          </button>
+          {TRADE_CATEGORIES.map((cat) => {
+            const on = activeTrades.has(cat);
+            return (
+              <button
+                key={cat}
+                type="button"
+                aria-pressed={on}
+                onClick={() =>
+                  setActiveTrades((prev) => {
+                    const next = new Set(prev);
+                    if (next.has(cat)) next.delete(cat);
+                    else next.add(cat);
+                    return next;
+                  })
+                }
+                className={`rounded-full px-3 py-1.5 text-xs font-semibold transition-colors ${
+                  on
+                    ? "bg-brand-600 text-white shadow-sm"
+                    : "bg-white text-slate-400 ring-1 ring-slate-200"
+                }`}
+              >
+                {TRADE_CATEGORY_LABELS[cat]}
+              </button>
+            );
+          })}
+        </div>
       </section>
 
       {selectedProjectTasks.length === 0 || !chartLayout ? (
@@ -1294,8 +1365,8 @@ function GanttPageContent({ initialProjectId = null }: GanttPageProps) {
         />
       ) : (
         <GanttChart
-          ganttTasks={selectedProjectTasks}
-          visibleRows={selectedProjectTasks.map((task) => ({ type: "task" as const, task }))}
+          ganttTasks={filteredProjectTasks}
+          visibleRows={filteredProjectTasks.map((task) => ({ type: "task" as const, task }))}
           chartLayout={chartLayout}
           dragState={dragState}
           dragRef={dragRef}

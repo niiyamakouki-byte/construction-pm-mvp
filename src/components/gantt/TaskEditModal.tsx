@@ -162,6 +162,24 @@ export function TaskEditModal({
             </p>
           )}
 
+          {taskDetail.task.majorCategory && (
+            <div className="flex flex-col gap-1.5">
+              <span className="text-sm font-medium text-slate-600">工種カテゴリ</span>
+              <div className="flex flex-wrap gap-1.5">
+                {[taskDetail.task.majorCategory, taskDetail.task.middleCategory, taskDetail.task.minorCategory]
+                  .filter(Boolean)
+                  .map((cat) => (
+                    <span
+                      key={cat}
+                      className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700"
+                    >
+                      {cat}
+                    </span>
+                  ))}
+              </div>
+            </div>
+          )}
+
           {taskDetail.task.dependencies && taskDetail.task.dependencies.length > 0 && (
             <div className="flex flex-col gap-1.5">
               <span className="text-sm font-medium text-slate-600">依存関係タイプ</span>
