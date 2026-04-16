@@ -503,6 +503,21 @@ function AppShell() {
                   ) : null}
                 </div>
               </nav>
+
+              {user ? (
+                <div className="hidden items-center gap-2 md:flex">
+                  <span className="max-w-[160px] truncate text-xs text-slate-500" title={user.email}>
+                    {user.email}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => void signOut()}
+                    className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50"
+                  >
+                    ログアウト
+                  </button>
+                </div>
+              ) : null}
             </div>
           </div>
         </header>
