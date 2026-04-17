@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { getSupabaseClient, hasSupabaseEnv } from "../infra/supabase-client.js";
 import { navigate } from "../hooks/useHashRouter.js";
+import { appendAuditLog } from "../lib/audit-log.js";
 
 type User = {
   id: string;
@@ -68,6 +69,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           if (event === "SIGNED_IN" && newSession?.user) {
             const confirmedAt = (newSession.user as { email_confirmed_at?: string | null }).email_confirmed_at;
             if (confirmedAt == null) return;
+            appendAuditLog({ type: "login", userId: newSession.user.id, email: newSession.user.email, ts: new Date().toISOString() });
             const hash = window.location.hash.replace("#", "") || "/";
             if (hash === "/" || hash === "" || hash === "/login" || hash === "/signup") {
               navigate("/app");
@@ -95,6 +97,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signOut = async () => {
     if (!hasSupabaseEnv()) return;
+    if (session?.user) {
+      appendAuditLog({ type: "logout", userId: session.user.id, email: session.user.email, ts: new Date().toISOString() });
+    }
     const client = await getSupabaseClient();
     await client.auth.signOut();
     setSession(null);

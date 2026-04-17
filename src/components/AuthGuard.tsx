@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState, type ReactNode } from "react"
 import { useAuth } from "../contexts/AuthContext.js";
 import { navigate } from "../hooks/useHashRouter.js";
 import { hasSupabaseEnv } from "../infra/supabase-client.js";
+import { appendAuditLog } from "../lib/audit-log.js";
 
 declare global {
   interface Window {
@@ -27,8 +28,11 @@ export function AuthGuard({ children }: Props) {
     setShowWarning(false);
     timerRef.current = setTimeout(() => {
       setShowWarning(true);
+      if (session?.user) {
+        appendAuditLog({ type: "timeout", userId: session.user.id, email: session.user.email, ts: new Date().toISOString() });
+      }
     }, TIMEOUT_MS);
-  }, []);
+  }, [session]);
 
   // E2E test bypass: only effective when explicitly set on window by test runner (localhost only)
   const isE2EBypass = typeof window !== "undefined" && window.__E2E_BYPASS_AUTH__ === true;
