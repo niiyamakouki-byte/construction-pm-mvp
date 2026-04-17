@@ -73,7 +73,8 @@ function toWallGeometry(line: PdfLine, scaleMmPerPt: number): WallGeometry {
   const s = scaleMmPerPt;
   const startMm: Point = { x: line.start.x * s, y: line.start.y * s };
   const endMm: Point = { x: line.end.x * s, y: line.end.y * s };
-  const lengthMm = lineLengthMm(line);
+  // Euclidean length — handles diagonal walls at any angle (Math.hypot)
+  const lengthMm = Math.hypot(endMm.x - startMm.x, endMm.y - startMm.y);
   const thicknessMm = (line.thickness ?? 1) * s;
   return { startMm, endMm, lengthMm, thicknessMm };
 }

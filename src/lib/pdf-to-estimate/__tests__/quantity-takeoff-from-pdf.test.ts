@@ -17,6 +17,18 @@ function wallElement(lengthMm: number, confidence = 0.8): InteriorElement {
   };
 }
 
+/** 任意の始点・終点から壁要素を生成（斜め壁テスト用）。lengthMm は Euclidean 距離で自動計算 */
+function wallElementFromPoints(
+  x1: number, y1: number, x2: number, y2: number, confidence = 0.8,
+): InteriorElement {
+  const lengthMm = Math.hypot(x2 - x1, y2 - y1);
+  return {
+    kind: "wall",
+    geometry: { startMm: { x: x1, y: y1 }, endMm: { x: x2, y: y2 }, lengthMm, thicknessMm: 100 },
+    inferredFrom: { pdfPage: 0, confidence },
+  };
+}
+
 function doorElement(widthMm = 800, confidence = 0.75): InteriorElement {
   return {
     kind: "opening",
@@ -145,5 +157,39 @@ describe("takeoffFromInterior", () => {
       expect(item.confidence).toBeGreaterThanOrEqual(0);
       expect(item.confidence).toBeLessThanOrEqual(1);
     }
+  });
+
+  // ─── 斜め壁テスト ──────────────────────────────────────────────────
+
+  it("45°斜め壁の周長が Euclidean 距離で正しく算出される（台形部屋）", () => {
+    // 台形部屋: 底辺6m(水平) + 右辺4m(垂直) + 斜辺(6000,4000→0,0) + 左辺4m(垂直)
+    // 斜辺: hypot(6000, 4000) ≈ 7211.1mm
+    const diagonal = Math.hypot(6000, 4000); // ≈ 7211.1mm
+    const elements: InteriorElement[] = [
+      wallElementFromPoints(0, 0, 6000, 0),        // 底辺 6m
+      wallElementFromPoints(6000, 0, 6000, 4000),  // 右辺 4m
+      wallElementFromPoints(6000, 4000, 0, 0),     // 斜辺 ≈ 7211.1mm
+      wallElementFromPoints(0, 4000, 0, 0),        // 左辺 4m
+    ];
+    const takeoff = takeoffFromInterior(elements, { defaultCeilingHeight: 2400 });
+    const wallItem = takeoff.items.find((i) => i.category === "壁");
+    expect(wallItem).toBeDefined();
+    const expectedPerimeterM = (6000 + 4000 + diagonal + 4000) / 1000;
+    const expectedAreaSqM = expectedPerimeterM * 2.4;
+    expect(wallItem!.quantity).toBeCloseTo(expectedAreaSqM, 1);
+  });
+
+  it("直交矩形は wallElement と同じ結果（回帰）", () => {
+    // 3m×4m 矩形: 周長14m → 壁面積14×2.4=33.6㎡
+    const elements: InteriorElement[] = [
+      wallElement(3000),  // 上辺
+      wallElement(4000),  // 右辺
+      wallElement(3000),  // 下辺
+      wallElement(4000),  // 左辺
+    ];
+    const takeoff = takeoffFromInterior(elements, { defaultCeilingHeight: 2400 });
+    const wallItem = takeoff.items.find((i) => i.category === "壁");
+    expect(wallItem).toBeDefined();
+    expect(wallItem!.quantity).toBeCloseTo(33.6, 1);
   });
 });

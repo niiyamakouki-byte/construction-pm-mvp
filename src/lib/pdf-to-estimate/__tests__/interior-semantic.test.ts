@@ -58,13 +58,15 @@ describe("classifyInteriorElements", () => {
     expect(walls.length).toBe(1);
   });
 
-  it("wall 要素の lengthMm が正しい", () => {
-    const drawing = makeDrawing({ lines: [wallLine({ length_mm: 3000 })] });
+  it("wall 要素の lengthMm が正しい（Euclidean距離ベース）", () => {
+    // wallLine() default: start={x:0,y:0}, end={x:2000,y:0}, scale=0.3528
+    // endMm.x = 2000 * 0.3528 = 705.6mm → hypot(705.6, 0) = 705.6mm
+    const drawing = makeDrawing({ lines: [wallLine()] });
     const elements = classifyInteriorElements(drawing);
     const wall = elements.find((e) => e.kind === "wall");
     expect(wall).toBeDefined();
     if (wall?.kind === "wall") {
-      expect(wall.geometry.lengthMm).toBe(3000);
+      expect(wall.geometry.lengthMm).toBeCloseTo(2000 * 0.3528, 1);
     }
   });
 
