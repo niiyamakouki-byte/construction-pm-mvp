@@ -1,6 +1,6 @@
 /**
- * CRMRepository — Phase B
- * 同期メソッドはインメモリ（既存互換）。
+ * CRMRepository — Phase C
+ * async メソッドのみ（sync メソッド削除済み）。
  * async メソッドは VITE_USE_SUPABASE=true のとき Supabase へ、
  * それ以外はインメモリへルーティングする。
  *
@@ -105,56 +105,14 @@ export class CRMRepository {
     }
   }
 
-  // ── 同期メソッド（既存互換 / インメモリのみ）─────────────────────────────
-
-  /** @deprecated Use getCustomerAsync instead. Will be removed in Phase C cleanup. */
-  getCustomer(id: string): CustomerRecord | null {
-    return this.customers.get(id) ?? null;
-  }
-
-  /** @deprecated Use listCustomersAsync instead. Will be removed in Phase C cleanup. */
-  listCustomers(): CustomerRecord[] {
-    return [...this.customers.values()];
-  }
-
-  /** @deprecated Use saveCustomerAsync instead. Will be removed in Phase C cleanup. */
-  saveCustomer(customer: CustomerRecord): void {
-    this.customers.set(customer.id, { ...customer });
-  }
-
-  /** @deprecated Use deleteCustomerAsync instead. Will be removed in Phase C cleanup. */
-  deleteCustomer(id: string): boolean {
-    return this.customers.delete(id);
-  }
-
-  /** @deprecated Use getDealAsync instead. Will be removed in Phase C cleanup. */
-  getDeal(id: string): DealRecord | null {
-    return this.deals.get(id) ?? null;
-  }
-
-  /** @deprecated Use listDealsAsync instead. Will be removed in Phase C cleanup. */
-  listDeals(): DealRecord[] {
-    return [...this.deals.values()];
-  }
-
-  /** @deprecated Use saveDealAsync instead. Will be removed in Phase C cleanup. */
-  saveDeal(deal: DealRecord): void {
-    this.deals.set(deal.id, { ...deal });
-  }
-
-  /** @deprecated Use deleteDealAsync instead. Will be removed in Phase C cleanup. */
-  deleteDeal(id: string): boolean {
-    return this.deals.delete(id);
-  }
-
-  // ── async メソッド（Phase B: Supabase or InMemory）────────────────────
+  // ── async メソッド（Phase C: Supabase or InMemory）────────────────────
 
   async getCustomerAsync(id: string): Promise<CustomerRecord | null> {
     if (this.supabaseCustomers) {
       const row = await this.supabaseCustomers.getById(id);
       return row ? rowToCustomer(row) : null;
     }
-    return this.getCustomer(id);
+    return this.customers.get(id) ?? null;
   }
 
   async listCustomersAsync(): Promise<CustomerRecord[]> {
@@ -162,7 +120,7 @@ export class CRMRepository {
       const rows = await this.supabaseCustomers.getAll();
       return rows.map(rowToCustomer);
     }
-    return this.listCustomers();
+    return [...this.customers.values()];
   }
 
   async saveCustomerAsync(customer: CustomerRecord): Promise<void> {
@@ -178,7 +136,7 @@ export class CRMRepository {
       }
       return;
     }
-    this.saveCustomer(customer);
+    this.customers.set(customer.id, { ...customer });
   }
 
   async deleteCustomerAsync(id: string): Promise<boolean> {
@@ -190,24 +148,24 @@ export class CRMRepository {
         return false;
       }
     }
-    return this.deleteCustomer(id);
+    return this.customers.delete(id);
   }
 
   // deals は Phase C 待ち → 常に InMemory
 
   async getDealAsync(id: string): Promise<DealRecord | null> {
-    return this.getDeal(id);
+    return this.deals.get(id) ?? null;
   }
 
   async listDealsAsync(): Promise<DealRecord[]> {
-    return this.listDeals();
+    return [...this.deals.values()];
   }
 
   async saveDealAsync(deal: DealRecord): Promise<void> {
-    this.saveDeal(deal);
+    this.deals.set(deal.id, { ...deal });
   }
 
   async deleteDealAsync(id: string): Promise<boolean> {
-    return this.deleteDeal(id);
+    return this.deals.delete(id);
   }
 }

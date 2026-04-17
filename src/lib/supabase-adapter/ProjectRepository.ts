@@ -1,6 +1,6 @@
 /**
- * ProjectRepository — Phase B
- * 同期メソッドはインメモリ（既存互換）。
+ * ProjectRepository — Phase C
+ * async メソッドのみ（sync メソッド削除済み）。
  * async メソッドは VITE_USE_SUPABASE=true のとき Supabase へ、
  * それ以外はインメモリへルーティングする。
  */
@@ -77,36 +77,14 @@ export class ProjectRepository {
     this.supabase = enabled ? new SupabaseRepository<ProjectRow>('projects') : null;
   }
 
-  // ── 同期メソッド（既存互換 / インメモリのみ）─────────────────────────────
-
-  /** @deprecated Use getAsync instead. Will be removed in Phase C cleanup. */
-  get(id: string): StoreProject | null {
-    return this.store.get(id) ?? null;
-  }
-
-  /** @deprecated Use listAsync instead. Will be removed in Phase C cleanup. */
-  list(): StoreProject[] {
-    return [...this.store.values()];
-  }
-
-  /** @deprecated Use saveAsync instead. Will be removed in Phase C cleanup. */
-  save(project: StoreProject): void {
-    this.store.set(project.id, { ...project });
-  }
-
-  /** @deprecated Use deleteAsync instead. Will be removed in Phase C cleanup. */
-  delete(id: string): boolean {
-    return this.store.delete(id);
-  }
-
-  // ── async メソッド（Phase B: Supabase or InMemory）────────────────────
+  // ── async メソッド（Phase C: Supabase or InMemory）────────────────────
 
   async getAsync(id: string): Promise<StoreProject | null> {
     if (this.supabase) {
       const row = await this.supabase.getById(id);
       return row ? rowToProject(row) : null;
     }
-    return this.get(id);
+    return this.store.get(id) ?? null;
   }
 
   async listAsync(): Promise<StoreProject[]> {
@@ -114,7 +92,7 @@ export class ProjectRepository {
       const rows = await this.supabase.getAll();
       return rows.map(rowToProject);
     }
-    return this.list();
+    return [...this.store.values()];
   }
 
   async saveAsync(project: StoreProject): Promise<void> {
@@ -132,7 +110,7 @@ export class ProjectRepository {
       }
       return;
     }
-    this.save(project);
+    this.store.set(project.id, { ...project });
   }
 
   async deleteAsync(id: string): Promise<boolean> {
@@ -144,6 +122,6 @@ export class ProjectRepository {
         return false;
       }
     }
-    return this.delete(id);
+    return this.store.delete(id);
   }
 }

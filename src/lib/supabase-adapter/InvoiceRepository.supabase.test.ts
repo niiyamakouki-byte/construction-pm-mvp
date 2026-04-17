@@ -80,7 +80,7 @@ describe('InvoiceRepository Phase B — Supabase routing', () => {
   it('useSupabase=false で async はインメモリ', async () => {
     const repo = new InvoiceRepository(false);
     const inv = makeInvoice('inv-99');
-    repo.save(inv);
+    await repo.saveAsync(inv);
     const found = await repo.getAsync('inv-99');
     expect(found?.vendorName).toBe('山田工務店');
     expect(mockFrom).not.toHaveBeenCalled();
@@ -88,7 +88,7 @@ describe('InvoiceRepository Phase B — Supabase routing', () => {
 
   it('useSupabase=false で deleteAsync は同期 delete と同じ挙動', async () => {
     const repo = new InvoiceRepository(false);
-    repo.save(makeInvoice());
+    await repo.saveAsync(makeInvoice());
     expect(await repo.deleteAsync('inv-1')).toBe(true);
     expect(await repo.deleteAsync('ghost')).toBe(false);
     expect(mockFrom).not.toHaveBeenCalled();

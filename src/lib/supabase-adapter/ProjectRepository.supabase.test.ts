@@ -94,7 +94,7 @@ describe('ProjectRepository Phase B — Supabase routing', () => {
 
   it('useSupabase=false で deleteAsync は同期 delete と同じ挙動', async () => {
     const repo = new ProjectRepository(false);
-    repo.save(makeProject());
+    await repo.saveAsync(makeProject());
     expect(await repo.deleteAsync('p-1')).toBe(true);
     expect(await repo.deleteAsync('ghost')).toBe(false);
     expect(mockFrom).not.toHaveBeenCalled();

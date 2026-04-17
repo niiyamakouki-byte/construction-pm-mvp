@@ -1,6 +1,6 @@
 /**
- * InvoiceRepository — Phase B
- * 同期メソッドはインメモリ（既存互換）。
+ * InvoiceRepository — Phase C
+ * async メソッドのみ（sync メソッド削除済み）。
  * async メソッドは VITE_USE_SUPABASE=true のとき Supabase へ、
  * それ以外はインメモリへルーティングする。
  *
@@ -95,43 +95,14 @@ export class InvoiceRepository {
     this.supabase = enabled ? new SupabaseRepository<InvoiceRow>('invoices') : null;
   }
 
-  // ── 同期メソッド（既存互換 / インメモリのみ）─────────────────────────────
-
-  /** @deprecated Use getAsync instead. Will be removed in Phase C cleanup. */
-  get(id: string): InvoiceRecord | null {
-    return this.store.get(id) ?? null;
-  }
-
-  /** @deprecated Use listAsync instead. Will be removed in Phase C cleanup. */
-  list(): InvoiceRecord[] {
-    return [...this.store.values()];
-  }
-
-  /** @deprecated Use addAsync instead. Will be removed in Phase C cleanup. */
-  add(data: Omit<InvoiceRecord, 'id'>): InvoiceRecord {
-    const invoice: InvoiceRecord = { ...data, id: `inv-${this.nextId++}` };
-    this.store.set(invoice.id, invoice);
-    return invoice;
-  }
-
-  /** @deprecated Use saveAsync instead. Will be removed in Phase C cleanup. */
-  save(invoice: InvoiceRecord): void {
-    this.store.set(invoice.id, { ...invoice });
-  }
-
-  /** @deprecated Use deleteAsync instead. Will be removed in Phase C cleanup. */
-  delete(id: string): boolean {
-    return this.store.delete(id);
-  }
-
-  // ── async メソッド（Phase B: Supabase or InMemory）────────────────────
+  // ── async メソッド（Phase C: Supabase or InMemory）────────────────────
 
   async getAsync(id: string): Promise<InvoiceRecord | null> {
     if (this.supabase) {
       const row = await this.supabase.getById(id);
       return row ? rowToInvoice(row) : null;
     }
-    return this.get(id);
+    return this.store.get(id) ?? null;
   }
 
   async listAsync(): Promise<InvoiceRecord[]> {
@@ -139,7 +110,7 @@ export class InvoiceRepository {
       const rows = await this.supabase.getAll();
       return rows.map(rowToInvoice);
     }
-    return this.list();
+    return [...this.store.values()];
   }
 
   async addAsync(data: Omit<InvoiceRecord, 'id'>): Promise<InvoiceRecord> {
@@ -152,7 +123,9 @@ export class InvoiceRepository {
       const created = await this.supabase.create({ ...rest, id: tempId } as unknown as Omit<InvoiceRow, 'id'>);
       return rowToInvoice(created);
     }
-    return this.add(data);
+    const invoice: InvoiceRecord = { ...data, id: `inv-${this.nextId++}` };
+    this.store.set(invoice.id, invoice);
+    return invoice;
   }
 
   async saveAsync(invoice: InvoiceRecord): Promise<void> {
@@ -168,7 +141,7 @@ export class InvoiceRepository {
       }
       return;
     }
-    this.save(invoice);
+    this.store.set(invoice.id, { ...invoice });
   }
 
   async deleteAsync(id: string): Promise<boolean> {
@@ -180,6 +153,6 @@ export class InvoiceRepository {
         return false;
       }
     }
-    return this.delete(id);
+    return this.store.delete(id);
   }
 }

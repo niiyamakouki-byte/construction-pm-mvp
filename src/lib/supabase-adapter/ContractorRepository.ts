@@ -1,6 +1,6 @@
 /**
- * ContractorRepository — Phase B
- * 同期メソッドはインメモリ（既存互換）。
+ * ContractorRepository — Phase C
+ * async メソッドのみ（sync メソッド削除済み）。
  * async メソッドは VITE_USE_SUPABASE=true のとき Supabase へ、
  * それ以外はインメモリへルーティングする。
  */
@@ -76,36 +76,14 @@ export class ContractorRepository {
     this.supabase = enabled ? new SupabaseRepository<ContractorRow>('contractors') : null;
   }
 
-  // ── 同期メソッド（既存互換 / インメモリのみ）─────────────────────────────
-
-  /** @deprecated Use getAsync instead. Will be removed in Phase C cleanup. */
-  get(id: string): ContractorRecord | null {
-    return this.store.get(id) ?? null;
-  }
-
-  /** @deprecated Use listAsync instead. Will be removed in Phase C cleanup. */
-  list(): ContractorRecord[] {
-    return [...this.store.values()];
-  }
-
-  /** @deprecated Use saveAsync instead. Will be removed in Phase C cleanup. */
-  save(contractor: ContractorRecord): void {
-    this.store.set(contractor.id, { ...contractor });
-  }
-
-  /** @deprecated Use deleteAsync instead. Will be removed in Phase C cleanup. */
-  delete(id: string): boolean {
-    return this.store.delete(id);
-  }
-
-  // ── async メソッド（Phase B: Supabase or InMemory）────────────────────
+  // ── async メソッド（Phase C: Supabase or InMemory）────────────────────
 
   async getAsync(id: string): Promise<ContractorRecord | null> {
     if (this.supabase) {
       const row = await this.supabase.getById(id);
       return row ? rowToContractor(row) : null;
     }
-    return this.get(id);
+    return this.store.get(id) ?? null;
   }
 
   async listAsync(): Promise<ContractorRecord[]> {
@@ -113,7 +91,7 @@ export class ContractorRepository {
       const rows = await this.supabase.getAll();
       return rows.map(rowToContractor);
     }
-    return this.list();
+    return [...this.store.values()];
   }
 
   async saveAsync(contractor: ContractorRecord): Promise<void> {
@@ -129,7 +107,7 @@ export class ContractorRepository {
       }
       return;
     }
-    this.save(contractor);
+    this.store.set(contractor.id, { ...contractor });
   }
 
   async deleteAsync(id: string): Promise<boolean> {
@@ -141,6 +119,6 @@ export class ContractorRepository {
         return false;
       }
     }
-    return this.delete(id);
+    return this.store.delete(id);
   }
 }

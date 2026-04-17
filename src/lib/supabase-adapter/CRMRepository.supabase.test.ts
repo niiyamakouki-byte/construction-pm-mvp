@@ -114,7 +114,7 @@ describe('CRMRepository Phase B — Supabase routing', () => {
 
   it('useSupabase=false で deleteCustomerAsync は同期 delete と同じ挙動', async () => {
     const repo = new CRMRepository(false);
-    repo.saveCustomer(makeCustomer());
+    await repo.saveCustomerAsync(makeCustomer());
     expect(await repo.deleteCustomerAsync('cust-1')).toBe(true);
     expect(await repo.deleteCustomerAsync('ghost')).toBe(false);
     expect(mockFrom).not.toHaveBeenCalled();

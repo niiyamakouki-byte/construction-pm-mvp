@@ -97,7 +97,7 @@ describe('ChatRepository Phase B — Supabase routing', () => {
 
   it('useSupabase=false で deleteAsync は同期 delete と同じ挙動', async () => {
     const repo = new ChatRepository(false);
-    repo.save(makeMessage());
+    await repo.saveAsync(makeMessage());
     expect(await repo.deleteAsync('chat-1')).toBe(true);
     expect(await repo.deleteAsync('ghost')).toBe(false);
     expect(mockFrom).not.toHaveBeenCalled();

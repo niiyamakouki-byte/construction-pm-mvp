@@ -1,5 +1,6 @@
 /**
- * EstimateRepository — Phase B (限定対応)
+ * EstimateRepository — Phase C
+ * async メソッドのみ（sync メソッド削除済み）
  *
  * NOTE: DB スキーマ (public.estimates) は「明細行」単位
  *   (project_id, item_name, quantity, unit_price, category) であり、
@@ -50,52 +51,25 @@ export class EstimateRepository {
     }
   }
 
-  // ── 同期メソッド（既存互換）──────────────────────────────────────────────
-
-  /** @deprecated Use getAsync instead. Will be removed in Phase C cleanup. */
-  get(id: string): EstimateRecord | null {
-    return this.store.get(id) ?? null;
-  }
-
-  /** @deprecated Use listAsync instead. Will be removed in Phase C cleanup. */
-  list(): EstimateRecord[] {
-    return [...this.store.values()];
-  }
-
-  /** @deprecated Use listByProjectAsync instead. Will be removed in Phase C cleanup. */
-  listByProject(projectId: string): EstimateRecord[] {
-    return this.list().filter((e) => e.projectId === projectId);
-  }
-
-  /** @deprecated Use saveAsync instead. Will be removed in Phase C cleanup. */
-  save(estimate: EstimateRecord): void {
-    this.store.set(estimate.id, { ...estimate });
-  }
-
-  /** @deprecated Use deleteAsync instead. Will be removed in Phase C cleanup. */
-  delete(id: string): boolean {
-    return this.store.delete(id);
-  }
-
-  // ── async エイリアス（Phase A: Supabase 移行対応可能）──────────────────
+  // ── async メソッド ──────────────────────────────────────────────────────
 
   async getAsync(id: string): Promise<EstimateRecord | null> {
-    return Promise.resolve(this.get(id));
+    return Promise.resolve(this.store.get(id) ?? null);
   }
 
   async listAsync(): Promise<EstimateRecord[]> {
-    return Promise.resolve(this.list());
+    return Promise.resolve([...this.store.values()]);
   }
 
   async listByProjectAsync(projectId: string): Promise<EstimateRecord[]> {
-    return Promise.resolve(this.listByProject(projectId));
+    return Promise.resolve([...this.store.values()].filter((e) => e.projectId === projectId));
   }
 
   async saveAsync(estimate: EstimateRecord): Promise<void> {
-    return Promise.resolve(this.save(estimate));
+    this.store.set(estimate.id, { ...estimate });
   }
 
   async deleteAsync(id: string): Promise<boolean> {
-    return Promise.resolve(this.delete(id));
+    return Promise.resolve(this.store.delete(id));
   }
 }

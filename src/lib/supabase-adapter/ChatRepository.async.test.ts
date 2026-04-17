@@ -41,8 +41,8 @@ describe('ChatRepository async aliases (Phase A)', () => {
   });
 
   it('listByProjectAsync はプロジェクト別にフィルタする', async () => {
-    repo.save(makeMessage({ id: 'chat-1', projectId: 'proj-1' }));
-    repo.save(makeMessage({ id: 'chat-2', projectId: 'proj-2' }));
+    await repo.saveAsync(makeMessage({ id: 'chat-1', projectId: 'proj-1' }));
+    await repo.saveAsync(makeMessage({ id: 'chat-2', projectId: 'proj-2' }));
     const result = await repo.listByProjectAsync('proj-1');
     expect(result).toHaveLength(1);
     expect(result[0].projectId).toBe('proj-1');

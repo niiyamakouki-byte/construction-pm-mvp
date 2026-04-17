@@ -22,21 +22,18 @@ describe('RoomRepository async aliases (Phase A)', () => {
     repo = new RoomRepository();
   });
 
-  it('getAsync は同期 get と同じ結果を返す', async () => {
+  it('getAsync でデータを取得できる', async () => {
     const r = makeRoom();
     await repo.saveAsync(r);
-    const sync = repo.get('r-1');
-    const async_ = await repo.getAsync('r-1');
-    expect(async_).toEqual(sync);
+    const result = await repo.getAsync('r-1');
+    expect(result).toEqual(r);
   });
 
-  it('listAsync は同期 list と同じ結果を返す', async () => {
+  it('listAsync は保存したデータを全件返す', async () => {
     await repo.saveAsync(makeRoom('r-1'));
     await repo.saveAsync(makeRoom('r-2'));
-    const sync = repo.list();
-    const async_ = await repo.listAsync();
-    expect(async_).toEqual(sync);
-    expect(async_).toHaveLength(2);
+    const result = await repo.listAsync();
+    expect(result).toHaveLength(2);
   });
 
   it('saveAsync でデータを永続化し getAsync で取得できる', async () => {

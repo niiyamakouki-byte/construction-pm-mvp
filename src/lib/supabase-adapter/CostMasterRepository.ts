@@ -1,6 +1,6 @@
 /**
- * CostMasterRepository — Phase A
- * 同期メソッド + async エイリアス（Promise.resolve ラッパー）
+ * CostMasterRepository — Phase C
+ * async メソッドのみ（sync メソッド削除済み）
  */
 
 export type CostMasterItem = {
@@ -18,52 +18,25 @@ export type CostMasterItem = {
 export class CostMasterRepository {
   private store = new Map<string, CostMasterItem>();
 
-  // ── 同期メソッド（既存互換）──────────────────────────────────────────────
-
-  /** @deprecated Use getAsync instead. Will be removed in Phase C cleanup. */
-  get(id: string): CostMasterItem | null {
-    return this.store.get(id) ?? null;
-  }
-
-  /** @deprecated Use listAsync instead. Will be removed in Phase C cleanup. */
-  list(): CostMasterItem[] {
-    return [...this.store.values()];
-  }
-
-  /** @deprecated Use listByCategoryAsync instead. Will be removed in Phase C cleanup. */
-  listByCategory(category: string): CostMasterItem[] {
-    return this.list().filter((c) => c.category === category);
-  }
-
-  /** @deprecated Use saveAsync instead. Will be removed in Phase C cleanup. */
-  save(item: CostMasterItem): void {
-    this.store.set(item.id, { ...item });
-  }
-
-  /** @deprecated Use deleteAsync instead. Will be removed in Phase C cleanup. */
-  delete(id: string): boolean {
-    return this.store.delete(id);
-  }
-
-  // ── async エイリアス（Phase A: Supabase 移行対応可能）──────────────────
+  // ── async メソッド ──────────────────────────────────────────────────────
 
   async getAsync(id: string): Promise<CostMasterItem | null> {
-    return Promise.resolve(this.get(id));
+    return Promise.resolve(this.store.get(id) ?? null);
   }
 
   async listAsync(): Promise<CostMasterItem[]> {
-    return Promise.resolve(this.list());
+    return Promise.resolve([...this.store.values()]);
   }
 
   async listByCategoryAsync(category: string): Promise<CostMasterItem[]> {
-    return Promise.resolve(this.listByCategory(category));
+    return Promise.resolve([...this.store.values()].filter((c) => c.category === category));
   }
 
   async saveAsync(item: CostMasterItem): Promise<void> {
-    return Promise.resolve(this.save(item));
+    this.store.set(item.id, { ...item });
   }
 
   async deleteAsync(id: string): Promise<boolean> {
-    return Promise.resolve(this.delete(id));
+    return Promise.resolve(this.store.delete(id));
   }
 }

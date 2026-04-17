@@ -1,6 +1,6 @@
 /**
- * TaskRepository — Phase B
- * 同期メソッドはインメモリ（既存互換）。
+ * TaskRepository — Phase C
+ * async メソッドのみ（sync メソッド削除済み）。
  * async メソッドは VITE_USE_SUPABASE=true のとき Supabase へ、
  * それ以外はインメモリへルーティングする。
  */
@@ -86,41 +86,14 @@ export class TaskRepository {
     this.supabase = enabled ? new SupabaseRepository<TaskRow>('tasks') : null;
   }
 
-  // ── 同期メソッド（既存互換 / インメモリのみ）─────────────────────────────
-
-  /** @deprecated Use getAsync instead. Will be removed in Phase C cleanup. */
-  get(id: string): Task | null {
-    return this.store.get(id) ?? null;
-  }
-
-  /** @deprecated Use listAsync instead. Will be removed in Phase C cleanup. */
-  list(): Task[] {
-    return [...this.store.values()];
-  }
-
-  /** @deprecated Use listByProjectAsync instead. Will be removed in Phase C cleanup. */
-  listByProject(projectId: string): Task[] {
-    return this.list().filter((t) => t.projectId === projectId);
-  }
-
-  /** @deprecated Use saveAsync instead. Will be removed in Phase C cleanup. */
-  save(task: Task): void {
-    this.store.set(task.id, { ...task });
-  }
-
-  /** @deprecated Use deleteAsync instead. Will be removed in Phase C cleanup. */
-  delete(id: string): boolean {
-    return this.store.delete(id);
-  }
-
-  // ── async メソッド（Phase B: Supabase or InMemory）────────────────────
+  // ── async メソッド（Phase C: Supabase or InMemory）────────────────────
 
   async getAsync(id: string): Promise<Task | null> {
     if (this.supabase) {
       const row = await this.supabase.getById(id);
       return row ? rowToTask(row) : null;
     }
-    return this.get(id);
+    return this.store.get(id) ?? null;
   }
 
   async listAsync(): Promise<Task[]> {
@@ -128,7 +101,7 @@ export class TaskRepository {
       const rows = await this.supabase.getAll();
       return rows.map(rowToTask);
     }
-    return this.list();
+    return [...this.store.values()];
   }
 
   async listByProjectAsync(projectId: string): Promise<Task[]> {
@@ -137,7 +110,7 @@ export class TaskRepository {
       const rows = await this.supabase.getAll();
       return rows.filter((r) => r.project_id === projectId).map(rowToTask);
     }
-    return this.listByProject(projectId);
+    return [...this.store.values()].filter((t) => t.projectId === projectId);
   }
 
   async saveAsync(task: Task): Promise<void> {
@@ -153,7 +126,7 @@ export class TaskRepository {
       }
       return;
     }
-    this.save(task);
+    this.store.set(task.id, { ...task });
   }
 
   async deleteAsync(id: string): Promise<boolean> {
@@ -165,6 +138,6 @@ export class TaskRepository {
         return false;
       }
     }
-    return this.delete(id);
+    return this.store.delete(id);
   }
 }
