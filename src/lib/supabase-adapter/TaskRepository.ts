@@ -88,22 +88,27 @@ export class TaskRepository {
 
   // ── 同期メソッド（既存互換 / インメモリのみ）─────────────────────────────
 
+  /** @deprecated Use getAsync instead. Will be removed in Phase C cleanup. */
   get(id: string): Task | null {
     return this.store.get(id) ?? null;
   }
 
+  /** @deprecated Use listAsync instead. Will be removed in Phase C cleanup. */
   list(): Task[] {
     return [...this.store.values()];
   }
 
+  /** @deprecated Use listByProjectAsync instead. Will be removed in Phase C cleanup. */
   listByProject(projectId: string): Task[] {
     return this.list().filter((t) => t.projectId === projectId);
   }
 
+  /** @deprecated Use saveAsync instead. Will be removed in Phase C cleanup. */
   save(task: Task): void {
     this.store.set(task.id, { ...task });
   }
 
+  /** @deprecated Use deleteAsync instead. Will be removed in Phase C cleanup. */
   delete(id: string): boolean {
     return this.store.delete(id);
   }

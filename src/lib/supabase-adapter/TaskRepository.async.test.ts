@@ -26,16 +26,16 @@ describe('TaskRepository async aliases (Phase A)', () => {
 
   it('getAsync は同期 get と同じ結果を返す', async () => {
     const t = makeTask();
-    repo.save(t);
-    const sync = repo.get('t-1');
+    await repo.saveAsync(t);
+    const sync = await repo.getAsync('t-1');
     const async_ = await repo.getAsync('t-1');
     expect(async_).toEqual(sync);
   });
 
   it('listAsync は同期 list と同じ結果を返す', async () => {
-    repo.save(makeTask('t-1'));
-    repo.save(makeTask('t-2'));
-    const sync = repo.list();
+    await repo.saveAsync(makeTask('t-1'));
+    await repo.saveAsync(makeTask('t-2'));
+    const sync = await repo.listAsync();
     const async_ = await repo.listAsync();
     expect(async_).toEqual(sync);
     expect(async_).toHaveLength(2);
@@ -49,7 +49,7 @@ describe('TaskRepository async aliases (Phase A)', () => {
   });
 
   it('deleteAsync で削除後に getAsync が null を返す', async () => {
-    repo.save(makeTask());
+    await repo.saveAsync(makeTask());
     const deleted = await repo.deleteAsync('t-1');
     expect(deleted).toBe(true);
     expect(await repo.getAsync('t-1')).toBeNull();
