@@ -59,6 +59,7 @@ export function useTheme() {
       setSystemTheme(event.matches ? "dark" : "light");
     };
 
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- マウント時にシステムテーマを初期設定する初期化パターン
     setSystemTheme(mediaQuery.matches ? "dark" : "light");
     mediaQuery.addEventListener("change", handleChange);
 

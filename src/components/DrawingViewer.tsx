@@ -91,6 +91,7 @@ export function DrawingViewer({
   // Load persisted scale on mount
   useEffect(() => {
     const saved = loadScale(drawingId);
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- drawingId変化時にlocalStorageから倍率を復元する初期化パターン
     if (saved !== null) setScale(saved);
   }, [drawingId]);
 
@@ -387,6 +388,7 @@ export function DrawingViewer({
     } finally {
       setDiffRunning(false);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- notify は非メモ化関数のため deps 追加すると再生成ループになる
   }, []);
 
   // Render diff overlay onto diffCanvasRef whenever diffResult changes

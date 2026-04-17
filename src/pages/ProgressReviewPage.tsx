@@ -118,7 +118,10 @@ export function ProgressReviewPage() {
     }
   }, [projectRepository, selectedProjectId]);
 
-  useEffect(() => { void loadProjects(); }, [loadProjects]);
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- プロジェクト一覧の取得トリガー
+    void loadProjects();
+  }, [loadProjects]);
 
   const loadSchedule = useCallback(async (projectId: string) => {
     if (!projectId) return;
@@ -139,6 +142,7 @@ export function ProgressReviewPage() {
   }, [projects, taskRepository]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- プロジェクト選択時に工程データを取得する意図的なパターン
     if (selectedProjectId) void loadSchedule(selectedProjectId);
   }, [selectedProjectId, loadSchedule]);
 

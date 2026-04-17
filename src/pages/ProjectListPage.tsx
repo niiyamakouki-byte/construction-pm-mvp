@@ -49,6 +49,7 @@ export function ProjectListPage() {
   }, [projectRepository]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- プロジェクト一覧の取得トリガー
     void loadProjects();
   }, [loadProjects]);
 

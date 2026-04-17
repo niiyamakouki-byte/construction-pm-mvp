@@ -456,11 +456,13 @@ function GanttPageContent({ initialProjectId = null }: GanttPageProps) {
   }, [contractorRepository, initialProjectId, projectRepository, taskRepository, today]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- ガントデータの取得トリガー
     void loadData();
   }, [loadData]);
 
   useEffect(() => {
     if (!initialProjectId) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- URLパラメータからプロジェクトIDを初期設定する同期パターン
     setSelectedProjectId(initialProjectId);
   }, [initialProjectId]);
 
@@ -475,6 +477,7 @@ function GanttPageContent({ initialProjectId = null }: GanttPageProps) {
 
   useEffect(() => {
     undoStack.clear();
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- プロジェクト切替時にundoスタックをリセットする同期パターン
     setCanUndo(false);
   }, [selectedProjectId]);
 

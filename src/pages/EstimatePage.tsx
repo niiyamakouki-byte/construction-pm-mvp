@@ -608,6 +608,7 @@ function EstimatePageContent() {
     } catch {
       return null;
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- costItems は selectedItems から派生するため selectedItems が deps にあれば十分
   }, [selectedItems, targetMargin, includeLegalWelfare, hasCostItems]);
 
   const simPatterns = useMemo(() => {
@@ -617,6 +618,7 @@ function EstimatePageContent() {
     } catch {
       return null;
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- costItems は selectedItems から派生するため selectedItems が deps にあれば十分
   }, [selectedItems, includeLegalWelfare, hasCostItems]);
 
   const handleApplyMargin = () => {

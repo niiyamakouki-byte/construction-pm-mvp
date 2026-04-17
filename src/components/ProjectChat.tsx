@@ -184,6 +184,7 @@ export function ProjectChat({
   }, [projectId]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- メッセージ一覧の取得トリガー
     loadMessages();
   }, [loadMessages]);
 
@@ -195,7 +196,9 @@ export function ProjectChat({
   // Mark all visible messages as read when component mounts or messages change
   useEffect(() => {
     markAllAsRead(projectId, currentUserId);
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- プロジェクト切替時のメッセージ再取得
     loadMessages();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- loadMessages は意図的に省略（projectId/currentUserId変化時のみ実行）
   }, [projectId, currentUserId]);
 
   const handleSubmit = useCallback(

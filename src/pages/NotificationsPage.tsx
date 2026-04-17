@@ -90,6 +90,7 @@ export function NotificationsPage() {
   }, [notificationRepository, loadData]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- 通知データの取得トリガー
     void loadData();
   }, [loadData]);
 

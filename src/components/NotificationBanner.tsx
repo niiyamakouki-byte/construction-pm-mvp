@@ -97,6 +97,7 @@ export function NotificationBanner({ refreshKey }: NotificationBannerProps) {
   }, [costItemRepository, expenseRepository, projectRepository, taskRepository]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- 通知データの取得・更新トリガー
     void loadNotifications();
   }, [loadNotifications, refreshKey]);
 

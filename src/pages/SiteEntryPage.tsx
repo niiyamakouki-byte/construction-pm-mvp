@@ -125,7 +125,9 @@ export function SiteEntryPage({ projectId }: { projectId: string }) {
   };
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- projectId/currentRecord変化時に入退場ログを同期する意図的なパターン
     refreshLog();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- refreshLog は意図的に省略（projectId/currentRecord変化時のみ実行）
   }, [projectId, currentRecord]);
 
   const companies = Array.from(

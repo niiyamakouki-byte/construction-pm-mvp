@@ -89,6 +89,7 @@ export function InvoiceManagementPage() {
   }, []);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- 請求書データの取得トリガー
     refreshInvoices();
   }, [refreshInvoices]);
 
@@ -97,10 +98,12 @@ export function InvoiceManagementPage() {
     return invoices.filter((inv) => inv.status === filterStatus);
   }, [invoices, filterStatus]);
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- invoices は外部ストア変更時の再計算トリガー
   const summary = useMemo(() => getMonthlyInvoiceSummary(today), [invoices, today]);
 
   const paymentSchedule = useMemo(
     () => buildPaymentSchedule("月末締め翌月払い" as PaymentTerm),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- invoices は外部ストア変更時の再計算トリガー
     [invoices],
   );
 

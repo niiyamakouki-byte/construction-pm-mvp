@@ -204,6 +204,7 @@ function AppShell() {
   ];
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- ルート変化でナビを閉じる意図的な同期
     setMobileNavOpen(false);
     setMoreDrawerOpen(false);
   }, [route]);

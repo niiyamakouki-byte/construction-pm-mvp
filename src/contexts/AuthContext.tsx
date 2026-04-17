@@ -33,6 +33,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!hasSupabaseEnv()) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- Supabase未設定時にローディング解除する初期化パターン
       setLoading(false);
       return;
     }

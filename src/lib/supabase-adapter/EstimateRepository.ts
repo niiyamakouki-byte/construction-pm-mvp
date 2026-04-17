@@ -44,7 +44,6 @@ export class EstimateRepository {
     const enabled = useSupabase ?? isSupabaseEnabled();
     if (enabled && !warnedSchemaMismatch) {
       warnedSchemaMismatch = true;
-      // eslint-disable-next-line no-console
       console.warn(
         '[EstimateRepository] VITE_USE_SUPABASE=true ですが、見積書スキーマが Phase C 待ちのため InMemory にフォールバックします',
       );

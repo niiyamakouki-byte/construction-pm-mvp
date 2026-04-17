@@ -37,6 +37,7 @@ export function AuthGuard({ children }: Props) {
   useEffect(() => {
     if (!isActive) return;
 
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- isActive 変化時にタイマーをリセットする意図的な同期
     resetTimer();
     for (const event of ACTIVITY_EVENTS) {
       window.addEventListener(event, resetTimer, { passive: true });

@@ -221,11 +221,13 @@ export function ProjectDetailPage({
   }, [costItemRepository, expenseRepository, projectId, projectRepository, taskRepository]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- プロジェクト詳細データの取得トリガー
     void loadData();
   }, [loadData]);
 
   useEffect(() => {
     const today = new Date().toISOString().slice(0, 10);
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- projectId変化時に入退場ログを同期する意図的なパターン
     setTodayEntryLog(getEntryLog(projectId, today));
     setOnSiteCount(getTodayWorkerCount(projectId));
   }, [projectId]);

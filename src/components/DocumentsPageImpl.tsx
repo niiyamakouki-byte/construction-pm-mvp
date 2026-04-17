@@ -177,6 +177,7 @@ export function DocumentsPage({ projectId }: { projectId: string }) {
 
   useEffect(() => {
     if (selectedDocumentId && !documents.some((document) => document.id === selectedDocumentId)) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- 選択中ドキュメントが削除された時の選択リセット
       setSelectedDocumentId(null);
       setVersions([]);
     }

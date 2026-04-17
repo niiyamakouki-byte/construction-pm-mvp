@@ -75,6 +75,7 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!user || !hasSupabaseEnv()) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- ユーザー未認証時に組織情報をリセットする初期化パターン
       setOrganization(null);
       setLoading(false);
       return;

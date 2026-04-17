@@ -35,6 +35,7 @@ export function DigitalBlackboard({ photoUrl, defaults }: Props) {
   const imgRef = useRef<HTMLImageElement | null>(null);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- マウント時にlocalStorageからテンプレートを読み込む初期化パターン
     setTemplates(loadTemplates());
   }, []);
 

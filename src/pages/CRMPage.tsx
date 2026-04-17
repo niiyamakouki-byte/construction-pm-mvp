@@ -70,8 +70,11 @@ export function CRMPage() {
   // Seed demo data on first render, not at module level
   useEffect(() => { seedDemoData(); }, []);
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- refresh は外部ストア変更の強制再計算トリガー
   const customers = useMemo(() => getAllCustomers(), [refresh]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- refresh は外部ストア変更の強制再計算トリガー
   const deals = useMemo(() => getAllDeals(), [refresh]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- refresh は外部ストア変更の強制再計算トリガー
   const stats = useMemo(() => getCRMStats(), [refresh]);
   const stages = useMemo(() => getStageOrder(), []);
 
@@ -373,6 +376,7 @@ function CustomersView({
 
   const customerDeals = useMemo(
     () => selected ? getDealsByCustomer(selected.id) : [],
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- deals は外部ストア変更時の再計算トリガー
     [selected, deals],
   );
 

@@ -227,6 +227,7 @@ export function WeatherPage() {
 
   useEffect(() => {
     if (siteForecasts.length === 0) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- 現場予報データ更新時に選択サイトを初期化する意図的なパターン
     setSelectedSiteId((current) => {
       if (current && siteForecasts.some((site) => site.siteId === current)) {
         return current;

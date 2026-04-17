@@ -26,6 +26,7 @@ const PLAN_LIMITS: Record<Plan, PlanLimits> = {
 export function useSubscription(): SubscriptionInfo {
   const { organization } = useOrganization();
 
+  // eslint-disable-next-line react-hooks/preserve-manual-memoization -- 関数を含むオブジェクトを返す useMemo は compiler plugin が保持できないが正しいパターン
   return useMemo(() => {
     const plan: Plan = (organization?.plan as Plan | undefined) ?? "trial";
     const limits = PLAN_LIMITS[plan];

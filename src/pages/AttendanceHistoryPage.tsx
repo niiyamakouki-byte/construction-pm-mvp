@@ -46,6 +46,7 @@ export function AttendanceHistoryPage({ projectId }: { projectId: string }) {
 
   useEffect(() => {
     const recs = getEntryLog(projectId, selectedDate);
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- プロジェクト/日付変化時に入退場データを同期する意図的なパターン
     setEntries(recs);
     setByCompany(getEntriesByCompany(projectId, selectedDate));
   }, [projectId, selectedDate]);

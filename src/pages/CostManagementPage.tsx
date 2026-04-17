@@ -301,6 +301,7 @@ function ChangeRequestTab({ projectId }: { projectId: string | null }) {
   }, [projectId]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- コスト変更依頼データの取得トリガー
     reload();
   }, [reload]);
 
@@ -312,6 +313,7 @@ function ChangeRequestTab({ projectId }: { projectId: string | null }) {
 
   const approvedTotal = useMemo(
     () => (projectId ? getApprovedCostTotal(projectId) : 0),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- requests は外部ストア変更時の再計算トリガー
     [projectId, requests],
   );
 
@@ -579,6 +581,7 @@ export function CostManagementPage() {
   }, [costItemRepository, expenseRepository, projectRepository, taskRepository]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- コストデータの取得トリガー
     void loadData();
   }, [loadData]);
 

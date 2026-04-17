@@ -108,7 +108,10 @@ export function NodeSchedulePage() {
     }
   }, [taskRepository]);
 
-  useEffect(() => { void loadTasks(); }, [loadTasks]);
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- タスクデータの取得トリガー
+    void loadTasks();
+  }, [loadTasks]);
 
   // Convert screen coords to canvas coords
   const screenToCanvas = useCallback((sx: number, sy: number): Vec2 => {
@@ -468,6 +471,7 @@ export function NodeSchedulePage() {
             </defs>
 
             {/* Live connecting line */}
+            {/* eslint-disable-next-line react-hooks/refs -- connectingFrom.ref はキャンバス上の接続操作状態を保持するためレンダー中に読む意図的なパターン */}
             {isConnecting && connectingFrom.current && (() => {
               const fromTask = tasks.find((t) => t.id === connectingFrom.current);
               if (!fromTask) return null;

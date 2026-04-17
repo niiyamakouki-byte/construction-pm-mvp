@@ -267,6 +267,7 @@ function TodayDashboardPageContent() {
   }, [contractorRepository, costItemRepository, expenseRepository, projectRepository, taskRepository, today]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- ダッシュボードデータの取得トリガー
     void loadData();
   }, [loadData]);
 

@@ -174,6 +174,7 @@ function ChangeOrderSection({ projectId }: { projectId: string }) {
   const [requests, setRequests] = useState<ChangeRequest[]>([]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- projectId変化時に変更依頼を同期する意図的なパターン
     setRequests(getChangeRequests(projectId).filter((r) => r.status === "施主確認中"));
   }, [projectId]);
 

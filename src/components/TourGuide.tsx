@@ -118,6 +118,7 @@ export function TourGuide({ onComplete }: Props) {
   }, [currentStep]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- ステップ変化時にハイライト位置を更新する同期パターン
     updateHighlight();
     window.addEventListener("resize", updateHighlight);
     window.addEventListener("scroll", updateHighlight);
