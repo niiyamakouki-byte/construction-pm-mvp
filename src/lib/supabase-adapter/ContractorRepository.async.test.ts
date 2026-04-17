@@ -24,16 +24,16 @@ describe('ContractorRepository async aliases (Phase A)', () => {
 
   it('getAsync は同期 get と同じ結果を返す', async () => {
     const c = makeContractor();
-    repo.save(c);
-    const sync = repo.get('c-1');
+    await repo.saveAsync(c);
+    const sync = await repo.getAsync('c-1');
     const async_ = await repo.getAsync('c-1');
     expect(async_).toEqual(sync);
   });
 
   it('listAsync は同期 list と同じ結果を返す', async () => {
-    repo.save(makeContractor('c-1'));
-    repo.save(makeContractor('c-2'));
-    const sync = repo.list();
+    await repo.saveAsync(makeContractor('c-1'));
+    await repo.saveAsync(makeContractor('c-2'));
+    const sync = await repo.listAsync();
     const async_ = await repo.listAsync();
     expect(async_).toEqual(sync);
     expect(async_).toHaveLength(2);
@@ -47,7 +47,7 @@ describe('ContractorRepository async aliases (Phase A)', () => {
   });
 
   it('deleteAsync で削除後に getAsync が null を返す', async () => {
-    repo.save(makeContractor());
+    await repo.saveAsync(makeContractor());
     const deleted = await repo.deleteAsync('c-1');
     expect(deleted).toBe(true);
     expect(await repo.getAsync('c-1')).toBeNull();
