@@ -188,10 +188,9 @@ export interface WallTypeRule {
 /**
  * LGS壁タイプ別ルール定義。
  *
- * LGS65/LGS75/木下地 は個別品目（IN-045〜047）を使用（係数依存から脱却）。
+ * LGS65/LGS75/木下地/LGS90/LGS100 は個別品目（IN-045〜049）を使用（係数依存から脱却）。
  * その他タイプは IN-001（LGS間仕切り65型 ¥5,500/㎡）に係数を掛けて調整:
  *   LGS20_runner: 軽量（0.60） / LGS45: やや薄（0.85）
- *   LGS90/100: 遮音強化（1.20/1.30）
  */
 export const WALL_TYPE_RULES: Record<WallType, WallTypeRule> = {
   LGS20_runner: {
@@ -259,9 +258,8 @@ export const WALL_TYPE_RULES: Record<WallType, WallTypeRule> = {
     usage: "遮音・耐火強化（稀）",
     priority: 1,
     defaultAssembly: [
-      { costMasterCode: "IN-001", quantityFactor: 1.20 },
-      { costMasterCode: "IN-003", quantityFactor: 1.0 },
-      { costMasterCode: "IN-005", quantityFactor: 1.05 },
+      { costMasterCode: "IN-048", quantityFactor: 1.0 }, // IN-048 = LGS90 ボード両面張り（個別品目）
+      { costMasterCode: "IN-005", quantityFactor: 1.05 }, // クロス（ロス5%）
     ],
   },
   LGS100: {
@@ -271,9 +269,8 @@ export const WALL_TYPE_RULES: Record<WallType, WallTypeRule> = {
     usage: "遮音・耐火強化（稀）",
     priority: 1,
     defaultAssembly: [
-      { costMasterCode: "IN-001", quantityFactor: 1.30 },
-      { costMasterCode: "IN-004", quantityFactor: 1.0 }, // 二重張り（遮音）
-      { costMasterCode: "IN-005", quantityFactor: 1.05 },
+      { costMasterCode: "IN-049", quantityFactor: 1.0 }, // IN-049 = LGS100 ボード両面張り（個別品目）
+      { costMasterCode: "IN-005", quantityFactor: 1.05 }, // クロス（ロス5%）
     ],
   },
   木下地: {

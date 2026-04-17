@@ -82,9 +82,9 @@ describe("estimate-generator", () => {
     ]);
   });
 
-  it("lists all items (230 total)", () => {
+  it("lists all items (232 total)", () => {
     const items = listAllItems();
-    expect(items.length).toBe(230);
+    expect(items.length).toBe(232);
   });
 
   it("lists items by category", () => {

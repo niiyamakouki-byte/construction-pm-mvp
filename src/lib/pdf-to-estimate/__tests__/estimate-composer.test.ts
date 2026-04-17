@@ -47,6 +47,8 @@ const TEST_COST_MASTER: CostMasterItem[] = [
   { code: "IN-045", name: "LGS65 ボード両面張り", unit: "㎡", unitPrice: 4800 },
   { code: "IN-046", name: "LGS75 ボード両面張り", unit: "㎡", unitPrice: 5200 },
   { code: "IN-047", name: "木下地 ボード両面張り", unit: "㎡", unitPrice: 4500 },
+  { code: "IN-048", name: "LGS90 ボード両面張り", unit: "㎡", unitPrice: 5800 },
+  { code: "IN-049", name: "LGS100 ボード両面張り", unit: "㎡", unitPrice: 6500 },
   { code: "IN-068", name: "天井・軽鉄下地（シングル）", unit: "㎡", unitPrice: 2800 },
   { code: "FX-001", name: "木製建具（フラッシュ戸）", unit: "枚", unitPrice: 65000 },
   { code: "FX-003", name: "ガラス入り建具", unit: "枚", unitPrice: 95000 },
@@ -283,5 +285,37 @@ describe("composeEstimate — 壁タイプ個別単価行", () => {
     const line = draft.lines.find((l) => l.code === "IN-047");
     expect(line).toBeDefined();
     expect(draft.notes.some((n) => n.includes("木下地"))).toBe(true);
+  });
+
+  it("LGS90 は IN-048（¥5,800/㎡）の個別品目行が生成される", () => {
+    const takeoff = makeTakeoff([
+      makeTakeoffItem({ category: "壁", item: "壁仕上げ面積", quantity: 10 }),
+    ]);
+    const draft = composeEstimate(takeoff, TEST_COST_MASTER, makeDrawing(), {
+      wallTypeOverride: "LGS90",
+    });
+    const line = draft.lines.find((l) => l.code === "IN-048");
+    expect(line).toBeDefined();
+    expect(line?.unitPrice).toBe(5800);
+    expect(line?.quantity).toBeCloseTo(10, 2);
+    expect(line?.amount).toBe(58000);
+    // 係数依存の IN-001 は使われていない
+    expect(draft.lines.find((l) => l.code === "IN-001")).toBeUndefined();
+  });
+
+  it("LGS100 は IN-049（¥6,500/㎡）の個別品目行が生成される", () => {
+    const takeoff = makeTakeoff([
+      makeTakeoffItem({ category: "壁", item: "壁仕上げ面積", quantity: 10 }),
+    ]);
+    const draft = composeEstimate(takeoff, TEST_COST_MASTER, makeDrawing(), {
+      wallTypeOverride: "LGS100",
+    });
+    const line = draft.lines.find((l) => l.code === "IN-049");
+    expect(line).toBeDefined();
+    expect(line?.unitPrice).toBe(6500);
+    expect(line?.quantity).toBeCloseTo(10, 2);
+    expect(line?.amount).toBe(65000);
+    // 係数依存の IN-001 は使われていない
+    expect(draft.lines.find((l) => l.code === "IN-001")).toBeUndefined();
   });
 });
