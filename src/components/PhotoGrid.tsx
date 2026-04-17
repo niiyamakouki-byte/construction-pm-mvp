@@ -1,5 +1,6 @@
 import type { PhotoMetadata } from "../lib/photo-organizer.js";
 import { classifyPhoto } from "../lib/photo-classifier.js";
+import { PhotoProgressPanel } from "./PhotoProgressPanel.js";
 
 const CATEGORY_COLORS: Record<string, string> = {
   基礎工事: "bg-amber-100 text-amber-800",
@@ -84,10 +85,13 @@ export function PhotoGrid({ photos, emptyMessage = "写真がありません" }:
   }
 
   return (
-    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-      {photos.map((photo) => (
-        <PhotoCard key={photo.id} photo={photo} />
-      ))}
+    <div>
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+        {photos.map((photo) => (
+          <PhotoCard key={photo.id} photo={photo} />
+        ))}
+      </div>
+      <PhotoProgressPanel photos={photos} />
     </div>
   );
 }
