@@ -20,22 +20,27 @@ export class CostMasterRepository {
 
   // ── 同期メソッド（既存互換）──────────────────────────────────────────────
 
+  /** @deprecated Use getAsync instead. Will be removed in Phase C cleanup. */
   get(id: string): CostMasterItem | null {
     return this.store.get(id) ?? null;
   }
 
+  /** @deprecated Use listAsync instead. Will be removed in Phase C cleanup. */
   list(): CostMasterItem[] {
     return [...this.store.values()];
   }
 
+  /** @deprecated Use listByCategoryAsync instead. Will be removed in Phase C cleanup. */
   listByCategory(category: string): CostMasterItem[] {
     return this.list().filter((c) => c.category === category);
   }
 
+  /** @deprecated Use saveAsync instead. Will be removed in Phase C cleanup. */
   save(item: CostMasterItem): void {
     this.store.set(item.id, { ...item });
   }
 
+  /** @deprecated Use deleteAsync instead. Will be removed in Phase C cleanup. */
   delete(id: string): boolean {
     return this.store.delete(id);
   }

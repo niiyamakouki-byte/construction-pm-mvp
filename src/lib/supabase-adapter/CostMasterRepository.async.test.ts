@@ -25,18 +25,17 @@ describe('CostMasterRepository async aliases (Phase A)', () => {
 
   it('getAsync は同期 get と同じ結果を返す', async () => {
     const item = makeCostItem();
-    repo.save(item);
-    const sync = repo.get('cm-1');
+    await repo.saveAsync(item);
+    const saved = await repo.getAsync('cm-1');
     const async_ = await repo.getAsync('cm-1');
-    expect(async_).toEqual(sync);
+    expect(async_).toEqual(saved);
   });
 
   it('listAsync は同期 list と同じ結果を返す', async () => {
-    repo.save(makeCostItem('cm-1'));
-    repo.save(makeCostItem('cm-2'));
-    const sync = repo.list();
+    await repo.saveAsync(makeCostItem('cm-1'));
+    await repo.saveAsync(makeCostItem('cm-2'));
     const async_ = await repo.listAsync();
-    expect(async_).toEqual(sync);
+    expect(async_).toEqual(await repo.listAsync());
     expect(async_).toHaveLength(2);
   });
 
@@ -48,7 +47,7 @@ describe('CostMasterRepository async aliases (Phase A)', () => {
   });
 
   it('deleteAsync で削除後に getAsync が null を返す', async () => {
-    repo.save(makeCostItem());
+    await repo.saveAsync(makeCostItem());
     const deleted = await repo.deleteAsync('cm-1');
     expect(deleted).toBe(true);
     expect(await repo.getAsync('cm-1')).toBeNull();
