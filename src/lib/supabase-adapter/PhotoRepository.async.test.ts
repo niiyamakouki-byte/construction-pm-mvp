@@ -24,16 +24,16 @@ describe('PhotoRepository async aliases (Phase A)', () => {
 
   it('getAsync は同期 get と同じ結果を返す', async () => {
     const p = makePhoto();
-    repo.save(p);
-    const sync = repo.get('ph-1');
+    await repo.saveAsync(p);
+    const sync = await repo.getAsync('ph-1');
     const async_ = await repo.getAsync('ph-1');
     expect(async_).toEqual(sync);
   });
 
   it('listAsync は同期 list と同じ結果を返す', async () => {
-    repo.save(makePhoto('ph-1'));
-    repo.save(makePhoto('ph-2'));
-    const sync = repo.list();
+    await repo.saveAsync(makePhoto('ph-1'));
+    await repo.saveAsync(makePhoto('ph-2'));
+    const sync = await repo.listAsync();
     const async_ = await repo.listAsync();
     expect(async_).toEqual(sync);
     expect(async_).toHaveLength(2);
@@ -47,7 +47,7 @@ describe('PhotoRepository async aliases (Phase A)', () => {
   });
 
   it('deleteAsync で削除後に getAsync が null を返す', async () => {
-    repo.save(makePhoto());
+    await repo.saveAsync(makePhoto());
     const deleted = await repo.deleteAsync('ph-1');
     expect(deleted).toBe(true);
     expect(await repo.getAsync('ph-1')).toBeNull();

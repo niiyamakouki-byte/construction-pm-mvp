@@ -20,22 +20,27 @@ export class PhotoRepository {
 
   // ── 同期メソッド（既存互換）──────────────────────────────────────────────
 
+  /** @deprecated Use getAsync instead. Will be removed in Phase C cleanup. */
   get(id: string): PhotoRecord | null {
     return this.store.get(id) ?? null;
   }
 
+  /** @deprecated Use listAsync instead. Will be removed in Phase C cleanup. */
   list(): PhotoRecord[] {
     return [...this.store.values()];
   }
 
+  /** @deprecated Use listByProjectAsync instead. Will be removed in Phase C cleanup. */
   listByProject(projectId: string): PhotoRecord[] {
     return this.list().filter((p) => p.projectId === projectId);
   }
 
+  /** @deprecated Use saveAsync instead. Will be removed in Phase C cleanup. */
   save(photo: PhotoRecord): void {
     this.store.set(photo.id, { ...photo });
   }
 
+  /** @deprecated Use deleteAsync instead. Will be removed in Phase C cleanup. */
   delete(id: string): boolean {
     return this.store.delete(id);
   }
