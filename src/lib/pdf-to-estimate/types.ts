@@ -91,7 +91,12 @@ export type TakeoffItem = {
   unit: TakeoffUnit;
   source: TakeoffSource;
   confidence: number;
+  /** 部屋識別子（任意）。WallTypeMap と組み合わせて部屋ごとの壁タイプを適用する */
+  roomId?: string;
 };
+
+/** 部屋ごとの壁タイプマップ。key = roomId, value = WallType */
+export type WallTypeMap = Record<string, WallType>;
 
 export type QuantityTakeoff = {
   items: TakeoffItem[];

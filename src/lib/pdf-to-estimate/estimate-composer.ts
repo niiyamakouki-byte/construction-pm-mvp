@@ -21,6 +21,7 @@ import type {
   AssemblyLineSpec,
   TakeoffSource,
   WallType,
+  WallTypeMap,
 } from "./types.js";
 import { WALL_TYPE_RULES } from "./types.js";
 import { inferWallType } from "./wall-type-inference.js";
@@ -93,24 +94,36 @@ function buildLines(
 
 // ─── Public API ────────────────────────────────────────────────────
 
+/** wallTypeOverride が WallTypeMap かどうかを判定するタイプガード */
+function isWallTypeMap(v: WallType | WallTypeMap): v is WallTypeMap {
+  return typeof v === "object";
+}
+
+const DEFAULT_WALL_TYPE: WallType = "LGS65";
+
 /**
  * QuantityTakeoff と cost-master から EstimateDraft を生成する。
  * drawingModel は出自情報としてドラフトに埋め込むのみ（計算には使わない）。
  *
  * 壁タイプ解決順:
- *   1. options.wallTypeOverride（UI手動指定）
+ *   1. options.wallTypeOverride（UI手動指定、単一 WallType または WallTypeMap）
  *   2. options.wallTypeInferenceHints によるテキスト/厚み推定
  *   3. options.assemblyTemplate（カスタムアセンブリ直接指定）
  *   4. DEFAULT_ASSEMBLY（後方互換）
  */
+
 export function composeEstimate(
   takeoff: QuantityTakeoff,
   costMaster: CostMasterItem[],
   drawingModel: DrawingModel,
   options?: {
     assemblyTemplate?: InteriorAssembly;
-    /** UI で手動選択した壁タイプ（最優先） */
-    wallTypeOverride?: WallType;
+    /**
+     * UI で手動選択した壁タイプ（最優先）。
+     * 単一 WallType: 全部屋に同じタイプを適用（後方互換）。
+     * WallTypeMap: roomId ごとにタイプを解決。未指定 roomId は LGS65 にフォールバック。
+     */
+    wallTypeOverride?: WallType | WallTypeMap;
     /** 推定ヒント（テキスト群 or 壁厚） */
     wallTypeInferenceHints?: { texts?: string[]; thicknessMm?: number };
   },
@@ -119,10 +132,14 @@ export function composeEstimate(
   let assembly: InteriorAssembly;
   let wallTypeNote: string | null = null;
 
-  if (options?.wallTypeOverride) {
-    const rule = WALL_TYPE_RULES[options.wallTypeOverride];
+  const wallTypeOverride = options?.wallTypeOverride;
+  const isMapMode = wallTypeOverride !== undefined && isWallTypeMap(wallTypeOverride);
+
+  if (wallTypeOverride && !isMapMode) {
+    // 後方互換: 単一 WallType
+    const rule = WALL_TYPE_RULES[wallTypeOverride as WallType];
     assembly = { ...DEFAULT_ASSEMBLY, wall: rule.defaultAssembly };
-    wallTypeNote = `壁タイプ: ${options.wallTypeOverride}（手動指定）— ${rule.usage}`;
+    wallTypeNote = `壁タイプ: ${wallTypeOverride}（手動指定）— ${rule.usage}`;
   } else if (options?.wallTypeInferenceHints) {
     const hints = options.wallTypeInferenceHints;
     const result = inferWallType({
@@ -144,7 +161,23 @@ export function composeEstimate(
     const src = item.source;
 
     if (item.category === "壁" && item.item === "壁仕上げ面積") {
-      allLines.push(...buildLines(assembly.wall, item.quantity, item.unit, src, conf, costMaster, notes));
+      // WallTypeMap モード: roomId ごとに壁アセンブリを解決
+      let wallAssembly = assembly.wall;
+      if (isMapMode) {
+        const map = wallTypeOverride as WallTypeMap;
+        const roomId = item.roomId;
+        let resolvedType: WallType;
+        if (roomId !== undefined && map[roomId] !== undefined) {
+          resolvedType = map[roomId];
+        } else {
+          resolvedType = DEFAULT_WALL_TYPE;
+          if (roomId !== undefined) {
+            console.warn(`[composeEstimate] roomId "${roomId}" not found in WallTypeMap — fallback to ${DEFAULT_WALL_TYPE}`);
+          }
+        }
+        wallAssembly = WALL_TYPE_RULES[resolvedType].defaultAssembly;
+      }
+      allLines.push(...buildLines(wallAssembly, item.quantity, item.unit, src, conf, costMaster, notes));
     } else if (item.category === "床" && item.item === "床仕上げ面積") {
       allLines.push(...buildLines(assembly.floor, item.quantity, item.unit, src, conf, costMaster, notes));
     } else if (item.category === "天井" && item.item === "天井仕上げ面積") {

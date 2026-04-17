@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { composeEstimate, DEFAULT_ASSEMBLY } from "../estimate-composer.js";
-import type { QuantityTakeoff, CostMasterItem, DrawingModel, TakeoffItem } from "../types.js";
+import type { QuantityTakeoff, CostMasterItem, DrawingModel, TakeoffItem, WallTypeMap } from "../types.js";
 
 // ─── fixtures ─────────────────────────────────────────────────────
 
@@ -317,5 +317,68 @@ describe("composeEstimate — 壁タイプ個別単価行", () => {
     expect(line?.amount).toBe(65000);
     // 係数依存の IN-001 は使われていない
     expect(draft.lines.find((l) => l.code === "IN-001")).toBeUndefined();
+  });
+});
+
+// ─── WallTypeMap（部屋ごと壁タイプ）テスト ────────────────────────
+
+describe("composeEstimate — WallTypeMap（部屋ごと壁タイプ）", () => {
+  it("部屋A=LGS65 / 部屋B=LGS90 / 部屋C=木下地 → IN-045/IN-048/IN-047 の3行が生成される", () => {
+    const wallTypeMap: WallTypeMap = { roomA: "LGS65", roomB: "LGS90", roomC: "木下地" };
+    const takeoff = makeTakeoff([
+      makeTakeoffItem({ category: "壁", item: "壁仕上げ面積", quantity: 10, roomId: "roomA" }),
+      makeTakeoffItem({ category: "壁", item: "壁仕上げ面積", quantity: 12, roomId: "roomB" }),
+      makeTakeoffItem({ category: "壁", item: "壁仕上げ面積", quantity: 8,  roomId: "roomC" }),
+    ]);
+    const draft = composeEstimate(takeoff, TEST_COST_MASTER, makeDrawing(), {
+      wallTypeOverride: wallTypeMap,
+    });
+    // 各部屋の壁タイプ品目コードが含まれること
+    const codes = draft.lines.map((l) => l.code);
+    expect(codes).toContain("IN-045"); // roomA: LGS65
+    expect(codes).toContain("IN-048"); // roomB: LGS90
+    expect(codes).toContain("IN-047"); // roomC: 木下地
+    // IN-001（係数依存）は使われていない
+    expect(codes).not.toContain("IN-001");
+  });
+
+  it("WallTypeMap で roomId 未指定のアイテムは LGS65（デフォルト）にフォールバックする", () => {
+    const wallTypeMap: WallTypeMap = { roomA: "LGS90" };
+    const takeoff = makeTakeoff([
+      makeTakeoffItem({ category: "壁", item: "壁仕上げ面積", quantity: 10, roomId: "roomA" }),
+      // roomId なし → フォールバック
+      makeTakeoffItem({ category: "壁", item: "壁仕上げ面積", quantity: 15 }),
+    ]);
+    const draft = composeEstimate(takeoff, TEST_COST_MASTER, makeDrawing(), {
+      wallTypeOverride: wallTypeMap,
+    });
+    const codes = draft.lines.map((l) => l.code);
+    expect(codes).toContain("IN-048"); // roomA: LGS90
+    expect(codes).toContain("IN-045"); // フォールバック: LGS65
+  });
+
+  it("WallTypeMap で存在しない roomId は LGS65 にフォールバックする（警告ログ）", () => {
+    const wallTypeMap: WallTypeMap = { roomA: "LGS75" };
+    const takeoff = makeTakeoff([
+      makeTakeoffItem({ category: "壁", item: "壁仕上げ面積", quantity: 10, roomId: "unknownRoom" }),
+    ]);
+    const draft = composeEstimate(takeoff, TEST_COST_MASTER, makeDrawing(), {
+      wallTypeOverride: wallTypeMap,
+    });
+    // unknownRoom は LGS65 にフォールバック → IN-045 が生成される
+    const line = draft.lines.find((l) => l.code === "IN-045");
+    expect(line).toBeDefined();
+  });
+
+  it("単一 WallType（後方互換）が WallTypeMap 導入後も正常動作する", () => {
+    const takeoff = makeTakeoff([
+      makeTakeoffItem({ category: "壁", item: "壁仕上げ面積", quantity: 20 }),
+    ]);
+    const draft = composeEstimate(takeoff, TEST_COST_MASTER, makeDrawing(), {
+      wallTypeOverride: "LGS75",
+    });
+    const line = draft.lines.find((l) => l.code === "IN-046");
+    expect(line).toBeDefined();
+    expect(line?.unitPrice).toBe(5200);
   });
 });
