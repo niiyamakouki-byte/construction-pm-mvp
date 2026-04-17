@@ -23,3 +23,12 @@ export type { ContractorRecord } from './ContractorRepository.js';
 
 export { CostMasterRepository } from './CostMasterRepository.js';
 export type { CostMasterItem } from './CostMasterRepository.js';
+
+export { ChatRepository } from './ChatRepository.js';
+export type { ChatMessageRecord } from './ChatRepository.js';
+
+export { CRMRepository } from './CRMRepository.js';
+export type { CustomerRecord, DealRecord, DealStage } from './CRMRepository.js';
+
+export { InvoiceRepository } from './InvoiceRepository.js';
+export type { InvoiceRecord, InvoiceStatus, InvoiceItemRecord } from './InvoiceRepository.js';
