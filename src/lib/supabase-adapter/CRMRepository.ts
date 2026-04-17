@@ -107,34 +107,42 @@ export class CRMRepository {
 
   // ── 同期メソッド（既存互換 / インメモリのみ）─────────────────────────────
 
+  /** @deprecated Use getCustomerAsync instead. Will be removed in Phase C cleanup. */
   getCustomer(id: string): CustomerRecord | null {
     return this.customers.get(id) ?? null;
   }
 
+  /** @deprecated Use listCustomersAsync instead. Will be removed in Phase C cleanup. */
   listCustomers(): CustomerRecord[] {
     return [...this.customers.values()];
   }
 
+  /** @deprecated Use saveCustomerAsync instead. Will be removed in Phase C cleanup. */
   saveCustomer(customer: CustomerRecord): void {
     this.customers.set(customer.id, { ...customer });
   }
 
+  /** @deprecated Use deleteCustomerAsync instead. Will be removed in Phase C cleanup. */
   deleteCustomer(id: string): boolean {
     return this.customers.delete(id);
   }
 
+  /** @deprecated Use getDealAsync instead. Will be removed in Phase C cleanup. */
   getDeal(id: string): DealRecord | null {
     return this.deals.get(id) ?? null;
   }
 
+  /** @deprecated Use listDealsAsync instead. Will be removed in Phase C cleanup. */
   listDeals(): DealRecord[] {
     return [...this.deals.values()];
   }
 
+  /** @deprecated Use saveDealAsync instead. Will be removed in Phase C cleanup. */
   saveDeal(deal: DealRecord): void {
     this.deals.set(deal.id, { ...deal });
   }
 
+  /** @deprecated Use deleteDealAsync instead. Will be removed in Phase C cleanup. */
   deleteDeal(id: string): boolean {
     return this.deals.delete(id);
   }

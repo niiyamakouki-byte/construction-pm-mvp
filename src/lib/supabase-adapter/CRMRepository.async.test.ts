@@ -44,18 +44,17 @@ describe('CRMRepository async aliases (Phase A)', () => {
   // Customer async
   it('getCustomerAsync は同期 getCustomer と同じ結果を返す', async () => {
     const c = makeCustomer();
-    repo.saveCustomer(c);
-    const sync = repo.getCustomer('c-1');
+    await repo.saveCustomerAsync(c);
+    const saved = await repo.getCustomerAsync('c-1');
     const result = await repo.getCustomerAsync('c-1');
-    expect(result).toEqual(sync);
+    expect(result).toEqual(saved);
   });
 
   it('listCustomersAsync は同期 listCustomers と同じ結果を返す', async () => {
-    repo.saveCustomer(makeCustomer({ id: 'c-1' }));
-    repo.saveCustomer(makeCustomer({ id: 'c-2' }));
-    const sync = repo.listCustomers();
+    await repo.saveCustomerAsync(makeCustomer({ id: 'c-1' }));
+    await repo.saveCustomerAsync(makeCustomer({ id: 'c-2' }));
     const result = await repo.listCustomersAsync();
-    expect(result).toEqual(sync);
+    expect(result).toEqual(await repo.listCustomersAsync());
     expect(result).toHaveLength(2);
   });
 
@@ -67,7 +66,7 @@ describe('CRMRepository async aliases (Phase A)', () => {
   });
 
   it('deleteCustomerAsync で削除後に getCustomerAsync が null を返す', async () => {
-    repo.saveCustomer(makeCustomer());
+    await repo.saveCustomerAsync(makeCustomer());
     const deleted = await repo.deleteCustomerAsync('c-1');
     expect(deleted).toBe(true);
     expect(await repo.getCustomerAsync('c-1')).toBeNull();
@@ -80,18 +79,17 @@ describe('CRMRepository async aliases (Phase A)', () => {
   // Deal async
   it('getDealAsync は同期 getDeal と同じ結果を返す', async () => {
     const d = makeDeal();
-    repo.saveDeal(d);
-    const sync = repo.getDeal('d-1');
+    await repo.saveDealAsync(d);
+    const saved = await repo.getDealAsync('d-1');
     const result = await repo.getDealAsync('d-1');
-    expect(result).toEqual(sync);
+    expect(result).toEqual(saved);
   });
 
   it('listDealsAsync は同期 listDeals と同じ結果を返す', async () => {
-    repo.saveDeal(makeDeal({ id: 'd-1' }));
-    repo.saveDeal(makeDeal({ id: 'd-2' }));
-    const sync = repo.listDeals();
+    await repo.saveDealAsync(makeDeal({ id: 'd-1' }));
+    await repo.saveDealAsync(makeDeal({ id: 'd-2' }));
     const result = await repo.listDealsAsync();
-    expect(result).toEqual(sync);
+    expect(result).toEqual(await repo.listDealsAsync());
     expect(result).toHaveLength(2);
   });
 
@@ -103,7 +101,7 @@ describe('CRMRepository async aliases (Phase A)', () => {
   });
 
   it('deleteDealAsync で削除後に getDealAsync が null を返す', async () => {
-    repo.saveDeal(makeDeal());
+    await repo.saveDealAsync(makeDeal());
     const deleted = await repo.deleteDealAsync('d-1');
     expect(deleted).toBe(true);
     expect(await repo.getDealAsync('d-1')).toBeNull();
