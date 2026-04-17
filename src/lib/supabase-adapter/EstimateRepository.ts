@@ -1,6 +1,14 @@
 /**
- * EstimateRepository — Phase A
- * 同期メソッド + async エイリアス（Promise.resolve ラッパー）
+ * EstimateRepository — Phase B (限定対応)
+ *
+ * NOTE: DB スキーマ (public.estimates) は「明細行」単位
+ *   (project_id, item_name, quantity, unit_price, category) であり、
+ * 本リポジトリの EstimateRecord は「見積書」単位
+ *   (propertyName, clientName, totalAmount, status, taxRate) と粒度が異なる。
+ *
+ * Phase B 時点では schema 整合が取れないため、useSupabase=true でも
+ * async メソッドは InMemory のまま動作する（データ破損回避）。
+ * Phase C で見積書レベル schema を追加した上で本格切替予定。
  */
 
 export type EstimateRecord = {
@@ -15,8 +23,33 @@ export type EstimateRecord = {
   updatedAt: string;
 };
 
+function isSupabaseEnabled(): boolean {
+  if (typeof import.meta !== 'undefined' && import.meta.env) {
+    return import.meta.env.VITE_USE_SUPABASE === 'true';
+  }
+  return false;
+}
+
+let warnedSchemaMismatch = false;
+
 export class EstimateRepository {
   private store = new Map<string, EstimateRecord>();
+
+  /**
+   * @param useSupabase Phase B 時点では Supabase スキーマと粒度不一致のため
+   * true 指定でも InMemory にフォールバック（一度だけ警告ログ）。
+   * Phase C で見積書 schema 追加後に本切替予定。
+   */
+  constructor(useSupabase?: boolean) {
+    const enabled = useSupabase ?? isSupabaseEnabled();
+    if (enabled && !warnedSchemaMismatch) {
+      warnedSchemaMismatch = true;
+      // eslint-disable-next-line no-console
+      console.warn(
+        '[EstimateRepository] VITE_USE_SUPABASE=true ですが、見積書スキーマが Phase C 待ちのため InMemory にフォールバックします',
+      );
+    }
+  }
 
   // ── 同期メソッド（既存互換）──────────────────────────────────────────────
 
