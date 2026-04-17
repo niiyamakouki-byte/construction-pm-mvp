@@ -25,16 +25,16 @@ describe('ChatRepository async aliases (Phase A)', () => {
 
   it('getAsync は同期 get と同じ結果を返す', async () => {
     const msg = makeMessage();
-    repo.save(msg);
-    const sync = repo.get('chat-1');
+    await repo.saveAsync(msg);
+    const sync = await repo.getAsync('chat-1');
     const result = await repo.getAsync('chat-1');
     expect(result).toEqual(sync);
   });
 
   it('listAsync は同期 list と同じ結果を返す', async () => {
-    repo.save(makeMessage({ id: 'chat-1' }));
-    repo.save(makeMessage({ id: 'chat-2' }));
-    const sync = repo.list();
+    await repo.saveAsync(makeMessage({ id: 'chat-1' }));
+    await repo.saveAsync(makeMessage({ id: 'chat-2' }));
+    const sync = await repo.listAsync();
     const result = await repo.listAsync();
     expect(result).toEqual(sync);
     expect(result).toHaveLength(2);
@@ -68,7 +68,7 @@ describe('ChatRepository async aliases (Phase A)', () => {
   });
 
   it('deleteAsync で削除後に getAsync が null を返す', async () => {
-    repo.save(makeMessage());
+    await repo.saveAsync(makeMessage());
     const deleted = await repo.deleteAsync('chat-1');
     expect(deleted).toBe(true);
     expect(await repo.getAsync('chat-1')).toBeNull();

@@ -78,18 +78,22 @@ export class ChatRepository {
 
   // ── 同期メソッド（既存互換 / インメモリのみ）─────────────────────────────
 
+  /** @deprecated Use getAsync instead. Will be removed in Phase C cleanup. */
   get(id: string): ChatMessageRecord | null {
     return this.store.get(id) ?? null;
   }
 
+  /** @deprecated Use listByProjectAsync instead. Will be removed in Phase C cleanup. */
   listByProject(projectId: string): ChatMessageRecord[] {
     return [...this.store.values()].filter((m) => m.projectId === projectId);
   }
 
+  /** @deprecated Use listAsync instead. Will be removed in Phase C cleanup. */
   list(): ChatMessageRecord[] {
     return [...this.store.values()];
   }
 
+  /** @deprecated Use addAsync instead. Will be removed in Phase C cleanup. */
   add(
     projectId: string,
     userId: string,
@@ -114,10 +118,12 @@ export class ChatRepository {
     return msg;
   }
 
+  /** @deprecated Use saveAsync instead. Will be removed in Phase C cleanup. */
   save(msg: ChatMessageRecord): void {
     this.store.set(msg.id, { ...msg });
   }
 
+  /** @deprecated Use deleteAsync instead. Will be removed in Phase C cleanup. */
   delete(id: string): boolean {
     return this.store.delete(id);
   }
