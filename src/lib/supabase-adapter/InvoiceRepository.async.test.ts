@@ -24,16 +24,16 @@ describe('InvoiceRepository async aliases (Phase A)', () => {
   });
 
   it('getAsync は同期 get と同じ結果を返す', async () => {
-    const inv = repo.add(baseInvoiceData);
-    const sync = repo.get(inv.id);
+    const inv = await repo.addAsync(baseInvoiceData);
+    const sync = await repo.getAsync(inv.id);
     const result = await repo.getAsync(inv.id);
     expect(result).toEqual(sync);
   });
 
   it('listAsync は同期 list と同じ結果を返す', async () => {
-    repo.add(baseInvoiceData);
-    repo.add({ ...baseInvoiceData, vendorName: '山田建設' });
-    const sync = repo.list();
+    await repo.addAsync(baseInvoiceData);
+    await repo.addAsync({ ...baseInvoiceData, vendorName: '山田建設' });
+    const sync = await repo.listAsync();
     const result = await repo.listAsync();
     expect(result).toEqual(sync);
     expect(result).toHaveLength(2);
@@ -48,14 +48,14 @@ describe('InvoiceRepository async aliases (Phase A)', () => {
   });
 
   it('saveAsync でデータを永続化し getAsync で取得できる', async () => {
-    const inv = repo.add(baseInvoiceData);
+    const inv = await repo.addAsync(baseInvoiceData);
     await repo.saveAsync({ ...inv, status: '振込済' });
     const found = await repo.getAsync(inv.id);
     expect(found?.status).toBe('振込済');
   });
 
   it('deleteAsync で削除後に getAsync が null を返す', async () => {
-    const inv = repo.add(baseInvoiceData);
+    const inv = await repo.addAsync(baseInvoiceData);
     const deleted = await repo.deleteAsync(inv.id);
     expect(deleted).toBe(true);
     expect(await repo.getAsync(inv.id)).toBeNull();

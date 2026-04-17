@@ -97,24 +97,29 @@ export class InvoiceRepository {
 
   // ── 同期メソッド（既存互換 / インメモリのみ）─────────────────────────────
 
+  /** @deprecated Use getAsync instead. Will be removed in Phase C cleanup. */
   get(id: string): InvoiceRecord | null {
     return this.store.get(id) ?? null;
   }
 
+  /** @deprecated Use listAsync instead. Will be removed in Phase C cleanup. */
   list(): InvoiceRecord[] {
     return [...this.store.values()];
   }
 
+  /** @deprecated Use addAsync instead. Will be removed in Phase C cleanup. */
   add(data: Omit<InvoiceRecord, 'id'>): InvoiceRecord {
     const invoice: InvoiceRecord = { ...data, id: `inv-${this.nextId++}` };
     this.store.set(invoice.id, invoice);
     return invoice;
   }
 
+  /** @deprecated Use saveAsync instead. Will be removed in Phase C cleanup. */
   save(invoice: InvoiceRecord): void {
     this.store.set(invoice.id, { ...invoice });
   }
 
+  /** @deprecated Use deleteAsync instead. Will be removed in Phase C cleanup. */
   delete(id: string): boolean {
     return this.store.delete(id);
   }
