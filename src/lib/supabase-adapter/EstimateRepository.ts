@@ -52,22 +52,27 @@ export class EstimateRepository {
 
   // ── 同期メソッド（既存互換）──────────────────────────────────────────────
 
+  /** @deprecated Use getAsync instead. Will be removed in Phase C cleanup. */
   get(id: string): EstimateRecord | null {
     return this.store.get(id) ?? null;
   }
 
+  /** @deprecated Use listAsync instead. Will be removed in Phase C cleanup. */
   list(): EstimateRecord[] {
     return [...this.store.values()];
   }
 
+  /** @deprecated Use listByProjectAsync instead. Will be removed in Phase C cleanup. */
   listByProject(projectId: string): EstimateRecord[] {
     return this.list().filter((e) => e.projectId === projectId);
   }
 
+  /** @deprecated Use saveAsync instead. Will be removed in Phase C cleanup. */
   save(estimate: EstimateRecord): void {
     this.store.set(estimate.id, { ...estimate });
   }
 
+  /** @deprecated Use deleteAsync instead. Will be removed in Phase C cleanup. */
   delete(id: string): boolean {
     return this.store.delete(id);
   }

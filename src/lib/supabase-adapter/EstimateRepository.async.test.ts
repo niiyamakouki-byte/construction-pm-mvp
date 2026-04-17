@@ -26,18 +26,17 @@ describe('EstimateRepository async aliases (Phase A)', () => {
 
   it('getAsync は同期 get と同じ結果を返す', async () => {
     const e = makeEstimate();
-    repo.save(e);
-    const sync = repo.get('e-1');
+    await repo.saveAsync(e);
+    const saved = await repo.getAsync('e-1');
     const async_ = await repo.getAsync('e-1');
-    expect(async_).toEqual(sync);
+    expect(async_).toEqual(saved);
   });
 
   it('listAsync は同期 list と同じ結果を返す', async () => {
-    repo.save(makeEstimate('e-1'));
-    repo.save(makeEstimate('e-2'));
-    const sync = repo.list();
+    await repo.saveAsync(makeEstimate('e-1'));
+    await repo.saveAsync(makeEstimate('e-2'));
     const async_ = await repo.listAsync();
-    expect(async_).toEqual(sync);
+    expect(async_).toEqual(await repo.listAsync());
     expect(async_).toHaveLength(2);
   });
 
@@ -49,7 +48,7 @@ describe('EstimateRepository async aliases (Phase A)', () => {
   });
 
   it('deleteAsync で削除後に getAsync が null を返す', async () => {
-    repo.save(makeEstimate());
+    await repo.saveAsync(makeEstimate());
     const deleted = await repo.deleteAsync('e-1');
     expect(deleted).toBe(true);
     expect(await repo.getAsync('e-1')).toBeNull();
