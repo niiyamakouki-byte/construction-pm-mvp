@@ -24,15 +24,15 @@ describe('RoomRepository async aliases (Phase A)', () => {
 
   it('getAsync は同期 get と同じ結果を返す', async () => {
     const r = makeRoom();
-    repo.save(r);
+    await repo.saveAsync(r);
     const sync = repo.get('r-1');
     const async_ = await repo.getAsync('r-1');
     expect(async_).toEqual(sync);
   });
 
   it('listAsync は同期 list と同じ結果を返す', async () => {
-    repo.save(makeRoom('r-1'));
-    repo.save(makeRoom('r-2'));
+    await repo.saveAsync(makeRoom('r-1'));
+    await repo.saveAsync(makeRoom('r-2'));
     const sync = repo.list();
     const async_ = await repo.listAsync();
     expect(async_).toEqual(sync);
@@ -47,7 +47,7 @@ describe('RoomRepository async aliases (Phase A)', () => {
   });
 
   it('deleteAsync で削除後に getAsync が null を返す', async () => {
-    repo.save(makeRoom());
+    await repo.saveAsync(makeRoom());
     const deleted = await repo.deleteAsync('r-1');
     expect(deleted).toBe(true);
     expect(await repo.getAsync('r-1')).toBeNull();

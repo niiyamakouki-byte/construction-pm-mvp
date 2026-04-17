@@ -19,22 +19,27 @@ export class RoomRepository {
 
   // ── 同期メソッド（既存互換）──────────────────────────────────────────────
 
+  /** @deprecated Use getAsync instead. Will be removed in Phase C cleanup. */
   get(id: string): RoomRecord | null {
     return this.store.get(id) ?? null;
   }
 
+  /** @deprecated Use listAsync instead. Will be removed in Phase C cleanup. */
   list(): RoomRecord[] {
     return [...this.store.values()];
   }
 
+  /** @deprecated Use listByProjectAsync instead. Will be removed in Phase C cleanup. */
   listByProject(projectId: string): RoomRecord[] {
     return this.list().filter((r) => r.projectId === projectId);
   }
 
+  /** @deprecated Use saveAsync instead. Will be removed in Phase C cleanup. */
   save(room: RoomRecord): void {
     this.store.set(room.id, { ...room });
   }
 
+  /** @deprecated Use deleteAsync instead. Will be removed in Phase C cleanup. */
   delete(id: string): boolean {
     return this.store.delete(id);
   }
