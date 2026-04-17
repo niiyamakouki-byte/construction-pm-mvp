@@ -20,6 +20,7 @@ type ProjectRow = {
   end_date?: string | null;
   address?: string | null;
   budget?: number | null;
+  include_weekends?: boolean | null;
   created_at: string;
   updated_at: string;
 };
@@ -34,8 +35,7 @@ function rowToProject(row: ProjectRow): StoreProject {
     endDate: row.end_date ?? undefined,
     address: row.address ?? undefined,
     budget: row.budget ?? undefined,
-    // includeWeekends は DB スキーマに存在しないため既定 true
-    includeWeekends: true,
+    includeWeekends: row.include_weekends ?? true,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -51,6 +51,7 @@ function projectToRow(p: StoreProject): ProjectRow {
     end_date: p.endDate ?? null,
     address: p.address ?? null,
     budget: p.budget ?? null,
+    include_weekends: p.includeWeekends,
     created_at: p.createdAt,
     updated_at: p.updatedAt,
   };
