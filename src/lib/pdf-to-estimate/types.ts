@@ -165,7 +165,8 @@ export type WallType =
   | "LGS65"
   | "LGS75"
   | "LGS90"
-  | "LGS100";
+  | "LGS100"
+  | "木下地";
 
 export interface WallTypeRule {
   type: WallType;
@@ -186,10 +187,11 @@ export interface WallTypeRule {
 
 /**
  * LGS壁タイプ別ルール定義。
- * cost-master IN-001（LGS間仕切り65型 ¥5,500/㎡）をベースに
- * 厚みに応じた係数でコスト調整:
- *   LGS20_runner: 軽量（0.60） / LGS45: やや薄（0.85） / LGS65: 標準（1.00）
- *   LGS75: 標準+（1.08） / LGS90/100: 遮音強化（1.20/1.30）
+ *
+ * LGS65/LGS75/木下地 は個別品目（IN-045〜047）を使用（係数依存から脱却）。
+ * その他タイプは IN-001（LGS間仕切り65型 ¥5,500/㎡）に係数を掛けて調整:
+ *   LGS20_runner: 軽量（0.60） / LGS45: やや薄（0.85）
+ *   LGS90/100: 遮音強化（1.20/1.30）
  */
 export const WALL_TYPE_RULES: Record<WallType, WallTypeRule> = {
   LGS20_runner: {
@@ -235,9 +237,8 @@ export const WALL_TYPE_RULES: Record<WallType, WallTypeRule> = {
     usage: "一般間仕切り（メイン）",
     priority: 10, // ← メイン用途
     defaultAssembly: [
-      { costMasterCode: "IN-001", quantityFactor: 1.0 }, // IN-001 = LGS65型 標準
-      { costMasterCode: "IN-003", quantityFactor: 1.0 },
-      { costMasterCode: "IN-005", quantityFactor: 1.05 },
+      { costMasterCode: "IN-045", quantityFactor: 1.0 }, // IN-045 = LGS65 ボード両面張り（個別品目）
+      { costMasterCode: "IN-005", quantityFactor: 1.05 }, // クロス（ロス5%）
     ],
   },
   LGS75: {
@@ -247,9 +248,8 @@ export const WALL_TYPE_RULES: Record<WallType, WallTypeRule> = {
     usage: "補助",
     priority: 3,
     defaultAssembly: [
-      { costMasterCode: "IN-001", quantityFactor: 1.08 },
-      { costMasterCode: "IN-003", quantityFactor: 1.0 },
-      { costMasterCode: "IN-005", quantityFactor: 1.05 },
+      { costMasterCode: "IN-046", quantityFactor: 1.0 }, // IN-046 = LGS75 ボード両面張り（個別品目）
+      { costMasterCode: "IN-005", quantityFactor: 1.05 }, // クロス（ロス5%）
     ],
   },
   LGS90: {
@@ -274,6 +274,17 @@ export const WALL_TYPE_RULES: Record<WallType, WallTypeRule> = {
       { costMasterCode: "IN-001", quantityFactor: 1.30 },
       { costMasterCode: "IN-004", quantityFactor: 1.0 }, // 二重張り（遮音）
       { costMasterCode: "IN-005", quantityFactor: 1.05 },
+    ],
+  },
+  木下地: {
+    type: "木下地",
+    nominalThicknessMm: 45,
+    typicalWallThicknessMm: [80, 120],
+    usage: "木製下地（間柱）ボード両面張り",
+    priority: 5,
+    defaultAssembly: [
+      { costMasterCode: "IN-047", quantityFactor: 1.0 }, // IN-047 = 木下地 ボード両面張り（個別品目）
+      { costMasterCode: "IN-005", quantityFactor: 1.05 }, // クロス（ロス5%）
     ],
   },
 };

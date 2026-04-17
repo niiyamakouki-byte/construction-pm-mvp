@@ -2,7 +2,8 @@
  * 見積ドラフト生成 — QuantityTakeoff + cost-master → EstimateDraft
  *
  * 典型的な内装アセンブリ（デフォルト）:
- *   壁:   LGS(IN-001) + PB12.5mm(IN-003) + クロス量産(IN-005)
+ *   壁:   LGS65両面張り(IN-045) + クロス量産(IN-005)
+ *         ※壁タイプ別個別品目: IN-045(LGS65)/IN-046(LGS75)/IN-047(木下地)
  *   床:   フロアタイル(IN-011)
  *   天井: 軽鉄下地シングル(IN-068) + 石膏ボード天井(IN-015)
  *   ドア: 木製建具フラッシュ(FX-001)
@@ -28,8 +29,7 @@ import { inferWallType } from "./wall-type-inference.js";
 
 export const DEFAULT_ASSEMBLY: InteriorAssembly = {
   wall: [
-    { costMasterCode: "IN-001", quantityFactor: 1.0 },  // LGS間仕切り
-    { costMasterCode: "IN-003", quantityFactor: 1.0 },  // PB12.5mm
+    { costMasterCode: "IN-045", quantityFactor: 1.0 },  // LGS65 ボード両面張り（個別品目）
     { costMasterCode: "IN-005", quantityFactor: 1.05 }, // クロス（ロス5%）
   ],
   floor: [

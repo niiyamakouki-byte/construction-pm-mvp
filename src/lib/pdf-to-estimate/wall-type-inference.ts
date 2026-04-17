@@ -50,6 +50,8 @@ const TEXT_PATTERNS: Array<{ pattern: RegExp; type: WallType }> = [
   { pattern: /\bC[\s-]20\b/i, type: "LGS20_runner" },
   { pattern: /(?<![0-9])20[型形]/, type: "LGS20_runner" },
   { pattern: /ランナー20|20ランナー/, type: "LGS20_runner" },
+  // 木下地
+  { pattern: /木下地|木製下地|間柱/, type: "木下地" },
 ];
 
 // ─── 壁厚→タイプマッピング ──────────────────────────────────────
