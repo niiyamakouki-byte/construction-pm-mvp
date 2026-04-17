@@ -12,6 +12,7 @@ import { GanttPageSkeleton } from "../components/PageSkeletons.js";
 import { GanttChart } from "../components/gantt/GanttChart.js";
 import { QuickAddForm } from "../components/gantt/QuickAddForm.js";
 import { TaskEditModal } from "../components/gantt/TaskEditModal.js";
+import { TaskDrilldownModal } from "../components/gantt/TaskDrilldownModal.js";
 import type { ChartLayout, GanttTask, QuickAddState, TaskDetailState } from "../components/gantt/types.js";
 import type { GeneratedSchedule, GeneratedTask } from "../lib/ai-schedule-generator.js";
 import { getDefaultPaceData } from "../lib/ai-schedule-generator.js";
@@ -355,6 +356,7 @@ function GanttPageContent({ initialProjectId = null }: GanttPageProps) {
   const [error, setError] = useState<string | null>(null);
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(initialProjectId ?? readLastProjectId());
   const [quickAdd, setQuickAdd] = useState<QuickAddState | null>(null);
+  const [drilldownTask, setDrilldownTask] = useState<GanttTask | null>(null);
   const [taskDetail, setTaskDetail] = useState<TaskDetailState | null>(null);
   const [dayWidth, setDayWidth] = useState(DEFAULT_DAY_WIDTH);
   const [connectMode, setConnectMode] = useState(false);
@@ -574,6 +576,11 @@ function GanttPageContent({ initialProjectId = null }: GanttPageProps) {
   }, [projects, today]);
 
   const openTaskDetail = useCallback((task: GanttTask) => {
+    setDrilldownTask(task);
+  }, []);
+
+  const openTaskEdit = useCallback((task: GanttTask) => {
+    setDrilldownTask(null);
     setTaskDetail({
       task,
       editName: task.name,
@@ -999,6 +1006,14 @@ function GanttPageContent({ initialProjectId = null }: GanttPageProps) {
           onClose={() => setQuickAdd(null)}
           onSubmit={(event) => void handleQuickAddSubmit(event)}
           onChange={(updater) => setQuickAdd((current) => (current ? updater(current) : current))}
+        />
+      ) : null}
+
+      {drilldownTask ? (
+        <TaskDrilldownModal
+          task={drilldownTask}
+          onClose={() => setDrilldownTask(null)}
+          onEdit={() => openTaskEdit(drilldownTask)}
         />
       ) : null}
 

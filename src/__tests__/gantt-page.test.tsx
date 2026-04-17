@@ -252,6 +252,10 @@ describe("GanttPage", () => {
     await screen.findByRole("figure", { name: "ガントチャート: 1タスク" });
     await user.click(screen.getAllByText("墨出し")[0]);
 
+    // drilldown modal opens first
+    expect(await screen.findByRole("dialog", { name: "タスク詳細" })).toBeDefined();
+    await user.click(screen.getByRole("button", { name: "編集する" }));
+
     expect(await screen.findByRole("dialog", { name: "タスクを編集" })).toBeDefined();
   });
 
@@ -341,6 +345,8 @@ describe("GanttPage", () => {
 
     await screen.findByRole("figure", { name: "ガントチャート: 1タスク" });
     await user.click(screen.getAllByText("墨出し")[0]);
+    // go through drilldown → edit
+    await user.click(await screen.findByRole("button", { name: "編集する" }));
     await user.click(screen.getByRole("checkbox", { name: "上書きする" }));
     await user.click(screen.getByRole("checkbox", { name: /この工程は土日稼働/ }));
     await user.click(screen.getByRole("button", { name: "保存" }));
