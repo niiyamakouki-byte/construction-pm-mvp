@@ -608,7 +608,6 @@ function EstimatePageContent() {
     } catch {
       return null;
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedItems, targetMargin, includeLegalWelfare, hasCostItems]);
 
   const simPatterns = useMemo(() => {
@@ -618,7 +617,6 @@ function EstimatePageContent() {
     } catch {
       return null;
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedItems, includeLegalWelfare, hasCostItems]);
 
   const handleApplyMargin = () => {

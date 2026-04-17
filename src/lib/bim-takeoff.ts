@@ -131,7 +131,7 @@ export function parseBIMElements(rawData: unknown): BIMElement[] {
  * - クロス面積
  */
 export function calculateWallTakeoff(wall: BIMElement): MaterialTakeoff {
-  const { length, height, area } = wall.dimensions;
+  const { length, area } = wall.dimensions;
 
   // LGSスタッド: 600mmピッチ → 両端含めて floor(length/0.6)+1
   const studCount = Math.floor(length / 0.6) + 1;

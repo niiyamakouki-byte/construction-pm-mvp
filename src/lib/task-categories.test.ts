@@ -4,7 +4,6 @@ import {
   getCategories,
   getSubCategories,
   searchCategories,
-  type TaskCategory,
 } from "./task-categories";
 
 describe("TASK_CATEGORIES", () => {

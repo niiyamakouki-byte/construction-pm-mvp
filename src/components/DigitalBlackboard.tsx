@@ -186,7 +186,6 @@ export function DigitalBlackboard({ photoUrl, defaults }: Props) {
       {hasImage && (
         <div className="relative overflow-hidden rounded-2xl border border-slate-200 bg-slate-100">
           {/* Hidden img for drawing */}
-          {/* eslint-disable-next-line jsx-a11y/alt-text */}
           <img
             src={previewUrl}
             className="hidden"

@@ -1,7 +1,5 @@
 import { useEffect, useRef, useState } from "react";
 import {
-  calculateManDays,
-  getEntriesByCompany,
   getEntryLog,
   getTodayWorkerCount,
   logEntry,

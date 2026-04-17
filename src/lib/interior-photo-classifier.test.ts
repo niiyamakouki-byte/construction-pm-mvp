@@ -4,7 +4,6 @@ import {
   suggestCategory,
   getCategoryHierarchy,
   INTERIOR_CATEGORIES,
-  type InteriorCategory,
   type InteriorParentCategory,
 } from "./interior-photo-classifier.js";
 

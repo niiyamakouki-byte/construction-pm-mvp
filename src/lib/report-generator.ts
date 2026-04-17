@@ -734,7 +734,7 @@ export type InspectionReportInput = {
  */
 export function buildInspectionReportHtml(input: InspectionReportInput): string {
   const { checklist, photoUrls = [], correctiveActions = [] } = input;
-  const evaluation = evaluateChecklist(checklist);
+  const _evaluation = evaluateChecklist(checklist);
   const baseHtml = buildInspectionHtml(checklist);
 
   // Inject photos and corrective action sections before closing </body>

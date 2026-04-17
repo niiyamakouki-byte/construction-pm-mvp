@@ -77,7 +77,7 @@ const records = new Map<string, DekigataRecord>();
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
-function now(): string {
+function _now(): string {
   return new Date().toISOString();
 }
 

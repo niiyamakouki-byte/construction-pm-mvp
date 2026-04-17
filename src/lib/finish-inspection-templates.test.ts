@@ -3,8 +3,6 @@ import {
   INTERIOR_INSPECTION_TEMPLATES,
   createInspectionFromTemplate,
   clearInspections,
-  type InspectionTemplate,
-  type TemplateItem,
 } from "./finish-inspection.js";
 
 beforeEach(() => {

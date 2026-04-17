@@ -196,7 +196,7 @@ export function ProjectChat({
   useEffect(() => {
     markAllAsRead(projectId, currentUserId);
     loadMessages();
-  }, [projectId, currentUserId]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [projectId, currentUserId]);
 
   const handleSubmit = useCallback(
     (e: React.FormEvent, overrideContent?: string) => {

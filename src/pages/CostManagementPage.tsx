@@ -312,7 +312,6 @@ function ChangeRequestTab({ projectId }: { projectId: string | null }) {
 
   const approvedTotal = useMemo(
     () => (projectId ? getApprovedCostTotal(projectId) : 0),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [projectId, requests],
   );
 

@@ -5,7 +5,7 @@
  */
 
 import { describe, expect, it } from "vitest";
-import { assessProjectHealth, type HealthScore } from "./project-health.js";
+import { assessProjectHealth } from "./project-health.js";
 import { generateForecastReport } from "./cost-forecaster.js";
 import {
   logEntry,

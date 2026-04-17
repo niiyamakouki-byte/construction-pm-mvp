@@ -141,7 +141,7 @@ function calcMaterialCost(materials: DailyReportMaterial[]): number {
   return materials.reduce((sum, m) => sum + m.amount, 0);
 }
 
-function sameDay(a: Date, b: Date): boolean {
+function _sameDay(a: Date, b: Date): boolean {
   return (
     a.getFullYear() === b.getFullYear() &&
     a.getMonth() === b.getMonth() &&
@@ -298,7 +298,7 @@ export function calculateSiteProfit(
 
 // ── Multi-site dashboard ─────────────────────────────────
 
-const ALERT_OVER_BUDGET_RATIO = 1.0; // 100% spent
+const _ALERT_OVER_BUDGET_RATIO = 1.0; // 100% spent
 const ALERT_HIGH_COST_RATIO = 0.9; // 90% of budget used
 const ALERT_LOW_MARGIN = 10; // below 10% projected margin
 const ALERT_BEHIND_SCHEDULE_RATIO = 0.8; // cost progress / day progress ratio

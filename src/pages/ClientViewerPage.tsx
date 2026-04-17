@@ -5,7 +5,7 @@
  */
 
 import { useEffect, useMemo, useState } from "react";
-import type { Project, Task, DailyReport, ChatMessage } from "../domain/types.js";
+import type { Project, Task, ChatMessage } from "../domain/types.js";
 import { createProjectRepository } from "../stores/project-store.js";
 import { createTaskRepository } from "../stores/task-store.js";
 import {

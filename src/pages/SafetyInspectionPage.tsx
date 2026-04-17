@@ -12,7 +12,6 @@ import {
   copyDocumentToProject,
   deleteDocument,
   generateDocumentHtml,
-  DOCUMENT_TEMPLATE_DATA,
 } from "../lib/safety-documents.js";
 
 type ProjectType = "general" | "renovation" | "demolition" | "high-rise";

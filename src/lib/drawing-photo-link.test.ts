@@ -9,7 +9,6 @@ import {
   unlinkPhoto,
   buildPhotoLinkReportHtml,
   _resetForTest,
-  type DrawingPhotoLink,
 } from "./drawing-photo-link.js";
 
 const DRAWING_ID = "drawing-001";

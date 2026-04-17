@@ -11,7 +11,7 @@
 import { parseNaturalLanguage } from "./nl-estimate-parser";
 import { generateEstimate } from "./estimate-generator";
 import type { Estimate, EstimateInput } from "./types";
-import type { ParseResult, ParsedEstimateItem } from "./nl-estimate-parser";
+import type { ParseResult } from "./nl-estimate-parser";
 import { calculateConfidence, scoreToStars } from "../lib/confidence-scorer";
 import { detectAnomalies } from "../lib/anomaly-detector";
 

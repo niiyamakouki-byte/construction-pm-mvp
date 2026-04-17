@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { searchGanttTasks, type GanttSearchFilter } from "../lib/gantt/gantt-search.js";
+import { searchGanttTasks } from "../lib/gantt/gantt-search.js";
 import type { CrossProjectGanttTask } from "../lib/gantt/cross-project-gantt.js";
 
 function makeTask(overrides?: Partial<CrossProjectGanttTask>): CrossProjectGanttTask {

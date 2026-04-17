@@ -9,13 +9,11 @@ import {
   generateTimestamp,
   searchContracts,
   buildContractSummaryHtml,
-  listContracts,
   getContract,
   deleteContract,
   clearContracts,
   canTransitionContract,
 } from "./e-contract.js";
-import type { ContractStatus } from "./e-contract.js";
 
 beforeEach(() => {
   clearContracts();
@@ -195,7 +193,7 @@ describe("searchContracts", () => {
     const c1 = createContract("p-1", "KDX南青山内装工事契約", [ISSUER, SIGNER], "2099-01-01");
     sendContract(c1.id);
 
-    const c2 = createContract("p-2", "アルペジオ改装契約", [
+    createContract("p-2", "アルペジオ改装契約", [
       ISSUER,
       { name: "山田建設", email: "yamada@kensetsu.jp", role: "signer" },
     ], "2099-01-01");

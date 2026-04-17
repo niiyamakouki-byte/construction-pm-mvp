@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { GanttTaskLabel } from "./GanttTaskBar.js";
 import type { GanttTask } from "./types.js";

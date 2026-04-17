@@ -3,7 +3,6 @@ import {
   buildPhotoLedgerHtml,
   buildPhotoLedgerMetadata,
   type PhotoLedgerEntry,
-  type PhotoLedgerInput,
   type PhotoLedgerCoverInfo,
 } from "../lib/photo-ledger.js";
 

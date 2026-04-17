@@ -10,7 +10,6 @@ import {
   getDeal,
   updateDeal,
   deleteDeal,
-  getAllDeals,
   getDealsByCustomer,
   getDealsByStage,
   changeStage,

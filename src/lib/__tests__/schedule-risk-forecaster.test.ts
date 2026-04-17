@@ -6,7 +6,7 @@ import {
   identifyDrivingPaths,
   monteCarloSchedule,
 } from "../schedule-risk-forecaster.js";
-import type { DurationDistribution, ScheduleForecast, TaskPath } from "../schedule-risk-forecaster.js";
+import type { ScheduleForecast, TaskPath } from "../schedule-risk-forecaster.js";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 

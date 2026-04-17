@@ -511,7 +511,7 @@ export function buildContractHtml(contract: ElectronicContract): string {
     <p><strong>受注者（乙）</strong></p>
     <p>${escapeHtml(contract.contractorName)}</p>
     <br>
-    <p>署名日：　　　年　　月　　日</p>
+    <p>署名日：___年___月___日</p>
     <p>署名：________________</p>
   </div>
 </div>

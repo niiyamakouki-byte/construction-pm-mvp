@@ -87,7 +87,7 @@ function normalize(str: string): string {
   return str.toLowerCase().replace(/[\s_\-./]/g, "");
 }
 
-function scoreText(text: string, keywords: string[]): number {
+function _scoreText(text: string, keywords: string[]): number {
   const normalized = normalize(text);
   let score = 0;
   for (const kw of keywords) {

@@ -7,7 +7,7 @@ import {
   getNextStatuses,
   getOrderSummaryByStatus,
 } from "../lib/order-management.js";
-import type { PurchaseOrder, OrderStatus, OrderItem } from "../lib/order-management.js";
+import type { PurchaseOrder, OrderStatus } from "../lib/order-management.js";
 import costMaster from "../estimate/cost-master.json";
 
 // ── Types ────────────────────────────────────────────────────────────────────

@@ -15,7 +15,6 @@ import {
   getMoodBoardsByProject,
   moveItem,
   removeMoodBoardItem,
-  resizeItem,
 } from "../lib/mood-board.js";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -364,7 +363,7 @@ function exportToPdf(board: MoodBoard, total: number) {
 </head>
 <body>
   <h1>ムードボード：${board.title}</h1>
-  <div class="meta">作成日：${new Date(board.createdAt).toLocaleDateString("ja-JP")}　アイテム数：${board.items.length}点</div>
+  <div class="meta">作成日：${new Date(board.createdAt).toLocaleDateString("ja-JP")} アイテム数：${board.items.length}点</div>
   ${items}
   <div class="total">合計概算：¥${total.toLocaleString()}</div>
   <button onclick="window.print()" style="margin-top:20px;padding:10px 24px;background:#2563eb;color:#fff;border:none;border-radius:6px;font-size:14px;cursor:pointer">印刷 / PDF保存</button>
@@ -419,7 +418,7 @@ export function MoodBoardPage({ projectId }: { projectId: string }) {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-xl font-bold text-slate-900">{board.title}</h1>
-          <p className="text-sm text-slate-500">{board.items.length}点　合計概算：¥{total.toLocaleString()}</p>
+          <p className="text-sm text-slate-500">{board.items.length}点 合計概算：¥{total.toLocaleString()}</p>
         </div>
         <div className="flex gap-2">
           <button

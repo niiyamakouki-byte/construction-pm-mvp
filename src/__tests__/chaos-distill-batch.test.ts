@@ -16,22 +16,22 @@ import {
   updatePaceFromActual,
   getDefaultPaceData,
   type ProjectSpec,
-  type GeneratedTask,
+  type GeneratedTask as _GeneratedTask,
   type GeneratedSchedule,
 } from "../lib/ai-schedule-generator.js";
 
 // 2. multi-site-manager
 import {
   createSite,
-  addDailyReport,
+  addDailyReport as _addDailyReport,
   calculateSiteProfit,
   getMultiSiteDashboard,
-  getWorkerAllocation,
+  getWorkerAllocation as _getWorkerAllocation,
   optimizeWorkerAssignment,
   getDailyReportSummary,
   detectScheduleConflicts,
   forecastCashflow,
-  exportDailyReportsCSV,
+  exportDailyReportsCSV as _exportDailyReportsCSV,
 } from "../lib/multi-site-manager.js";
 
 // 3. e-contract-finance
@@ -45,7 +45,7 @@ import {
   checkContractExpiry,
   getContractStats,
   calculateMonthlyPayment,
-  exportContractCSV,
+  exportContractCSV as _exportContractCSV,
 } from "../lib/e-contract-finance.js";
 
 // 4. bim-takeoff
@@ -53,14 +53,14 @@ import {
   parseBIMElements,
   calculateWallTakeoff,
   calculateCeilingTakeoff,
-  calculateFloorTakeoff,
+  calculateFloorTakeoff as _calculateFloorTakeoff,
   generateFullTakeoff,
   aggregateMaterials,
-  generatePrecutPlan,
+  generatePrecutPlan as _generatePrecutPlan,
   estimatePrecutWaste,
-  compareTakeoffs,
-  buildTakeoffSummary,
-  exportTakeoffCSV,
+  compareTakeoffs as _compareTakeoffs,
+  buildTakeoffSummary as _buildTakeoffSummary,
+  exportTakeoffCSV as _exportTakeoffCSV,
   type BIMElement,
   type BIMModel,
 } from "../lib/bim-takeoff.js";
@@ -72,12 +72,12 @@ import {
   createInspectionRoute,
   scheduleInspection,
   startInspection,
-  addFinding,
-  completeInspection,
-  resolveFindings,
+  addFinding as _addFinding,
+  completeInspection as _completeInspection,
+  resolveFindings as _resolveFindings,
   compareProgress,
   getUnresolvedFindings,
-  generateInspectionReport,
+  generateInspectionReport as _generateInspectionReport,
   getInspectionStats,
   suggestInspectionFrequency,
   exportFindingsCSV,
@@ -92,7 +92,7 @@ import {
   calculateSkillLevel,
   getCCUSStats,
   getExpiringCertifications,
-  lookupWorkerCCUS,
+  lookupWorkerCCUS as _lookupWorkerCCUS,
 } from "../lib/ccus-integration.js";
 
 // 7. safety-doc-reuse
@@ -125,12 +125,12 @@ import {
 import {
   calculateArea,
   calculatePerimeter,
-  calculateLength,
+  calculateLength as _calculateLength,
   applyScale,
   setDrawingScale,
   createTakeoffItem,
-  summarizeTakeoff,
-  exportTakeoffCSV as exportDrawingTakeoffCSV,
+  summarizeTakeoff as _summarizeTakeoff,
+  exportTakeoffCSV as _exportDrawingTakeoffCSV,
   mergeTakeoffSessions,
   calculateCostEstimate,
   getDefaultWasteFactor,
@@ -143,14 +143,14 @@ import {
   classifyByFilename,
   classifyByMetadata,
   autoSortPhotos,
-  groupPhotosByCategory,
-  groupPhotosByDate,
+  groupPhotosByCategory as _groupPhotosByCategory,
+  groupPhotosByDate as _groupPhotosByDate,
   getPhotoStats,
   detectDuplicates,
   suggestMissingPhotos,
   searchPhotos,
-  generatePhotoIndex,
-  classifyPhoto,
+  generatePhotoIndex as _generatePhotoIndex,
+  classifyPhoto as _classifyPhoto,
   type ClassifiedPhoto,
 } from "../lib/photo-classifier.js";
 
@@ -161,10 +161,10 @@ import {
   calculateAssembly,
   estimateFromAssemblies,
   findAssembliesByCategory,
-  getAssemblyUnitCost,
+  getAssemblyUnitCost as _getAssemblyUnitCost,
   compareAssemblies,
-  buildAssemblyEstimateHtml,
-  exportAssemblyCSV,
+  buildAssemblyEstimateHtml as _buildAssemblyEstimateHtml,
+  exportAssemblyCSV as _exportAssemblyCSV,
 } from "../lib/assembly-estimator.js";
 
 // 12. collaborative-markup
@@ -175,9 +175,9 @@ import {
   addMarkup,
   updateMarkupStatus,
   addReply,
-  getMarkupsByStatus,
+  getMarkupsByStatus as _getMarkupsByStatus,
   getMarkupSummary,
-  exportMarkupsCSV,
+  exportMarkupsCSV as _exportMarkupsCSV,
   mergeMarkupSessions,
   toggleLayerVisibility,
   lockLayer,
@@ -191,7 +191,7 @@ import {
   getScenarioDiff,
   recommendScenario,
   buildComparisonTableHtml,
-  exportComparisonCSV,
+  exportComparisonCSV as _exportComparisonCSV,
   cloneScenario,
   mergeScenarioItems,
 } from "../lib/multi-scenario-estimate.js";
@@ -200,16 +200,16 @@ import {
 import {
   createTemplate,
   getBuiltInTemplates,
-  addField,
+  addField as _addField,
   removeField,
   reorderFields,
   createRecord,
   fillRecord,
   validateRecord,
   evaluateCalculationFields,
-  submitRecord,
-  approveRecord,
-  buildRecordHtml,
+  submitRecord as _submitRecord,
+  approveRecord as _approveRecord,
+  buildRecordHtml as _buildRecordHtml,
   exportRecordsCSV,
   cloneTemplate,
 } from "../lib/custom-template-engine.js";
@@ -963,7 +963,7 @@ describe("chaos: photo-classifier", () => {
       filename: `img${i}.jpg`,
       takenAt: new Date(),
       projectId: "p1",
-      classification: { category: cat as any, confidence: 1, tags: [] },
+      classification: { category: cat as ClassifiedPhoto["classification"]["category"], confidence: 1, tags: [] },
     }));
     expect(suggestMissingPhotos(photos, "interior")).toEqual([]);
   });

@@ -45,7 +45,7 @@ const KANJI_MAP: Record<string, number> = {
   六: 6, 七: 7, 八: 8, 九: 9, 十: 10,
 };
 
-function parseJapaneseNumber(s: string): number | null {
+function _parseJapaneseNumber(s: string): number | null {
   // 半角数字
   const half = s.match(/^[0-9]+$/);
   if (half) return parseInt(s, 10);
@@ -157,7 +157,7 @@ function splitCommands(nl: string): string[] {
 }
 
 /** タスク名候補を抽出: 「を」「の」の前の部分 */
-function extractTaskName(segment: string): string {
+function _extractTaskName(segment: string): string {
   // 「〇〇を△△に変更」「〇〇を〇〇に」→ 最初の「を」「の」前
   const m = segment.match(/^(.+?)(?:を|の)/);
   return m ? m[1].trim() : segment.trim();

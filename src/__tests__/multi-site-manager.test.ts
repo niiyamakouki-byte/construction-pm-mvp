@@ -1,4 +1,4 @@
-import { describe, expect, it, beforeEach } from "vitest";
+import { describe, expect, it } from "vitest";
 import {
   createSite,
   updateSiteStatus,
@@ -132,7 +132,7 @@ describe("addDailyReport", () => {
   });
 
   it("複数の日報を追加するとコストが累積する", () => {
-    let site = createSite("現場", "addr", 5, 1_000_000, new Date());
+    const site = createSite("現場", "addr", 5, 1_000_000, new Date());
     const { updatedSite: s1 } = addDailyReport(site, makeReport(site.id, new Date(), 8, 10_000, 30_000, 20));
     const { updatedSite: s2 } = addDailyReport(s1, makeReport(site.id, new Date(), 8, 10_000, 30_000, 40));
 

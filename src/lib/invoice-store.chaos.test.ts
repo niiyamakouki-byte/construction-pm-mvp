@@ -4,7 +4,6 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import {
   addInvoice,
-  getInvoice,
   getAllInvoices,
   clearInvoices,
   updateInvoiceStatus,

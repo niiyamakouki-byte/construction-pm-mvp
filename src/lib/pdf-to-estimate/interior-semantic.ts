@@ -55,7 +55,7 @@ function midpoint(line: PdfLine): Point {
 }
 
 /** Distance between two points in PDF point units */
-function dist(a: Point, b: Point): number {
+function _dist(a: Point, b: Point): number {
   return Math.sqrt((a.x - b.x) ** 2 + (a.y - b.y) ** 2);
 }
 
