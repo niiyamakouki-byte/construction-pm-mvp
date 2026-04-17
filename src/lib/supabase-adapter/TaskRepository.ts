@@ -1,7 +1,11 @@
 /**
- * TaskRepository — Phase A
- * 同期メソッド + async エイリアス（Promise.resolve ラッパー）
+ * TaskRepository — Phase B
+ * 同期メソッドはインメモリ（既存互換）。
+ * async メソッドは VITE_USE_SUPABASE=true のとき Supabase へ、
+ * それ以外はインメモリへルーティングする。
  */
+
+import { SupabaseRepository } from '../repository/supabase-repository.js';
 
 export type Task = {
   id: string;
@@ -18,10 +22,71 @@ export type Task = {
   updatedAt: string;
 };
 
+type TaskRow = {
+  id: string;
+  project_id: string;
+  name: string;
+  description: string;
+  status: Task['status'];
+  progress: number;
+  start_date?: string | null;
+  due_date?: string | null;
+  assignee_id?: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+function rowToTask(row: TaskRow): Task {
+  return {
+    id: row.id,
+    projectId: row.project_id,
+    name: row.name,
+    description: row.description ?? '',
+    status: row.status,
+    progress: row.progress ?? 0,
+    startDate: row.start_date ?? undefined,
+    dueDate: row.due_date ?? undefined,
+    contractorId: row.assignee_id ?? undefined,
+    // isMilestone は DB スキーマに存在しないため既定 false
+    isMilestone: false,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+function taskToRow(t: Task): TaskRow {
+  return {
+    id: t.id,
+    project_id: t.projectId,
+    name: t.name,
+    description: t.description,
+    status: t.status,
+    progress: t.progress,
+    start_date: t.startDate ?? null,
+    due_date: t.dueDate ?? null,
+    assignee_id: t.contractorId ?? null,
+    created_at: t.createdAt,
+    updated_at: t.updatedAt,
+  };
+}
+
+function isSupabaseEnabled(): boolean {
+  if (typeof import.meta !== 'undefined' && import.meta.env) {
+    return import.meta.env.VITE_USE_SUPABASE === 'true';
+  }
+  return false;
+}
+
 export class TaskRepository {
   private store = new Map<string, Task>();
+  private supabase: SupabaseRepository<TaskRow> | null;
 
-  // ── 同期メソッド（既存互換）──────────────────────────────────────────────
+  constructor(useSupabase?: boolean) {
+    const enabled = useSupabase ?? isSupabaseEnabled();
+    this.supabase = enabled ? new SupabaseRepository<TaskRow>('tasks') : null;
+  }
+
+  // ── 同期メソッド（既存互換 / インメモリのみ）─────────────────────────────
 
   get(id: string): Task | null {
     return this.store.get(id) ?? null;
@@ -43,25 +108,58 @@ export class TaskRepository {
     return this.store.delete(id);
   }
 
-  // ── async エイリアス（Phase A: Supabase 移行対応可能）──────────────────
+  // ── async メソッド（Phase B: Supabase or InMemory）────────────────────
 
   async getAsync(id: string): Promise<Task | null> {
-    return Promise.resolve(this.get(id));
+    if (this.supabase) {
+      const row = await this.supabase.getById(id);
+      return row ? rowToTask(row) : null;
+    }
+    return this.get(id);
   }
 
   async listAsync(): Promise<Task[]> {
-    return Promise.resolve(this.list());
+    if (this.supabase) {
+      const rows = await this.supabase.getAll();
+      return rows.map(rowToTask);
+    }
+    return this.list();
   }
 
   async listByProjectAsync(projectId: string): Promise<Task[]> {
-    return Promise.resolve(this.listByProject(projectId));
+    if (this.supabase) {
+      // 簡易フィルタ：getAll 後にメモリで絞り込み（行数少 MVP 想定）
+      const rows = await this.supabase.getAll();
+      return rows.filter((r) => r.project_id === projectId).map(rowToTask);
+    }
+    return this.listByProject(projectId);
   }
 
   async saveAsync(task: Task): Promise<void> {
-    return Promise.resolve(this.save(task));
+    if (this.supabase) {
+      const row = taskToRow(task);
+      const existing = await this.supabase.getById(task.id);
+      if (existing) {
+        await this.supabase.update(task.id, row);
+      } else {
+        const { id: _id, ...rest } = row;
+        void _id;
+        await this.supabase.create({ ...rest, id: task.id } as unknown as Omit<TaskRow, 'id'>);
+      }
+      return;
+    }
+    this.save(task);
   }
 
   async deleteAsync(id: string): Promise<boolean> {
-    return Promise.resolve(this.delete(id));
+    if (this.supabase) {
+      try {
+        await this.supabase.delete(id);
+        return true;
+      } catch {
+        return false;
+      }
+    }
+    return this.delete(id);
   }
 }
