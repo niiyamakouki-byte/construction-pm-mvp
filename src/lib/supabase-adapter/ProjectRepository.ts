@@ -1,17 +1,82 @@
 /**
- * ProjectRepository — Phase A
- * 同期メソッド + async エイリアス（Promise.resolve ラッパー）
- * Phase B で async メソッドを Supabase 実装に差し替える。
+ * ProjectRepository — Phase B
+ * 同期メソッドはインメモリ（既存互換）。
+ * async メソッドは VITE_USE_SUPABASE=true のとき Supabase へ、
+ * それ以外はインメモリへルーティングする。
  */
 
 import type { StoreProject } from '../store.js';
+import { SupabaseRepository } from '../repository/supabase-repository.js';
 
 export type { StoreProject as Project };
 
+// DB 行 (snake_case) ↔ アプリ型 (camelCase) のマッピング
+type ProjectRow = {
+  id: string;
+  name: string;
+  description: string;
+  status: StoreProject['status'];
+  start_date: string;
+  end_date?: string | null;
+  address?: string | null;
+  budget?: number | null;
+  created_at: string;
+  updated_at: string;
+};
+
+function rowToProject(row: ProjectRow): StoreProject {
+  return {
+    id: row.id,
+    name: row.name,
+    description: row.description ?? '',
+    status: row.status,
+    startDate: row.start_date,
+    endDate: row.end_date ?? undefined,
+    address: row.address ?? undefined,
+    budget: row.budget ?? undefined,
+    // includeWeekends は DB スキーマに存在しないため既定 true
+    includeWeekends: true,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+function projectToRow(p: StoreProject): ProjectRow {
+  return {
+    id: p.id,
+    name: p.name,
+    description: p.description,
+    status: p.status,
+    start_date: p.startDate,
+    end_date: p.endDate ?? null,
+    address: p.address ?? null,
+    budget: p.budget ?? null,
+    created_at: p.createdAt,
+    updated_at: p.updatedAt,
+  };
+}
+
+function isSupabaseEnabled(): boolean {
+  // ブラウザ Vite 環境
+  if (typeof import.meta !== 'undefined' && import.meta.env) {
+    return import.meta.env.VITE_USE_SUPABASE === 'true';
+  }
+  return false;
+}
+
 export class ProjectRepository {
   private store = new Map<string, StoreProject>();
+  private supabase: SupabaseRepository<ProjectRow> | null;
 
-  // ── 同期メソッド（既存互換）──────────────────────────────────────────────
+  /**
+   * @param useSupabase 明示指定がなければ env を見る。テスト用に上書き可。
+   */
+  constructor(useSupabase?: boolean) {
+    const enabled = useSupabase ?? isSupabaseEnabled();
+    this.supabase = enabled ? new SupabaseRepository<ProjectRow>('projects') : null;
+  }
+
+  // ── 同期メソッド（既存互換 / インメモリのみ）─────────────────────────────
 
   get(id: string): StoreProject | null {
     return this.store.get(id) ?? null;
@@ -29,21 +94,51 @@ export class ProjectRepository {
     return this.store.delete(id);
   }
 
-  // ── async エイリアス（Phase A: Supabase 移行対応可能）──────────────────
+  // ── async メソッド（Phase B: Supabase or InMemory）────────────────────
 
   async getAsync(id: string): Promise<StoreProject | null> {
-    return Promise.resolve(this.get(id));
+    if (this.supabase) {
+      const row = await this.supabase.getById(id);
+      return row ? rowToProject(row) : null;
+    }
+    return this.get(id);
   }
 
   async listAsync(): Promise<StoreProject[]> {
-    return Promise.resolve(this.list());
+    if (this.supabase) {
+      const rows = await this.supabase.getAll();
+      return rows.map(rowToProject);
+    }
+    return this.list();
   }
 
   async saveAsync(project: StoreProject): Promise<void> {
-    return Promise.resolve(this.save(project));
+    if (this.supabase) {
+      const row = projectToRow(project);
+      const existing = await this.supabase.getById(project.id);
+      if (existing) {
+        await this.supabase.update(project.id, row);
+      } else {
+        // SupabaseRepository.create は Omit<T,'id'> を要求するが、
+        // projects.id は text PK なのでそのまま insert する
+        const { id: _id, ...rest } = row;
+        void _id;
+        await this.supabase.create({ ...rest, id: project.id } as unknown as Omit<ProjectRow, 'id'>);
+      }
+      return;
+    }
+    this.save(project);
   }
 
   async deleteAsync(id: string): Promise<boolean> {
-    return Promise.resolve(this.delete(id));
+    if (this.supabase) {
+      try {
+        await this.supabase.delete(id);
+        return true;
+      } catch {
+        return false;
+      }
+    }
+    return this.delete(id);
   }
 }
