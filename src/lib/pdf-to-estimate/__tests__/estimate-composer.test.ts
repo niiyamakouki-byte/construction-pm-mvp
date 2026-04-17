@@ -44,6 +44,9 @@ const TEST_COST_MASTER: CostMasterItem[] = [
   { code: "IN-012", name: "巾木（ビニル）", unit: "m", unitPrice: 800 },
   { code: "IN-015", name: "石膏ボード天井", unit: "㎡", unitPrice: 4500 },
   { code: "IN-024", name: "廻り縁", unit: "m", unitPrice: 1200 },
+  { code: "IN-045", name: "LGS65 ボード両面張り", unit: "㎡", unitPrice: 4800 },
+  { code: "IN-046", name: "LGS75 ボード両面張り", unit: "㎡", unitPrice: 5200 },
+  { code: "IN-047", name: "木下地 ボード両面張り", unit: "㎡", unitPrice: 4500 },
   { code: "IN-068", name: "天井・軽鉄下地（シングル）", unit: "㎡", unitPrice: 2800 },
   { code: "FX-001", name: "木製建具（フラッシュ戸）", unit: "枚", unitPrice: 65000 },
   { code: "FX-003", name: "ガラス入り建具", unit: "枚", unitPrice: 95000 },
@@ -52,13 +55,12 @@ const TEST_COST_MASTER: CostMasterItem[] = [
 // ─── Tests ────────────────────────────────────────────────────────
 
 describe("composeEstimate", () => {
-  it("壁面積から LGS・PB・クロスの3行が生成される", () => {
+  it("壁面積から LGS65両面張り・クロスの2行が生成される（個別品目）", () => {
     const takeoff = makeTakeoff([makeTakeoffItem({ category: "壁", item: "壁仕上げ面積", quantity: 30 })]);
     const draft = composeEstimate(takeoff, TEST_COST_MASTER, makeDrawing());
     const codes = draft.lines.map((l) => l.code);
-    expect(codes).toContain("IN-001");
-    expect(codes).toContain("IN-003");
-    expect(codes).toContain("IN-005");
+    expect(codes).toContain("IN-045"); // LGS65 ボード両面張り（個別品目）
+    expect(codes).toContain("IN-005"); // クロス
   });
 
   it("金額合計が各行の amount の合計と一致する", () => {
@@ -149,16 +151,22 @@ const EXTENDED_COST_MASTER: CostMasterItem[] = [
 ];
 
 describe("composeEstimate — wallType options", () => {
-  it("wallTypeOverride: LGS45 は IN-001 quantityFactor 0.85 で LGS65 より金額が下がる", () => {
+  it("wallTypeOverride: LGS45 は IN-001 × 0.85 で、LGS65 は IN-045 個別品目で計算される", () => {
     const takeoff = makeTakeoff([
       makeTakeoffItem({ category: "壁", item: "壁仕上げ面積", quantity: 20 }),
     ]);
-    const draftDefault = composeEstimate(takeoff, TEST_COST_MASTER, makeDrawing());
+    const draftLGS65 = composeEstimate(takeoff, TEST_COST_MASTER, makeDrawing(), {
+      wallTypeOverride: "LGS65",
+    });
     const draftLGS45 = composeEstimate(takeoff, TEST_COST_MASTER, makeDrawing(), {
       wallTypeOverride: "LGS45",
     });
-    // LGS45 の IN-001 係数(0.85) < LGS65(1.0) なので合計が小さい
-    expect(draftLGS45.totalExcludingTax).toBeLessThan(draftDefault.totalExcludingTax);
+    // LGS65 は IN-045(¥4,800) 個別品目を使用
+    const lgs65Line = draftLGS65.lines.find((l) => l.code === "IN-045");
+    expect(lgs65Line).toBeDefined();
+    // LGS45 は IN-001(¥5,500×0.85=¥4,675) 係数ベースを使用
+    const lgs45Line = draftLGS45.lines.find((l) => l.code === "IN-001");
+    expect(lgs45Line).toBeDefined();
   });
 
   it("wallTypeOverride: LGS100 は notes に壁タイプ情報が含まれる", () => {
@@ -178,9 +186,11 @@ describe("composeEstimate — wallType options", () => {
     const draftInferred = composeEstimate(takeoff, TEST_COST_MASTER, makeDrawing(), {
       wallTypeInferenceHints: { texts: ["スタッド LGS45"] },
     });
-    const draftDefault = composeEstimate(takeoff, TEST_COST_MASTER, makeDrawing());
-    // LGS45(0.85) → LGS65(1.0) より安い
-    expect(draftInferred.totalExcludingTax).toBeLessThan(draftDefault.totalExcludingTax);
+    // LGS45 は IN-001 係数ベースアセンブリが採用される
+    const lgs45Line = draftInferred.lines.find((l) => l.code === "IN-001");
+    expect(lgs45Line).toBeDefined();
+    // notes に推定情報が含まれる
+    expect(draftInferred.notes.some((n) => n.includes("LGS45"))).toBe(true);
   });
 
   it("wallTypeOverride は assemblyTemplate より優先される", () => {
@@ -195,8 +205,83 @@ describe("composeEstimate — wallType options", () => {
       assemblyTemplate: customAssembly,
       wallTypeOverride: "LGS65",
     });
-    // wallTypeOverride が優先 → quantityFactor 1.0 で計算
-    const lgsLine = draft.lines.find((l) => l.code === "IN-001");
+    // wallTypeOverride が優先 → LGS65 個別品目 IN-045(quantityFactor 1.0) で計算
+    const lgsLine = draft.lines.find((l) => l.code === "IN-045");
     expect(lgsLine?.quantity).toBeCloseTo(10, 1);
+  });
+});
+
+// ─── 壁タイプ個別品目テスト（IN-045/046/047） ─────────────────────
+
+describe("composeEstimate — 壁タイプ個別単価行", () => {
+  it("LGS65 は IN-045（¥4,800/㎡）の個別品目行が生成される", () => {
+    const takeoff = makeTakeoff([
+      makeTakeoffItem({ category: "壁", item: "壁仕上げ面積", quantity: 10 }),
+    ]);
+    const draft = composeEstimate(takeoff, TEST_COST_MASTER, makeDrawing(), {
+      wallTypeOverride: "LGS65",
+    });
+    const line = draft.lines.find((l) => l.code === "IN-045");
+    expect(line).toBeDefined();
+    expect(line?.unitPrice).toBe(4800);
+    expect(line?.quantity).toBeCloseTo(10, 2);
+    expect(line?.amount).toBe(48000);
+  });
+
+  it("LGS75 は IN-046（¥5,200/㎡）の個別品目行が生成される", () => {
+    const takeoff = makeTakeoff([
+      makeTakeoffItem({ category: "壁", item: "壁仕上げ面積", quantity: 10 }),
+    ]);
+    const draft = composeEstimate(takeoff, TEST_COST_MASTER, makeDrawing(), {
+      wallTypeOverride: "LGS75",
+    });
+    const line = draft.lines.find((l) => l.code === "IN-046");
+    expect(line).toBeDefined();
+    expect(line?.unitPrice).toBe(5200);
+    expect(line?.quantity).toBeCloseTo(10, 2);
+    expect(line?.amount).toBe(52000);
+  });
+
+  it("木下地 は IN-047（¥4,500/㎡）の個別品目行が生成される", () => {
+    const takeoff = makeTakeoff([
+      makeTakeoffItem({ category: "壁", item: "壁仕上げ面積", quantity: 10 }),
+    ]);
+    const draft = composeEstimate(takeoff, TEST_COST_MASTER, makeDrawing(), {
+      wallTypeOverride: "木下地",
+    });
+    const line = draft.lines.find((l) => l.code === "IN-047");
+    expect(line).toBeDefined();
+    expect(line?.unitPrice).toBe(4500);
+    expect(line?.quantity).toBeCloseTo(10, 2);
+    expect(line?.amount).toBe(45000);
+  });
+
+  it("LGS65/LGS75/木下地 はそれぞれ異なる品目コードの行を生成する", () => {
+    const takeoff = makeTakeoff([
+      makeTakeoffItem({ category: "壁", item: "壁仕上げ面積", quantity: 20 }),
+    ]);
+    const drafts = (["LGS65", "LGS75", "木下地"] as const).map((wt) =>
+      composeEstimate(takeoff, TEST_COST_MASTER, makeDrawing(), { wallTypeOverride: wt }),
+    );
+    const [dLGS65, dLGS75, d木下地] = drafts;
+    expect(dLGS65.lines.find((l) => l.code === "IN-045")).toBeDefined();
+    expect(dLGS75.lines.find((l) => l.code === "IN-046")).toBeDefined();
+    expect(d木下地.lines.find((l) => l.code === "IN-047")).toBeDefined();
+    // 係数依存の IN-001 は使われていない
+    expect(dLGS65.lines.find((l) => l.code === "IN-001")).toBeUndefined();
+    expect(dLGS75.lines.find((l) => l.code === "IN-001")).toBeUndefined();
+    expect(d木下地.lines.find((l) => l.code === "IN-001")).toBeUndefined();
+  });
+
+  it("wallTypeInferenceHints: テキスト「木下地」で 木下地 アセンブリが採用される", () => {
+    const takeoff = makeTakeoff([
+      makeTakeoffItem({ category: "壁", item: "壁仕上げ面積", quantity: 15 }),
+    ]);
+    const draft = composeEstimate(takeoff, TEST_COST_MASTER, makeDrawing(), {
+      wallTypeInferenceHints: { texts: ["木下地 間柱@303"] },
+    });
+    const line = draft.lines.find((l) => l.code === "IN-047");
+    expect(line).toBeDefined();
+    expect(draft.notes.some((n) => n.includes("木下地"))).toBe(true);
   });
 });
