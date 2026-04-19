@@ -7,6 +7,10 @@
  *
  * 現時点では TEST MODE 専用。STRIPE_TEST_SECRET_KEY が未設定の場合は
  * 呼び出し元で設定エラーを返す想定。
+ *
+ * セキュリティ方針:
+ *   priceId はクライアントから受け取らず、ここに来るまでにサーバー側で
+ *   plan → priceId のマッピングが解決済みである必要がある。
  */
 
 export type CheckoutPlanId = "standard" | "pro";
