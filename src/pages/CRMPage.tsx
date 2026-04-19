@@ -10,33 +10,32 @@ import {
   getDealsByCustomer,
   getStageOrder,
   searchCustomers,
+  updateCustomer,
   type Customer,
   type Deal,
   type DealStage,
 } from "../lib/crm-store.js";
+import { CRMRepository } from "../lib/supabase-adapter/CRMRepository.js";
 
-// Seed demo data only if store is empty (called inside useEffect, not at module level)
-let seeded = false;
-function seedDemoData() {
-  if (seeded) return;
-  seeded = true;
-  if (getAllCustomers().length > 0) return;
-  const now = new Date().toISOString();
+// Shared async repository (Supabase or InMemory depending on VITE_USE_SUPABASE)
+const crmRepo = new CRMRepository();
 
-  const customers: Customer[] = [
-    { id: "demo-c1", name: "田中 光一", company: "田中建設", phone: "03-1234-5678", email: "tanaka@example.com", address: "東京都港区南青山1-1-1", note: "メイン顧客", createdAt: "2025-01-10T09:00:00Z" },
-    { id: "demo-c2", name: "鈴木 美智子", company: "鈴木不動産", phone: "03-2345-6789", email: "suzuki@example.com", address: "東京都渋谷区2-2-2", note: "", createdAt: "2025-02-01T09:00:00Z" },
-    { id: "demo-c3", name: "佐藤 健", company: "佐藤商事", phone: "03-3456-7890", email: "sato@example.com", address: "東京都新宿区3-3-3", note: "", createdAt: "2025-02-15T09:00:00Z" },
-  ];
-  const deals: Deal[] = [
-    { id: "demo-d1", customerId: "demo-c1", projectName: "南青山マンション内装", stage: "商談中", estimatedAmount: 4750000, actualAmount: null, probability: 70, expectedCloseDate: "2025-07-31", note: "KDX物件", createdAt: "2025-03-01T09:00:00Z", updatedAt: now },
-    { id: "demo-d2", customerId: "demo-c1", projectName: "港区オフィスリノベ", stage: "受注", estimatedAmount: 2800000, actualAmount: 2950000, probability: 100, expectedCloseDate: "2025-04-30", note: "", createdAt: "2025-01-15T09:00:00Z", updatedAt: now },
-    { id: "demo-d3", customerId: "demo-c2", projectName: "渋谷区戸建てリフォーム", stage: "見積提出", estimatedAmount: 1500000, actualAmount: null, probability: 40, expectedCloseDate: "2025-08-31", note: "", createdAt: "2025-03-20T09:00:00Z", updatedAt: now },
-    { id: "demo-d4", customerId: "demo-c3", projectName: "新宿区店舗改装", stage: "引合", estimatedAmount: 800000, actualAmount: null, probability: 10, expectedCloseDate: "2025-09-30", note: "", createdAt: "2025-04-01T09:00:00Z", updatedAt: now },
-    { id: "demo-d5", customerId: "demo-c2", projectName: "渋谷区倉庫床リノリウム", stage: "失注", estimatedAmount: 600000, actualAmount: null, probability: 0, expectedCloseDate: "2025-05-31", note: "他社受注", createdAt: "2025-02-10T09:00:00Z", updatedAt: now },
-  ];
-  customers.forEach(addCustomer);
-  deals.forEach(addDeal);
+/** 永続化されている顧客/商談をインメモリへ水和。永続化失敗時は何もしない。 */
+async function hydrateFromRepo(): Promise<void> {
+  try {
+    const [customers, deals] = await Promise.all([
+      crmRepo.listCustomersAsync(),
+      crmRepo.listDealsAsync(),
+    ]);
+    for (const c of customers) {
+      if (!getAllCustomers().some((existing) => existing.id === c.id)) addCustomer(c);
+    }
+    for (const d of deals) {
+      if (!getAllDeals().some((existing) => existing.id === d.id)) addDeal(d);
+    }
+  } catch {
+    // Supabase 未設定時や RLS で弾かれた場合は静かに fallback。
+  }
 }
 
 const currencyFmt = new Intl.NumberFormat("ja-JP", { style: "currency", currency: "JPY", maximumFractionDigits: 0 });
@@ -67,8 +66,17 @@ export function CRMPage() {
   const [refresh, setRefresh] = useState(0);
   const bump = useCallback(() => setRefresh((n) => n + 1), []);
 
-  // Seed demo data on first render, not at module level
-  useEffect(() => { seedDemoData(); }, []);
+  // Hydrate from persistent repository on mount (no demo data injection).
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      await hydrateFromRepo();
+      if (!cancelled) bump();
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [bump]);
 
   // eslint-disable-next-line react-hooks/exhaustive-deps -- refresh は外部ストア変更の強制再計算トリガー
   const customers = useMemo(() => getAllCustomers(), [refresh]);
@@ -133,12 +141,14 @@ function PipelineView({
   }, [deals, stages]);
 
   const handleStageChange = (dealId: string, stage: DealStage) => {
-    changeStage(dealId, stage);
+    const updated = changeStage(dealId, stage);
+    if (updated) void crmRepo.saveDealAsync(updated);
     onRefresh();
   };
 
   const handleDelete = (dealId: string) => {
     deleteDeal(dealId);
+    void crmRepo.deleteDealAsync(dealId);
     onRefresh();
   };
 
@@ -275,7 +285,7 @@ function DealForm({
     e.preventDefault();
     if (!projectName.trim() || !customerId) return;
     const now = new Date().toISOString();
-    addDeal({
+    const deal: Deal = {
       id: crypto.randomUUID(),
       customerId,
       projectName: projectName.trim(),
@@ -287,7 +297,9 @@ function DealForm({
       note: note.trim(),
       createdAt: now,
       updatedAt: now,
-    });
+    };
+    addDeal(deal);
+    void crmRepo.saveDealAsync(deal);
     onSave();
   };
 
@@ -295,7 +307,7 @@ function DealForm({
     e.preventDefault();
     if (!newCustomerName.trim()) return;
     const id = crypto.randomUUID();
-    addCustomer({
+    const customer: Customer = {
       id,
       name: newCustomerName.trim(),
       company: newCustomerCompany.trim(),
@@ -304,7 +316,9 @@ function DealForm({
       address: "",
       note: "",
       createdAt: new Date().toISOString(),
-    });
+    };
+    addCustomer(customer);
+    void crmRepo.saveCustomerAsync(customer);
     setCustomerId(id);
     setCustomerForm(false);
     setNewCustomerName("");
@@ -445,11 +459,10 @@ function CustomerDetail({
   const [note, setNote] = useState(customer.note);
 
   const handleSaveNote = () => {
-    import("../lib/crm-store.js").then(({ updateCustomer }) => {
-      updateCustomer(customer.id, { note });
-      setEditNote(false);
-      onRefresh();
-    });
+    const updated = updateCustomer(customer.id, { note });
+    if (updated) void crmRepo.saveCustomerAsync(updated);
+    setEditNote(false);
+    onRefresh();
   };
 
   return (
