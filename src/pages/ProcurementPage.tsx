@@ -1,46 +1,23 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { buildProcurementAlerts } from "../lib/procurement-alerts.js";
 import type { ProcurementAlert } from "../lib/procurement-alerts.js";
 import type { Task } from "../domain/types.js";
-
-// ── Demo seed data ──────────────────────────────────────────────────────────
-
-type Material = {
-  id: string;
-  name: string;
-  category: string;
-  quantity: number;
-  unit: string;
-  status: "unordered" | "ordered" | "delivered" | "accepted";
-  dueDate: string;
-  projectId: string;
-};
-
-const DEMO_MATERIALS: Material[] = [
-  { id: "m-1", name: "LGS 65mm", category: "軽鉄材", quantity: 200, unit: "本", status: "unordered", dueDate: "2025-07-10", projectId: "p-1" },
-  { id: "m-2", name: "石膏ボード 12.5mm", category: "ボード", quantity: 500, unit: "枚", status: "ordered", dueDate: "2025-07-05", projectId: "p-1" },
-  { id: "m-3", name: "フローリング材 オーク", category: "床材", quantity: 120, unit: "枚", status: "delivered", dueDate: "2025-06-28", projectId: "p-1" },
-  { id: "m-4", name: "クロス (白)", category: "内装材", quantity: 300, unit: "m", status: "accepted", dueDate: "2025-06-20", projectId: "p-1" },
-  { id: "m-5", name: "電線 VVF2.0mm", category: "電気材料", quantity: 100, unit: "m", status: "unordered", dueDate: "2025-07-15", projectId: "p-1" },
-  { id: "m-6", name: "配管 VU50", category: "給排水", quantity: 30, unit: "本", status: "ordered", dueDate: "2025-07-08", projectId: "p-1" },
-];
-
-const DEMO_TASKS: Task[] = [
-  { id: "t-1", projectId: "p-1", name: "空調機搬入", description: "", status: "todo", progress: 0, dependencies: [], createdAt: "", updatedAt: "", startDate: "2025-07-05", lead_time: 7 },
-  { id: "t-2", projectId: "p-1", name: "電気配線工事", description: "", status: "todo", progress: 0, dependencies: [], createdAt: "", updatedAt: "", startDate: "2025-07-12", lead_time: 5 },
-  { id: "t-3", projectId: "p-1", name: "給排水配管", description: "", status: "todo", progress: 0, dependencies: [], createdAt: "", updatedAt: "", startDate: "2025-07-20", lead_time: 10 },
-];
+import {
+  ProcurementRepository,
+  type ProcurementMaterialRecord,
+  type ProcurementMaterialStatus,
+} from "../lib/supabase-adapter/ProcurementRepository.js";
 
 // ── Constants ───────────────────────────────────────────────────────────────
 
-const STATUS_LABELS: Record<Material["status"], string> = {
+const STATUS_LABELS: Record<ProcurementMaterialStatus, string> = {
   unordered: "未発注",
   ordered: "発注済",
   delivered: "納品済",
   accepted: "検収済",
 };
 
-const STATUS_STYLES: Record<Material["status"], string> = {
+const STATUS_STYLES: Record<ProcurementMaterialStatus, string> = {
   unordered: "bg-red-50 text-red-700 border-red-200",
   ordered: "bg-amber-50 text-amber-700 border-amber-200",
   delivered: "bg-blue-50 text-blue-700 border-blue-200",
@@ -88,11 +65,17 @@ const TAB_LABELS: { key: Tab; label: string; icon: string }[] = [
   { key: "calendar", label: "納期カレンダー", icon: "📅" },
 ];
 
+// ── Repository (Supabase or InMemory) ────────────────────────────────────────
+
+const repository = new ProcurementRepository();
+
 // ── Component ────────────────────────────────────────────────────────────────
 
-export function ProcurementPage() {
+export function ProcurementPage({ projectId = "p-1" }: { projectId?: string } = {}) {
   const [activeTab, setActiveTab] = useState<Tab>("alerts");
-  const [materials, setMaterials] = useState<Material[]>(DEMO_MATERIALS);
+  const [materials, setMaterials] = useState<ProcurementMaterialRecord[]>([]);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
   const today = new Date().toISOString().slice(0, 10);
 
   // Calendar state
@@ -100,15 +83,39 @@ export function ProcurementPage() {
   const [calYear, setCalYear] = useState(now.getFullYear());
   const [calMonth, setCalMonth] = useState(now.getMonth());
 
+  // Load materials from Supabase (or in-memory fallback) on mount.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const loaded = await repository.listByProjectAsync(projectId);
+        if (!cancelled) setMaterials(loaded);
+      } catch (err) {
+        if (!cancelled) {
+          setLoadError(err instanceof Error ? err.message : "資材データの読み込みに失敗しました");
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [projectId]);
+
+  // buildProcurementAlerts needs tasks with lead_time + startDate.
+  // Without a task store wired here we pass an empty list; alerts tab will
+  // simply show 'no alerts'. This is intentional while tasks flow is elsewhere.
+  const emptyTasks = useMemo<Task[]>(() => [], []);
   const alerts = useMemo(
-    () => buildProcurementAlerts(DEMO_TASKS, today),
-    [today],
+    () => buildProcurementAlerts(emptyTasks, today),
+    [emptyTasks, today],
   );
 
   const calDays = useMemo(() => buildCalendarDays(calYear, calMonth), [calYear, calMonth]);
 
   const dueDates = useMemo(() => {
-    const map = new Map<string, Material[]>();
+    const map = new Map<string, ProcurementMaterialRecord[]>();
     materials.forEach((m) => {
       const list = map.get(m.dueDate) ?? [];
       list.push(m);
@@ -117,10 +124,15 @@ export function ProcurementPage() {
     return map;
   }, [materials]);
 
-  const handleStatusChange = (id: string, status: Material["status"]) => {
-    setMaterials((prev) =>
-      prev.map((m) => (m.id === id ? { ...m, status } : m)),
-    );
+  const handleStatusChange = (id: string, status: ProcurementMaterialStatus) => {
+    setMaterials((prev) => {
+      const next = prev.map((m) =>
+        m.id === id ? { ...m, status, updatedAt: new Date().toISOString() } : m,
+      );
+      const updated = next.find((m) => m.id === id);
+      if (updated) void repository.saveAsync(updated);
+      return next;
+    });
   };
 
   const prevMonth = () => {
@@ -132,6 +144,28 @@ export function ProcurementPage() {
     if (calMonth === 11) { setCalYear((y) => y + 1); setCalMonth(0); }
     else setCalMonth((m) => m + 1);
   };
+
+  if (loadError) {
+    return (
+      <div className="mx-auto max-w-2xl px-4 pb-8">
+        <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+          資材発注データの読み込みに失敗しました：{loadError}
+        </div>
+      </div>
+    );
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-12 text-sm text-slate-500">
+        <span
+          className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-slate-300 border-t-slate-600"
+          aria-hidden="true"
+        />
+        <span className="ml-2">読み込み中...</span>
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto max-w-2xl space-y-4 px-4 pb-8">
@@ -212,28 +246,34 @@ export function ProcurementPage() {
       {/* Tab: Materials */}
       {activeTab === "materials" && (
         <div className="space-y-2">
-          {materials.map((m) => (
-            <div key={m.id} className="rounded-xl border border-slate-200 bg-white p-4">
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex-1">
-                  <p className="text-sm font-semibold text-slate-900">{m.name}</p>
-                  <p className="mt-0.5 text-xs text-slate-500">
-                    {m.category} / {m.quantity}{m.unit} / 納期: {m.dueDate}
-                  </p>
-                </div>
-                <select
-                  value={m.status}
-                  onChange={(e) => handleStatusChange(m.id, e.target.value as Material["status"])}
-                  className={`rounded-lg border px-2 py-1 text-xs font-semibold ${STATUS_STYLES[m.status]} focus:outline-none`}
-                  aria-label={`${m.name}のステータス`}
-                >
-                  {(Object.keys(STATUS_LABELS) as Material["status"][]).map((s) => (
-                    <option key={s} value={s}>{STATUS_LABELS[s]}</option>
-                  ))}
-                </select>
-              </div>
+          {materials.length === 0 ? (
+            <div className="rounded-2xl border border-slate-200 bg-white p-6 text-center">
+              <p className="text-sm text-slate-500">登録された資材はありません</p>
             </div>
-          ))}
+          ) : (
+            materials.map((m) => (
+              <div key={m.id} className="rounded-xl border border-slate-200 bg-white p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex-1">
+                    <p className="text-sm font-semibold text-slate-900">{m.name}</p>
+                    <p className="mt-0.5 text-xs text-slate-500">
+                      {m.category} / {m.quantity}{m.unit} / 納期: {m.dueDate}
+                    </p>
+                  </div>
+                  <select
+                    value={m.status}
+                    onChange={(e) => handleStatusChange(m.id, e.target.value as ProcurementMaterialStatus)}
+                    className={`rounded-lg border px-2 py-1 text-xs font-semibold ${STATUS_STYLES[m.status]} focus:outline-none`}
+                    aria-label={`${m.name}のステータス`}
+                  >
+                    {(Object.keys(STATUS_LABELS) as ProcurementMaterialStatus[]).map((s) => (
+                      <option key={s} value={s}>{STATUS_LABELS[s]}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            ))
+          )}
         </div>
       )}
 
