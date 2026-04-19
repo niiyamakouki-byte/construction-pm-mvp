@@ -5,7 +5,7 @@ import { navigate } from "../hooks/useHashRouter.js";
 import { createAppRepository } from "../infra/create-app-repository.js";
 import type { AppNotification } from "../lib/notifications.js";
 import { buildNotifications, sortNotifications } from "../lib/notifications.js";
-import { buildMockConstructionSiteForecasts, collectWeatherWarnings } from "../lib/weather.js";
+import { fetchConstructionSiteForecasts, collectWeatherWarnings } from "../lib/weather.js";
 import { createCostItemRepository } from "../stores/cost-item-store.js";
 import { createProjectRepository } from "../stores/project-store.js";
 import { createTaskRepository } from "../stores/task-store.js";
@@ -76,7 +76,7 @@ export function NotificationBanner({ refreshKey }: NotificationBannerProps) {
       });
 
       const weatherWarnings = collectWeatherWarnings(
-        buildMockConstructionSiteForecasts(projects),
+        await fetchConstructionSiteForecasts(projects),
         2,
       ).map((warning) => ({
         id: `weather:${warning.siteId}:${warning.day.dt}`,

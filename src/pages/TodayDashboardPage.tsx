@@ -25,6 +25,7 @@ import {
 import { assessProjectHealth } from "../lib/project-health.js";
 import { generateDailyReport } from "../lib/daily-report-generator.js";
 import {
+  fetchConstructionSiteForecasts,
   buildMockConstructionSiteForecasts,
   getConstructionRecommendation,
   getDailyWeatherRisk,
@@ -213,10 +214,15 @@ function TodayDashboardPageContent() {
   const [photoCategory, setPhotoCategory] = useState<string>(PhotoCategory.other);
   const [photoValidation, setPhotoValidation] = useState<PhotoValidationResult | null>(null);
   const [photoUploaded, setPhotoUploaded] = useState(false);
-  const allSiteForecasts = useMemo(
+  const [allSiteForecasts, setAllSiteForecasts] = useState<import("../lib/weather.js").ConstructionSiteForecast[]>(
     () => buildMockConstructionSiteForecasts(allProjects),
-    [allProjects],
   );
+  useEffect(() => {
+    if (allProjects.length === 0) return;
+    void fetchConstructionSiteForecasts(allProjects).then(setAllSiteForecasts);
+  // allProjects の identity が変わったときのみ再 fetch
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [allProjects.length]);
   const siteForecasts = useMemo(
     () => allSiteForecasts.slice(0, 3),
     [allSiteForecasts],
@@ -757,12 +763,12 @@ function TodayDashboardPageContent() {
         </div>
       </section>
 
-      {/* Photo Upload */}
+      {/* Photo Upload — 写真保存機能は実装中 */}
       <section>
         <div className="mb-3 flex items-center justify-between gap-3">
-          <h2 className="text-base font-bold text-slate-800">現場写真アップロード</h2>
-          <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
-            {dailyReportProject?.name ?? "案件なし"}
+          <h2 className="text-base font-bold text-slate-800">現場写真日報</h2>
+          <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-700">
+            準備中
           </span>
         </div>
         <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
@@ -809,8 +815,8 @@ function TodayDashboardPageContent() {
             </div>
           )}
           {photoUploaded && photoValidation?.valid && (
-            <p className="mt-3 text-xs text-emerald-600 font-semibold">
-              写真を検証しました（{getCategoryLabel(photoCategory as import("../lib/photo-upload.js").PhotoCategory)}）。アップロード準備完了。
+            <p className="mt-3 text-xs text-amber-600 font-semibold">
+              ファイル検証OK（{getCategoryLabel(photoCategory as import("../lib/photo-upload.js").PhotoCategory)}）。写真の保存機能は現在実装中です。
             </p>
           )}
         </div>

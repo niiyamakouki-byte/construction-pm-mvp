@@ -3,6 +3,7 @@ import type { Project } from "../domain/types.js";
 import { useOrganizationContext } from "../contexts/OrganizationContext.js";
 import { navigate } from "../hooks/useHashRouter.js";
 import {
+  fetchConstructionSiteForecasts,
   buildMockConstructionSiteForecasts,
   getConstructionRecommendation,
   getDailyWeatherRisk,
@@ -220,10 +221,14 @@ export function WeatherPage() {
     };
   }, [projectRepository]);
 
-  const siteForecasts = useMemo(
+  const [siteForecasts, setSiteForecasts] = useState<ConstructionSiteForecast[]>(
     () => buildMockConstructionSiteForecasts(projects),
-    [projects],
   );
+  useEffect(() => {
+    if (projects.length === 0) return;
+    void fetchConstructionSiteForecasts(projects).then(setSiteForecasts);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [projects.length]);
 
   useEffect(() => {
     if (siteForecasts.length === 0) return;

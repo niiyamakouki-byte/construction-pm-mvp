@@ -228,6 +228,110 @@ function createMockForecast(lat: number, lon: number, offset: number, baseDate: 
   };
 }
 
+/** open-meteo APIから7日間予報を取得してOpenWeatherMapForecast形式に変換する */
+async function fetchOpenMeteoForecast(
+  lat: number,
+  lon: number,
+): Promise<OpenWeatherMapForecast | null> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 6000);
+  try {
+    const url =
+      `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}` +
+      `&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,wind_speed_10m_max` +
+      `&timezone=Asia%2FTokyo&forecast_days=7`;
+    const res = await fetch(url, { signal: controller.signal });
+    if (!res.ok) return null;
+    const data = (await res.json()) as {
+      daily?: {
+        time: string[];
+        weather_code: number[];
+        temperature_2m_max: number[];
+        temperature_2m_min: number[];
+        precipitation_probability_max: number[];
+        wind_speed_10m_max: number[];
+      };
+    };
+    const d = data.daily;
+    if (!d || !d.time?.length) return null;
+
+    function wmoToOpenWeatherIcon(code: number): { id: number; main: string; description: string; icon: string } {
+      if (code === 0) return { id: 800, main: "Clear", description: "clear sky", icon: "01d" };
+      if (code <= 2) return { id: 801, main: "Clouds", description: "few clouds", icon: "02d" };
+      if (code === 3) return { id: 803, main: "Clouds", description: "broken clouds", icon: "04d" };
+      if (code <= 48) return { id: 741, main: "Fog", description: "fog", icon: "50d" };
+      if (code <= 57) return { id: 300, main: "Drizzle", description: "drizzle", icon: "09d" };
+      if (code <= 67) return { id: 500, main: "Rain", description: "rain", icon: "10d" };
+      if (code <= 77) return { id: 600, main: "Snow", description: "snow", icon: "13d" };
+      if (code <= 82) return { id: 500, main: "Rain", description: "shower rain", icon: "09d" };
+      if (code <= 99) return { id: 200, main: "Thunderstorm", description: "thunderstorm", icon: "11d" };
+      return { id: 800, main: "Clear", description: "clear sky", icon: "01d" };
+    }
+
+    const daily: OpenWeatherMapDailyForecast[] = d.time.map((timeStr, i) => {
+      const dt = Math.floor(new Date(timeStr).getTime() / 1000);
+      const max = d.temperature_2m_max[i] ?? 25;
+      const min = d.temperature_2m_min[i] ?? 18;
+      const pop = (d.precipitation_probability_max[i] ?? 0) / 100;
+      const wind = d.wind_speed_10m_max[i] ?? 5;
+      const weatherInfo = wmoToOpenWeatherIcon(d.weather_code[i] ?? 0);
+      return {
+        dt,
+        temp: { day: Math.round((max + min) / 2), min, max },
+        pop,
+        wind_speed: wind,
+        weather: [weatherInfo],
+      };
+    });
+
+    return { lat, lon, timezone: "Asia/Tokyo", timezone_offset: 32400, daily };
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
+/**
+ * 案件の緯度経度からopen-meteo APIで天気を取得する。
+ * 取得失敗時はモックデータにフォールバック。
+ */
+export async function fetchConstructionSiteForecasts(
+  projects: Project[],
+  baseDate = new Date(),
+): Promise<ConstructionSiteForecast[]> {
+  const activeProjects = projects.filter(
+    (project) => project.status === "active" || project.status === "planning",
+  );
+
+  const sites = activeProjects.length > 0
+    ? activeProjects.map((project, index) => ({
+        siteId: `weather-${project.id}`,
+        projectId: project.id,
+        siteName: project.name,
+        locationLabel: project.address ?? "現場住所未設定",
+        lat: project.latitude ?? DEFAULT_SITE.lat + index * 0.03,
+        lon: project.longitude ?? DEFAULT_SITE.lon + index * 0.03,
+        offset: index,
+      }))
+    : [{ ...DEFAULT_SITE, offset: 0 }];
+
+  const results = await Promise.all(
+    sites.map(async (site) => {
+      const realForecast = await fetchOpenMeteoForecast(site.lat, site.lon);
+      return {
+        siteId: site.siteId,
+        projectId: "projectId" in site ? site.projectId : undefined,
+        siteName: site.siteName,
+        locationLabel: site.locationLabel,
+        forecast: realForecast ?? createMockForecast(site.lat, site.lon, site.offset, baseDate),
+      };
+    }),
+  );
+  return results;
+}
+
+/** 後方互換: 同期的なモックを返す（テスト/タイムアウト用） */
 export function buildMockConstructionSiteForecasts(
   projects: Project[],
   baseDate = new Date(),
