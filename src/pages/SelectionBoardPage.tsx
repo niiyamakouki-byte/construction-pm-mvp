@@ -4,18 +4,21 @@
  * 認証不要 /selection/:projectId
  */
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   type SelectionCategory,
   type SelectionItem,
   type SelectionOption,
   approveSelection,
-  createSelectionItem,
   getSelectionItemsByProject,
   selectOption,
   setStatus,
   updateSelectionItem,
 } from "../lib/selection-board.js";
+import {
+  SelectionRepository,
+  type SelectionItemRecord,
+} from "../lib/supabase-adapter/SelectionRepository.js";
 
 const CATEGORIES: SelectionCategory[] = [
   "床材",
@@ -34,81 +37,47 @@ const STATUS_BADGE: Record<SelectionItem["status"], string> = {
   変更依頼: "bg-red-100 text-red-700",
 };
 
-// ── Demo seed ─────────────────────────────────────────────────────────────────
+// ── Repository (Supabase or InMemory) ─────────────────────────────────────────
 
-function seedDemoItems(projectId: string): SelectionItem[] {
-  const existing = getSelectionItemsByProject(projectId);
-  if (existing.length > 0) return existing;
+const repository = new SelectionRepository();
 
-  const demoData: Array<{
-    category: SelectionCategory;
-    name: string;
-    options: Omit<SelectionOption, "id">[];
-  }> = [
-    {
-      category: "床材",
-      name: "リビング床材",
-      options: [
-        { name: "オーク突板フローリング", description: "天然木突板・15mm厚", unitPrice: 12000 },
-        { name: "ビニル床タイル", description: "耐水性・抗菌仕様", unitPrice: 4500 },
-        { name: "磁器質タイル 600角", description: "イタリア製・艶消し", unitPrice: 18000 },
-      ],
-    },
-    {
-      category: "壁材",
-      name: "リビング壁クロス",
-      options: [
-        { name: "量産クロス白系", description: "SB仕様・防汚加工", unitPrice: 1200 },
-        { name: "珪藻土塗り壁", description: "調湿機能・左官仕上げ", unitPrice: 8500 },
-        { name: "エコカラット", description: "LIXIL・消臭・調湿", unitPrice: 15000 },
-      ],
-    },
-    {
-      category: "天井材",
-      name: "LDK天井",
-      options: [
-        { name: "PB9.5mm AEP塗装", description: "白色・つや消し", unitPrice: 3200 },
-        { name: "化粧石膏ボード", description: "格子柄・シルバー", unitPrice: 6800 },
-      ],
-    },
-    {
-      category: "建具",
-      name: "室内ドア（3枚）",
-      options: [
-        { name: "LIXIL ラシッサD パレット", description: "ホワイトオーク柄", unitPrice: 45000 },
-        { name: "大建工業 ハピアベーシック", description: "オフホワイト", unitPrice: 38000 },
-      ],
-    },
-    {
-      category: "照明",
-      name: "リビング照明",
-      options: [
-        { name: "パナソニック シーリングLED", description: "調光・調色対応", unitPrice: 25000 },
-        { name: "コイズミ ダウンライト×6", description: "白色・埋込型", unitPrice: 42000 },
-      ],
-    },
-    {
-      category: "衛生器具",
-      name: "洗面台",
-      options: [
-        { name: "TOTO Vシリーズ 750mm", description: "シングルレバー混合栓", unitPrice: 85000 },
-        {
-          name: "LIXIL ルミシス 750mm",
-          description: "スリム収納・LED照明付",
-          unitPrice: 128000,
-        },
-      ],
-    },
-  ];
+function recordToItem(r: SelectionItemRecord): SelectionItem {
+  return {
+    id: r.id,
+    projectId: r.projectId,
+    category: r.category as SelectionCategory,
+    name: r.name,
+    options: r.options as SelectionOption[],
+    selectedOptionId: r.selectedOptionId,
+    status: r.status,
+    clientNote: r.clientNote,
+  };
+}
 
-  return demoData.map((d) =>
-    createSelectionItem({
-      projectId,
-      category: d.category,
-      name: d.name,
-      options: d.options.map((o, i) => ({ ...o, id: `opt-${d.category}-${i}` })),
-    }),
-  );
+function itemToRecord(item: SelectionItem, createdAt: string): SelectionItemRecord {
+  const now = new Date().toISOString();
+  return {
+    id: item.id,
+    projectId: item.projectId,
+    category: item.category,
+    name: item.name,
+    options: item.options,
+    selectedOptionId: item.selectedOptionId,
+    status: item.status,
+    clientNote: item.clientNote,
+    createdAt,
+    updatedAt: now,
+  };
+}
+
+/** 初回読み込み: 永続化された品目を取得する（デモは自動挿入しない）。 */
+async function loadItems(projectId: string): Promise<SelectionItem[]> {
+  const persisted = await repository.listByProjectAsync(projectId);
+  return persisted.map(recordToItem);
+}
+
+async function persistItem(item: SelectionItem, createdAt: string): Promise<void> {
+  await repository.saveAsync(itemToRecord(item, createdAt));
 }
 
 // ── Option card ───────────────────────────────────────────────────────────────
@@ -258,19 +227,63 @@ function ItemCard({
 
 export function SelectionBoardPage({ projectId }: { projectId: string }) {
   const [activeCategory, setActiveCategory] = useState<SelectionCategory>("床材");
-  const [items, setItems] = useState<SelectionItem[]>(() => seedDemoItems(projectId));
+  const [items, setItems] = useState<SelectionItem[] | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [createdAtById] = useState<Map<string, string>>(() => new Map());
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        // 永続化済みレコードを優先。空のときはインメモリ（tests 等）にフォールバック。
+        const persisted = await loadItems(projectId);
+        const local = getSelectionItemsByProject(projectId);
+        const merged = persisted.length > 0 ? persisted : local;
+        const now = new Date().toISOString();
+        for (const it of merged) {
+          if (!createdAtById.has(it.id)) createdAtById.set(it.id, now);
+        }
+        if (!cancelled) setItems(merged);
+      } catch (err) {
+        if (!cancelled) {
+          setLoadError(err instanceof Error ? err.message : "セレクションの読み込みに失敗しました");
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [projectId, createdAtById]);
 
   const filtered = useMemo(
-    () => items.filter((item) => item.category === activeCategory),
+    () => (items ?? []).filter((item) => item.category === activeCategory),
     [items, activeCategory],
   );
 
-  const approvedCount = items.filter((i) => i.status === "承認済").length;
-  const totalCount = items.length;
+  const approvedCount = (items ?? []).filter((i) => i.status === "承認済").length;
+  const totalCount = items?.length ?? 0;
 
   const handleUpdate = (updated: SelectionItem) => {
-    setItems((prev) => prev.map((i) => (i.id === updated.id ? updated : i)));
+    setItems((prev) => (prev ?? []).map((i) => (i.id === updated.id ? updated : i)));
+    const createdAt = createdAtById.get(updated.id) ?? new Date().toISOString();
+    createdAtById.set(updated.id, createdAt);
+    void persistItem(updated, createdAt);
   };
+
+  if (loadError) {
+    return (
+      <div className="p-6 text-sm text-red-700">セレクションの読み込みに失敗しました：{loadError}</div>
+    );
+  }
+
+  if (items === null) {
+    return (
+      <div className="flex items-center justify-center py-12 text-sm text-slate-500">
+        <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-slate-300 border-t-slate-600" aria-hidden="true" />
+        <span className="ml-2">読み込み中...</span>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-50">
