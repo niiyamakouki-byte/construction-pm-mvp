@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import {
   extractInvoiceFromFile,
+  InvoiceOcrError,
   parseVisionResponseText,
 } from "./invoice-vision.js";
 import { InvoiceExtractionSchema } from "../domain/invoice-extraction-schema.js";
@@ -148,19 +149,20 @@ describe("extractInvoiceFromFile", () => {
     expect(result.total).toBe(275000);
   });
 
-  it("extraction オブジェクトを直接返すパスも機能する", async () => {
+  it("getAccessToken を渡すと Authorization ヘッダを付与する", async () => {
     const fetcher = vi.fn<(url: string, init: RequestInit) => Promise<Response>>(async () =>
-      new Response(
-        JSON.stringify({
-          extraction: { vendor: "直接返し", total: 42000 },
-        }),
-        { status: 200, headers: { "Content-Type": "application/json" } },
-      ),
+      new Response(JSON.stringify({ text: `{"vendor": "認証済", "total": 1}` }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      }),
     );
     const file = makeFile("x.png", "image/png");
-    const result = await extractInvoiceFromFile(file, { fetcher });
-    expect(result.vendor).toBe("直接返し");
-    expect(result.total).toBe(42000);
+    await extractInvoiceFromFile(file, {
+      fetcher,
+      getAccessToken: async () => "jwt-abc",
+    });
+    const headers = fetcher.mock.calls[0][1]?.headers as Record<string, string>;
+    expect(headers?.["Authorization"]).toBe("Bearer jwt-abc");
   });
 
   it("非 2xx レスポンスは日本語エラーを投げる", async () => {
@@ -174,6 +176,46 @@ describe("extractInvoiceFromFile", () => {
     await expect(extractInvoiceFromFile(file, { fetcher })).rejects.toThrow(
       /請求書OCRに失敗/,
     );
+  });
+
+  it("401 は status=401 の InvoiceOcrError を投げる", async () => {
+    const fetcher = vi.fn<(url: string, init: RequestInit) => Promise<Response>>(async () =>
+      new Response(JSON.stringify({ error: "認証が必要です" }), {
+        status: 401,
+        headers: { "Content-Type": "application/json" },
+      }),
+    );
+    const file = makeFile("x.png", "image/png");
+    const err = await extractInvoiceFromFile(file, { fetcher }).catch((e) => e);
+    expect(err).toBeInstanceOf(InvoiceOcrError);
+    expect((err as InvoiceOcrError).status).toBe(401);
+  });
+
+  it("429 は Retry-After を保持した InvoiceOcrError を投げる", async () => {
+    const fetcher = vi.fn<(url: string, init: RequestInit) => Promise<Response>>(async () =>
+      new Response(JSON.stringify({ error: "rate limit" }), {
+        status: 429,
+        headers: { "Content-Type": "application/json", "Retry-After": "42" },
+      }),
+    );
+    const file = makeFile("x.png", "image/png");
+    const err = await extractInvoiceFromFile(file, { fetcher }).catch((e) => e);
+    expect(err).toBeInstanceOf(InvoiceOcrError);
+    expect((err as InvoiceOcrError).status).toBe(429);
+    expect((err as InvoiceOcrError).retryAfterSeconds).toBe(42);
+  });
+
+  it("413 は status=413 の InvoiceOcrError を投げる", async () => {
+    const fetcher = vi.fn<(url: string, init: RequestInit) => Promise<Response>>(async () =>
+      new Response(JSON.stringify({ error: "ファイルが大きすぎます" }), {
+        status: 413,
+        headers: { "Content-Type": "application/json" },
+      }),
+    );
+    const file = makeFile("x.png", "image/png");
+    const err = await extractInvoiceFromFile(file, { fetcher }).catch((e) => e);
+    expect(err).toBeInstanceOf(InvoiceOcrError);
+    expect((err as InvoiceOcrError).status).toBe(413);
   });
 
   it("PDF も送信できる", async () => {
