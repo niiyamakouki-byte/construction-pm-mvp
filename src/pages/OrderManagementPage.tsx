@@ -1,13 +1,11 @@
-import { useState, useMemo } from "react";
+import { useEffect, useState, useMemo } from "react";
+import { getNextStatuses } from "../lib/order-management.js";
 import {
-  createOrder,
-  transitionOrder,
-  listOrders,
-  deleteOrder,
-  getNextStatuses,
-  getOrderSummaryByStatus,
-} from "../lib/order-management.js";
-import type { PurchaseOrder, OrderStatus } from "../lib/order-management.js";
+  OrderRepository,
+  type PurchaseOrderRecord,
+  type PurchaseOrderItemRecord,
+  type PurchaseOrderStatus,
+} from "../lib/supabase-adapter/OrderRepository.js";
 import costMaster from "../estimate/cost-master.json";
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -26,7 +24,7 @@ type CostMasterCategory = {
   items: CostMasterItem[];
 };
 
-// ── Demo contractors ─────────────────────────────────────────────────────────
+// ── Demo contractors (used only as suggestions when no contractor store is wired) ─
 
 const DEMO_CONTRACTORS = [
   { id: "c-1", name: "山田内装工業" },
@@ -37,9 +35,13 @@ const DEMO_CONTRACTORS = [
 
 const DEMO_PROJECT_ID = "p-1";
 
+// ── Repository (Supabase or InMemory) ────────────────────────────────────────
+
+const repository = new OrderRepository();
+
 // ── Status style helpers ─────────────────────────────────────────────────────
 
-const STATUS_COLORS: Record<OrderStatus, string> = {
+const STATUS_COLORS: Record<PurchaseOrderStatus, string> = {
   下書き: "bg-slate-100 text-slate-700 border-slate-200",
   発注済: "bg-blue-50 text-blue-700 border-blue-200",
   納品待ち: "bg-amber-50 text-amber-700 border-amber-200",
@@ -49,7 +51,7 @@ const STATUS_COLORS: Record<OrderStatus, string> = {
   支払済: "bg-emerald-50 text-emerald-700 border-emerald-200",
 };
 
-const STATUS_ORDER: OrderStatus[] = [
+const STATUS_ORDER: PurchaseOrderStatus[] = [
   "下書き",
   "発注済",
   "納品待ち",
@@ -112,7 +114,7 @@ function ItemRow({
             <optgroup key={cat.id} label={cat.name}>
               {cat.items.map((ci) => (
                 <option key={ci.code} value={ci.code}>
-                  {ci.name}（{ci.unit}）
+                  {ci.name}({ci.unit})
                 </option>
               ))}
             </optgroup>
@@ -148,7 +150,7 @@ function ItemRow({
         />
       </div>
       <div className="col-span-2">
-        {idx === 0 && <label className="block text-xs text-slate-500 mb-1">単価（円）</label>}
+        {idx === 0 && <label className="block text-xs text-slate-500 mb-1">単価(円)</label>}
         <input
           type="number"
           min="0"
@@ -174,11 +176,13 @@ function ItemRow({
 // ── Order form modal ──────────────────────────────────────────────────────────
 
 function OrderForm({
+  projectId,
   onClose,
   onCreated,
 }: {
+  projectId: string;
   onClose: () => void;
-  onCreated: (order: PurchaseOrder) => void;
+  onCreated: (order: PurchaseOrderRecord) => void;
 }) {
   const [contractorId, setContractorId] = useState(DEMO_CONTRACTORS[0].id);
   const [deliveryDate, setDeliveryDate] = useState("");
@@ -212,7 +216,7 @@ function OrderForm({
   );
   const tax = Math.floor(subtotal * 0.1);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!deliveryDate) {
       setError("納期を入力してください");
@@ -223,23 +227,40 @@ function OrderForm({
       setError("品目を1件以上入力してください");
       return;
     }
-    const orderItems = validItems.map((i) => ({
+    const orderItems: PurchaseOrderItemRecord[] = validItems.map((i) => ({
       code: i.code,
       name: i.name,
       unit: i.unit,
       quantity: Number(i.quantity),
       unitPrice: Number(i.unitPrice),
+      amount: Number(i.quantity) * Number(i.unitPrice),
     }));
-    const order = createOrder(
-      DEMO_PROJECT_ID,
-      contractor.id,
-      contractor.name,
-      orderItems,
+    const totalAmount = orderItems.reduce((s, it) => s + it.amount, 0);
+    const taxAmount = Math.floor(totalAmount * 0.1);
+    const now = new Date().toISOString();
+    const order: PurchaseOrderRecord = {
+      id: crypto.randomUUID(),
+      projectId,
+      contractorId: contractor.id,
+      contractorName: contractor.name,
+      items: orderItems,
+      status: "下書き",
+      orderDate: now.slice(0, 10),
       deliveryDate,
-      notes || undefined,
-    );
-    onCreated(order);
-    onClose();
+      totalAmount,
+      taxAmount,
+      totalWithTax: totalAmount + taxAmount,
+      notes: notes || undefined,
+      createdAt: now,
+      updatedAt: now,
+    };
+    try {
+      await repository.saveAsync(order);
+      onCreated(order);
+      onClose();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "保存に失敗しました");
+    }
   };
 
   return (
@@ -315,7 +336,7 @@ function OrderForm({
               <span>¥{fmt(subtotal)}</span>
             </div>
             <div className="flex justify-between text-slate-600">
-              <span>消費税（10%）</span>
+              <span>消費税(10%)</span>
               <span>¥{fmt(tax)}</span>
             </div>
             <div className="flex justify-between font-semibold text-slate-800 text-base pt-1 border-t border-slate-200">
@@ -363,11 +384,11 @@ function OrderCard({
   onTransition,
   onDelete,
 }: {
-  order: PurchaseOrder;
-  onTransition: (id: string, to: OrderStatus) => void;
+  order: PurchaseOrderRecord;
+  onTransition: (id: string, to: PurchaseOrderStatus) => void;
   onDelete: (id: string) => void;
 }) {
-  const nextStatuses = getNextStatuses(order.status);
+  const nextStatuses = getNextStatuses(order.status) as PurchaseOrderStatus[];
   const [expanded, setExpanded] = useState(false);
 
   return (
@@ -468,9 +489,9 @@ function StatusColumn({
   onTransition,
   onDelete,
 }: {
-  status: OrderStatus;
-  orders: PurchaseOrder[];
-  onTransition: (id: string, to: OrderStatus) => void;
+  status: PurchaseOrderStatus;
+  orders: PurchaseOrderRecord[];
+  onTransition: (id: string, to: PurchaseOrderStatus) => void;
   onDelete: (id: string) => void;
 }) {
   return (
@@ -498,18 +519,40 @@ function StatusColumn({
 
 // ── Main page ─────────────────────────────────────────────────────────────────
 
-export function OrderManagementPage() {
+export function OrderManagementPage({
+  projectId = DEMO_PROJECT_ID,
+}: { projectId?: string } = {}) {
   const [showForm, setShowForm] = useState(false);
-  const [tick, setTick] = useState(0); // force re-render after mutations
+  const [allOrders, setAllOrders] = useState<PurchaseOrderRecord[]>([]);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<"kanban" | "list">("list");
-  const [filterStatus, setFilterStatus] = useState<OrderStatus | "すべて">("すべて");
+  const [filterStatus, setFilterStatus] = useState<PurchaseOrderStatus | "すべて">("すべて");
 
-  const refresh = () => setTick((n) => n + 1);
+  // Load on mount + reload helper.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const loaded = await repository.listByProjectAsync(projectId);
+        if (!cancelled) setAllOrders(loaded);
+      } catch (err) {
+        if (!cancelled) {
+          setLoadError(err instanceof Error ? err.message : "受発注データの読み込みに失敗しました");
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [projectId]);
 
-  const allOrders = useMemo(() => {
-    void tick;
-    return listOrders(DEMO_PROJECT_ID);
-  }, [tick]);
+  const reload = async () => {
+    const loaded = await repository.listByProjectAsync(projectId);
+    setAllOrders(loaded);
+  };
 
   const filteredOrders = useMemo(() => {
     if (filterStatus === "すべて") return allOrders;
@@ -517,23 +560,59 @@ export function OrderManagementPage() {
   }, [allOrders, filterStatus]);
 
   const summary = useMemo(() => {
-    void tick;
-    return getOrderSummaryByStatus(DEMO_PROJECT_ID);
-  }, [tick]);
+    const s: Record<PurchaseOrderStatus, number> = {
+      下書き: 0,
+      発注済: 0,
+      納品待ち: 0,
+      納品済: 0,
+      検収済: 0,
+      請求済: 0,
+      支払済: 0,
+    };
+    for (const o of allOrders) s[o.status]++;
+    return s;
+  }, [allOrders]);
 
-  const handleTransition = (id: string, to: OrderStatus) => {
-    transitionOrder(id, to);
-    refresh();
+  const handleTransition = async (id: string, to: PurchaseOrderStatus) => {
+    const existing = allOrders.find((o) => o.id === id);
+    if (!existing) return;
+    const next: PurchaseOrderRecord = {
+      ...existing,
+      status: to,
+      updatedAt: new Date().toISOString(),
+    };
+    await repository.saveAsync(next);
+    await reload();
   };
 
-  const handleDelete = (id: string) => {
-    deleteOrder(id);
-    refresh();
+  const handleDelete = async (id: string) => {
+    await repository.deleteAsync(id);
+    await reload();
   };
 
   const totalPending = allOrders
     .filter((o) => !["支払済", "下書き"].includes(o.status))
     .reduce((sum, o) => sum + o.totalWithTax, 0);
+
+  if (loadError) {
+    return (
+      <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+        受発注データの読み込みに失敗しました：{loadError}
+      </div>
+    );
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-12 text-sm text-slate-500">
+        <span
+          className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-slate-300 border-t-slate-600"
+          aria-hidden="true"
+        />
+        <span className="ml-2">読み込み中...</span>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -592,13 +671,13 @@ export function OrderManagementPage() {
         {viewMode === "list" && (
           <select
             value={filterStatus}
-            onChange={(e) => setFilterStatus(e.target.value as OrderStatus | "すべて")}
+            onChange={(e) => setFilterStatus(e.target.value as PurchaseOrderStatus | "すべて")}
             className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm"
           >
             <option value="すべて">すべて</option>
             {STATUS_ORDER.map((s) => (
               <option key={s} value={s}>
-                {s}（{summary[s]}）
+                {s}({summary[s]})
               </option>
             ))}
           </select>
@@ -648,8 +727,9 @@ export function OrderManagementPage() {
       {/* Form modal */}
       {showForm && (
         <OrderForm
+          projectId={projectId}
           onClose={() => setShowForm(false)}
-          onCreated={refresh}
+          onCreated={() => void reload()}
         />
       )}
     </div>
