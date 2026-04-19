@@ -1,6 +1,9 @@
 import { loadStripe, type Stripe } from "@stripe/stripe-js";
 
-const PUBLISHABLE_KEY = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY as string | undefined;
+// TEST MODE を優先。本番 key（VITE_STRIPE_PUBLISHABLE_KEY）はフォールバックとして残す。
+const PUBLISHABLE_KEY =
+  (import.meta.env.VITE_STRIPE_TEST_PUBLIC_KEY as string | undefined) ??
+  (import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY as string | undefined);
 
 let stripePromise: Promise<Stripe | null> | null = null;
 

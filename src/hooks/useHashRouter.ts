@@ -22,5 +22,11 @@ export function navigate(path: string): void {
 export const PUBLIC_ROUTES = ["/", "/login", "/signup", "/pricing", "/legal"];
 
 export function isPublicRoute(route: string): boolean {
-  return PUBLIC_ROUTES.some((pub) => route === pub || route.startsWith(pub + "#"));
+  return PUBLIC_ROUTES.some(
+    (pub) =>
+      route === pub ||
+      route.startsWith(pub + "#") ||
+      route.startsWith(pub + "/") ||
+      route.startsWith(pub + "?"),
+  );
 }

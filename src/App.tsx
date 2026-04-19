@@ -17,6 +17,8 @@ const LoginPage = lazy(() => import("./pages/LoginPage.js").then((m) => ({ defau
 const SignupPage = lazy(() => import("./pages/SignupPage.js").then((m) => ({ default: m.SignupPage })));
 const LegalPages = lazy(() => import("./pages/LegalPages.js").then((m) => ({ default: m.LegalPages })));
 const PricingPage = lazy(() => import("./pages/PricingPage.js").then((m) => ({ default: m.PricingPage })));
+const PricingSuccessPage = lazy(() => import("./pages/PricingSuccessPage.js").then((m) => ({ default: m.PricingSuccessPage })));
+const PricingCancelPage = lazy(() => import("./pages/PricingCancelPage.js").then((m) => ({ default: m.PricingCancelPage })));
 const TasksPage = lazy(() => import("./pages/TasksPage.js").then((m) => ({ default: m.TasksPage })));
 const CostManagementPage = lazy(() => import("./pages/CostManagementPage.js").then((m) => ({ default: m.CostManagementPage })));
 const WeatherPage = lazy(() => import("./pages/WeatherPage.js").then((m) => ({ default: m.WeatherPage })));
@@ -263,6 +265,12 @@ function AppShell() {
   if (legalMatch) {
     const section = legalMatch[1] as "tokushoho" | "privacy" | "tos" | undefined;
     return <Suspense fallback={pageFallback}><LegalPages section={section} /></Suspense>;
+  }
+  if (route === "/pricing/success" || route.startsWith("/pricing/success?")) {
+    return <Suspense fallback={pageFallback}><PricingSuccessPage /></Suspense>;
+  }
+  if (route === "/pricing/cancel" || route.startsWith("/pricing/cancel?")) {
+    return <Suspense fallback={pageFallback}><PricingCancelPage /></Suspense>;
   }
   if (route === "/pricing") return <Suspense fallback={pageFallback}><PricingPage /></Suspense>;
 
