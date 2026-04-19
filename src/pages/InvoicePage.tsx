@@ -177,6 +177,9 @@ export function InvoicePage() {
     <div className="mx-auto max-w-2xl space-y-4 px-4 pb-24">
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-bold text-slate-900">請求書OCR</h1>
+        <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-700">
+          準備中
+        </span>
         {ocrResult && (
           <button
             onClick={handleReset}
@@ -193,6 +196,10 @@ export function InvoicePage() {
           <button onClick={() => setError(null)} className="text-red-400 hover:text-red-600">&times;</button>
         </div>
       )}
+
+      <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+        OCR抽出は準備中です。現在は確認用のダミー結果を表示します。
+      </div>
 
       {/* Upload area */}
       {!ocrResult && !processing && (
