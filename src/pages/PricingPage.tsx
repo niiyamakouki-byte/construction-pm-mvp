@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { navigate } from "../hooks/useHashRouter.js";
 import { useSubscriptionContext } from "../contexts/SubscriptionContext.js";
+import { useAuth } from "../contexts/AuthContext.js";
 import {
   STRIPE_PLANS,
-  getStripe,
   isStripeConfigured,
   type PlanId,
   type StripePlan,
@@ -145,6 +145,7 @@ function PlanCardView({
 
 export function PricingPage() {
   const { plan: currentPlan } = useSubscriptionContext();
+  const { session } = useAuth();
   const [showModal, setShowModal] = useState(false);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -159,16 +160,23 @@ export function PricingPage() {
       return;
     }
 
-    // サーバーサイド関数で Checkout Session を作成し、
-    // 返ってきた URL に遷移する（Stripe.js の redirectToCheckout フォールバック付き）。
+    if (!session?.access_token) {
+      setError("ログインが必要です。ログインしてから再度お試しください。");
+      return;
+    }
+
+    // サーバーサイド関数で Checkout Session を作成し、返ってきた URL に遷移する。
+    // priceId はサーバー側で env から解決するため、ここからは送らない。
     setCheckoutLoading(true);
     try {
       const response = await fetch("/api/checkout-session", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+        },
         body: JSON.stringify({
           plan: selected.id,
-          priceId: selected.priceId,
         }),
       });
 
@@ -181,30 +189,14 @@ export function PricingPage() {
         );
       }
 
-      const { url, sessionId } = (await response.json()) as {
+      const { url } = (await response.json()) as {
         url?: string;
-        sessionId?: string;
       };
 
-      if (url) {
-        window.location.href = url;
-        return;
+      if (!url) {
+        throw new Error("セッション URL が取得できませんでした");
       }
-
-      // URL が返らなかった場合は Stripe.js でリダイレクト
-      if (!sessionId) {
-        throw new Error("セッション情報が取得できませんでした");
-      }
-      const stripe = await getStripe();
-      if (!stripe) {
-        throw new Error("Stripe の初期化に失敗しました");
-      }
-      const { error: redirectError } = await stripe.redirectToCheckout({
-        sessionId,
-      });
-      if (redirectError) {
-        throw redirectError;
-      }
+      window.location.href = url;
     } catch (err) {
       const message =
         err instanceof Error ? err.message : "決済処理でエラーが発生しました";
