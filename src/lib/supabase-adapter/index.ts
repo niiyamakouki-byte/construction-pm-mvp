@@ -32,3 +32,18 @@ export type { CustomerRecord, DealRecord, DealStage } from './CRMRepository.js';
 
 export { InvoiceRepository } from './InvoiceRepository.js';
 export type { InvoiceRecord, InvoiceStatus, InvoiceItemRecord } from './InvoiceRepository.js';
+
+export { MoodBoardRepository } from './MoodBoardRepository.js';
+export type {
+  MoodBoardRecord,
+  MoodBoardItemRecord,
+  MoodBoardCategory,
+} from './MoodBoardRepository.js';
+
+export { SelectionRepository } from './SelectionRepository.js';
+export type {
+  SelectionItemRecord,
+  SelectionOptionRecord,
+  SelectionCategory,
+  SelectionStatus,
+} from './SelectionRepository.js';
