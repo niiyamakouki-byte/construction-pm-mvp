@@ -1,5 +1,5 @@
 import type { Project } from "../domain/types.js";
-import { ProjectSchema, parseOrThrow } from "../domain/schemas.js";
+import { ProjectSchema, parseOrWarn } from "../domain/schemas.js";
 import { createAppRepository } from "../infra/create-app-repository.js";
 import type { Repository } from "../domain/repository.js";
 
@@ -8,11 +8,11 @@ function wrapWithValidation(inner: Repository<Project>): Repository<Project> {
     async findById(id) {
       const result = await inner.findById(id);
       if (result === null) return null;
-      return parseOrThrow(ProjectSchema, "Project", result);
+      return parseOrWarn(ProjectSchema, "Project", result);
     },
     async findAll() {
       const results = await inner.findAll();
-      return results.map((item) => parseOrThrow(ProjectSchema, "Project", item));
+      return results.map((item) => parseOrWarn(ProjectSchema, "Project", item));
     },
     // Write ops: bind to inner so spies placed on inner.create propagate correctly.
     create: inner.create.bind(inner),

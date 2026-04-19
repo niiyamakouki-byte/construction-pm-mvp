@@ -1,5 +1,5 @@
 import type { Task } from "../domain/types.js";
-import { TaskSchema, parseOrThrow } from "../domain/schemas.js";
+import { TaskSchema, parseOrWarn } from "../domain/schemas.js";
 import { createAppRepository } from "../infra/create-app-repository.js";
 import type { Repository } from "../domain/repository.js";
 
@@ -8,11 +8,11 @@ function wrapWithValidation(inner: Repository<Task>): Repository<Task> {
     async findById(id) {
       const result = await inner.findById(id);
       if (result === null) return null;
-      return parseOrThrow(TaskSchema, "Task", result);
+      return parseOrWarn(TaskSchema, "Task", result);
     },
     async findAll() {
       const results = await inner.findAll();
-      return results.map((item) => parseOrThrow(TaskSchema, "Task", item));
+      return results.map((item) => parseOrWarn(TaskSchema, "Task", item));
     },
     create: inner.create.bind(inner),
     update: inner.update.bind(inner),

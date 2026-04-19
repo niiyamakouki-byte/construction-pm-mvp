@@ -29,6 +29,29 @@ export function parseOrThrow<T>(
   return result.data;
 }
 
+/**
+ * Parses `data` with `schema`. On failure, logs a warning and returns the
+ * original data cast to T instead of throwing. Use for read paths against
+ * existing production data that may not yet match schema constraints.
+ */
+export function parseOrWarn<T>(
+  schema: z.ZodType<T>,
+  entityName: string,
+  data: unknown,
+): T {
+  const result = schema.safeParse(data);
+  if (!result.success) {
+    if (typeof console !== "undefined" && console.warn) {
+      console.warn(
+        `[schema] ${entityName} validation warning:`,
+        result.error.issues.map((i) => `${i.path.join(".")}: ${i.message}`).join("; "),
+      );
+    }
+    return data as T;
+  }
+  return result.data;
+}
+
 // ── Shared validators ────────────────────────────────────────────────────────
 
 /**
@@ -312,6 +335,67 @@ export type SelectionCategory = z.infer<typeof SelectionCategorySchema>;
 export type SelectionStatus = z.infer<typeof SelectionStatusSchema>;
 export type SelectionOption = z.infer<typeof SelectionOptionSchema>;
 export type Selection = z.infer<typeof SelectionSchema>;
+
+// ── ProcurementMaterial ──────────────────────────────────────────────────────
+
+export const ProcurementMaterialStatusSchema = z.enum([
+  "unordered",
+  "ordered",
+  "delivered",
+  "accepted",
+]);
+
+export const ProcurementMaterialSchema = BaseEntitySchema.extend({
+  projectId: z.string().uuid(),
+  name: z.string(),
+  category: z.string(),
+  quantity: z.number().finite().nonnegative(),
+  unit: z.string(),
+  status: ProcurementMaterialStatusSchema,
+  dueDate: isoDateString,
+});
+
+export type ProcurementMaterialStatus = z.infer<typeof ProcurementMaterialStatusSchema>;
+export type ProcurementMaterial = z.infer<typeof ProcurementMaterialSchema>;
+
+// ── PurchaseOrder (order management) ─────────────────────────────────────────
+
+export const PurchaseOrderStatusSchema = z.enum([
+  "下書き",
+  "発注済",
+  "納品待ち",
+  "納品済",
+  "検収済",
+  "請求済",
+  "支払済",
+]);
+
+export const PurchaseOrderItemSchema = z.object({
+  code: z.string(),
+  name: z.string(),
+  unit: z.string(),
+  quantity: z.number().finite().nonnegative(),
+  unitPrice: z.number().finite().nonnegative(),
+  amount: z.number().finite().nonnegative(),
+});
+
+export const PurchaseOrderSchema = BaseEntitySchema.extend({
+  projectId: z.string().uuid(),
+  contractorId: z.string(),
+  contractorName: z.string(),
+  items: z.array(PurchaseOrderItemSchema),
+  status: PurchaseOrderStatusSchema,
+  orderDate: isoDateString,
+  deliveryDate: isoDateString,
+  totalAmount: z.number().finite().nonnegative(),
+  taxAmount: z.number().finite().nonnegative(),
+  totalWithTax: z.number().finite().nonnegative(),
+  notes: z.string().optional(),
+});
+
+export type PurchaseOrderStatus = z.infer<typeof PurchaseOrderStatusSchema>;
+export type PurchaseOrderItem = z.infer<typeof PurchaseOrderItemSchema>;
+export type PurchaseOrder = z.infer<typeof PurchaseOrderSchema>;
 
 // ── CRM: Contact / Deal ──────────────────────────────────────────────────────
 
