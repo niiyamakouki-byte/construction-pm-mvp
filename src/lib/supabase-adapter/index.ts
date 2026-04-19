@@ -47,3 +47,16 @@ export type {
   SelectionCategory,
   SelectionStatus,
 } from './SelectionRepository.js';
+
+export { ProcurementRepository } from './ProcurementRepository.js';
+export type {
+  ProcurementMaterialRecord,
+  ProcurementMaterialStatus,
+} from './ProcurementRepository.js';
+
+export { OrderRepository } from './OrderRepository.js';
+export type {
+  PurchaseOrderRecord,
+  PurchaseOrderItemRecord,
+  PurchaseOrderStatus,
+} from './OrderRepository.js';
