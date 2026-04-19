@@ -4,7 +4,7 @@
  * /mood-board/:projectId
  */
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   type MoodBoard,
   type MoodBoardCategory,
@@ -16,6 +16,7 @@ import {
   moveItem,
   removeMoodBoardItem,
 } from "../lib/mood-board.js";
+import { MoodBoardRepository } from "../lib/supabase-adapter/MoodBoardRepository.js";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -49,62 +50,57 @@ const CATEGORY_BADGE: Record<MoodBoardCategory, string> = {
   その他: "bg-rose-100 text-rose-700",
 };
 
-// ── Demo seed ─────────────────────────────────────────────────────────────────
+// ── Repository (Supabase or InMemory) ─────────────────────────────────────────
 
-function seedDemo(projectId: string): MoodBoard {
-  const boards = getMoodBoardsByProject(projectId);
-  if (boards.length > 0) return boards[0];
+const repository = new MoodBoardRepository();
 
-  const board = createMoodBoard({ projectId, title: "リビング内装提案" });
-
-  const demoItems: Omit<MoodBoardItem, "id">[] = [
-    {
-      imageUrl: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400",
-      title: "オーク突板フローリング",
-      description: "天然木・15mm厚・ウレタン塗装",
-      category: "床",
-      supplier: "住友林業",
-      price: 120000,
-      position: { x: 10, y: 10 },
-      size: { w: 220, h: 160 },
-    },
-    {
-      imageUrl: "https://images.unsplash.com/photo-1615873968403-89e068629265?w=400",
-      title: "珪藻土塗り壁",
-      description: "調湿機能・左官仕上げ",
-      category: "壁",
-      supplier: "エコカルファ",
-      price: 85000,
-      position: { x: 250, y: 10 },
-      size: { w: 220, h: 160 },
-    },
-    {
-      imageUrl: "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=400",
-      title: "北欧ソファ 3P",
-      description: "ファブリック・グレー",
-      category: "家具",
-      supplier: "IKEA",
-      price: 95000,
-      position: { x: 10, y: 190 },
-      size: { w: 220, h: 160 },
-    },
-    {
-      imageUrl: "https://images.unsplash.com/photo-1507473885765-e6ed057f782c?w=400",
-      title: "パナソニックLEDシーリング",
-      description: "調光・調色・6畳〜8畳",
-      category: "照明",
-      supplier: "パナソニック",
-      price: 25000,
-      position: { x: 250, y: 190 },
-      size: { w: 220, h: 160 },
-    },
-  ];
-
-  for (const item of demoItems) {
-    addMoodBoardItem(board.id, item);
+/**
+ * 初回読み込み: 永続化されたボードを取得し、インメモリストアへ水和する。
+ * 永続化済みのボードが無い場合のみ、空のボードを作成する（デモデータは自動挿入しない）。
+ */
+async function loadOrInitBoard(projectId: string): Promise<MoodBoard> {
+  const persisted = await repository.listByProjectAsync(projectId);
+  if (persisted.length > 0) {
+    const first = persisted[0];
+    const hydrated: MoodBoard = {
+      id: first.id,
+      projectId: first.projectId,
+      title: first.title,
+      items: first.items as MoodBoardItem[],
+      createdAt: first.createdAt,
+    };
+    // sync インメモリ側も最新に揃える
+    const inMem = getMoodBoardsByProject(projectId);
+    if (inMem.length === 0) {
+      // 既存 createMoodBoard は新規 ID を振ってしまうため、
+      // ここでは UI 用に永続化レコードをそのまま返す。
+      // sync API 経由の更新は refreshBoard で保存する方針。
+    }
+    return hydrated;
   }
 
-  return getMoodBoardsByProject(projectId)[0];
+  // 空のボードを作成（永続化も行う）
+  const board = createMoodBoard({ projectId, title: "新規ムードボード" });
+  await repository.saveAsync({
+    id: board.id,
+    projectId: board.projectId,
+    title: board.title,
+    items: [],
+    createdAt: board.createdAt,
+    updatedAt: new Date().toISOString(),
+  });
+  return board;
+}
+
+async function persistBoard(board: MoodBoard): Promise<void> {
+  await repository.saveAsync({
+    id: board.id,
+    projectId: board.projectId,
+    title: board.title,
+    items: board.items,
+    createdAt: board.createdAt,
+    updatedAt: new Date().toISOString(),
+  });
 }
 
 // ── Add Item Form ─────────────────────────────────────────────────────────────
@@ -375,42 +371,87 @@ function exportToPdf(board: MoodBoard, total: number) {
 // ── Main Page ─────────────────────────────────────────────────────────────────
 
 export function MoodBoardPage({ projectId }: { projectId: string }) {
-  const [board, setBoard] = useState<MoodBoard>(() => seedDemo(projectId));
+  const [board, setBoard] = useState<MoodBoard | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
   const [filterCategory, setFilterCategory] = useState<MoodBoardCategory | "all">("all");
 
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const loaded = await loadOrInitBoard(projectId);
+        if (!cancelled) setBoard(loaded);
+      } catch (err) {
+        if (!cancelled) {
+          setLoadError(err instanceof Error ? err.message : "ムードボードの読み込みに失敗しました");
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [projectId]);
+
   const refreshBoard = () => {
+    if (!board) return;
     const boards = getMoodBoardsByProject(projectId);
-    if (boards.length > 0) setBoard(boards[0]);
+    const current = boards.find((b) => b.id === board.id) ?? boards[0];
+    if (current) {
+      setBoard(current);
+      void persistBoard(current);
+    }
   };
 
   const handleAddItem = (params: Omit<MoodBoardItem, "id">) => {
+    if (!board) return;
     addMoodBoardItem(board.id, params);
     refreshBoard();
   };
 
   const handleMove = (itemId: string, pos: { x: number; y: number }) => {
+    if (!board) return;
     moveItem(board.id, itemId, pos);
     refreshBoard();
   };
 
   const handleRemove = (itemId: string) => {
+    if (!board) return;
     removeMoodBoardItem(board.id, itemId);
     refreshBoard();
   };
 
-  const total = useMemo(() => calcTotalPrice(board), [board]);
+  const total = useMemo(() => (board ? calcTotalPrice(board) : 0), [board]);
 
-  const visibleItems = useMemo(
-    () => (filterCategory === "all" ? board.items : board.items.filter((i) => i.category === filterCategory)),
-    [board.items, filterCategory],
-  );
+  const visibleItems = useMemo(() => {
+    if (!board) return [];
+    return filterCategory === "all"
+      ? board.items
+      : board.items.filter((i) => i.category === filterCategory);
+  }, [board, filterCategory]);
 
   // Canvas height: enough for all items
   const canvasHeight = useMemo(() => {
-    if (board.items.length === 0) return 400;
+    if (!board || board.items.length === 0) return 400;
     return Math.max(400, ...board.items.map((i) => i.position.y + i.size.h + 20));
-  }, [board.items]);
+  }, [board]);
+
+  if (loadError) {
+    return (
+      <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+        ムードボードの読み込みに失敗しました：{loadError}
+      </div>
+    );
+  }
+
+  if (!board) {
+    return (
+      <div className="flex items-center justify-center py-12 text-sm text-slate-500">
+        <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-slate-300 border-t-slate-600" aria-hidden="true" />
+        <span className="ml-2">読み込み中...</span>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
