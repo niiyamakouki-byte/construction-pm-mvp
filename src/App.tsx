@@ -34,6 +34,7 @@ const OrderManagementPage = lazy(() => import("./pages/OrderManagementPage.js").
 const InvoiceManagementPage = lazy(() => import("./pages/InvoiceManagementPage.js").then((m) => ({ default: m.InvoiceManagementPage })));
 const CrossProjectGanttPage = lazy(() => import("./pages/CrossProjectGanttPage.js").then((m) => ({ default: m.CrossProjectGanttPage })));
 const ProgressReviewPage = lazy(() => import("./pages/ProgressReviewPage.js").then((m) => ({ default: m.ProgressReviewPage })));
+const PhotoPage = lazy(() => import("./pages/PhotoPage.js").then((m) => ({ default: m.PhotoPage })));
 import { ErrorBoundary } from "./components/ErrorBoundary.js";
 import { AuthGuard } from "./components/AuthGuard.js";
 import { OnboardingWizard, useOnboardingDone } from "./components/OnboardingWizard.js";
@@ -125,7 +126,7 @@ function AppShell() {
       icon: "☰",
       path: "/notifications",
       matchRoute: (currentRoute) =>
-        ["/today", "/invoice", "/estimate", "/contractors", "/notifications", "/help", "/node-schedule", "/cost-management", "/weather", "/safety", "/procurement", "/orders", "/crm", "/reports", "/invoices", "/cross-project-gantt", "/progress-review"].includes(currentRoute) || currentRoute.startsWith("/reports/"),
+        ["/today", "/invoice", "/estimate", "/contractors", "/notifications", "/help", "/node-schedule", "/cost-management", "/weather", "/safety", "/procurement", "/orders", "/crm", "/reports", "/invoices", "/cross-project-gantt", "/progress-review", "/photos"].includes(currentRoute) || currentRoute.startsWith("/reports/"),
     },
   ];
 
@@ -168,6 +169,7 @@ function AppShell() {
     },
     { key: "cross-gantt", label: "全案件ガント", icon: "📅", path: "/cross-project-gantt", matchRoute: (currentRoute) => currentRoute === "/cross-project-gantt" },
     { key: "progress-review", label: "進捗レビュー", icon: "📸", path: "/progress-review", matchRoute: (currentRoute) => currentRoute === "/progress-review" },
+    { key: "photos", label: "写真", icon: "🖼", path: "/photos", matchRoute: (currentRoute) => currentRoute === "/photos" },
     { key: "safety", label: "安全", icon: "🦺", path: "/safety", matchRoute: (currentRoute) => currentRoute === "/safety" },
     { key: "procurement", label: "発注", icon: "📦", path: "/procurement", matchRoute: (currentRoute) => currentRoute === "/procurement" },
     { key: "orders", label: "受発注", icon: "🗒", path: "/orders", matchRoute: (currentRoute) => currentRoute === "/orders" },
@@ -296,6 +298,13 @@ function AppShell() {
       return (
         <ErrorBoundary fallbackTitle="進捗レビューエラー">
           <ProgressReviewPage />
+        </ErrorBoundary>
+      );
+    }
+    if (route === "/photos") {
+      return (
+        <ErrorBoundary fallbackTitle="写真一覧エラー">
+          <PhotoPage />
         </ErrorBoundary>
       );
     }
