@@ -84,6 +84,11 @@ type SupabaseQueryResult = {
   error: { message: string } | null;
 };
 
+type SupabaseStorageResult<TData> = {
+  data: TData | null;
+  error: { message: string } | null;
+};
+
 type SupabaseQueryBuilder = {
   select(columns?: string): SupabaseQueryBuilder;
   insert(values: SupabaseRow | SupabaseRow[]): SupabaseQueryBuilder;
@@ -133,9 +138,24 @@ type SupabaseAuthClient = {
   onAuthStateChange(callback: (event: AuthChangeEvent, session: SupabaseSession | null) => void): { data: { subscription: { unsubscribe(): void } } };
 };
 
+type SupabaseStorageBucketClient = {
+  upload(
+    path: string,
+    file: File,
+    options?: { cacheControl?: string; contentType?: string; upsert?: boolean },
+  ): Promise<SupabaseStorageResult<{ path: string; id?: string; fullPath?: string }>>;
+  createSignedUrl(path: string, expiresIn: number): Promise<SupabaseStorageResult<{ signedUrl: string }>>;
+  remove(paths: string[]): Promise<SupabaseStorageResult<{ name?: string }[]>>;
+};
+
+type SupabaseStorageClient = {
+  from(bucket: string): SupabaseStorageBucketClient;
+};
+
 export type SupabaseClientLike = {
   from(table: string): SupabaseQueryBuilder;
   auth: SupabaseAuthClient;
+  storage: SupabaseStorageClient;
 };
 
 type SupabaseModule = {
