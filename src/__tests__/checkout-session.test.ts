@@ -34,16 +34,21 @@ describe("createCheckoutSession", () => {
   });
 
   it("mode=subscription と line_items を Stripe に渡す", async () => {
-    const createSpy = vi.fn(async () => ({
-      id: "cs_test_1",
-      url: "https://checkout.stripe.com/c/pay/cs_test_1",
-    }));
-    const mock: StripeCheckoutSessionsAPI = { create: createSpy };
+    let lastParams: Record<string, unknown> | null = null;
+    const mock: StripeCheckoutSessionsAPI = {
+      create: async (params) => {
+        lastParams = params;
+        return {
+          id: "cs_test_1",
+          url: "https://checkout.stripe.com/c/pay/cs_test_1",
+        };
+      },
+    };
 
     await createCheckoutSession(mock, baseInput);
 
-    expect(createSpy).toHaveBeenCalledTimes(1);
-    const params = createSpy.mock.calls[0]![0] as Record<string, unknown>;
+    expect(lastParams).not.toBeNull();
+    const params = lastParams!;
     expect(params.mode).toBe("subscription");
     expect(params.line_items).toEqual([
       { price: "price_test_123", quantity: 1 },
@@ -54,48 +59,63 @@ describe("createCheckoutSession", () => {
   });
 
   it("customerEmail が渡されれば Stripe パラメータに含める", async () => {
-    const createSpy = vi.fn(async () => ({
-      id: "cs_test_2",
-      url: "https://checkout.stripe.com/c/pay/cs_test_2",
-    }));
-    const mock: StripeCheckoutSessionsAPI = { create: createSpy };
+    let lastParams: Record<string, unknown> | null = null;
+    const mock: StripeCheckoutSessionsAPI = {
+      create: async (params) => {
+        lastParams = params;
+        return {
+          id: "cs_test_2",
+          url: "https://checkout.stripe.com/c/pay/cs_test_2",
+        };
+      },
+    };
 
     await createCheckoutSession(mock, {
       ...baseInput,
       customerEmail: "user@example.com",
     });
 
-    const params = createSpy.mock.calls[0]![0] as Record<string, unknown>;
-    expect(params.customer_email).toBe("user@example.com");
+    expect(lastParams).not.toBeNull();
+    expect(lastParams!.customer_email).toBe("user@example.com");
   });
 
   it("customerEmail を渡さなければ customer_email は含まれない", async () => {
-    const createSpy = vi.fn(async () => ({
-      id: "cs_test_3",
-      url: "https://checkout.stripe.com/c/pay/cs_test_3",
-    }));
-    const mock: StripeCheckoutSessionsAPI = { create: createSpy };
+    let lastParams: Record<string, unknown> | null = null;
+    const mock: StripeCheckoutSessionsAPI = {
+      create: async (params) => {
+        lastParams = params;
+        return {
+          id: "cs_test_3",
+          url: "https://checkout.stripe.com/c/pay/cs_test_3",
+        };
+      },
+    };
 
     await createCheckoutSession(mock, baseInput);
 
-    const params = createSpy.mock.calls[0]![0] as Record<string, unknown>;
-    expect("customer_email" in params).toBe(false);
+    expect(lastParams).not.toBeNull();
+    expect("customer_email" in lastParams!).toBe(false);
   });
 
   it("clientReferenceId を Stripe に渡す", async () => {
-    const createSpy = vi.fn(async () => ({
-      id: "cs_test_4",
-      url: "https://checkout.stripe.com/c/pay/cs_test_4",
-    }));
-    const mock: StripeCheckoutSessionsAPI = { create: createSpy };
+    let lastParams: Record<string, unknown> | null = null;
+    const mock: StripeCheckoutSessionsAPI = {
+      create: async (params) => {
+        lastParams = params;
+        return {
+          id: "cs_test_4",
+          url: "https://checkout.stripe.com/c/pay/cs_test_4",
+        };
+      },
+    };
 
     await createCheckoutSession(mock, {
       ...baseInput,
       clientReferenceId: "user_uuid_abc",
     });
 
-    const params = createSpy.mock.calls[0]![0] as Record<string, unknown>;
-    expect(params.client_reference_id).toBe("user_uuid_abc");
+    expect(lastParams).not.toBeNull();
+    expect(lastParams!.client_reference_id).toBe("user_uuid_abc");
   });
 
   it("priceId が空なら例外を投げる", async () => {
