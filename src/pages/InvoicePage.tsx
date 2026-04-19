@@ -1,10 +1,14 @@
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Expense } from "../domain/types.js";
 import { createAppRepository } from "../infra/create-app-repository.js";
 import { createProjectRepository } from "../stores/project-store.js";
 import { useOrganizationContext } from "../contexts/OrganizationContext.js";
-import { extractInvoiceFromFile } from "../lib/invoice-vision.js";
+import {
+  extractInvoiceFromFile,
+  InvoiceOcrError,
+} from "../lib/invoice-vision.js";
 import type { InvoiceExtraction } from "../domain/invoice-extraction-schema.js";
+import { getSupabaseClient, hasSupabaseEnv } from "../infra/supabase-client.js";
 
 // ── OCR result (UI 表示用の縮約形) ────────────────────────────
 
@@ -71,12 +75,10 @@ export function InvoicePage() {
     }
   }, [projectRepository]);
 
-  // useEffect with sync callback
-  const [projectsLoaded, setProjectsLoaded] = useState(false);
-  if (!projectsLoaded) {
-    setProjectsLoaded(true);
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- マウント時の一度きりの外部データ取得
     void loadProjects();
-  }
+  }, [loadProjects]);
 
   const processFile = useCallback(async (file: File) => {
     if (!file.type.startsWith("image/") && file.type !== "application/pdf") {
@@ -98,15 +100,39 @@ export function InvoicePage() {
     setFileName(file.name);
 
     try {
-      const extraction = await extractInvoiceFromFile(file);
+      const extraction = await extractInvoiceFromFile(file, {
+        getAccessToken: async () => {
+          if (!hasSupabaseEnv()) return null;
+          const client = await getSupabaseClient();
+          const { data } = await client.auth.getSession();
+          return data.session?.access_token ?? null;
+        },
+      });
       const result = toOcrResult(extraction);
       setOcrResult(result);
       setVendorName(result.vendorName);
       setAmount(result.amount ? String(result.amount) : "");
       setInvoiceDate(result.invoiceDate);
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "OCR処理に失敗しました";
-      setError(`請求書の読み取りに失敗しました。${msg}`);
+      if (err instanceof InvoiceOcrError) {
+        if (err.status === 401) {
+          setError("認証が切れています。ログインし直してから再試行してください。");
+        } else if (err.status === 413) {
+          setError("ファイルが大きすぎます（上限 5MB）。小さいファイルで再試行してください。");
+        } else if (err.status === 429) {
+          const sec = err.retryAfterSeconds;
+          setError(
+            sec
+              ? `リクエストが多すぎます。${sec}秒後に再試行してください。`
+              : "リクエストが多すぎます。しばらく待ってから再試行してください。",
+          );
+        } else {
+          setError(`請求書の読み取りに失敗しました。${err.message}`);
+        }
+      } else {
+        const msg = err instanceof Error ? err.message : "OCR処理に失敗しました";
+        setError(`請求書の読み取りに失敗しました。${msg}`);
+      }
     } finally {
       setProcessing(false);
     }
