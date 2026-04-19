@@ -1,9 +1,10 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, type ChangeEvent } from "react";
 import type { Contractor, CostItem, Expense, Task, TaskStatus, Project } from "../domain/types.js";
 import { createTaskRepository } from "../stores/task-store.js";
 import { createProjectRepository } from "../stores/project-store.js";
 import { createCostItemRepository } from "../stores/cost-item-store.js";
 import { createContractorRepository } from "../stores/contractor-store.js";
+import { createPhotoStore } from "../stores/photo-store.js";
 import { navigate } from "../hooks/useHashRouter.js";
 import { useOrganizationContext } from "../contexts/OrganizationContext.js";
 import { usePersona } from "../contexts/PersonaContext.js";
@@ -199,6 +200,7 @@ function TodayDashboardPageContent() {
     () => createAppRepository<Expense>("expenses", () => organizationId),
     [organizationId],
   );
+  const photoStore = useMemo(() => createPhotoStore(), []);
   const today = toLocalDateString(new Date());
   const [tasks, setTasks] = useState<TaskWithProject[]>([]);
   const [allProjectTasks, setAllProjectTasks] = useState<Task[]>([]);
@@ -213,7 +215,10 @@ function TodayDashboardPageContent() {
   const [dailyReportExporting, setDailyReportExporting] = useState(false);
   const [photoCategory, setPhotoCategory] = useState<string>(PhotoCategory.other);
   const [photoValidation, setPhotoValidation] = useState<PhotoValidationResult | null>(null);
-  const [photoUploaded, setPhotoUploaded] = useState(false);
+  const [photoPreviewUrl, setPhotoPreviewUrl] = useState<string | null>(null);
+  const [photoUploadStatus, setPhotoUploadStatus] = useState<string | null>(null);
+  const [photoUploadError, setPhotoUploadError] = useState<string | null>(null);
+  const [photoUploading, setPhotoUploading] = useState(false);
   const [allSiteForecasts, setAllSiteForecasts] = useState<import("../lib/weather.js").ConstructionSiteForecast[]>(
     () => buildMockConstructionSiteForecasts(allProjects),
   );
@@ -520,6 +525,50 @@ function TodayDashboardPageContent() {
     today,
   ]);
 
+  useEffect(() => {
+    return () => {
+      if (photoPreviewUrl?.startsWith("blob:")) {
+        URL.revokeObjectURL(photoPreviewUrl);
+      }
+    };
+  }, [photoPreviewUrl]);
+
+  const handlePhotoFileChange = useCallback(async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    setPhotoValidation(null);
+    setPhotoUploadStatus(null);
+    setPhotoUploadError(null);
+    if (!file) {
+      setPhotoPreviewUrl(null);
+      return;
+    }
+    const localPreviewUrl = URL.createObjectURL(file);
+    setPhotoPreviewUrl(localPreviewUrl);
+    const result = validatePhoto({ type: file.type, size: file.size, name: file.name });
+    setPhotoValidation(result);
+    if (!result.valid) {
+      return;
+    }
+    if (!dailyReportProject) {
+      setPhotoUploadError("アップロード先の案件がありません");
+      return;
+    }
+    setPhotoUploading(true);
+    try {
+      const uploaded = await photoStore.uploadPhoto(file, dailyReportProject.id, undefined, {
+        category: photoCategory,
+        caption: getCategoryLabel(photoCategory as import("../lib/photo-upload.js").PhotoCategory),
+      });
+      setPhotoPreviewUrl(uploaded.url);
+      setPhotoUploadStatus("写真を保存しました");
+    } catch (err) {
+      setPhotoUploadError(err instanceof Error ? err.message : "写真の保存に失敗しました");
+    } finally {
+      setPhotoUploading(false);
+      event.target.value = "";
+    }
+  }, [dailyReportProject, photoCategory, photoStore]);
+
   // ── Cockpit data ─────────────────────────────────────
   const cockpitCriticalPath = useMemo<CriticalPathStatus | null>(() => {
     if (!insightProject || insightTasks.length === 0) return null;
@@ -763,12 +812,12 @@ function TodayDashboardPageContent() {
         </div>
       </section>
 
-      {/* Photo Upload — 写真保存機能は実装中 */}
+      {/* Photo Upload */}
       <section>
         <div className="mb-3 flex items-center justify-between gap-3">
-          <h2 className="text-base font-bold text-slate-800">現場写真日報</h2>
-          <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-700">
-            準備中
+          <h2 className="text-base font-bold text-slate-800">現場写真アップロード</h2>
+          <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
+            {dailyReportProject?.name ?? "案件なし"}
           </span>
         </div>
         <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
@@ -792,19 +841,8 @@ function TodayDashboardPageContent() {
                 id="photo-file"
                 type="file"
                 accept="image/jpeg,image/png,image/heic,image/heif"
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  setPhotoUploaded(false);
-                  if (!file) {
-                    setPhotoValidation(null);
-                    return;
-                  }
-                  const result = validatePhoto({ type: file.type, size: file.size, name: file.name });
-                  setPhotoValidation(result);
-                  if (result.valid) {
-                    setPhotoUploaded(true);
-                  }
-                }}
+                onChange={handlePhotoFileChange}
+                disabled={photoUploading || !dailyReportProject}
                 className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-brand-50 file:px-3 file:py-1 file:text-xs file:font-semibold file:text-brand-700"
               />
             </div>
@@ -814,10 +852,19 @@ function TodayDashboardPageContent() {
               {photoValidation.errors.map((err, i) => <p key={i}>{err}</p>)}
             </div>
           )}
-          {photoUploaded && photoValidation?.valid && (
-            <p className="mt-3 text-xs text-amber-600 font-semibold">
-              ファイル検証OK（{getCategoryLabel(photoCategory as import("../lib/photo-upload.js").PhotoCategory)}）。写真の保存機能は現在実装中です。
-            </p>
+          {photoPreviewUrl && (
+            <div className="mt-3 overflow-hidden rounded-xl border border-slate-200 bg-slate-50">
+              <img src={photoPreviewUrl} alt="アップロード写真プレビュー" className="max-h-64 w-full object-contain" />
+            </div>
+          )}
+          {photoUploading && (
+            <p className="mt-3 text-xs font-semibold text-slate-600">写真を保存中...</p>
+          )}
+          {photoUploadError && (
+            <p className="mt-3 text-xs font-semibold text-red-600">{photoUploadError}</p>
+          )}
+          {photoUploadStatus && !photoUploadError && (
+            <p className="mt-3 text-xs font-semibold text-emerald-600">{photoUploadStatus}</p>
           )}
         </div>
       </section>
