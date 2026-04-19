@@ -3,8 +3,10 @@ import type { Expense } from "../domain/types.js";
 import { createAppRepository } from "../infra/create-app-repository.js";
 import { createProjectRepository } from "../stores/project-store.js";
 import { useOrganizationContext } from "../contexts/OrganizationContext.js";
+import { extractInvoiceFromFile } from "../lib/invoice-vision.js";
+import type { InvoiceExtraction } from "../domain/invoice-extraction-schema.js";
 
-// ── Mock OCR ────────────────────────────────────────────────
+// ── OCR result (UI 表示用の縮約形) ────────────────────────────
 
 type OcrResult = {
   vendorName: string;
@@ -12,19 +14,19 @@ type OcrResult = {
   invoiceDate: string;
 };
 
-// Mock OCR: returns realistic dummy data, no actual AI call
-function mockOcrExtract(fileName: string): OcrResult {
-  const vendors = ["田中工務店", "山田建設", "鈴木電気工事", "佐藤塗装", "東京内装"];
-  const amounts = [125000, 380000, 92500, 215000, 467000, 53000, 148000];
-  // Use filename chars as seed for deterministic results
-  const seed = fileName.split("").reduce((a, c) => a + c.charCodeAt(0), 0);
-  const vendor = vendors[seed % vendors.length];
-  const amount = amounts[seed % amounts.length];
-  const today = new Date();
-  const dayOffset = seed % 30;
-  today.setDate(today.getDate() - dayOffset);
-  const invoiceDate = today.toISOString().slice(0, 10);
-  return { vendorName: vendor, amount, invoiceDate };
+/**
+ * Vision の抽出結果を UI フォームが扱う OcrResult に変換する。
+ * total を優先、なければ subtotal を使う。両方無ければ 0。
+ */
+function toOcrResult(extraction: InvoiceExtraction): OcrResult {
+  const amount = extraction.total ?? extraction.subtotal ?? 0;
+  const invoiceDate =
+    extraction.issue_date ?? extraction.due_date ?? new Date().toISOString().slice(0, 10);
+  return {
+    vendorName: extraction.vendor ?? "",
+    amount,
+    invoiceDate,
+  };
 }
 
 // ── Component ────────────────────────────────────────────────
@@ -95,15 +97,19 @@ export function InvoicePage() {
     }
     setFileName(file.name);
 
-    // Simulate OCR processing delay
-    await new Promise((resolve) => setTimeout(resolve, 1200));
-
-    const result = mockOcrExtract(file.name);
-    setOcrResult(result);
-    setVendorName(result.vendorName);
-    setAmount(String(result.amount));
-    setInvoiceDate(result.invoiceDate);
-    setProcessing(false);
+    try {
+      const extraction = await extractInvoiceFromFile(file);
+      const result = toOcrResult(extraction);
+      setOcrResult(result);
+      setVendorName(result.vendorName);
+      setAmount(result.amount ? String(result.amount) : "");
+      setInvoiceDate(result.invoiceDate);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "OCR処理に失敗しました";
+      setError(`請求書の読み取りに失敗しました。${msg}`);
+    } finally {
+      setProcessing(false);
+    }
   }, []);
 
   const handleFileInput = useCallback(
@@ -177,9 +183,6 @@ export function InvoicePage() {
     <div className="mx-auto max-w-2xl space-y-4 px-4 pb-24">
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-bold text-slate-900">請求書OCR</h1>
-        <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-700">
-          準備中
-        </span>
         {ocrResult && (
           <button
             onClick={handleReset}
@@ -197,8 +200,8 @@ export function InvoicePage() {
         </div>
       )}
 
-      <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-        OCR抽出は準備中です。現在は確認用のダミー結果を表示します。
+      <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-xs text-slate-600">
+        請求書画像または PDF をアップロードすると、Claude Vision で業者名・金額・日付を自動抽出します。抽出結果は必ず内容を確認してから保存してください。
       </div>
 
       {/* Upload area */}
