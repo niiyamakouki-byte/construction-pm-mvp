@@ -1,0 +1,135 @@
+/**
+ * invoice-vision — 請求書画像を Claude Vision API 経由で構造化抽出する。
+ *
+ * ブラウザから直接 Anthropic API を叩くと API キーが露出するので、
+ * Vercel Serverless Function (/api/invoice-ocr) を経由する。
+ *
+ * サーバー側で ANTHROPIC_API_KEY を読み、Claude にビジョンリクエストを投げて
+ * JSON（InvoiceExtraction 形式）を返す。
+ */
+
+import {
+  InvoiceExtractionSchema,
+  type InvoiceExtraction,
+} from "../domain/invoice-extraction-schema.js";
+import { parseOrThrow } from "../domain/schemas.js";
+
+export type VisionFetcher = (
+  url: string,
+  init: RequestInit,
+) => Promise<Response>;
+
+export type ExtractInvoiceOptions = {
+  endpoint?: string;
+  fetcher?: VisionFetcher;
+};
+
+/**
+ * File を data URL (base64) に変換する。
+ * 画像 (image/*) と PDF (application/pdf) の両方に対応。
+ */
+export async function fileToBase64DataUrl(file: File): Promise<{
+  mediaType: string;
+  base64: string;
+}> {
+  const buf = await file.arrayBuffer();
+  const bytes = new Uint8Array(buf);
+  let binary = "";
+  const chunk = 0x8000;
+  for (let i = 0; i < bytes.length; i += chunk) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + chunk));
+  }
+  const base64 =
+    typeof btoa !== "undefined"
+      ? btoa(binary)
+      : Buffer.from(binary, "binary").toString("base64");
+  return { mediaType: file.type || "application/octet-stream", base64 };
+}
+
+/**
+ * Claude が返したテキストブロックから JSON を取り出してパースする。
+ * ```json ... ``` フェンスで囲まれている場合も先頭・末尾の { ... } を拾う。
+ */
+export function parseVisionResponseText(text: string): InvoiceExtraction {
+  if (!text || !text.trim()) {
+    throw new Error("Vision レスポンスが空です");
+  }
+
+  // ```json ... ``` フェンスを剥がす
+  const fenceMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/);
+  const candidate = fenceMatch ? fenceMatch[1] : text;
+
+  // 最初の { から最後の } までを抜き出す（前後の説明文を捨てる）
+  const firstBrace = candidate.indexOf("{");
+  const lastBrace = candidate.lastIndexOf("}");
+  if (firstBrace === -1 || lastBrace === -1 || lastBrace < firstBrace) {
+    throw new Error("Vision レスポンスに JSON が見つかりません");
+  }
+  const jsonSlice = candidate.slice(firstBrace, lastBrace + 1);
+
+  let raw: unknown;
+  try {
+    raw = JSON.parse(jsonSlice);
+  } catch (e) {
+    throw new Error(
+      `Vision レスポンスの JSON パースに失敗しました: ${
+        e instanceof Error ? e.message : String(e)
+      }`,
+    );
+  }
+
+  return parseOrThrow(InvoiceExtractionSchema, "InvoiceExtraction", raw);
+}
+
+/**
+ * /api/invoice-ocr に POST して請求書を抽出する。
+ *
+ * 失敗時は Error を投げる（UI 側で friendly メッセージに変換する想定）。
+ */
+export async function extractInvoiceFromFile(
+  file: File,
+  options: ExtractInvoiceOptions = {},
+): Promise<InvoiceExtraction> {
+  const endpoint = options.endpoint ?? "/api/invoice-ocr";
+  const fetcher = options.fetcher ?? fetch.bind(globalThis);
+
+  const { mediaType, base64 } = await fileToBase64DataUrl(file);
+
+  const response = await fetcher(endpoint, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      mediaType,
+      data: base64,
+      fileName: file.name,
+    }),
+  });
+
+  if (!response.ok) {
+    let detail = "";
+    try {
+      const body = (await response.json()) as { error?: string };
+      detail = body?.error ?? "";
+    } catch {
+      // ignore
+    }
+    throw new Error(
+      detail
+        ? `請求書OCRに失敗しました: ${detail}`
+        : `請求書OCRに失敗しました (HTTP ${response.status})`,
+    );
+  }
+
+  const payload = (await response.json()) as { text?: string; extraction?: unknown };
+
+  // サーバーが extraction を直接返す経路（テスト時など）
+  if (payload.extraction !== undefined) {
+    return parseOrThrow(InvoiceExtractionSchema, "InvoiceExtraction", payload.extraction);
+  }
+
+  if (typeof payload.text !== "string") {
+    throw new Error("Vision レスポンスの形式が不正です");
+  }
+
+  return parseVisionResponseText(payload.text);
+}
