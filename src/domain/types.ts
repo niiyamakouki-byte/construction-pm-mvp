@@ -1,63 +1,29 @@
+// ── Re-exports from schemas (Zod-derived types) ──────────────────────────────
+// These 7 types are now derived from Zod schemas in ./schemas.ts.
+// All existing imports of these type names continue to work unchanged.
+export type {
+  Project,
+  ProjectStatus,
+  Task,
+  TaskStatus,
+  DependencyType,
+  CostItem,
+  CostPaymentStatus,
+  CostBreakdownType,
+  Invoice,
+  InvoiceStatus,
+  Contract,
+  ContractStatus,
+  ChangeOrder,
+  ChangeOrderStatus,
+  Photo,
+} from "./schemas.js";
+
 /** 全エンティティ共通フィールド */
 export type BaseEntity = {
   id: string;
   createdAt: string;
   updatedAt: string;
-};
-
-// ── Project ─────────────────────────────────────────
-
-export type ProjectStatus = "planning" | "active" | "completed" | "on_hold";
-
-export type Project = BaseEntity & {
-  name: string;
-  description: string;
-  status: ProjectStatus;
-  startDate: string;
-  endDate?: string;
-  address?: string;
-  latitude?: number;
-  longitude?: number;
-  budget?: number;
-  includeWeekends: boolean;
-};
-
-// ── Task ────────────────────────────────────────────
-
-export type TaskStatus = "todo" | "in_progress" | "done";
-
-/**
- * Dependency relationship type between tasks.
- * FS = Finish-to-Start (default)
- * FF = Finish-to-Finish
- * SS = Start-to-Start
- * SF = Start-to-Finish
- * none = no dependency (parallel)
- */
-export type DependencyType = "FS" | "FF" | "SS" | "SF" | "none";
-
-export type Task = BaseEntity & {
-  projectId: string;
-  name: string;
-  description: string;
-  status: TaskStatus;
-  includeWeekends?: boolean;
-  assigneeId?: string;
-  startDate?: string;
-  dueDate?: string;
-  progress: number;
-  dependencies: string[];
-  /** Dependency relationship type; defaults to 'FS' when not set */
-  dependencyType?: DependencyType;
-  contractorId?: string;
-  materials?: string[];
-  lead_time?: number;
-  leadTimeDays?: number;
-  canvasX?: number;
-  canvasY?: number;
-  majorCategory?: string;
-  middleCategory?: string;
-  minorCategory?: string;
 };
 
 // ── Resource ────────────────────────────────────────
@@ -68,27 +34,6 @@ export type Resource = BaseEntity & {
   name: string;
   type: ResourceType;
   unit?: string;
-};
-
-// ── CostItem ────────────────────────────────────────
-
-export type CostPaymentStatus = "paid" | "unpaid";
-
-export type CostBreakdownType =
-  | "task_cost"
-  | "material_cost"
-  | "change_order_cost"
-  | "invoice_received";
-
-export type CostItem = BaseEntity & {
-  projectId: string;
-  taskId?: string;
-  description: string;
-  amount: number;
-  category: string;
-  costDate?: string;
-  paymentStatus?: CostPaymentStatus;
-  breakdownType?: CostBreakdownType;
 };
 
 // ── TeamMember ──────────────────────────────────────
