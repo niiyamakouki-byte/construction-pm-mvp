@@ -37,6 +37,7 @@ const InvoiceManagementPage = lazy(() => import("./pages/InvoiceManagementPage.j
 const CrossProjectGanttPage = lazy(() => import("./pages/CrossProjectGanttPage.js").then((m) => ({ default: m.CrossProjectGanttPage })));
 const ProgressReviewPage = lazy(() => import("./pages/ProgressReviewPage.js").then((m) => ({ default: m.ProgressReviewPage })));
 const PhotoPage = lazy(() => import("./pages/PhotoPage.js").then((m) => ({ default: m.PhotoPage })));
+const FreeePage = lazy(() => import("./pages/FreeePage.js").then((m) => ({ default: m.FreeePage })));
 import { ErrorBoundary } from "./components/ErrorBoundary.js";
 import { AuthGuard } from "./components/AuthGuard.js";
 import { OnboardingWizard, useOnboardingDone } from "./components/OnboardingWizard.js";
@@ -128,7 +129,7 @@ function AppShell() {
       icon: "☰",
       path: "/notifications",
       matchRoute: (currentRoute) =>
-        ["/today", "/invoice", "/estimate", "/contractors", "/notifications", "/help", "/node-schedule", "/cost-management", "/weather", "/safety", "/procurement", "/orders", "/crm", "/reports", "/invoices", "/cross-project-gantt", "/progress-review", "/photos"].includes(currentRoute) || currentRoute.startsWith("/reports/"),
+        ["/today", "/invoice", "/estimate", "/contractors", "/notifications", "/help", "/node-schedule", "/cost-management", "/weather", "/safety", "/procurement", "/orders", "/crm", "/reports", "/invoices", "/cross-project-gantt", "/progress-review", "/photos", "/freee"].includes(currentRoute) || currentRoute.startsWith("/reports/") || currentRoute.startsWith("/freee?"),
     },
   ];
 
@@ -183,6 +184,13 @@ function AppShell() {
       icon: "💴",
       path: "/invoice",
       matchRoute: (currentRoute) => currentRoute === "/invoice",
+    },
+    {
+      key: "freee",
+      label: "freee",
+      icon: "📗",
+      path: "/freee",
+      matchRoute: (currentRoute) => currentRoute === "/freee" || currentRoute.startsWith("/freee?"),
     },
     {
       key: "help",
@@ -313,6 +321,13 @@ function AppShell() {
       return (
         <ErrorBoundary fallbackTitle="写真一覧エラー">
           <PhotoPage />
+        </ErrorBoundary>
+      );
+    }
+    if (route === "/freee" || route.startsWith("/freee?")) {
+      return (
+        <ErrorBoundary fallbackTitle="freee連携エラー">
+          <FreeePage />
         </ErrorBoundary>
       );
     }
