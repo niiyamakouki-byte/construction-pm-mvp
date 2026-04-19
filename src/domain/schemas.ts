@@ -229,3 +229,121 @@ export const PhotoSchema = BaseEntitySchema.extend({
 });
 
 export type Photo = z.infer<typeof PhotoSchema>;
+
+// ── MoodBoard ────────────────────────────────────────────────────────────────
+
+export const MoodBoardCategorySchema = z.enum([
+  "床",
+  "壁",
+  "天井",
+  "家具",
+  "照明",
+  "カーテン",
+  "その他",
+]);
+
+export const MoodBoardItemSchema = z.object({
+  id: z.string(),
+  imageUrl: z.string().url(),
+  title: z.string(),
+  description: z.string(),
+  category: MoodBoardCategorySchema,
+  supplier: z.string().optional(),
+  price: z.number().finite().nonnegative().optional(),
+  position: z.object({
+    x: z.number().finite(),
+    y: z.number().finite(),
+  }),
+  size: z.object({
+    w: z.number().finite().positive(),
+    h: z.number().finite().positive(),
+  }),
+});
+
+export const MoodBoardSchema = BaseEntitySchema.extend({
+  projectId: z.string().uuid(),
+  title: z.string(),
+  items: z.array(MoodBoardItemSchema),
+});
+
+export type MoodBoardCategory = z.infer<typeof MoodBoardCategorySchema>;
+export type MoodBoardItem = z.infer<typeof MoodBoardItemSchema>;
+export type MoodBoard = z.infer<typeof MoodBoardSchema>;
+
+// ── SelectionItem ────────────────────────────────────────────────────────────
+
+export const SelectionCategorySchema = z.enum([
+  "床材",
+  "壁材",
+  "天井材",
+  "建具",
+  "照明",
+  "衛生器具",
+  "その他",
+]);
+
+export const SelectionStatusSchema = z.enum([
+  "選定中",
+  "施主確認待ち",
+  "承認済",
+  "変更依頼",
+]);
+
+export const SelectionOptionSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  description: z.string(),
+  unitPrice: z.number().finite().nonnegative(),
+  imageUrl: z.string().url().optional(),
+  catalogUrl: z.string().url().optional(),
+});
+
+export const SelectionSchema = BaseEntitySchema.extend({
+  projectId: z.string().uuid(),
+  category: SelectionCategorySchema,
+  name: z.string(),
+  options: z.array(SelectionOptionSchema),
+  selectedOptionId: z.string().nullable(),
+  status: SelectionStatusSchema,
+  clientNote: z.string(),
+});
+
+export type SelectionCategory = z.infer<typeof SelectionCategorySchema>;
+export type SelectionStatus = z.infer<typeof SelectionStatusSchema>;
+export type SelectionOption = z.infer<typeof SelectionOptionSchema>;
+export type Selection = z.infer<typeof SelectionSchema>;
+
+// ── CRM: Contact / Deal ──────────────────────────────────────────────────────
+
+export const CRMContactSchema = BaseEntitySchema.extend({
+  name: z.string(),
+  company: z.string(),
+  phone: z.string(),
+  email: z.string(),
+  address: z.string(),
+  note: z.string(),
+});
+
+export const CRMDealStageSchema = z.enum([
+  "引合",
+  "現調",
+  "見積提出",
+  "商談中",
+  "受注",
+  "失注",
+]);
+
+export const CRMDealSchema = BaseEntitySchema.extend({
+  customerId: z.string().uuid(),
+  projectName: z.string(),
+  stage: CRMDealStageSchema,
+  estimatedAmount: z.number().finite().nonnegative(),
+  actualAmount: z.number().finite().nonnegative().nullable(),
+  probability: z.number().finite().min(0).max(100),
+  expectedCloseDate: z.string(),
+  note: z.string(),
+});
+
+export type CRMContact = z.infer<typeof CRMContactSchema>;
+export type CRMDealStage = z.infer<typeof CRMDealStageSchema>;
+export type CRMDeal = z.infer<typeof CRMDealSchema>;
