@@ -51,7 +51,6 @@ describe("VoiceInput", () => {
     });
 
     afterEach(() => {
-      // @ts-expect-error -- SpeechRecognition is not typed on window in test env
       delete window.SpeechRecognition;
       vi.clearAllMocks();
     });
