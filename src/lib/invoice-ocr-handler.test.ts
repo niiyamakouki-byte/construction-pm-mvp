@@ -3,6 +3,7 @@ import {
   handleInvoiceOcr,
   INVOICE_RATE_LIMIT_PER_MIN,
   MAX_BASE64_BYTES,
+  type GlmFetcher,
   type InvoiceOcrResponse,
 } from "./invoice-ocr-handler.js";
 import type { RateLimitStore } from "./rate-limiter.js";
@@ -181,5 +182,80 @@ describe("handleInvoiceOcr — 正常系", () => {
       },
     );
     expect(calls.status).toBe(405);
+  });
+});
+
+describe("handleInvoiceOcr — ocrBackend", () => {
+  it("ocrBackend=claude はデフォルトの Anthropic パスを使う", async () => {
+    const { res, calls } = makeRes();
+    const anthropicFetcher = vi.fn(
+      async () =>
+        new Response(
+          JSON.stringify({ content: [{ type: "text", text: `{"vendor": "Claude社", "total": 5000}` }] }),
+          { status: 200, headers: { "Content-Type": "application/json" } },
+        ),
+    );
+    const glmFetcher = vi.fn(async () => {
+      throw new Error("GLM fetcher should not be called");
+    }) as unknown as GlmFetcher;
+
+    await handleInvoiceOcr(
+      {
+        method: "POST",
+        headers: { authorization: "Bearer good" },
+        body: { mediaType: "image/png", data: "aGVsbG8=", fileName: "a.png", ocrBackend: "claude" },
+      },
+      res,
+      {
+        auth: okAuth(),
+        rateLimitStore: rlStore(1),
+        anthropicApiKey: "test-key",
+        anthropicFetcher: anthropicFetcher as unknown as typeof fetch,
+        glmFetcher,
+      },
+    );
+
+    expect(calls.status).toBe(200);
+    expect(anthropicFetcher).toHaveBeenCalledTimes(1);
+    expect(glmFetcher).not.toHaveBeenCalled();
+    expect((calls.body as { text: string }).text).toMatch(/Claude社/);
+  });
+
+  it("ocrBackend=glm は Ollama /api/generate を呼び Anthropic を呼ばない", async () => {
+    const { res, calls } = makeRes();
+    const glmFetcher = vi.fn(
+      async () =>
+        new Response(
+          JSON.stringify({ response: `{"vendor": "GLM社", "total": 110000}` }),
+          { status: 200, headers: { "Content-Type": "application/json" } },
+        ),
+    ) as unknown as GlmFetcher;
+    const anthropicFetcher = vi.fn(async () => {
+      throw new Error("Anthropic fetcher should not be called");
+    }) as unknown as typeof fetch;
+
+    await handleInvoiceOcr(
+      {
+        method: "POST",
+        headers: { authorization: "Bearer good" },
+        body: { mediaType: "image/png", data: "aGVsbG8=", fileName: "invoice.png", ocrBackend: "glm" },
+      },
+      res,
+      {
+        auth: okAuth(),
+        rateLimitStore: rlStore(1),
+        anthropicApiKey: "test-key",
+        anthropicFetcher,
+        glmFetcher,
+        ollamaHost: "http://localhost:11434",
+      },
+    );
+
+    expect(calls.status).toBe(200);
+    expect(glmFetcher).toHaveBeenCalledTimes(1);
+    expect(anthropicFetcher).not.toHaveBeenCalled();
+    const url = (glmFetcher as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+    expect(url).toContain("/api/generate");
+    expect((calls.body as { text: string }).text).toMatch(/GLM社/);
   });
 });

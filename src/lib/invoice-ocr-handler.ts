@@ -57,10 +57,14 @@ type AnthropicMessagesResponse = {
   error?: { message?: string; type?: string };
 };
 
+export type OcrBackend = "claude" | "glm";
+
 export type InvoiceOcrRequestBody = {
   mediaType?: string;
   data?: string;
   fileName?: string;
+  /** OCR バックエンド。'glm' はローカル Ollama 推論（API 課金なし）。デフォルト 'claude'。 */
+  ocrBackend?: OcrBackend;
 };
 
 export type InvoiceOcrRequest = {
@@ -81,6 +85,11 @@ export type AnthropicFetcher = (
   init: RequestInit,
 ) => Promise<Response>;
 
+export type GlmFetcher = (
+  url: string,
+  init: RequestInit,
+) => Promise<Response>;
+
 export type InvoiceOcrDeps = {
   /** Supabase auth.getUser ラッパ（本番では getSupabaseServerClient().auth）。 */
   auth: SupabaseAuthVerifier;
@@ -94,7 +103,70 @@ export type InvoiceOcrDeps = {
   model?: string;
   /** テスト注入用の現在時刻。 */
   now?: () => Date;
+  /** Ollama /api/generate 呼び出し（GLM バックエンド用）。デフォルトは global fetch。 */
+  glmFetcher?: GlmFetcher;
+  /** Ollama ホスト URL。デフォルト http://localhost:11434。 */
+  ollamaHost?: string;
 };
+
+const DEFAULT_OLLAMA_HOST = "http://localhost:11434";
+const GLM_MODEL = "glm-ocr:q8_0";
+
+const GLM_PROMPT = `この画像は日本の請求書です。以下のJSON形式で情報を抽出してください:
+{
+  "vendor": "請求元の会社名（不明なら null）",
+  "invoice_number": "請求書番号（不明なら null）",
+  "issue_date": "発行日 YYYY-MM-DD（不明なら null）",
+  "due_date": "支払期限 YYYY-MM-DD（不明なら null）",
+  "items": [{"description": "品名", "quantity": 数値, "unit_price": 数値, "amount": 数値}],
+  "subtotal": 小計（税抜、不明なら null）,
+  "tax": 消費税額（不明なら null）,
+  "total": 合計（税込、不明なら null）
+}
+JSONのみ返してください。`;
+
+async function handleGlmOcr(
+  data: string,
+  mediaType: string,
+  fileName: string | undefined,
+  deps: InvoiceOcrDeps,
+  res: InvoiceOcrResponse,
+): Promise<void> {
+  const ollamaHost = deps.ollamaHost ?? DEFAULT_OLLAMA_HOST;
+  const glmFetch = deps.glmFetcher ?? (fetch.bind(globalThis) as GlmFetcher);
+
+  const payload = {
+    model: GLM_MODEL,
+    prompt: `${GLM_PROMPT}\n\nファイル名: ${fileName ?? "（不明）"}`,
+    images: [data],
+    stream: false,
+    format: "json",
+  };
+
+  let ollamaRes: Response;
+  try {
+    ollamaRes = await glmFetch(`${ollamaHost}/api/generate`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+  } catch (err) {
+    res.status(502).json({
+      error: `Ollama に接続できません: ${err instanceof Error ? err.message : String(err)}`,
+    });
+    return;
+  }
+
+  if (!ollamaRes.ok) {
+    res.status(502).json({ error: `Ollama エラー (${ollamaRes.status})` });
+    return;
+  }
+
+  const ollamaJson = (await ollamaRes.json()) as { response?: string };
+  const rawText = ollamaJson.response ?? "";
+
+  res.status(200).json({ text: rawText });
+}
 
 function readBody(req: InvoiceOcrRequest): InvoiceOcrRequestBody {
   if (req.body == null) return {};
@@ -127,7 +199,7 @@ export async function handleInvoiceOcr(
   }
 
   // ── 2. サイズ上限（認証後に計算してコスト節約）────────
-  const { mediaType, data, fileName } = readBody(req);
+  const { mediaType, data, fileName, ocrBackend } = readBody(req);
   if (!mediaType || !data) {
     res.status(400).json({ error: "mediaType と data (base64) が必要です" });
     return;
@@ -155,7 +227,19 @@ export async function handleInvoiceOcr(
     return;
   }
 
-  // ── 4. API キー + メディアタイプチェック ─────────────
+  // ── 4. バックエンド分岐 ───────────────────────────────
+  if (ocrBackend === "glm") {
+    const isPdfGlm = mediaType === "application/pdf";
+    const isImageGlm = mediaType.startsWith("image/");
+    if (!isPdfGlm && !isImageGlm) {
+      res.status(400).json({ error: "画像 (image/*) か PDF (application/pdf) のみ対応しています" });
+      return;
+    }
+    await handleGlmOcr(data, mediaType, fileName, deps, res);
+    return;
+  }
+
+  // ── 5. API キー + メディアタイプチェック (Claude) ────
   const apiKey = deps.anthropicApiKey ?? process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
     res.status(500).json({
