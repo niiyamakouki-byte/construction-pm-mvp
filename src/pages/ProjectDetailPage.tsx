@@ -358,7 +358,7 @@ export function ProjectDetailPage({
   if (loading) {
     return (
       <div className="flex items-center justify-center gap-2 py-16">
-        <span className="inline-block h-5 w-5 animate-spin rounded-full border-2 border-brand-200 border-t-brand-600" />
+        <span className="inline-block h-5 w-5 animate-spin rounded-full border-2 border-[#007AFF]/30 border-t-[#007AFF]" />
         <span className="text-sm text-slate-400">読み込み中...</span>
       </div>
     );
@@ -370,7 +370,7 @@ export function ProjectDetailPage({
         <p className="text-sm text-slate-500">プロジェクトが見つかりません</p>
         <button
           onClick={() => navigate("/")}
-          className="mt-4 rounded-lg bg-brand-500 px-4 py-2 text-sm font-semibold text-white"
+          className="mt-4 ios-btn-primary px-4 py-2 text-sm"
         >
           一覧に戻る
         </button>
@@ -430,7 +430,7 @@ export function ProjectDetailPage({
       {/* Back button */}
       <button
         onClick={() => navigate("/")}
-        className="flex items-center gap-1 text-sm text-slate-500 hover:text-brand-600 transition-colors"
+        className="flex items-center gap-1 text-sm text-slate-500 hover:text-[#007AFF] transition-colors"
       >
         <span aria-hidden="true">&larr;</span>
         プロジェクト一覧
@@ -472,12 +472,12 @@ export function ProjectDetailPage({
       )}
 
       {/* Project Header */}
-      <div className="rounded-2xl bg-gradient-to-br from-brand-700 via-brand-800 to-brand-900 p-5 text-white shadow-lg">
+      <div className="rounded-2xl bg-gradient-to-br from-[#004fad] via-[#003d85] to-[#002a5c] p-5 text-white shadow-lg">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0 flex-1">
             <h1 className="text-xl font-bold leading-tight">{project.name}</h1>
             {project.description && (
-              <p className="mt-1 text-sm text-brand-300">{project.description}</p>
+              <p className="mt-1 text-sm text-white/70">{project.description}</p>
             )}
           </div>
           <span
@@ -489,12 +489,12 @@ export function ProjectDetailPage({
 
         <div className="mt-4 flex flex-wrap gap-4 text-sm">
           {project.address && (
-            <span className="flex items-center gap-1 text-brand-200">
+            <span className="flex items-center gap-1 text-white/60">
               <span aria-hidden="true">📍</span>
               {project.address}
             </span>
           )}
-          <span className="flex items-center gap-1 text-brand-200 tabular-nums">
+          <span className="flex items-center gap-1 text-white/60 tabular-nums">
             <span aria-hidden="true">📅</span>
             {project.startDate}
             {project.endDate && ` 〜 ${project.endDate}`}
@@ -506,7 +506,7 @@ export function ProjectDetailPage({
           <div className="mt-4 inline-flex items-center gap-2 rounded-xl bg-white/10 px-3 py-2">
             <span className="text-xl">{weather.icon}</span>
             <span className="font-bold">{weather.temperature}°C</span>
-            <span className="text-sm text-brand-200">{weather.description}</span>
+            <span className="text-sm text-white/60">{weather.description}</span>
           </div>
         )}
       </div>
@@ -556,7 +556,7 @@ export function ProjectDetailPage({
             />
             <div
               className={`h-5 w-9 rounded-full transition-colors ${
-                (project.includeWeekends ?? true) ? "bg-brand-500" : "bg-slate-300"
+                (project.includeWeekends ?? true) ? "bg-[#007AFF]" : "bg-slate-300"
               }`}
             />
             <div
@@ -601,7 +601,7 @@ export function ProjectDetailPage({
                 className="transition-all duration-700"
               />
             </svg>
-            <span className="absolute inset-0 flex items-center justify-center text-sm font-bold text-brand-700 tabular-nums">
+            <span className="absolute inset-0 flex items-center justify-center text-sm font-bold text-[#004fad] tabular-nums">
               {progressPercent}%
             </span>
           </div>
@@ -705,7 +705,7 @@ export function ProjectDetailPage({
           <h2 className="text-base font-bold text-slate-800">タスク一覧</h2>
           <button
             onClick={() => setShowTaskForm(!showTaskForm)}
-            className="inline-flex items-center gap-1 rounded-lg bg-brand-500 px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-brand-600 active:bg-brand-700 transition-colors"
+            className="inline-flex items-center gap-1 rounded-lg bg-[#007AFF] px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-[#0063d6] active:opacity-85 transition-colors"
           >
             <span className="text-sm leading-none">{showTaskForm ? "−" : "+"}</span>
             タスク追加
@@ -736,7 +736,7 @@ export function ProjectDetailPage({
         {showTaskForm && (
           <form
             onSubmit={handleAddTask}
-            className="mb-4 rounded-xl border border-brand-200 bg-white p-4 shadow-sm page-enter"
+            className="mb-4 rounded-xl border border-[#007AFF]/20 bg-white p-4 shadow-sm page-enter"
           >
             <div className="flex flex-col gap-3">
               {/* Row 1: task name */}
@@ -749,7 +749,7 @@ export function ProjectDetailPage({
                 maxLength={200}
                 autoComplete="off"
                 aria-label="タスク名"
-                className="rounded-lg border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 focus:outline-none"
+                className="rounded-lg border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-[#007AFF]/20 focus:border-[#007AFF] focus:outline-none"
               />
               {/* Row 2: dates */}
               <div className="flex flex-col gap-2 sm:flex-row">
@@ -760,7 +760,7 @@ export function ProjectDetailPage({
                     value={taskStartDate}
                     onChange={(e) => setTaskStartDate(e.target.value)}
                     aria-label="開始日"
-                    className="rounded-lg border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 focus:outline-none"
+                    className="rounded-lg border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-[#007AFF]/20 focus:border-[#007AFF] focus:outline-none"
                   />
                 </div>
                 <div className="flex flex-1 flex-col gap-1">
@@ -770,7 +770,7 @@ export function ProjectDetailPage({
                     value={taskDueDate}
                     onChange={(e) => setTaskDueDate(e.target.value)}
                     aria-label="終了日"
-                    className="rounded-lg border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 focus:outline-none"
+                    className="rounded-lg border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-[#007AFF]/20 focus:border-[#007AFF] focus:outline-none"
                   />
                 </div>
               </div>
@@ -784,7 +784,7 @@ export function ProjectDetailPage({
                   maxLength={100}
                   autoComplete="off"
                   aria-label="担当者名"
-                  className="flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 focus:outline-none"
+                  className="flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-[#007AFF]/20 focus:border-[#007AFF] focus:outline-none"
                 />
                 <div className="flex flex-1 flex-col gap-1">
                   <label className="text-xs font-medium text-slate-500">進捗 {taskProgress}%</label>
@@ -796,7 +796,7 @@ export function ProjectDetailPage({
                     value={taskProgress}
                     onChange={(e) => setTaskProgress(Number(e.target.value))}
                     aria-label="進捗率"
-                    className="w-full accent-brand-500"
+                    className="w-full accent-[#007AFF]"
                   />
                 </div>
               </div>
@@ -808,7 +808,7 @@ export function ProjectDetailPage({
                 rows={2}
                 maxLength={500}
                 aria-label="備考・説明"
-                className="rounded-lg border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 focus:outline-none resize-none"
+                className="rounded-lg border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-[#007AFF]/20 focus:border-[#007AFF] focus:outline-none resize-none"
               />
               {/* Row 5: actions */}
               <div className="flex justify-end gap-2">
@@ -822,7 +822,7 @@ export function ProjectDetailPage({
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="rounded-lg bg-brand-500 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-brand-600 disabled:opacity-50"
+                  className="rounded-lg bg-[#007AFF] px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-[#0063d6] disabled:opacity-50"
                 >
                   {submitting ? "追加中..." : "追加"}
                 </button>
@@ -890,7 +890,7 @@ export function ProjectDetailPage({
                           </span>
                         )}
                         {task.assigneeId && (
-                          <span className="inline-flex items-center rounded-full bg-brand-50 px-1.5 py-0.5 text-[10px] font-medium text-brand-700">
+                          <span className="inline-flex items-center rounded-full bg-[#007AFF]/10 px-1.5 py-0.5 text-[10px] font-medium text-[#004fad]">
                             {task.assigneeId}
                           </span>
                         )}
@@ -903,7 +903,7 @@ export function ProjectDetailPage({
                     </div>
                     <button
                       onClick={() => void handleCopyTask(task)}
-                      className="shrink-0 rounded-lg p-2.5 text-slate-300 hover:text-brand-500 hover:bg-brand-50 transition-colors"
+                      className="shrink-0 rounded-lg p-2.5 text-slate-300 hover:text-[#007AFF] hover:bg-[#007AFF]/10 transition-colors"
                       title="コピー"
                       aria-label={`${task.name}をコピー`}
                     >
@@ -961,7 +961,7 @@ export function ProjectDetailPage({
                 <div className="flex items-center gap-2">
                   <div className="h-2 flex-1 min-w-[80px] rounded-full bg-slate-100 overflow-hidden">
                     <div
-                      className={`h-full rounded-full transition-all duration-300 ${completion.passed ? "bg-emerald-500" : "bg-brand-500"}`}
+                      className={`h-full rounded-full transition-all duration-300 ${completion.passed ? "bg-emerald-500" : "bg-[#007AFF]"}`}
                       style={{ width: `${completion.percentage}%` }}
                     />
                   </div>
@@ -991,7 +991,7 @@ export function ProjectDetailPage({
                             return next;
                           });
                         }}
-                        className="h-4 w-4 rounded border-slate-300 accent-brand-500"
+                        className="h-4 w-4 rounded border-slate-300 accent-[#007AFF]"
                       />
                       <label htmlFor={`cl-${item.id}`} className={`text-sm ${checked ? "text-slate-400 line-through" : "text-slate-700"}`}>
                         {item.descriptionJa}
