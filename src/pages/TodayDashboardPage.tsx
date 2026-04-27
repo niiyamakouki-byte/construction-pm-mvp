@@ -760,6 +760,48 @@ function TodayDashboardPageContent() {
         </div>
       )}
 
+      {/* 今日のおすすめアクション - shown only when projects exist */}
+      {allProjects.length > 0 && (() => {
+        const actions: { icon: string; label: string; path: string; highlight?: boolean }[] = [];
+        if (overdueTasks > 0) {
+          actions.push({ icon: "⚠", label: `期限超過 ${overdueTasks}件を確認`, path: "/tasks", highlight: true });
+        }
+        if (tasks.length > 0) {
+          actions.push({ icon: "✓", label: `今日のタスク ${tasks.length}件を処理`, path: "/today" });
+        }
+        if (allProjects.length === 0) {
+          actions.push({ icon: "🏗️", label: "最初の案件を作成する", path: "/app", highlight: true });
+        }
+        if (allTasks.filter((t) => t.status === "todo" && !t.startDate).length > 0) {
+          actions.push({ icon: "📊", label: "工程表で未開始タスクを確認", path: insightProject ? `/gantt/${insightProject.id}` : "/gantt" });
+        }
+        actions.push({ icon: "📸", label: "現場写真をアップロード", path: "/today" });
+        if (actions.length === 0) return null;
+        return (
+          <section>
+            <h2 className="mb-3 text-base font-bold text-slate-800">今日のおすすめアクション</h2>
+            <div className="grid gap-2 sm:grid-cols-2">
+              {actions.slice(0, 4).map((action) => (
+                <button
+                  key={action.label}
+                  type="button"
+                  onClick={() => navigate(action.path)}
+                  className={`flex items-center gap-3 rounded-xl border px-4 py-3 text-left text-sm font-semibold transition-colors hover:bg-slate-50 ${
+                    action.highlight
+                      ? "border-red-200 bg-red-50 text-red-800"
+                      : "border-slate-200 bg-white text-slate-700"
+                  }`}
+                >
+                  <span className="text-lg" aria-hidden="true">{action.icon}</span>
+                  <span className="flex-1">{action.label}</span>
+                  <span className="text-slate-300" aria-hidden="true">›</span>
+                </button>
+              ))}
+            </div>
+          </section>
+        );
+      })()}
+
       {/* Cockpit Dashboard */}
       <section>
         <div className="mb-3 flex items-center justify-between gap-3">

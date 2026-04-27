@@ -30,7 +30,16 @@ export function SignupPage() {
         options: { data: { company_name: companyName } },
       });
       if (authError) {
-        setError(authError.message);
+        const msg = authError.message.toLowerCase();
+        if (msg.includes("user already registered") || msg.includes("already registered")) {
+          setError("このメールアドレスはすでに登録されています。ログインページからサインインしてください。");
+        } else if (msg.includes("password") && msg.includes("weak")) {
+          setError("パスワードが弱すぎます。英数字・記号を組み合わせた8文字以上を設定してください。");
+        } else if (msg.includes("invalid email")) {
+          setError("メールアドレスの形式が正しくありません。");
+        } else {
+          setError("登録に失敗しました。入力内容を確認してもう一度お試しください。");
+        }
       } else {
         setSuccess(true);
       }
