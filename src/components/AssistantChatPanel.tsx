@@ -8,8 +8,13 @@ type ChatMessage = {
 };
 
 const STORAGE_KEY = "genbahub_assistant_chat";
+const POS_KEY = "genbahub_chat_pos";
+const SIZE_KEY = "genbahub_chat_size";
 const MAX_STORED = 50;
 const POLL_INTERVAL_MS = 2000;
+
+const MIN_W = 320;
+const MIN_H = 400;
 
 function loadHistory(): ChatMessage[] {
   try {
@@ -35,6 +40,64 @@ function formatTime(isoString: string): string {
   return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
 }
 
+function loadPos(): { x: number; y: number } | null {
+  try {
+    const raw = localStorage.getItem(POS_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw) as { x: number; y: number };
+  } catch {
+    return null;
+  }
+}
+
+function savePos(pos: { x: number; y: number }): void {
+  try {
+    localStorage.setItem(POS_KEY, JSON.stringify(pos));
+  } catch {
+    // ignore
+  }
+}
+
+function loadSize(): { w: number; h: number } | null {
+  try {
+    const raw = localStorage.getItem(SIZE_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw) as { w: number; h: number };
+  } catch {
+    return null;
+  }
+}
+
+function saveSize(size: { w: number; h: number }): void {
+  try {
+    localStorage.setItem(SIZE_KEY, JSON.stringify(size));
+  } catch {
+    // ignore
+  }
+}
+
+/** FABのデフォルト右下座標を返す（viewport基準のright/bottom的な位置をleft/topに変換） */
+function defaultPos(): { x: number; y: number } {
+  return {
+    x: window.innerWidth - 80,
+    y: window.innerHeight - 80,
+  };
+}
+
+function defaultSize(): { w: number; h: number } {
+  return { w: 420, h: 560 };
+}
+
+/** パネルがviewport内に収まるようにクランプ */
+function clampPanelPos(x: number, y: number, w: number, h: number): { x: number; y: number } {
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+  return {
+    x: Math.max(0, Math.min(x, vw - w)),
+    y: Math.max(0, Math.min(y, vh - h)),
+  };
+}
+
 type Props = {
   /** ユーザー識別子。ログイン不要の demo 画面は "demo-user" を渡す */
   userId?: string;
@@ -47,8 +110,19 @@ export function AssistantChatPanel({ userId = "demo-user" }: Props) {
   const [sending, setSending] = useState(false);
   const [unread, setUnread] = useState(0);
   const [lastMessageId, setLastMessageId] = useState<string | undefined>(undefined);
+
+  // FAB / panel position (top-left corner of panel when open, FAB center when closed)
+  const [pos, setPos] = useState<{ x: number; y: number }>(() => loadPos() ?? defaultPos());
+  const [size, setSize] = useState<{ w: number; h: number }>(() => loadSize() ?? defaultSize());
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
+
+  // Drag state
+  const dragRef = useRef<{ startMouseX: number; startMouseY: number; startPosX: number; startPosY: number } | null>(null);
+  // Resize state
+  const resizeRef = useRef<{ startMouseX: number; startMouseY: number; startW: number; startH: number } | null>(null);
 
   // 初回マウント時に最新メッセージIDを設定
   useEffect(() => {
@@ -60,6 +134,24 @@ export function AssistantChatPanel({ userId = "demo-user" }: Props) {
       }
     }
   }, []);
+
+  // ⌘K / Ctrl+K でトグル
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      const isMac = navigator.platform.startsWith("Mac");
+      const trigger = isMac ? e.metaKey && e.key.toLowerCase() === "k" : e.ctrlKey && e.key.toLowerCase() === "k";
+      if (trigger) {
+        e.preventDefault();
+        setOpen((v) => !v);
+        return;
+      }
+      if (e.key === "Escape" && open) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [open]);
 
   // メッセージ追加ヘルパー
   const addMessages = useCallback((newMsgs: ChatMessage[]) => {
@@ -115,7 +207,7 @@ export function AssistantChatPanel({ userId = "demo-user" }: Props) {
     };
   }, [userId, lastMessageId, open, addMessages]);
 
-  // 展開時にスクロール & 未読クリア
+  // 展開時にスクロール & 未読クリア & focus trap
   useEffect(() => {
     if (open) {
       setUnread(0);
@@ -132,6 +224,83 @@ export function AssistantChatPanel({ userId = "demo-user" }: Props) {
       messagesEndRef.current?.scrollIntoView?.({ behavior: "smooth" });
     }
   }, [messages, open]);
+
+  // -- Drag: header mousedown --
+  const onDragStart = useCallback((e: React.MouseEvent) => {
+    // パネルが開いていないとFABドラッグ
+    e.preventDefault();
+    dragRef.current = {
+      startMouseX: e.clientX,
+      startMouseY: e.clientY,
+      startPosX: pos.x,
+      startPosY: pos.y,
+    };
+
+    const onMove = (ev: MouseEvent) => {
+      if (!dragRef.current) return;
+      const dx = ev.clientX - dragRef.current.startMouseX;
+      const dy = ev.clientY - dragRef.current.startMouseY;
+      const newX = dragRef.current.startPosX + dx;
+      const newY = dragRef.current.startPosY + dy;
+      const clamped = clampPanelPos(newX, newY, open ? size.w : 56, open ? size.h : 56);
+      setPos(clamped);
+    };
+
+    const onUp = (ev: MouseEvent) => {
+      if (!dragRef.current) return;
+      const dx = ev.clientX - dragRef.current.startMouseX;
+      const dy = ev.clientY - dragRef.current.startMouseY;
+      const newX = dragRef.current.startPosX + dx;
+      const newY = dragRef.current.startPosY + dy;
+      const clamped = clampPanelPos(newX, newY, open ? size.w : 56, open ? size.h : 56);
+      savePos(clamped);
+      dragRef.current = null;
+      document.removeEventListener("mousemove", onMove);
+      document.removeEventListener("mouseup", onUp);
+    };
+
+    document.addEventListener("mousemove", onMove);
+    document.addEventListener("mouseup", onUp);
+  }, [pos, open, size]);
+
+  // -- Resize: bottom-right corner mousedown --
+  const onResizeStart = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    resizeRef.current = {
+      startMouseX: e.clientX,
+      startMouseY: e.clientY,
+      startW: size.w,
+      startH: size.h,
+    };
+
+    const maxW = Math.floor(window.innerWidth * 0.6);
+    const maxH = Math.floor(window.innerHeight * 0.6);
+
+    const onMove = (ev: MouseEvent) => {
+      if (!resizeRef.current) return;
+      const dx = ev.clientX - resizeRef.current.startMouseX;
+      const dy = ev.clientY - resizeRef.current.startMouseY;
+      const newW = Math.max(MIN_W, Math.min(resizeRef.current.startW + dx, maxW));
+      const newH = Math.max(MIN_H, Math.min(resizeRef.current.startH + dy, maxH));
+      setSize({ w: newW, h: newH });
+    };
+
+    const onUp = (ev: MouseEvent) => {
+      if (!resizeRef.current) return;
+      const dx = ev.clientX - resizeRef.current.startMouseX;
+      const dy = ev.clientY - resizeRef.current.startMouseY;
+      const newW = Math.max(MIN_W, Math.min(resizeRef.current.startW + dx, maxW));
+      const newH = Math.max(MIN_H, Math.min(resizeRef.current.startH + dy, maxH));
+      saveSize({ w: newW, h: newH });
+      resizeRef.current = null;
+      document.removeEventListener("mousemove", onMove);
+      document.removeEventListener("mouseup", onUp);
+    };
+
+    document.addEventListener("mousemove", onMove);
+    document.addEventListener("mouseup", onUp);
+  }, [size]);
 
   const handleSend = useCallback(async () => {
     const text = input.trim();
@@ -187,22 +356,35 @@ export function AssistantChatPanel({ userId = "demo-user" }: Props) {
     }
   };
 
+  // パネルがopen時: left/top = pos (パネル左上)
+  // FABのみ時: FABの中心がposになるよう -28px オフセット
+  const fabStyle: React.CSSProperties = {
+    position: "fixed",
+    left: pos.x - (open ? 0 : 28),
+    top: pos.y - (open ? 0 : 28),
+    zIndex: 50,
+  };
+
+  const isMac = typeof navigator !== "undefined" && navigator.platform.startsWith("Mac");
+  const shortcutLabel = isMac ? "⌘K" : "Ctrl+K";
+
   return (
-    <div
-      className="fixed bottom-4 right-4 z-50 flex flex-col items-end"
-      aria-label="ラポルタ秘書チャット"
-    >
+    <div style={fabStyle}>
       {/* チャットウィンドウ */}
       {open && (
         <div
-          className="mb-3 flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl"
-          style={{ width: 350, height: 500 }}
+          ref={dialogRef}
+          className="flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl"
+          style={{ width: size.w, height: size.h, marginBottom: "0" }}
           role="dialog"
           aria-modal="true"
           aria-label="ラポルタ秘書チャット"
         >
-          {/* ヘッダー */}
-          <div className="flex items-center justify-between bg-blue-600 px-4 py-3 text-white">
+          {/* ヘッダー（ドラッグハンドル） */}
+          <div
+            className="flex items-center justify-between bg-blue-600 px-4 py-3 text-white cursor-grab active:cursor-grabbing select-none"
+            onMouseDown={onDragStart}
+          >
             <div className="flex items-center gap-2">
               <div className="flex h-8 w-8 items-center justify-center rounded-full bg-white/20 text-sm font-bold">
                 AI
@@ -212,15 +394,19 @@ export function AssistantChatPanel({ userId = "demo-user" }: Props) {
                 <div className="text-xs text-blue-200">Discord 中継</div>
               </div>
             </div>
-            <button
-              onClick={() => setOpen(false)}
-              className="rounded-lg p-1 hover:bg-white/20"
-              aria-label="チャットを閉じる"
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M18 6L6 18M6 6l12 12" />
-              </svg>
-            </button>
+            <div className="flex items-center gap-1">
+              <span className="text-xs text-blue-300 mr-1 hidden sm:block">{shortcutLabel}</span>
+              <button
+                onMouseDown={(e) => e.stopPropagation()}
+                onClick={() => setOpen(false)}
+                className="rounded-lg p-1 hover:bg-white/20"
+                aria-label="チャットを閉じる"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M18 6L6 18M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
           </div>
 
           {/* メッセージ一覧 */}
@@ -295,34 +481,43 @@ export function AssistantChatPanel({ userId = "demo-user" }: Props) {
               </button>
             </div>
           </div>
+
+          {/* リサイズハンドル（右下） */}
+          <div
+            onMouseDown={onResizeStart}
+            className="absolute bottom-0 right-0 h-4 w-4 cursor-se-resize"
+            aria-hidden="true"
+            style={{ background: "transparent" }}
+          >
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="text-slate-300">
+              <path d="M14 2L2 14M14 8L8 14M14 14H14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+            </svg>
+          </div>
         </div>
       )}
 
-      {/* FAB ボタン */}
-      <button
-        onClick={() => setOpen((v) => !v)}
-        className="relative flex h-14 w-14 items-center justify-center rounded-full bg-blue-600 text-white shadow-lg hover:bg-blue-700 transition-colors"
-        aria-label={open ? "チャットを閉じる" : "ラポルタ秘書を開く"}
-        data-testid="assistant-chat-fab"
-      >
-        {open ? (
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M18 6L6 18M6 6l12 12" />
-          </svg>
-        ) : (
+      {/* FAB ボタン（パネル閉時のみ表示） */}
+      {!open && (
+        <button
+          onMouseDown={onDragStart}
+          onClick={() => setOpen(true)}
+          className="relative flex h-14 w-14 items-center justify-center rounded-full bg-blue-600 text-white shadow-lg hover:bg-blue-700 transition-colors cursor-grab active:cursor-grabbing"
+          aria-label={`ラポルタ秘書を開く (${shortcutLabel})`}
+          data-testid="assistant-chat-fab"
+        >
           <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
             <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z" />
           </svg>
-        )}
-        {unread > 0 && !open && (
-          <span
-            className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs font-bold text-white animate-pulse"
-            aria-label={`${unread}件の新着メッセージ`}
-          >
-            {unread > 9 ? "9+" : unread}
-          </span>
-        )}
-      </button>
+          {unread > 0 && (
+            <span
+              className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs font-bold text-white animate-pulse"
+              aria-label={`${unread}件の新着メッセージ`}
+            >
+              {unread > 9 ? "9+" : unread}
+            </span>
+          )}
+        </button>
+      )}
     </div>
   );
 }

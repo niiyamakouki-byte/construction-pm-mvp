@@ -58,17 +58,44 @@ describe("AssistantChatPanel", () => {
     expect(dialog).toBeTruthy();
   });
 
-  it("展開状態で FAB をクリックすると折りたたまれる", () => {
+  it("展開中は FAB が非表示になり、閉じるボタンでパネルを折りたためる", () => {
     render(<AssistantChatPanel userId="test-user" />);
 
     const fab = screen.getByTestId("assistant-chat-fab");
 
-    // 展開
+    // 展開 → FAB は消える
     fireEvent.click(fab);
+    expect(screen.queryByTestId("assistant-chat-fab")).toBeNull();
     expect(screen.getByRole("dialog")).toBeTruthy();
 
-    // 折りたたむ
-    fireEvent.click(fab);
+    // ヘッダーの閉じるボタンで折りたたむ
+    const dialog = screen.getByRole("dialog");
+    const closeBtn = dialog.querySelector('[aria-label="チャットを閉じる"]') as HTMLElement;
+    fireEvent.click(closeBtn);
+    expect(screen.queryByRole("dialog")).toBeNull();
+    // FAB が再表示される
+    expect(screen.getByTestId("assistant-chat-fab")).toBeTruthy();
+  });
+
+  it("Escape キーでパネルを閉じられる", () => {
+    render(<AssistantChatPanel userId="test-user" />);
+
+    fireEvent.click(screen.getByTestId("assistant-chat-fab"));
+    expect(screen.getByRole("dialog")).toBeTruthy();
+
+    fireEvent.keyDown(document, { key: "Escape" });
+    expect(screen.queryByRole("dialog")).toBeNull();
+  });
+
+  it("Ctrl+K でパネルをトグル開閉できる", () => {
+    render(<AssistantChatPanel userId="test-user" />);
+
+    // 開く
+    fireEvent.keyDown(document, { key: "k", ctrlKey: true });
+    expect(screen.getByRole("dialog")).toBeTruthy();
+
+    // 閉じる
+    fireEvent.keyDown(document, { key: "k", ctrlKey: true });
     expect(screen.queryByRole("dialog")).toBeNull();
   });
 
