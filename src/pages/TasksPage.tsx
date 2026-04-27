@@ -58,7 +58,7 @@ export function TasksPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center gap-2 py-16" role="status" aria-label="読み込み中">
-        <span className="inline-block h-5 w-5 animate-spin rounded-full border-2 border-brand-200 border-t-brand-600" />
+        <span className="inline-block h-5 w-5 animate-spin rounded-full border-2 border-[#007AFF]/30 border-t-[#007AFF]" />
         <span className="text-sm text-slate-400">読み込み中...</span>
       </div>
     );
@@ -80,10 +80,10 @@ export function TasksPage() {
                   setSelectedProjectId(project.id);
                   writeLastProjectId(project.id);
                 }}
-                className={`rounded-full px-4 py-2 text-sm font-semibold ${
+                className={`rounded-full px-4 py-2 text-sm font-semibold transition-colors ${
                   project.id === selectedProjectId
-                    ? "bg-slate-900 text-white"
-                    : "bg-slate-100 text-slate-600"
+                    ? "bg-[#007AFF] text-white"
+                    : "bg-slate-100 text-slate-600 hover:bg-slate-200"
                 }`}
               >
                 {project.name}
