@@ -95,7 +95,7 @@ export function PhotoPage() {
           <select
             value={selectedProjectId}
             onChange={(event) => setSelectedProjectId(event.target.value)}
-            className="mt-1 block min-w-64 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700"
+            className="mt-1 block min-w-64 rounded-xl border border-slate-200 backdrop-blur-sm bg-white/80 px-3 py-2 text-sm text-slate-700 focus:border-[#007AFF] focus:outline-none focus:ring-2 focus:ring-[#007AFF]/20"
           >
             {projects.map((project) => (
               <option key={project.id} value={project.id}>{project.name}</option>
@@ -112,7 +112,7 @@ export function PhotoPage() {
 
       {loading ? (
         <div className="flex items-center justify-center gap-2 py-16 text-sm text-slate-400">
-          <span className="inline-block h-5 w-5 animate-spin rounded-full border-2 border-brand-200 border-t-brand-600" />
+          <span className="inline-block h-5 w-5 animate-spin rounded-full border-2 border-[#007AFF]/30 border-t-[#007AFF]" />
           読み込み中...
         </div>
       ) : (
