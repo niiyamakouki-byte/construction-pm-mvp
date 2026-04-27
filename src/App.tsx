@@ -54,6 +54,7 @@ import { MobileNav } from "./components/MobileNav.js";
 import { Navigation } from "./components/Navigation.js";
 import { NotificationBanner } from "./components/NotificationBanner.js";
 import { readLastProjectId } from "./lib/last-project.js";
+import { AssistantChatPanel } from "./components/AssistantChatPanel.js";
 
 function LogoIcon() {
   return (
@@ -258,7 +259,19 @@ function AppShell() {
 
   const pageFallback = <div className="flex items-center justify-center py-20 text-slate-400 text-sm">読み込み中...</div>;
 
-  // 認証不要ページ（入退場キオスク+協力会社ポータル+施主セレクション+施主ビューア）
+  // 認証不要ページ（入退場キオスク+協力会社ポータル+施主セレクション+施主ビューア+秘書デモ）
+  if (route === "/assistant/demo") {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <div className="text-center text-slate-500 text-sm">
+          <div className="text-2xl mb-2">🤖</div>
+          <div className="font-semibold text-slate-700">ラポルタ秘書 デモ画面</div>
+          <div className="mt-1">右下のチャットアイコンから話しかけてください</div>
+        </div>
+        <AssistantChatPanel userId="demo-user" />
+      </div>
+    );
+  }
   if (clientProjectId) return <Suspense fallback={pageFallback}><ClientViewerPage projectId={clientProjectId} /></Suspense>;
   if (entryProjectId) return <Suspense fallback={pageFallback}><SiteEntryPage projectId={entryProjectId} /></Suspense>;
   if (portalProjectId) return <Suspense fallback={pageFallback}><ContractorPortalPage projectId={portalProjectId} company={portalCompany} /></Suspense>;
@@ -655,6 +668,7 @@ function AppShell() {
         {!onboardingDone ? <OnboardingWizard onComplete={handleOnboardingComplete} /> : null}
         {onboardingDone && !tourDone && showTour ? <TourGuide onComplete={markTourDone} /> : null}
         {showShortcutHelp ? <KeyboardShortcutHelp onClose={() => setShowShortcutHelp(false)} /> : null}
+        <AssistantChatPanel userId={user?.email ?? "anonymous"} />
       </div>
     </AuthGuard>
   );
