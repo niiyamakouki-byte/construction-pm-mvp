@@ -78,7 +78,7 @@ export function MobileNav({
         aria-label="メニューを開く"
         aria-expanded={open}
         aria-controls="mobile-navigation-drawer"
-        className="flex h-11 w-11 items-center justify-center rounded-xl border border-white/15 bg-white/10 text-white hover:bg-white/15"
+        className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200/70 bg-white/70 text-slate-600 hover:bg-white backdrop-blur-sm"
       >
         <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5" aria-hidden="true">
           <path
@@ -105,7 +105,7 @@ export function MobileNav({
 
         <aside
           id="mobile-navigation-drawer"
-          className={`absolute inset-y-0 right-0 flex w-[min(22rem,86vw)] flex-col border-l border-slate-200 bg-white shadow-2xl transition-transform duration-200 ${
+          className={`absolute inset-y-0 right-0 flex w-[min(22rem,86vw)] flex-col border-l border-[rgba(60,60,67,0.12)] bg-white/92 backdrop-blur-xl shadow-2xl transition-transform duration-200 ${
             open ? "translate-x-0" : "translate-x-full"
           }`}
           role="dialog"
@@ -147,10 +147,10 @@ export function MobileNav({
                   onClick={() => handleNavigate(item.path)}
                   data-tour={item.dataTour}
                   aria-current={item.active ? "page" : undefined}
-                  className={`flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left transition-colors ${
+                  className={`flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left transition-colors ${
                     item.active
-                      ? "bg-brand-50 text-brand-700"
-                      : "text-slate-600 hover:bg-slate-50"
+                      ? "bg-[#007AFF]/10 text-[#007AFF] font-semibold"
+                      : "text-slate-600 hover:bg-[#007AFF]/5"
                   }`}
                 >
                   <span className="text-lg" aria-hidden="true">

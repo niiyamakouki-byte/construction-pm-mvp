@@ -1,4 +1,5 @@
 import { lazy, Suspense, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts.js";
 import { KeyboardShortcutHelp } from "./components/KeyboardShortcutHelp.js";
 
@@ -51,7 +52,7 @@ import { useHashRoute, navigate } from "./hooks/useHashRouter.js";
 import { useTheme } from "./hooks/useTheme.js";
 import { ThemeToggle } from "./components/ThemeToggle.js";
 import { MobileNav } from "./components/MobileNav.js";
-import { Navigation } from "./components/Navigation.js";
+// Navigation import removed – sidebar is rendered inline in AppShell
 import { NotificationBanner } from "./components/NotificationBanner.js";
 import { readLastProjectId } from "./lib/last-project.js";
 import { AssistantChatPanel } from "./components/AssistantChatPanel.js";
@@ -76,6 +77,7 @@ type TabDef = {
 };
 
 function AppShell() {
+  const { t } = useTranslation(["common", "pages", "errors"]);
   const route = useHashRoute();
   const { user, signOut } = useAuth();
   const { persona, setPersona } = usePersona();
@@ -105,28 +107,28 @@ function AppShell() {
   const primaryTabs: TabDef[] = [
     {
       key: "home",
-      label: "ホーム",
+      label: t("common:nav.home"),
       icon: "🏠",
       path: "/app",
       matchRoute: (currentRoute) => currentRoute === "/app" || currentRoute === "/" || currentRoute === "",
     },
     {
       key: "gantt",
-      label: "工程表",
+      label: t("common:nav.gantt"),
       icon: "📊",
       path: ganttPath,
       matchRoute: (currentRoute) => currentRoute === "/gantt" || currentRoute.startsWith("/gantt/"),
     },
     {
       key: "tasks",
-      label: "タスク",
+      label: t("common:nav.tasks"),
       icon: "🗂",
       path: "/tasks",
       matchRoute: (currentRoute) => currentRoute === "/tasks",
     },
     {
       key: "more",
-      label: "その他",
+      label: t("common:nav.more"),
       icon: "☰",
       path: "/notifications",
       matchRoute: (currentRoute) =>
@@ -137,28 +139,28 @@ function AppShell() {
   const secondaryTabs: TabDef[] = [
     {
       key: "today",
-      label: "今日",
+      label: t("common:nav.today"),
       icon: "📋",
       path: "/today",
       matchRoute: (currentRoute) => currentRoute === "/today",
     },
     {
       key: "notifications",
-      label: "通知",
+      label: t("common:nav.notifications"),
       icon: "🔔",
       path: "/notifications",
       matchRoute: (currentRoute) => currentRoute === "/notifications",
     },
     {
       key: "weather",
-      label: "天気",
+      label: t("common:nav.weather"),
       icon: "☔",
       path: "/weather",
       matchRoute: (currentRoute) => currentRoute === "/weather",
     },
     {
       key: "contractors",
-      label: "業者",
+      label: t("common:nav.contractors"),
       icon: "🏢",
       path: "/contractors",
       matchRoute: (currentRoute) => currentRoute === "/contractors",
@@ -166,50 +168,50 @@ function AppShell() {
     },
     {
       key: "estimate",
-      label: "見積",
+      label: t("common:nav.estimate"),
       icon: "🧾",
       path: "/estimate",
       matchRoute: (currentRoute) => currentRoute === "/estimate",
     },
-    { key: "cross-gantt", label: "全案件ガント", icon: "📅", path: "/cross-project-gantt", matchRoute: (currentRoute) => currentRoute === "/cross-project-gantt" },
-    { key: "progress-review", label: "進捗レビュー", icon: "📸", path: "/progress-review", matchRoute: (currentRoute) => currentRoute === "/progress-review" },
-    { key: "photos", label: "写真", icon: "🖼", path: "/photos", matchRoute: (currentRoute) => currentRoute === "/photos" },
-    { key: "safety", label: "安全", icon: "🦺", path: "/safety", matchRoute: (currentRoute) => currentRoute === "/safety" },
-    { key: "procurement", label: "発注", icon: "📦", path: "/procurement", matchRoute: (currentRoute) => currentRoute === "/procurement" },
-    { key: "orders", label: "受発注", icon: "🗒", path: "/orders", matchRoute: (currentRoute) => currentRoute === "/orders" },
-    { key: "cost", label: "コスト", icon: "💹", path: "/cost-management", matchRoute: (currentRoute) => currentRoute === "/cost-management" },
-    { key: "crm", label: "CRM", icon: "🤝", path: "/crm", matchRoute: (currentRoute) => currentRoute === "/crm" },
+    { key: "cross-gantt", label: t("common:nav.cross_gantt"), icon: "📅", path: "/cross-project-gantt", matchRoute: (currentRoute) => currentRoute === "/cross-project-gantt" },
+    { key: "progress-review", label: t("common:nav.progress_review"), icon: "📸", path: "/progress-review", matchRoute: (currentRoute) => currentRoute === "/progress-review" },
+    { key: "photos", label: t("common:nav.photos"), icon: "🖼", path: "/photos", matchRoute: (currentRoute) => currentRoute === "/photos" },
+    { key: "safety", label: t("common:nav.safety"), icon: "🦺", path: "/safety", matchRoute: (currentRoute) => currentRoute === "/safety" },
+    { key: "procurement", label: t("common:nav.procurement"), icon: "📦", path: "/procurement", matchRoute: (currentRoute) => currentRoute === "/procurement" },
+    { key: "orders", label: t("common:nav.orders"), icon: "🗒", path: "/orders", matchRoute: (currentRoute) => currentRoute === "/orders" },
+    { key: "cost", label: t("common:nav.cost"), icon: "💹", path: "/cost-management", matchRoute: (currentRoute) => currentRoute === "/cost-management" },
+    { key: "crm", label: t("common:nav.crm"), icon: "🤝", path: "/crm", matchRoute: (currentRoute) => currentRoute === "/crm" },
     {
       key: "invoice",
-      label: "請求",
+      label: t("common:nav.invoice"),
       icon: "💴",
       path: "/invoice",
       matchRoute: (currentRoute) => currentRoute === "/invoice",
     },
     {
       key: "freee",
-      label: "freee",
+      label: t("common:nav.freee"),
       icon: "📗",
       path: "/freee",
       matchRoute: (currentRoute) => currentRoute === "/freee" || currentRoute.startsWith("/freee?"),
     },
     {
       key: "help",
-      label: "ヘルプ",
+      label: t("common:nav.help"),
       icon: "❓",
       path: "/help",
       matchRoute: (currentRoute) => currentRoute === "/help",
     },
     {
       key: "node",
-      label: "ノード",
+      label: t("common:nav.node"),
       icon: "🕸",
       path: "/node-schedule",
       matchRoute: (currentRoute) => currentRoute === "/node-schedule",
     },
     {
       key: "reports",
-      label: "報告書",
+      label: t("common:nav.reports"),
       icon: "📄",
       path: "/reports",
       matchRoute: (currentRoute) => currentRoute === "/reports" || currentRoute.startsWith("/reports/"),
@@ -257,7 +259,7 @@ function AppShell() {
   const moodBoardProjectId = moodBoardMatch?.[1] ? decodeURIComponent(moodBoardMatch[1]) : null;
   const clientProjectId = clientMatch?.[1] ? decodeURIComponent(clientMatch[1]) : null;
 
-  const pageFallback = <div className="flex items-center justify-center py-20 text-slate-400 text-sm">読み込み中...</div>;
+  const pageFallback = <div className="flex items-center justify-center py-20 text-slate-400 text-sm">{t("common:status.loading")}</div>;
 
   // 認証不要ページ（入退場キオスク+協力会社ポータル+施主セレクション+施主ビューア+秘書デモ）
   if (route === "/assistant/demo") {
@@ -265,8 +267,8 @@ function AppShell() {
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <div className="text-center text-slate-500 text-sm">
           <div className="text-2xl mb-2">🤖</div>
-          <div className="font-semibold text-slate-700">ラポルタ秘書 デモ画面</div>
-          <div className="mt-1">右下のチャットアイコンから話しかけてください</div>
+          <div className="font-semibold text-slate-700">{t("pages:assistant.demo_title")}</div>
+          <div className="mt-1">{t("pages:assistant.demo_hint")}</div>
         </div>
         <AssistantChatPanel userId="demo-user" />
       </div>
@@ -298,7 +300,7 @@ function AppShell() {
   const renderPage = () => {
     if (moodBoardProjectId) {
       return (
-        <ErrorBoundary fallbackTitle="ムードボードエラー">
+        <ErrorBoundary fallbackTitle={t("errors:page_error.mood_board")}>
           <MoodBoardPage projectId={moodBoardProjectId} />
         </ErrorBoundary>
       );
@@ -311,35 +313,35 @@ function AppShell() {
     }
     if (route === "/app") {
       return (
-        <ErrorBoundary fallbackTitle="案件一覧エラー">
+        <ErrorBoundary fallbackTitle={t("errors:page_error.project_list")}>
           <ProjectListPage />
         </ErrorBoundary>
       );
     }
     if (route === "/cross-project-gantt") {
       return (
-        <ErrorBoundary fallbackTitle="全案件ガントチャートエラー">
+        <ErrorBoundary fallbackTitle={t("errors:page_error.cross_gantt")}>
           <CrossProjectGanttPage />
         </ErrorBoundary>
       );
     }
     if (route === "/progress-review") {
       return (
-        <ErrorBoundary fallbackTitle="進捗レビューエラー">
+        <ErrorBoundary fallbackTitle={t("errors:page_error.progress_review")}>
           <ProgressReviewPage />
         </ErrorBoundary>
       );
     }
     if (route === "/photos") {
       return (
-        <ErrorBoundary fallbackTitle="写真一覧エラー">
+        <ErrorBoundary fallbackTitle={t("errors:page_error.photos")}>
           <PhotoPage />
         </ErrorBoundary>
       );
     }
     if (route === "/freee" || route.startsWith("/freee?")) {
       return (
-        <ErrorBoundary fallbackTitle="freee連携エラー">
+        <ErrorBoundary fallbackTitle={t("errors:page_error.freee")}>
           <FreeePage />
         </ErrorBoundary>
       );
@@ -349,7 +351,7 @@ function AppShell() {
     }
     if (route === "/tasks") {
       return (
-        <ErrorBoundary fallbackTitle="タスク一覧エラー">
+        <ErrorBoundary fallbackTitle={t("errors:page_error.tasks")}>
           <TasksPage />
         </ErrorBoundary>
       );
@@ -359,14 +361,14 @@ function AppShell() {
     }
     if (route === "/node-schedule") {
       return (
-        <ErrorBoundary fallbackTitle="ノードビューエラー">
+        <ErrorBoundary fallbackTitle={t("errors:page_error.node_schedule")}>
           <NodeSchedulePage />
         </ErrorBoundary>
       );
     }
     if (route === "/invoice") {
       return (
-        <ErrorBoundary fallbackTitle="請求書OCRエラー">
+        <ErrorBoundary fallbackTitle={t("errors:page_error.invoice")}>
           <InvoicePage />
         </ErrorBoundary>
       );
@@ -376,77 +378,77 @@ function AppShell() {
     }
     if (route === "/cost-management") {
       return (
-        <ErrorBoundary fallbackTitle="コスト管理エラー">
+        <ErrorBoundary fallbackTitle={t("errors:page_error.cost")}>
           <CostManagementPage />
         </ErrorBoundary>
       );
     }
     if (route === "/invoices") {
       return (
-        <ErrorBoundary fallbackTitle="請求書管理エラー">
+        <ErrorBoundary fallbackTitle={t("errors:page_error.invoice_management")}>
           <InvoiceManagementPage />
         </ErrorBoundary>
       );
     }
     if (route === "/weather") {
       return (
-        <ErrorBoundary fallbackTitle="天気予報エラー">
+        <ErrorBoundary fallbackTitle={t("errors:page_error.weather")}>
           <WeatherPage />
         </ErrorBoundary>
       );
     }
     if (route === "/procurement") {
       return (
-        <ErrorBoundary fallbackTitle="発注管理エラー">
+        <ErrorBoundary fallbackTitle={t("errors:page_error.procurement")}>
           <ProcurementPage />
         </ErrorBoundary>
       );
     }
     if (route === "/orders") {
       return (
-        <ErrorBoundary fallbackTitle="受発注管理エラー">
+        <ErrorBoundary fallbackTitle={t("errors:page_error.orders")}>
           <OrderManagementPage />
         </ErrorBoundary>
       );
     }
     if (route === "/safety") {
       return (
-        <ErrorBoundary fallbackTitle="安全点検エラー">
+        <ErrorBoundary fallbackTitle={t("errors:page_error.safety")}>
           <SafetyInspectionPage />
         </ErrorBoundary>
       );
     }
     if (route === "/contractors") {
       return (
-        <ErrorBoundary fallbackTitle="業者管理エラー">
+        <ErrorBoundary fallbackTitle={t("errors:page_error.contractors")}>
           <ContractorsPage />
         </ErrorBoundary>
       );
     }
     if (route === "/crm") {
       return (
-        <ErrorBoundary fallbackTitle="CRMエラー">
+        <ErrorBoundary fallbackTitle={t("errors:page_error.crm")}>
           <CRMPage />
         </ErrorBoundary>
       );
     }
     if (route === "/notifications") {
       return (
-        <ErrorBoundary fallbackTitle="通知一覧エラー">
+        <ErrorBoundary fallbackTitle={t("errors:page_error.notifications")}>
           <NotificationsPage />
         </ErrorBoundary>
       );
     }
     if (route === "/help") {
       return (
-        <ErrorBoundary fallbackTitle="ヘルプエラー">
+        <ErrorBoundary fallbackTitle={t("errors:page_error.help")}>
           <HelpPage />
         </ErrorBoundary>
       );
     }
     if (projectId) {
       return (
-        <ErrorBoundary fallbackTitle="プロジェクト詳細エラー">
+        <ErrorBoundary fallbackTitle={t("errors:page_error.project_detail")}>
           <ProjectDetailPage projectId={projectId} subPath={projectSubPath} />
         </ErrorBoundary>
       );
@@ -454,64 +456,65 @@ function AppShell() {
     return (
       <div className="mx-auto max-w-lg px-4 py-12 text-center" role="alert">
         <div className="rounded-2xl border-2 border-dashed border-slate-200 bg-white p-8">
-          <h2 className="text-lg font-bold text-slate-900">ページが見つかりません</h2>
-          <p className="mt-2 text-sm text-slate-500">「{route}」は存在しないページです。</p>
+          <h2 className="text-lg font-bold text-slate-900">{t("common:messages.page_not_found")}</h2>
+          <p className="mt-2 text-sm text-slate-500">{t("common:messages.page_not_found_desc", { route })}</p>
           <button
             onClick={() => navigate("/app")}
             className="mt-4 rounded-lg bg-brand-500 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-brand-600"
           >
-            ホームへ戻る
+            {t("common:actions.go_home")}
           </button>
         </div>
       </div>
     );
   };
 
+  const allSidebarItems = [
+    { key: "today", label: t("common:nav.dashboard"), icon: "📊", path: "/today", active: route === "/today" },
+    { key: "app", label: t("common:nav.project_list"), icon: "📋", path: "/app", active: route === "/app" || route === "/" || route === "" },
+    { key: "cross-gantt", label: t("common:nav.gantt_chart"), icon: "📅", path: "/cross-project-gantt", active: route === "/cross-project-gantt" },
+    { key: "tasks", label: t("common:nav.tasks"), icon: "✅", path: "/tasks", active: route === "/tasks" },
+    { key: "estimate", label: t("common:nav.estimate"), icon: "💰", path: "/estimate", active: route === "/estimate" },
+    { key: "progress-review", label: t("common:nav.progress_review"), icon: "📸", path: "/progress-review", active: route === "/progress-review" },
+    { key: "safety", label: t("common:nav.safety_management"), icon: "🏗️", path: "/safety", active: route === "/safety" },
+    { key: "crm", label: t("common:nav.crm"), icon: "👥", path: "/crm", active: route === "/crm" },
+    { key: "contractors", label: t("common:nav.partner_companies"), icon: "🤝", path: "/contractors", active: route === "/contractors" },
+    { key: "invoice", label: t("common:nav.invoices_nav"), icon: "🧾", path: "/invoice", active: route === "/invoice" },
+    { key: "reports", label: t("common:nav.reports"), icon: "📈", path: "/reports", active: route === "/reports" || route.startsWith("/reports/") },
+    { key: "cost", label: t("common:nav.cost"), icon: "💹", path: "/cost-management", active: route === "/cost-management" },
+    { key: "freee", label: t("common:nav.freee"), icon: "📗", path: "/freee", active: route === "/freee" || route.startsWith("/freee?") },
+    { key: "help", label: t("common:nav.help"), icon: "❓", path: "/help", active: route === "/help" },
+  ];
+
   return (
     <AuthGuard>
       <div className="min-h-screen bg-[var(--app-bg)] text-[var(--app-text)]">
         <a
           href="#main-content"
-          className="sr-only focus:not-sr-only focus:fixed focus:left-2 focus:top-2 focus:z-[100] focus:rounded-lg focus:bg-brand-600 focus:px-4 focus:py-2 focus:text-white"
+          className="sr-only focus:not-sr-only focus:fixed focus:left-2 focus:top-2 focus:z-[100] focus:rounded-lg focus:bg-[#007AFF] focus:px-4 focus:py-2 focus:text-white"
         >
-          メインコンテンツへスキップ
+          {t("common:messages.skip_to_main")}
         </a>
 
-        <header className="sticky top-0 z-30 border-b border-white/50 bg-white/90 text-slate-900 backdrop-blur">
-          <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
+        {/* ── iPadOS TopBar (frosted glass) ── */}
+        <header className="ios-topbar text-slate-900">
+          <div className="flex h-full items-center justify-between px-4">
             <div className="flex items-center gap-3">
               <button
                 onClick={() => navigate("/app")}
-                className="flex items-center gap-3"
-                aria-label="GenbaHub ホームへ"
+                className="flex items-center gap-2.5"
+                aria-label={`${t("common:app.name")} ${t("common:nav.home")}`}
               >
                 <LogoIcon />
-                <div className="text-left">
-                  <span className="block text-lg font-bold tracking-tight">GenbaHub</span>
-                  <span className="block text-[11px] text-slate-500">現場工程を最短で開く</span>
+                <div className="text-left hidden sm:block">
+                  <span className="block text-base font-bold tracking-tight leading-tight">{t("common:app.name")}</span>
+                  <span className="block text-[10px] text-slate-400 leading-tight">{t("common:app.tagline")}</span>
                 </div>
               </button>
-              <div className="relative hidden md:block">
-                <Navigation
-                  items={[
-                    { key: "today", label: "ダッシュボード", icon: "📊", path: "/today", active: route === "/today" },
-                    { key: "app", label: "案件一覧", icon: "📋", path: "/app", active: route === "/app" || route === "/" || route === "" },
-                    { key: "cross-gantt", label: "ガントチャート", icon: "📅", path: "/cross-project-gantt", active: route === "/cross-project-gantt" },
-                    { key: "tasks", label: "タスク", icon: "✅", path: "/tasks", active: route === "/tasks" },
-                    { key: "estimate", label: "見積", icon: "💰", path: "/estimate", active: route === "/estimate" },
-                    { key: "progress-review", label: "進捗レビュー", icon: "📸", path: "/progress-review", active: route === "/progress-review" },
-                    { key: "safety", label: "安全管理", icon: "🏗️", path: "/safety", active: route === "/safety" },
-                    { key: "crm", label: "CRM", icon: "👥", path: "/crm", active: route === "/crm" },
-                    { key: "contractors", label: "協力会社", icon: "🤝", path: "/contractors", active: route === "/contractors" },
-                    { key: "invoice", label: "請求書", icon: "🧾", path: "/invoice", active: route === "/invoice" },
-                    { key: "reports", label: "レポート", icon: "📈", path: "/reports", active: route === "/reports" || route.startsWith("/reports/") },
-                  ]}
-                  onNavigate={navigate}
-                />
-              </div>
             </div>
             <div className="flex items-center gap-2">
               <ThemeToggle theme={theme} onToggle={cycleTheme} />
+              {/* Mobile hamburger */}
               <MobileNav
                 open={mobileNavOpen}
                 onOpen={() => setMobileNavOpen(true)}
@@ -525,54 +528,11 @@ function AppShell() {
                   dataTour: tab.dataTour,
                 }))}
                 onNavigate={navigate}
-                personaLabel={persona === "supervisor" ? "現場監督" : "経営層"}
+                personaLabel={persona === "supervisor" ? t("common:persona.supervisor") : t("common:persona.executive")}
                 onTogglePersona={() => setPersona(persona === "supervisor" ? "executive" : "supervisor")}
                 userLabel={user?.email ?? undefined}
                 onSignOut={user ? signOut : undefined}
               />
-
-              <nav className="hidden items-center gap-1 md:flex" aria-label="メインナビゲーション">
-                {primaryTabs.slice(0, 3).map((tab) => (
-                  <NavButton
-                    key={tab.key}
-                    label={tab.label}
-                    icon={tab.icon}
-                    active={tab.matchRoute(route)}
-                    onClick={() => navigate(tab.path)}
-                  />
-                ))}
-                <div className="relative">
-                  <NavButton
-                    label="その他"
-                    icon="☰"
-                    active={secondaryTabs.some((tab) => tab.matchRoute(route)) || moreDrawerOpen}
-                    onClick={() => setMoreDrawerOpen((current) => !current)}
-                  />
-                  {moreDrawerOpen ? (
-                    <div className="absolute right-0 top-full z-50 mt-2 w-40 rounded-2xl border border-slate-200 bg-white py-2 shadow-xl">
-                      {secondaryTabs.map((tab) => (
-                        <button
-                          key={tab.key}
-                          type="button"
-                          onClick={() => {
-                            navigate(tab.path);
-                            setMoreDrawerOpen(false);
-                          }}
-                          className={`flex w-full items-center gap-2 px-4 py-2 text-sm font-medium ${
-                            tab.matchRoute(route)
-                              ? "bg-brand-50 text-brand-700"
-                              : "text-slate-600 hover:bg-slate-50"
-                          }`}
-                        >
-                          <span aria-hidden="true">{tab.icon}</span>
-                          {tab.label}
-                        </button>
-                      ))}
-                    </div>
-                  ) : null}
-                </div>
-              </nav>
-
               {user ? (
                 <div className="hidden items-center gap-2 md:flex">
                   <span className="max-w-[160px] truncate text-xs text-slate-500" title={user.email}>
@@ -581,9 +541,9 @@ function AppShell() {
                   <button
                     type="button"
                     onClick={() => void signOut()}
-                    className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50"
+                    className="rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50"
                   >
-                    ログアウト
+                    {t("common:actions.logout")}
                   </button>
                 </div>
               ) : null}
@@ -591,17 +551,55 @@ function AppShell() {
           </div>
         </header>
 
+        {/* ── iPadOS Sidebar (desktop only) ── */}
+        <nav className="ios-sidebar hidden md:block" aria-label={t("common:nav.home")}>
+          <div className="px-3 py-4 space-y-0.5">
+            {allSidebarItems.map((item) => (
+              <button
+                key={item.key}
+                type="button"
+                onClick={() => navigate(item.path)}
+                aria-current={item.active ? "page" : undefined}
+                className={`ios-nav-item${item.active ? " active" : ""}`}
+              >
+                <span className="text-base leading-none" aria-hidden="true">{item.icon}</span>
+                <span>{item.label}</span>
+              </button>
+            ))}
+          </div>
+          {user ? (
+            <div className="border-t border-[rgba(60,60,67,0.12)] px-3 py-3 space-y-1">
+              <button
+                type="button"
+                onClick={() => setPersona(persona === "supervisor" ? "executive" : "supervisor")}
+                className="ios-nav-item w-full justify-between"
+              >
+                <span className="text-xs text-slate-400">表示モード</span>
+                <span className="text-xs font-semibold text-[#007AFF]">{persona === "supervisor" ? t("common:persona.supervisor") : t("common:persona.executive")}</span>
+              </button>
+            </div>
+          ) : null}
+        </nav>
+
         <NotificationBanner refreshKey={route} />
 
-        <main id="main-content" key={route} className="page-enter mx-auto max-w-6xl px-4 py-5 pb-24 sm:py-6">
-          <Suspense fallback={pageFallback}>
-            {renderPage()}
-          </Suspense>
+        {/* ── Main content area (shifted right on desktop) ── */}
+        <main
+          id="main-content"
+          key={route}
+          className="page-enter ios-main-with-sidebar max-md:ml-0 px-4 py-5 pb-24 sm:py-6"
+        >
+          <div className="mx-auto max-w-5xl">
+            <Suspense fallback={pageFallback}>
+              {renderPage()}
+            </Suspense>
+          </div>
         </main>
 
+        {/* ── Mobile bottom tab bar ── */}
         <nav
-          className={`safe-bottom fixed inset-x-0 bottom-0 z-40 flex border-t border-slate-200 bg-white shadow-[0_-2px_12px_rgba(0,0,0,0.08)] md:hidden transition-transform duration-200 ${keyboardOpen ? "translate-y-full" : ""}`}
-          aria-label="ボトムナビゲーション"
+          className={`safe-bottom fixed inset-x-0 bottom-0 z-40 flex border-t border-[rgba(60,60,67,0.12)] bg-white/80 backdrop-blur shadow-[0_-1px_0_rgba(60,60,67,0.12)] md:hidden transition-transform duration-200 ${keyboardOpen ? "translate-y-full" : ""}`}
+          aria-label={t("common:nav.home")}
         >
           {primaryTabs.map((tab) => {
             const isMore = tab.key === "more";
@@ -619,7 +617,7 @@ function AppShell() {
                   }
                 }}
                 className={`flex flex-1 flex-col items-center justify-center gap-1 py-2 text-center ${
-                  isActive ? "text-brand-600" : "text-slate-400"
+                  isActive ? "text-[#007AFF]" : "text-slate-400"
                 }`}
               >
                 <span className="text-xl leading-none" aria-hidden="true">{tab.icon}</span>
@@ -634,7 +632,7 @@ function AppShell() {
             <div className="absolute inset-0 bg-slate-950/30" />
             <div className="safe-bottom absolute bottom-16 inset-x-0 rounded-t-2xl bg-white px-4 pb-6 pt-4 shadow-2xl" onClick={(event) => event.stopPropagation()}>
               <div className="mb-3 flex items-center justify-between">
-                <p className="text-sm font-bold text-slate-700">その他</p>
+                <p className="text-sm font-bold text-slate-700">{t("common:nav.more")}</p>
                 <button type="button" onClick={() => setMoreDrawerOpen(false)} className="p-1 text-slate-400">
                   <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5" aria-hidden="true">
                     <path d="M6 6l12 12M18 6 6 18" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
@@ -652,7 +650,7 @@ function AppShell() {
                     }}
                     className={`flex items-center gap-3 rounded-xl border px-4 py-3 text-sm font-semibold ${
                       tab.matchRoute(route)
-                        ? "border-brand-200 bg-brand-50 text-brand-700"
+                        ? "border-[#007AFF]/30 bg-[#007AFF]/8 text-[#007AFF]"
                         : "border-slate-200 bg-white text-slate-700"
                     }`}
                   >
@@ -685,31 +683,5 @@ export function App() {
         </SubscriptionProvider>
       </OrganizationProvider>
     </AuthProvider>
-  );
-}
-
-function NavButton({
-  label,
-  icon,
-  active,
-  onClick,
-}: {
-  label: string;
-  icon: string;
-  active: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-current={active ? "page" : undefined}
-      className={`flex items-center gap-1.5 rounded-full px-3 py-2 text-sm font-semibold ${
-        active ? "bg-slate-900 text-white" : "text-slate-500 hover:bg-slate-100"
-      }`}
-    >
-      <span aria-hidden="true">{icon}</span>
-      {label}
-    </button>
   );
 }

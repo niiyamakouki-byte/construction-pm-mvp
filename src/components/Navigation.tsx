@@ -35,7 +35,7 @@ export function Navigation({ items, onNavigate }: NavigationProps) {
         aria-label={open ? "ナビゲーションを閉じる" : "ナビゲーションを開く"}
         aria-expanded={open}
         aria-controls="central-nav-menu"
-        className="flex h-9 items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-600 shadow-sm hover:bg-slate-50"
+        className="flex h-9 items-center gap-1.5 rounded-xl border border-slate-200/70 bg-white/80 px-3 py-2 text-sm font-semibold text-slate-600 shadow-sm hover:bg-white backdrop-blur-sm"
       >
         <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden="true">
           {open ? (
@@ -62,7 +62,7 @@ export function Navigation({ items, onNavigate }: NavigationProps) {
         id="central-nav-menu"
         role="navigation"
         aria-label="中央ナビゲーション"
-        className={`absolute left-0 top-full z-50 mt-2 w-56 rounded-2xl border border-slate-200 bg-white py-2 shadow-xl transition-all duration-150 ${
+        className={`absolute left-0 top-full z-50 mt-2 w-56 rounded-2xl border border-[rgba(60,60,67,0.12)] bg-white/90 py-2 shadow-xl backdrop-blur-md transition-all duration-150 ${
           open ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0"
         }`}
       >
@@ -74,8 +74,8 @@ export function Navigation({ items, onNavigate }: NavigationProps) {
             aria-current={item.active ? "page" : undefined}
             className={`flex w-full items-center gap-3 px-4 py-2.5 text-sm font-medium transition-colors ${
               item.active
-                ? "bg-brand-50 text-brand-700"
-                : "text-slate-600 hover:bg-slate-50"
+                ? "bg-[#007AFF]/10 text-[#007AFF] font-semibold"
+                : "text-slate-600 hover:bg-[#007AFF]/5"
             }`}
           >
             <span className="text-base" aria-hidden="true">{item.icon}</span>
