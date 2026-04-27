@@ -207,16 +207,18 @@ export function AssistantChatPanel({ userId = "demo-user" }: Props) {
     };
   }, [userId, lastMessageId, open, addMessages]);
 
-  // 展開時にスクロール & 未読クリア & focus trap
+  // 展開時にスクロール & 未読クリア & focus trap & 位置クランプ
   useEffect(() => {
     if (open) {
       setUnread(0);
+      // パネルがvieport内に完全に収まるよう位置を補正
+      setPos((p) => clampPanelPos(p.x, p.y, size.w, size.h));
       setTimeout(() => {
         messagesEndRef.current?.scrollIntoView?.({ behavior: "smooth" });
         inputRef.current?.focus();
       }, 100);
     }
-  }, [open]);
+  }, [open, size.w, size.h]);
 
   // メッセージ追加時に自動スクロール
   useEffect(() => {
