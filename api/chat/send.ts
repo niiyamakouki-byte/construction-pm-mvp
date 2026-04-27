@@ -2,7 +2,9 @@
  * Vercel Serverless Function: POST /api/chat/send
  *
  * GenbaHub UI からのメッセージを Discord チャンネルに投稿する。
- * Discord Bot API を直接呼び出す（webhook 不使用）。
+ * DISCORD_CHAT_WEBHOOK_URL が設定されている場合は webhook 経由で投稿する。
+ * webhook 投稿は bot から見ると「他者発言」になるため Claude sentinel が通常通り反応できる。
+ * 環境変数が未設定の場合は既存の Bot REST API にフォールバックする（後方互換）。
  *
  * リクエスト body (JSON):
  *   { userId: string, text: string }
@@ -25,6 +27,7 @@ type VercelResponse = {
 
 const CHANNEL_ID = process.env.DISCORD_CHAT_CHANNEL_ID ?? "1489407813230002347";
 const BOT_TOKEN = process.env.DISCORD_BOT_TOKEN ?? "";
+const WEBHOOK_URL = process.env.DISCORD_CHAT_WEBHOOK_URL ?? "";
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -41,8 +44,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return;
   }
 
-  if (!BOT_TOKEN) {
-    res.status(500).json({ error: "DISCORD_BOT_TOKEN not configured" });
+  if (!WEBHOOK_URL && !BOT_TOKEN) {
+    res.status(500).json({ error: "DISCORD_CHAT_WEBHOOK_URL or DISCORD_BOT_TOKEN must be configured" });
     return;
   }
 
@@ -59,17 +62,29 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const truncatedText = text.length > 1800 ? text.slice(0, 1800) + "..." : text;
   const content = `[GenbaHub:${userId}] ${truncatedText}`;
 
-  const response = await fetch(
-    `https://discord.com/api/v10/channels/${CHANNEL_ID}/messages`,
-    {
+  let response: Response;
+
+  if (WEBHOOK_URL) {
+    // webhook 経由で投稿（bot から見ると「他者発言」→ Claude sentinel が反応できる）
+    response = await fetch(WEBHOOK_URL + "?wait=true", {
       method: "POST",
-      headers: {
-        Authorization: `Bot ${BOT_TOKEN}`,
-        "Content-Type": "application/json",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ content, username: "GenbaHub Panel" }),
+    });
+  } else {
+    // フォールバック: Bot REST API（後方互換）
+    response = await fetch(
+      `https://discord.com/api/v10/channels/${CHANNEL_ID}/messages`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bot ${BOT_TOKEN}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ content }),
       },
-      body: JSON.stringify({ content }),
-    },
-  );
+    );
+  }
 
   if (!response.ok) {
     const errorText = await response.text();
