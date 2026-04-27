@@ -370,7 +370,7 @@ function ChangeRequestTab({ projectId }: { projectId: string | null }) {
         <button
           type="button"
           onClick={() => setShowForm((v) => !v)}
-          className="rounded-2xl bg-brand-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-brand-700"
+          className="rounded-2xl ios-btn-primary px-5 py-2.5 text-sm"
         >
           {showForm ? "キャンセル" : "+ 変更指示を追加"}
         </button>
@@ -456,7 +456,7 @@ function ChangeRequestTab({ projectId }: { projectId: string | null }) {
               <button type="button" onClick={() => setShowForm(false)} className="rounded-2xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50">
                 キャンセル
               </button>
-              <button type="submit" className="rounded-2xl bg-brand-600 px-5 py-2 text-sm font-semibold text-white hover:bg-brand-700">
+              <button type="submit" className="ios-btn-primary rounded-2xl px-5 py-2 text-sm">
                 登録
               </button>
             </div>
@@ -507,7 +507,7 @@ function ChangeRequestTab({ projectId }: { projectId: string | null }) {
                         <button
                           type="button"
                           onClick={() => handleAdvance(req.id, next)}
-                          className="rounded-2xl bg-brand-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-brand-700"
+                          className="rounded-2xl ios-btn-primary px-3 py-1.5 text-xs"
                         >
                           {STATUS_LABELS[next]}へ
                         </button>
@@ -674,7 +674,7 @@ export function CostManagementPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center gap-2 py-16">
-        <span className="inline-block h-5 w-5 animate-spin rounded-full border-2 border-brand-200 border-t-brand-600" />
+        <span className="inline-block h-5 w-5 animate-spin rounded-full border-2 border-[#007AFF]/30 border-t-[#007AFF]" />
         <span className="text-sm text-slate-400">コスト情報を読み込み中...</span>
       </div>
     );
@@ -918,7 +918,7 @@ export function CostManagementPage() {
             <StatCard
               label="諸経費込み合計"
               value={formatCurrency(overheadBreakdown.grandTotal)}
-              tone="border-brand-200 bg-brand-50 text-brand-900"
+              tone="border-[#007AFF]/20 bg-[#007AFF]/5 text-[#003d85]"
             />
           </div>
         </section>
