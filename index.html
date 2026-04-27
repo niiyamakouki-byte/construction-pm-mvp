@@ -27,12 +27,19 @@
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
-    <script>
-      // Skip service worker inside Capacitor WebView
-      if ("serviceWorker" in navigator && !window.Capacitor) {
-        window.addEventListener("load", () => {
-          navigator.serviceWorker.register("sw.js").catch(() => {});
-        });
+    <script type="module">
+      if ("serviceWorker" in navigator) {
+        if (import.meta.env.PROD && !window.Capacitor) {
+          // Production: register service worker for offline support
+          window.addEventListener("load", () => {
+            navigator.serviceWorker.register("sw.js").catch(() => {});
+          });
+        } else {
+          // Dev mode: unregister any stale service workers to prevent cache interference
+          navigator.serviceWorker.getRegistrations().then((regs) => {
+            regs.forEach((r) => r.unregister());
+          });
+        }
       }
     </script>
   </body>
