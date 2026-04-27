@@ -1,0 +1,293 @@
+{
+  "project_list": {
+    "section_label": "ホーム",
+    "title": "案件一覧",
+    "subtitle": "案件をタップすると、そのまま工程表を開きます。",
+    "create_title": "新規プロジェクト作成",
+    "create_button": "新規プロジェクト",
+    "close_form": "フォームを閉じる",
+    "project_name_label": "プロジェクト名",
+    "project_name_placeholder": "例: 渋谷オフィスビル内装工事",
+    "description_label": "説明",
+    "description_placeholder": "工事概要やメモを入力",
+    "address_label": "現場住所",
+    "address_placeholder": "例: 東京都港区南青山3-1-1",
+    "status_label": "ステータス",
+    "start_date_label": "開始日",
+    "submit_button": "作成",
+    "submitting": "作成中...",
+    "empty_title": "最初のプロジェクトを作成しましょう",
+    "empty_desc": "プロジェクトを作成すると、工程表まで最短で移動できます。まずは1件登録してください。",
+    "sample_creating": "作成中...",
+    "open_gantt": "工程表を開く"
+  },
+  "gantt": {
+    "section_label": "工程表",
+    "title": "工程表",
+    "risk_title": "リスク予測（モンテカルロ）",
+    "risk_button": "リスク計算",
+    "risk_calculating": "計算中...",
+    "risk_desc": "「リスク計算」を押すとモンテカルロ1000回でクリティカルパスを分析します。",
+    "critical_path": "{{pct}}% クリティカル / 平均 {{days}}日遅延",
+    "chat_title": "自然言語で工程を編集",
+    "chat_placeholder": "例: 塗装を2日後ろ倒し、清掃を前倒し",
+    "apply": "適用",
+    "history_applied": "（{{count}}件適用）",
+    "load_error": "工程表の読み込みに失敗しました",
+    "command_error": "コマンドを認識できませんでした。例: 「塗装を2日後ろ倒し」",
+    "apply_error": "適用エラー"
+  },
+  "tasks": {
+    "section_label": "タスク",
+    "title": "案件タスク一覧",
+    "subtitle": "案件を切り替えて、工程表へ戻る前に一覧で確認できます。",
+    "unknown_project": "不明な案件",
+    "no_contractor": "協力会社未設定",
+    "empty_title": "タスクがありません",
+    "empty_desc": "この案件に表示できるタスクはありません。工程表からタスクを追加してください。",
+    "go_gantt": "工程表へ"
+  },
+  "today": {
+    "section_label": "今日",
+    "title": "今日のダッシュボード"
+  },
+  "login": {
+    "title": "ログイン",
+    "email_label": "メールアドレス",
+    "password_label": "パスワード",
+    "remember_login": "ログイン状態を保持",
+    "login_button": "ログイン",
+    "logging_in": "ログイン中...",
+    "or": "または",
+    "google_login": "Google でログイン",
+    "magic_link": "メールでログイン（マジックリンク）",
+    "no_account": "アカウントをお持ちでない方は",
+    "signup_link": "新規登録"
+  },
+  "signup": {
+    "title": "新規登録",
+    "email_label": "メールアドレス",
+    "password_label": "パスワード",
+    "submit_button": "登録",
+    "submitting": "登録中...",
+    "or": "または",
+    "google_signup": "Google で登録",
+    "have_account": "すでにアカウントをお持ちの方は",
+    "login_link": "ログイン"
+  },
+  "invoice": {
+    "section_label": "請求書",
+    "title": "請求書OCR",
+    "upload_label": "請求書PDF・画像をアップロード",
+    "processing": "処理中...",
+    "result_title": "OCR結果",
+    "no_results": "まだ処理していません"
+  },
+  "estimate": {
+    "section_label": "見積",
+    "title": "見積書"
+  },
+  "cost": {
+    "section_label": "コスト管理",
+    "title": "コスト管理",
+    "budget_label": "予算",
+    "actual_label": "実績",
+    "difference_label": "差額"
+  },
+  "contractors": {
+    "section_label": "業者",
+    "title": "協力会社管理",
+    "add_button": "業者を追加",
+    "name_label": "会社名",
+    "phone_label": "電話番号",
+    "email_label": "メールアドレス",
+    "specialty_label": "専門工種",
+    "empty_title": "業者が登録されていません",
+    "empty_desc": "協力会社を登録すると、工程表でアサインできます。"
+  },
+  "notifications": {
+    "section_label": "通知",
+    "title": "通知一覧",
+    "empty": "通知はありません"
+  },
+  "weather": {
+    "section_label": "天気",
+    "title": "天気予報",
+    "rain_warning": "雨予報",
+    "wind_warning": "強風注意",
+    "typhoon_warning": "台風注意"
+  },
+  "safety": {
+    "section_label": "安全点検",
+    "title": "安全点検チェックリスト",
+    "add_button": "点検項目を追加",
+    "pass": "合格",
+    "fail": "不合格",
+    "pending": "確認待ち"
+  },
+  "procurement": {
+    "section_label": "発注管理",
+    "title": "発注管理",
+    "create_button": "新規発注",
+    "supplier_label": "仕入先",
+    "item_label": "品目"
+  },
+  "orders": {
+    "section_label": "受発注管理",
+    "title": "受発注管理"
+  },
+  "crm": {
+    "section_label": "CRM",
+    "title": "顧客管理"
+  },
+  "reports": {
+    "section_label": "報告書",
+    "title": "レポート",
+    "daily_report": "日報",
+    "weekly_report": "週報",
+    "generate": "生成",
+    "download_pdf": "PDFダウンロード"
+  },
+  "help": {
+    "section_label": "ヘルプ",
+    "title": "ヘルプ",
+    "faq_title": "よくある質問",
+    "contact": "お問い合わせ"
+  },
+  "node_schedule": {
+    "section_label": "ノードビュー",
+    "title": "ノードスケジュール"
+  },
+  "cross_gantt": {
+    "section_label": "全案件ガント",
+    "title": "全案件ガントチャート"
+  },
+  "progress_review": {
+    "section_label": "進捗レビュー",
+    "title": "進捗レビュー"
+  },
+  "photos": {
+    "section_label": "写真",
+    "title": "現場写真一覧",
+    "upload_button": "写真を追加",
+    "empty": "写真がありません"
+  },
+  "project_detail": {
+    "back": "案件一覧へ",
+    "tab_gantt": "工程表",
+    "tab_tasks": "タスク",
+    "tab_photos": "写真",
+    "tab_documents": "書類",
+    "tab_cost": "費用",
+    "tab_members": "メンバー",
+    "tab_settings": "設定",
+    "delete_project": "案件を削除",
+    "delete_confirm": "この案件を削除してもよいですか？この操作は取り消せません。"
+  },
+  "site_entry": {
+    "title": "入退場管理",
+    "subtitle": "職人の入退場を記録します",
+    "name_label": "名前",
+    "name_placeholder": "田中 太郎",
+    "company_label": "会社名",
+    "company_placeholder": "ABC建設",
+    "job_type_label": "工種",
+    "company_filter": "会社"
+  },
+  "attendance_history": {
+    "title": "入退場履歴",
+    "section_label": "履歴"
+  },
+  "freee": {
+    "title": "freee 連携",
+    "subtitle": "freee 会計から請求書・取引を取得します（Phase 1: 読み取りのみ）",
+    "connect_title": "freee を連携する",
+    "connect_desc": "freee 会計と連携すると、請求書と取引の取得ができるようになります。ボタンを押すと freee の認可画面に遷移します。",
+    "connect_button": "freee に接続",
+    "connecting": "接続中...",
+    "company_title": "事業所",
+    "fetch_companies": "事業所を取得",
+    "not_fetched": "まだ取得していません",
+    "data_title": "データ取得",
+    "fetch_invoices": "請求書を取得",
+    "fetch_deals": "取引を取得",
+    "invoices_count": "請求書（{{count}} 件）",
+    "deals_count": "取引（{{count}} 件）",
+    "col_issue_date": "発行日",
+    "col_invoice_number": "請求番号",
+    "col_partner": "取引先",
+    "col_amount": "金額",
+    "col_status": "状態",
+    "col_deal_date": "発生日",
+    "col_type": "種別",
+    "income": "収入",
+    "expense": "支出",
+    "settled": "決済済",
+    "unsettled": "未決済"
+  },
+  "landing": {
+    "hero_title": "GenbaHub",
+    "hero_subtitle": "建設・内装現場のデジタル化を、最短で。",
+    "cta_trial": "無料で始める",
+    "cta_login": "ログイン",
+    "features_title": "主な機能",
+    "pricing_title": "料金プラン"
+  },
+  "pricing": {
+    "title": "料金プラン",
+    "free_plan": "フリープラン",
+    "pro_plan": "プロプラン",
+    "per_month": "月額",
+    "subscribe": "このプランで始める",
+    "success_title": "ご登録ありがとうございます！",
+    "success_desc": "プランの設定が完了しました。",
+    "cancel_title": "お支払いがキャンセルされました",
+    "cancel_desc": "いつでも再度お試しいただけます。"
+  },
+  "mood_board": {
+    "title": "ムードボード",
+    "add_image": "画像を追加",
+    "empty": "画像を追加してイメージを共有しましょう"
+  },
+  "selection_board": {
+    "title": "仕上材セレクション",
+    "subtitle": "施主と一緒に仕上材を選ぶボード"
+  },
+  "client_viewer": {
+    "title": "施主ビュー",
+    "progress_label": "進捗"
+  },
+  "contractor_portal": {
+    "title": "協力会社ポータル",
+    "my_tasks": "担当タスク一覧"
+  },
+  "invoice_management": {
+    "title": "請求書管理",
+    "create_button": "新規請求書",
+    "col_date": "発行日",
+    "col_number": "請求番号",
+    "col_client": "請求先",
+    "col_amount": "金額",
+    "col_status": "ステータス",
+    "col_tax": "消費税",
+    "draft": "下書き",
+    "sent": "送付済",
+    "paid": "入金済"
+  },
+  "order_management": {
+    "title": "受発注管理",
+    "create_button": "新規発注",
+    "col_date": "発注日",
+    "col_supplier": "仕入先",
+    "col_item": "品目",
+    "col_amount": "金額",
+    "col_status": "ステータス",
+    "ordered": "発注済",
+    "delivered": "納品済",
+    "cancelled": "キャンセル"
+  },
+  "assistant": {
+    "demo_title": "ラポルタ秘書 デモ画面",
+    "demo_hint": "右下のチャットアイコンから話しかけてください"
+  }
+}
