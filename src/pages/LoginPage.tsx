@@ -31,8 +31,14 @@ export function LoginPage() {
       if (authError) {
         if (authError.message.toLowerCase().includes("email not confirmed")) {
           setError("メールアドレスが確認されていません。確認メールのリンクをクリックしてからログインしてください。");
+        } else if (authError.message.toLowerCase().includes("invalid login credentials") || authError.message.toLowerCase().includes("invalid email or password")) {
+          setError("メールアドレスまたはパスワードが正しくありません。");
+        } else if (authError.message.toLowerCase().includes("too many requests")) {
+          setError("ログイン試行が多すぎます。しばらくお待ちください。");
+        } else if (authError.message.toLowerCase().includes("user not found")) {
+          setError("このメールアドレスは登録されていません。");
         } else {
-          setError(authError.message);
+          setError("ログインに失敗しました。メールアドレスとパスワードをご確認ください。");
         }
       } else {
         navigate("/");
@@ -263,6 +269,19 @@ export function LoginPage() {
               新規登録
             </button>
           </p>
+
+          {!hasSupabaseEnv() && (
+            <div className="mt-4 rounded-xl bg-amber-50 border border-amber-200 px-4 py-3 text-center">
+              <p className="text-xs font-semibold text-amber-700 mb-2">デモモード</p>
+              <button
+                type="button"
+                onClick={() => navigate("/app")}
+                className="w-full rounded-lg bg-amber-500 px-4 py-2.5 text-sm font-semibold text-white hover:bg-amber-600"
+              >
+                ログインなしで試す
+              </button>
+            </div>
+          )}
 
           <p className="mt-2 text-center text-sm text-slate-500">
             <button

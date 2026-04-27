@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { Project, ProjectStatus } from "../domain/types.js";
 import { createProjectRepository } from "../stores/project-store.js";
+import { createTaskRepository } from "../stores/task-store.js";
 import { geocodeAddress } from "../infra/geocode.js";
 import { navigate } from "../hooks/useHashRouter.js";
 import { useOrganizationContext } from "../contexts/OrganizationContext.js";
@@ -30,6 +31,7 @@ const statusColor: Record<ProjectStatus, string> = {
 export function ProjectListPage() {
   const { organizationId } = useOrganizationContext();
   const projectRepository = useMemo(() => createProjectRepository(() => organizationId), [organizationId]);
+  const taskRepository = useMemo(() => createTaskRepository(() => organizationId), [organizationId]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -38,14 +40,20 @@ export function ProjectListPage() {
   const [startDate, setStartDate] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [sampleCreating, setSampleCreating] = useState(false);
   const [nameError, setNameError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   const loadProjects = useCallback(async () => {
-    const allProjects = await projectRepository.findAll();
-    setProjects(allProjects.sort((left, right) => right.updatedAt.localeCompare(left.updatedAt)));
-    setLoading(false);
+    try {
+      const allProjects = await projectRepository.findAll();
+      setProjects(allProjects.sort((left, right) => right.updatedAt.localeCompare(left.updatedAt)));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "案件の読み込みに失敗しました。再度お試しください。");
+    } finally {
+      setLoading(false);
+    }
   }, [projectRepository]);
 
   useEffect(() => {
@@ -116,6 +124,60 @@ export function ProjectListPage() {
   const openProjectGantt = (project: Project) => {
     writeLastProjectId(project.id);
     navigate(`/gantt/${project.id}`);
+  };
+
+  const handleCreateSample = async () => {
+    setSampleCreating(true);
+    setError(null);
+    try {
+      const now = new Date();
+      const toDate = (offsetDays: number) => {
+        const d = new Date(now);
+        d.setDate(d.getDate() + offsetDays);
+        return toLocalDateString(d);
+      };
+      const projectId = crypto.randomUUID();
+      await projectRepository.create({
+        id: projectId,
+        name: "渋谷オフィスビル内装工事（サンプル）",
+        description: "デモ用サンプル案件。自由に編集・削除してください。",
+        address: "東京都渋谷区渋谷2-21-1",
+        status: "active",
+        startDate: toLocalDateString(now),
+        includeWeekends: true,
+        createdAt: now.toISOString(),
+        updatedAt: now.toISOString(),
+      });
+      const sampleTasks = [
+        { name: "解体・撤去工事", offsetStart: 0, offsetEnd: 4 },
+        { name: "下地工事", offsetStart: 5, offsetEnd: 10 },
+        { name: "電気・設備工事", offsetStart: 8, offsetEnd: 15 },
+        { name: "内装仕上げ", offsetStart: 16, offsetEnd: 22 },
+        { name: "清掃・竣工検査", offsetStart: 23, offsetEnd: 25 },
+      ];
+      for (const t of sampleTasks) {
+        await taskRepository.create({
+          id: crypto.randomUUID(),
+          projectId,
+          name: t.name,
+          description: "",
+          status: t.offsetEnd < 5 ? "done" : t.offsetStart <= 0 ? "in_progress" : "todo",
+          progress: t.offsetEnd < 5 ? 100 : t.offsetStart <= 0 ? 40 : 0,
+          startDate: toDate(t.offsetStart),
+          dueDate: toDate(t.offsetEnd),
+          dependencies: [],
+          createdAt: now.toISOString(),
+          updatedAt: now.toISOString(),
+        });
+      }
+      writeLastProjectId(projectId);
+      await loadProjects();
+      navigate(`/gantt/${projectId}`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "サンプル作成に失敗しました");
+    } finally {
+      setSampleCreating(false);
+    }
   };
 
   if (loading) {
@@ -264,17 +326,31 @@ export function ProjectListPage() {
 
       {projects.length === 0 ? (
         <div className="rounded-[28px] border border-dashed border-slate-300 bg-white px-6 py-12 text-center shadow-sm">
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-brand-50 text-4xl">
+            🏗️
+          </div>
           <h2 className="text-xl font-bold text-slate-900">最初のプロジェクトを作成しましょう</h2>
           <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-slate-500">
             プロジェクトを作成すると、工程表まで最短で移動できます。まずは1件登録してください。
           </p>
-          <button
-            type="button"
-            onClick={() => setShowForm(true)}
-            className="mt-6 rounded-2xl bg-brand-600 px-5 py-3 text-sm font-semibold text-white shadow-sm"
-          >
-            プロジェクトを作成
-          </button>
+          <div className="mt-6 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
+            <button
+              type="button"
+              onClick={() => void handleCreateSample()}
+              disabled={sampleCreating}
+              className="rounded-2xl bg-amber-500 px-5 py-3 text-sm font-semibold text-white shadow-sm hover:bg-amber-600 disabled:opacity-60"
+            >
+              {sampleCreating ? "作成中..." : "サンプル案件を1クリックで投入"}
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowForm(true)}
+              className="rounded-2xl bg-brand-600 px-5 py-3 text-sm font-semibold text-white shadow-sm hover:bg-brand-700"
+            >
+              自分で作成する
+            </button>
+          </div>
+          <p className="mt-3 text-xs text-slate-400">サンプルは後からいつでも削除できます</p>
         </div>
       ) : (
         <div className="grid gap-3">

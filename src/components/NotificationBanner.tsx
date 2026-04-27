@@ -91,7 +91,10 @@ export function NotificationBanner({ refreshKey }: NotificationBannerProps) {
 
       setNotifications(sortNotifications([...workflowNotifications, ...weatherWarnings]));
     } catch (error) {
-      setLoadError(error instanceof Error ? error.message : "通知の読み込みに失敗しました");
+      const msg = error instanceof Error ? error.message : "";
+      // Suppress Supabase/network errors from UI - not actionable for the user
+      const isSupabaseError = msg.toLowerCase().includes("supabase") || msg.toLowerCase().includes("fetch") || msg.toLowerCase().includes("network") || msg.toLowerCase().includes("jwt");
+      setLoadError(isSupabaseError ? null : (msg || "通知の読み込みに失敗しました"));
       setNotifications([]);
     }
   }, [costItemRepository, expenseRepository, projectRepository, taskRepository]);

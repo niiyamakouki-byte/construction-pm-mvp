@@ -652,7 +652,7 @@ function AppShell() {
           </div>
         ) : null}
 
-        {!onboardingDone && !hasSupabaseEnv() ? <OnboardingWizard onComplete={handleOnboardingComplete} /> : null}
+        {!onboardingDone ? <OnboardingWizard onComplete={handleOnboardingComplete} /> : null}
         {onboardingDone && !tourDone && showTour ? <TourGuide onComplete={markTourDone} /> : null}
         {showShortcutHelp ? <KeyboardShortcutHelp onClose={() => setShowShortcutHelp(false)} /> : null}
       </div>

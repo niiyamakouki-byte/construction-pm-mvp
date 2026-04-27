@@ -740,6 +740,26 @@ function TodayDashboardPageContent() {
         <StatCard label="期限超過" value={overdueTasks} color="text-red-600" bgColor={overdueTasks > 0 ? "bg-red-50" : "bg-white"} />
       </div>
 
+      {/* Empty state CTA when no projects */}
+      {allProjects.length === 0 && (
+        <div className="rounded-2xl border-2 border-dashed border-slate-300 bg-white px-6 py-10 text-center shadow-sm">
+          <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-50 text-3xl">
+            🏗️
+          </div>
+          <h2 className="text-lg font-bold text-slate-900">案件を登録しましょう</h2>
+          <p className="mx-auto mt-2 max-w-xs text-sm leading-6 text-slate-500">
+            最初の案件を登録すると、今日のタスク・予算管理・健全性スコアがここに表示されます。
+          </p>
+          <button
+            type="button"
+            onClick={() => navigate("/app")}
+            className="mt-5 rounded-2xl bg-brand-600 px-6 py-3 text-sm font-semibold text-white shadow-sm hover:bg-brand-700"
+          >
+            最初の案件を作成する
+          </button>
+        </div>
+      )}
+
       {/* Cockpit Dashboard */}
       <section>
         <div className="mb-3 flex items-center justify-between gap-3">
