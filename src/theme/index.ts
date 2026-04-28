@@ -1,24 +1,27 @@
 // AppTheme — 全コンポーネントで共通使用するデザイントークン
+// v2-cozy: ベージュ+セージグリーン+和文フォント
 // 現場UI最適化: タップ領域48px以上、フォント16px以上、高コントラスト
 
 export const colors = {
-  primary: "#0f172a",       // navy
-  accent: "#2563eb",        // blue
-  success: "#10b981",       // green
-  warning: "#f59e0b",       // amber
-  danger: "#ef4444",        // red
-  background: "#f8fafc",    // very light gray
-  surface: "#ffffff",       // white
-  text: "#0f172a",          // near-black
-  textMuted: "#64748b",     // slate-500
-  border: "#e2e8f0",        // slate-200
-  borderLight: "#f1f5f9",   // slate-100
+  primary: "#6B8E5A",       // sage green
+  primaryHover: "#557048",  // sage green dark
+  primaryLight: "#A8C49A",  // sage green light
+  accent: "#C97B5A",        // terracotta
+  success: "#6B8E5A",       // sage green
+  warning: "#D4A35C",       // ochre
+  danger: "#B5573D",        // iron rust
+  background: "#F8F4ED",    // beige
+  surface: "#FFFFFF",       // white
+  surfaceSubtle: "#F0EBE0", // warm off-white
+  text: "#3A3026",          // warm near-black
+  textMuted: "#7A6D5A",     // warm gray
+  border: "#E5DDD0",        // warm border
 } as const;
 
 export const statusColors = {
-  todo: "#9ca3af",
-  in_progress: "#3b82f6",
-  done: "#22c55e",
+  todo: "#7A6D5A",
+  in_progress: "#6B8E5A",
+  done: "#557048",
 } as const;
 
 export const spacing = {
