@@ -6,6 +6,8 @@ import { createCostItemRepository } from "../stores/cost-item-store.js";
 import { createContractorRepository } from "../stores/contractor-store.js";
 import { createPhotoStore } from "../stores/photo-store.js";
 import { navigate } from "../hooks/useHashRouter.js";
+import { GreetingHeader } from "../components/GreetingHeader.js";
+import { DashboardCard } from "../components/DashboardCard.js";
 import { useOrganizationContext } from "../contexts/OrganizationContext.js";
 import { usePersona } from "../contexts/PersonaContext.js";
 import { TodayDashboardPageErrorBoundary } from "../components/PageErrorBoundaries.js";
@@ -666,6 +668,61 @@ function TodayDashboardPageContent() {
           <button onClick={() => setLoadError(null)} className="shrink-0 text-red-400 hover:text-red-600" aria-label="エラーを閉じる">&times;</button>
         </div>
       )}
+
+      {/* Greeting Header */}
+      <GreetingHeader userName="光輝さん" />
+
+      {/* Dashboard Cards — 6-card grid (仮データ: Supabase接続は別タスク) */}
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+        <DashboardCard
+          title="今日の予定"
+          value="3件"
+          subtext="会議・打合せ含む"
+          icon="📅"
+          accent="primary"
+          onClick={() => navigate("/tasks")}
+        />
+        <DashboardCard
+          title="今週の現場"
+          value="5現場稼働"
+          subtext="南青山・品川・他"
+          icon="🏗️"
+          accent="primary"
+          onClick={() => navigate("/app")}
+        />
+        <DashboardCard
+          title="未読通知"
+          value="12件"
+          subtext="タスク・アラート他"
+          icon="🔔"
+          accent="warning"
+          onClick={() => navigate("/notifications")}
+        />
+        <DashboardCard
+          title="進行中の見積"
+          value="8件"
+          subtext="提出待ち含む"
+          icon="📝"
+          accent="warm"
+          onClick={() => navigate("/estimate")}
+        />
+        <DashboardCard
+          title="今月の粗利率"
+          value="32.5%"
+          subtext="目標 30% 超過"
+          icon="📊"
+          accent="success"
+          onClick={() => navigate("/reports")}
+        />
+        <DashboardCard
+          title="残課題"
+          value="14件"
+          subtext="期限超過・未対応"
+          icon="⚠️"
+          accent="warning"
+          onClick={() => navigate("/tasks")}
+        />
+      </div>
 
       {/* Date Header */}
       <div className="rounded-2xl bg-gradient-to-br from-brand-700 via-brand-800 to-brand-900 px-5 py-5 text-white shadow-lg">
