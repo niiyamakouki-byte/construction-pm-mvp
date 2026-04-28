@@ -44,9 +44,13 @@
     "@modelcontextprotocol/sdk": "^1.29.0",
     "@stripe/stripe-js": "^9.0.1",
     "@supabase/supabase-js": "^2.0.0",
+    "framer-motion": "^12.38.0",
+    "i18next": "^26.0.8",
+    "i18next-browser-languagedetector": "^8.2.1",
     "jspdf": "^4.2.1",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
+    "react-i18next": "^17.0.4",
     "stripe": "22.0.2",
     "xlsx": "^0.18.5",
     "zod": "^4.3.6"

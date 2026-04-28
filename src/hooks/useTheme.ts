@@ -2,10 +2,10 @@ import { useEffect, useState } from "react";
 
 export const THEME_STORAGE_KEY = "genbahub-theme";
 
-export type ThemePreference = "light" | "dark" | "system";
-export type ResolvedTheme = "light" | "dark";
+export type ThemePreference = "light" | "evening" | "system";
+export type ResolvedTheme = "light" | "evening";
 
-const VALID_THEMES: ThemePreference[] = ["light", "dark", "system"];
+const VALID_THEMES: ThemePreference[] = ["light", "evening", "system"];
 
 function isThemePreference(value: string | null): value is ThemePreference {
   return value !== null && VALID_THEMES.includes(value as ThemePreference);
@@ -15,7 +15,7 @@ function getSystemTheme(): ResolvedTheme {
   if (typeof window === "undefined" || typeof window.matchMedia !== "function") {
     return "light";
   }
-  return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+  return window.matchMedia("(prefers-color-scheme: dark)").matches ? "evening" : "light";
 }
 
 function readStoredTheme(): ThemePreference {
@@ -34,12 +34,13 @@ function readStoredTheme(): ThemePreference {
 function applyTheme(theme: ThemePreference, resolvedTheme: ResolvedTheme): void {
   const root = document.documentElement;
   root.dataset.theme = theme;
-  root.style.colorScheme = resolvedTheme;
+  // evening = warm dark; map to dark color-scheme for browser UI
+  root.style.colorScheme = resolvedTheme === "evening" ? "dark" : "light";
 }
 
 function getNextTheme(theme: ThemePreference): ThemePreference {
-  if (theme === "light") return "dark";
-  if (theme === "dark") return "system";
+  if (theme === "light") return "evening";
+  if (theme === "evening") return "system";
   return "light";
 }
 
@@ -47,7 +48,7 @@ export function useTheme() {
   const [theme, setTheme] = useState<ThemePreference>(() => readStoredTheme());
   const [systemTheme, setSystemTheme] = useState<ResolvedTheme>(() => getSystemTheme());
 
-  const resolvedTheme: ResolvedTheme = theme === "system" ? systemTheme : theme;
+  const resolvedTheme: ResolvedTheme = theme === "system" ? systemTheme : (theme as ResolvedTheme);
 
   useEffect(() => {
     if (typeof window === "undefined" || typeof window.matchMedia !== "function") {
@@ -56,11 +57,11 @@ export function useTheme() {
 
     const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
     const handleChange = (event: MediaQueryListEvent) => {
-      setSystemTheme(event.matches ? "dark" : "light");
+      setSystemTheme(event.matches ? "evening" : "light");
     };
 
     // eslint-disable-next-line react-hooks/set-state-in-effect -- マウント時にシステムテーマを初期設定する初期化パターン
-    setSystemTheme(mediaQuery.matches ? "dark" : "light");
+    setSystemTheme(mediaQuery.matches ? "evening" : "light");
     mediaQuery.addEventListener("change", handleChange);
 
     return () => mediaQuery.removeEventListener("change", handleChange);

@@ -1,71 +1,92 @@
 @import "tailwindcss";
 
 @theme {
-  /* Brand colors (kept for backward compat) */
-  --color-brand-50: #e8f0ff;
-  --color-brand-100: #c7d9ff;
-  --color-brand-200: #99baff;
-  --color-brand-300: #6697ff;
-  --color-brand-400: #3d78ff;
-  --color-brand-500: #007AFF;
-  --color-brand-600: #0063d6;
-  --color-brand-700: #004fad;
-  --color-brand-800: #003d85;
-  --color-brand-900: #002a5c;
+  /* v2-cozy: 木+グリーン+ベージュ パレット */
+  --color-brand-50: #f0f5ec;
+  --color-brand-100: #d8e8d0;
+  --color-brand-200: #A8C49A;
+  --color-brand-300: #7fab6d;
+  --color-brand-400: #6B8E5A;
+  --color-brand-500: #6B8E5A;
+  --color-brand-600: #557048;
+  --color-brand-700: #415537;
+  --color-brand-800: #2e3b27;
+  --color-brand-900: #1a2216;
 
-  --color-accent-400: #fbbf24;
-  --color-accent-500: #f59e0b;
-  --color-accent-600: #d97706;
+  --color-accent-400: #D4A35C;
+  --color-accent-500: #C97B5A;
+  --color-accent-600: #B5573D;
 
-  /* iPadOS / Apple system colors */
-  --color-sys-blue: #007AFF;
-  --color-sys-blue-light: #e8f0ff;
-  --color-sys-gray: #64748B;
-  --color-sys-gray-bg: #F2F2F7;
-  --color-sys-separator: rgba(60,60,67,0.12);
+  /* v2-cozy トークン */
+  --color-primary: #6B8E5A;
+  --color-primary-hover: #557048;
+  --color-primary-light: #A8C49A;
+  --color-accent-warm: #C97B5A;
+  --color-accent-success: #6B8E5A;
+  --color-accent-warning: #D4A35C;
+  --color-accent-danger: #B5573D;
+
+  /* shadow / radius */
+  --shadow-soft: 0 2px 8px rgba(58, 48, 38, 0.06);
+  --shadow-medium: 0 4px 16px rgba(58, 48, 38, 0.10);
+  --radius-sm: 6px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
 }
 
 :root,
 :root[data-theme="light"],
 :root[data-theme="system"] {
-  --app-bg: #F2F2F7;
-  --app-text: #0f172a;
-  --app-text-secondary: #475569;
-  --app-text-muted: #64748b;
-  --app-card: #ffffff;
-  --app-card-muted: #f8fafc;
-  --app-border: #e2e8f0;
-  --app-input-bg: #ffffff;
-  --app-input-text: #0f172a;
+  /* v2-cozy ライト (日中モード) */
+  --app-bg: #F8F4ED;
+  --app-text: #3A3026;
+  --app-text-secondary: #5A4D3C;
+  --app-text-muted: #7A6D5A;
+  --app-card: #FFFFFF;
+  --app-card-muted: #F0EBE0;
+  --app-border: #E5DDD0;
+  --app-input-bg: #FFFFFF;
+  --app-input-text: #3A3026;
+  --app-primary: #6B8E5A;
+  --app-primary-hover: #557048;
 
   /* Sidebar & TopBar dimensions */
   --sidebar-width: 220px;
   --topbar-height: 56px;
 }
 
-:root[data-theme="dark"] {
-  --app-bg: #0f172a;
-  --app-text: #e2e8f0;
-  --app-text-secondary: #cbd5e1;
-  --app-text-muted: #94a3b8;
-  --app-card: #111827;
-  --app-card-muted: #1e293b;
-  --app-border: #334155;
-  --app-input-bg: #0f172a;
-  --app-input-text: #e2e8f0;
+:root[data-theme="evening"] {
+  /* v2-cozy 夕方モード (暖色ダーク) */
+  --app-bg: #2B2620;
+  --app-text: #F8F4ED;
+  --app-text-secondary: #D9CFC0;
+  --app-text-muted: #C9BFAB;
+  --app-card: #3A3026;
+  --app-card-muted: #443830;
+  --app-border: #554738;
+  --app-input-bg: #3A3026;
+  --app-input-text: #F8F4ED;
+  --app-primary: #A8C49A;
+  --app-primary-hover: #6B8E5A;
+
+  /* Sidebar & TopBar dimensions (inherited) */
+  --sidebar-width: 220px;
+  --topbar-height: 56px;
 }
 
 @media (prefers-color-scheme: dark) {
   :root[data-theme="system"] {
-    --app-bg: #0f172a;
-    --app-text: #e2e8f0;
-    --app-text-secondary: #cbd5e1;
-    --app-text-muted: #94a3b8;
-    --app-card: #111827;
-    --app-card-muted: #1e293b;
-    --app-border: #334155;
-    --app-input-bg: #0f172a;
-    --app-input-text: #e2e8f0;
+    --app-bg: #2B2620;
+    --app-text: #F8F4ED;
+    --app-text-secondary: #D9CFC0;
+    --app-text-muted: #C9BFAB;
+    --app-card: #3A3026;
+    --app-card-muted: #443830;
+    --app-border: #554738;
+    --app-input-bg: #3A3026;
+    --app-input-text: #F8F4ED;
+    --app-primary: #A8C49A;
+    --app-primary-hover: #6B8E5A;
   }
 }
 
@@ -76,7 +97,8 @@ html {
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif;
+  /* v2-cozy: 和文フォント優先 */
+  font-family: 'Hiragino Maru Gothic ProN', 'Yu Gothic UI', 'Meiryo', -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
   background-color: var(--app-bg);
   color: var(--app-text);
 }
@@ -326,29 +348,29 @@ textarea::placeholder {
 
 /* ─── iPadOS Native Layout Shell ─────────────────────────── */
 
-/* Frosted glass TopBar */
+/* Frosted glass TopBar – v2-cozy beige */
 .ios-topbar {
   position: sticky;
   top: 0;
   z-index: 30;
   height: var(--topbar-height);
-  background-color: rgba(255, 255, 255, 0.72);
-  backdrop-filter: saturate(180%) blur(20px);
-  -webkit-backdrop-filter: saturate(180%) blur(20px);
-  border-bottom: 1px solid rgba(60, 60, 67, 0.12);
+  background-color: color-mix(in srgb, var(--app-bg, #F8F4ED) 85%, transparent);
+  backdrop-filter: saturate(160%) blur(20px);
+  -webkit-backdrop-filter: saturate(160%) blur(20px);
+  border-bottom: 1px solid var(--app-border, #E5DDD0);
 }
 
-/* Frosted glass Sidebar */
+/* Frosted glass Sidebar – v2-cozy beige */
 .ios-sidebar {
   position: fixed;
   top: var(--topbar-height);
   left: 0;
   bottom: 0;
   width: var(--sidebar-width);
-  background-color: rgba(255, 255, 255, 0.88);
-  backdrop-filter: saturate(180%) blur(20px);
-  -webkit-backdrop-filter: saturate(180%) blur(20px);
-  border-right: 1px solid rgba(60, 60, 67, 0.12);
+  background-color: color-mix(in srgb, var(--app-bg, #F8F4ED) 92%, transparent);
+  backdrop-filter: saturate(160%) blur(20px);
+  -webkit-backdrop-filter: saturate(160%) blur(20px);
+  border-right: 1px solid var(--app-border, #E5DDD0);
   overflow-y: auto;
   z-index: 20;
 }
@@ -358,63 +380,66 @@ textarea::placeholder {
   margin-left: var(--sidebar-width);
 }
 
-/* Sidebar nav item */
+/* Sidebar nav item – v2-cozy */
 .ios-nav-item {
   display: flex;
   align-items: center;
   gap: 10px;
   width: 100%;
   padding: 9px 14px;
-  border-radius: 10px;
+  border-radius: var(--radius-sm, 6px);
   font-size: 0.875rem;
   font-weight: 500;
-  color: #3c3c43;
+  color: var(--app-text, #3A3026);
   transition: background-color 0.15s ease, color 0.15s ease;
   text-align: left;
 }
 
 .ios-nav-item:hover {
-  background-color: rgba(0, 122, 255, 0.06);
+  background-color: rgba(107, 142, 90, 0.08);
 }
 
 .ios-nav-item.active {
-  background-color: rgba(0, 122, 255, 0.12);
-  color: #007AFF;
+  background-color: rgba(107, 142, 90, 0.15);
+  color: var(--app-primary, #6B8E5A);
   font-weight: 600;
 }
 
-/* Primary button – system blue */
+/* Primary button – v2-cozy sage green */
 .ios-btn-primary {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
   padding: 8px 18px;
-  border-radius: 12px;
-  background-color: #007AFF;
+  border-radius: var(--radius-md, 12px);
+  background-color: var(--app-primary, #6B8E5A);
   color: #ffffff;
   font-size: 0.875rem;
   font-weight: 600;
-  transition: background-color 0.15s ease, opacity 0.15s ease;
+  transition: background-color 0.15s ease, opacity 0.15s ease, transform 0.1s ease;
 }
 
 .ios-btn-primary:hover {
-  background-color: #0063d6;
+  background-color: var(--app-primary-hover, #557048);
+  transform: scale(1.02);
 }
 
 .ios-btn-primary:active {
   opacity: 0.85;
+  transform: scale(0.99);
 }
 
-/* Card – white + subtle shadow + rounded-2xl */
+/* Card – beige bg + soft shadow + rounded-xl v2-cozy */
 .ios-card {
-  background-color: #ffffff;
-  border-radius: 16px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+  background-color: var(--app-card, #FFFFFF);
+  border-radius: var(--radius-lg, 20px);
+  box-shadow: var(--shadow-medium, 0 4px 16px rgba(58, 48, 38, 0.10));
+  border: 1px solid var(--app-border, #E5DDD0);
 }
 
-/* Fix: update focus ring to system blue */
+/* Focus ring – v2-cozy sage green */
 :focus-visible {
-  outline: 2px solid #007AFF;
+  outline: 2px solid var(--app-primary, #6B8E5A);
   outline-offset: 2px;
 }

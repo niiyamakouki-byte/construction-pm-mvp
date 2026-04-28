@@ -13,24 +13,25 @@ type Props = {
   actions: AiAction[];
 };
 
+// v2-cozy: 青系→グリーン/オーカー/鉄錆 に切替
 const severityStyles = {
   info: {
-    container: "border-blue-200 bg-blue-50",
-    icon: "text-blue-500",
-    badge: "bg-blue-100 text-blue-700",
-    button: "bg-blue-600 hover:bg-blue-700 text-white",
+    container: "border-[#A8C49A] bg-[#f0f5ec]",
+    icon: "text-[#6B8E5A]",
+    badge: "bg-[#d8e8d0] text-[#415537]",
+    button: "bg-[#6B8E5A] hover:bg-[#557048] text-white",
   },
   warning: {
-    container: "border-amber-200 bg-amber-50",
-    icon: "text-amber-500",
-    badge: "bg-amber-100 text-amber-700",
-    button: "bg-amber-500 hover:bg-amber-600 text-white",
+    container: "border-[#D4A35C] bg-[#fdf6ec]",
+    icon: "text-[#C97B5A]",
+    badge: "bg-[#fde8cc] text-[#7a4f20]",
+    button: "bg-[#D4A35C] hover:bg-[#b8893d] text-white",
   },
   urgent: {
-    container: "border-red-200 bg-red-50",
-    icon: "text-red-500",
-    badge: "bg-red-100 text-red-700",
-    button: "bg-red-600 hover:bg-red-700 text-white",
+    container: "border-[#B5573D] bg-[#fdf2ef]",
+    icon: "text-[#B5573D]",
+    badge: "bg-[#f9d8cf] text-[#6e2315]",
+    button: "bg-[#B5573D] hover:bg-[#943226] text-white",
   },
 } as const;
 
@@ -89,7 +90,7 @@ export function AiActionCard({ actions }: Props) {
         return (
           <div
             key={action.id}
-            className={`flex items-start gap-3 rounded-lg border px-4 py-3 ${styles.container}`}
+            className={`flex items-start gap-3 rounded-xl border px-4 py-3 ${styles.container}`}
             role="alert"
           >
             <span className={`mt-0.5 ${styles.icon}`}>
