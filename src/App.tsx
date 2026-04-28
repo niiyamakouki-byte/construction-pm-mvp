@@ -55,6 +55,7 @@ import { MobileNav } from "./components/MobileNav.js";
 // Navigation import removed – sidebar is rendered inline in AppShell
 import { NotificationBanner } from "./components/NotificationBanner.js";
 import { readLastProjectId } from "./lib/last-project.js";
+// Sprint 3-3: v2-cozy刷新版 AssistantChatPanel (コマンド5本+framer-motion)
 import { AssistantChatPanel } from "./components/AssistantChatPanel.js";
 
 function LogoIcon() {
