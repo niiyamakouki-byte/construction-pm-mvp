@@ -39,6 +39,7 @@ const CrossProjectGanttPage = lazy(() => import("./pages/CrossProjectGanttPage.j
 const ProgressReviewPage = lazy(() => import("./pages/ProgressReviewPage.js").then((m) => ({ default: m.ProgressReviewPage })));
 const PhotoPage = lazy(() => import("./pages/PhotoPage.js").then((m) => ({ default: m.PhotoPage })));
 const FreeePage = lazy(() => import("./pages/FreeePage.js").then((m) => ({ default: m.FreeePage })));
+const FinishingSchedulePage = lazy(() => import("./pages/FinishingSchedulePage.js").then((m) => ({ default: m.FinishingSchedulePage })));
 import { ErrorBoundary } from "./components/ErrorBoundary.js";
 import { AuthGuard } from "./components/AuthGuard.js";
 import { OnboardingWizard, useOnboardingDone } from "./components/OnboardingWizard.js";
@@ -133,7 +134,7 @@ function AppShell() {
       icon: "☰",
       path: "/notifications",
       matchRoute: (currentRoute) =>
-        ["/today", "/invoice", "/estimate", "/contractors", "/notifications", "/help", "/node-schedule", "/cost-management", "/weather", "/safety", "/procurement", "/orders", "/crm", "/reports", "/invoices", "/cross-project-gantt", "/progress-review", "/photos", "/freee"].includes(currentRoute) || currentRoute.startsWith("/reports/") || currentRoute.startsWith("/freee?"),
+        ["/today", "/invoice", "/estimate", "/contractors", "/notifications", "/help", "/node-schedule", "/cost-management", "/weather", "/safety", "/procurement", "/orders", "/crm", "/reports", "/invoices", "/cross-project-gantt", "/progress-review", "/photos", "/freee", "/finishing"].includes(currentRoute) || currentRoute.startsWith("/reports/") || currentRoute.startsWith("/freee?") || currentRoute.startsWith("/finishing"),
     },
   ];
 
@@ -217,6 +218,13 @@ function AppShell() {
       path: "/reports",
       matchRoute: (currentRoute) => currentRoute === "/reports" || currentRoute.startsWith("/reports/"),
     },
+    {
+      key: "finishing",
+      label: "仕上表",
+      icon: "📋",
+      path: "/finishing",
+      matchRoute: (currentRoute) => currentRoute === "/finishing" || currentRoute.startsWith("/finishing/"),
+    },
   ];
 
   useEffect(() => {
@@ -246,6 +254,7 @@ function AppShell() {
   const selectionMatch = route.match(/^\/selection\/([^/]+)$/);
   const moodBoardMatch = route.match(/^\/mood-board\/([^/]+)$/);
   const clientMatch = route.match(/^\/client\/([^/]+)$/);
+  const finishingMatch = route.match(/^\/finishing(?:\/([^/]+))?$/);
   const projectId = projectDetailMatch?.[1]
     ? decodeURIComponent(projectDetailMatch[1])
     : null;
@@ -279,6 +288,7 @@ function AppShell() {
   if (entryProjectId) return <Suspense fallback={pageFallback}><SiteEntryPage projectId={entryProjectId} /></Suspense>;
   if (portalProjectId) return <Suspense fallback={pageFallback}><ContractorPortalPage projectId={portalProjectId} company={portalCompany} /></Suspense>;
   if (selectionProjectId) return <Suspense fallback={pageFallback}><SelectionBoardPage projectId={selectionProjectId} /></Suspense>;
+  if (finishingMatch) return <Suspense fallback={pageFallback}><FinishingSchedulePage projectName={finishingMatch[1] ? decodeURIComponent(finishingMatch[1]) : undefined} /></Suspense>;
   if (route === "/landing") return <Suspense fallback={pageFallback}><LandingPage /></Suspense>;
   if (route === "/" || route === "") {
     navigate("/app");
@@ -344,6 +354,15 @@ function AppShell() {
       return (
         <ErrorBoundary fallbackTitle={t("errors:page_error.freee")}>
           <FreeePage />
+        </ErrorBoundary>
+      );
+    }
+    if (finishingMatch) {
+      return (
+        <ErrorBoundary fallbackTitle="仕上表エラー">
+          <FinishingSchedulePage
+            projectName={finishingMatch[1] ? decodeURIComponent(finishingMatch[1]) : undefined}
+          />
         </ErrorBoundary>
       );
     }
@@ -484,6 +503,7 @@ function AppShell() {
     { key: "reports", label: t("common:nav.reports"), icon: "📈", path: "/reports", active: route === "/reports" || route.startsWith("/reports/") },
     { key: "cost", label: t("common:nav.cost"), icon: "💹", path: "/cost-management", active: route === "/cost-management" },
     { key: "freee", label: t("common:nav.freee"), icon: "📗", path: "/freee", active: route === "/freee" || route.startsWith("/freee?") },
+    { key: "finishing", label: "仕上表", icon: "📋", path: "/finishing", active: route === "/finishing" || route.startsWith("/finishing/") },
     { key: "help", label: t("common:nav.help"), icon: "❓", path: "/help", active: route === "/help" },
   ];
 
