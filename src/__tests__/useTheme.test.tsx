@@ -78,13 +78,15 @@ describe("useTheme", () => {
   });
 
   it("uses a stored preference on initial render", () => {
-    localStorage.setItem(THEME_STORAGE_KEY, "dark");
+    // v2-cozy: "dark" は廃止、"evening" が暖色ダークモード
+    localStorage.setItem(THEME_STORAGE_KEY, "evening");
 
     const { result } = renderHook(() => useTheme());
 
-    expect(result.current.theme).toBe("dark");
-    expect(result.current.resolvedTheme).toBe("dark");
-    expect(document.documentElement.dataset.theme).toBe("dark");
+    expect(result.current.theme).toBe("evening");
+    expect(result.current.resolvedTheme).toBe("evening");
+    expect(document.documentElement.dataset.theme).toBe("evening");
+    // evening は color-scheme: dark にマップされる
     expect(document.documentElement.style.colorScheme).toBe("dark");
   });
 
@@ -92,13 +94,13 @@ describe("useTheme", () => {
     const { result } = renderHook(() => useTheme());
 
     act(() => {
-      result.current.setTheme("dark");
+      result.current.setTheme("evening");
     });
 
-    expect(result.current.theme).toBe("dark");
-    expect(result.current.resolvedTheme).toBe("dark");
-    expect(document.documentElement.dataset.theme).toBe("dark");
-    expect(localStorage.getItem(THEME_STORAGE_KEY)).toBe("dark");
+    expect(result.current.theme).toBe("evening");
+    expect(result.current.resolvedTheme).toBe("evening");
+    expect(document.documentElement.dataset.theme).toBe("evening");
+    expect(localStorage.getItem(THEME_STORAGE_KEY)).toBe("evening");
 
     act(() => {
       result.current.cycleTheme();
@@ -122,7 +124,8 @@ describe("useTheme", () => {
     });
 
     expect(result.current.theme).toBe("system");
-    expect(result.current.resolvedTheme).toBe("dark");
+    // system+dark OS = evening (暖色ダーク)
+    expect(result.current.resolvedTheme).toBe("evening");
     expect(document.documentElement.dataset.theme).toBe("system");
     expect(document.documentElement.style.colorScheme).toBe("dark");
   });
