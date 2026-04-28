@@ -7,6 +7,25 @@ import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { render, screen, fireEvent, waitFor, cleanup } from "@testing-library/react";
 import { AssistantChatPanel } from "../components/AssistantChatPanel.js";
 
+// framer-motion をスタブ化: jsdom では exit アニメーションが DOM に残るため
+// AnimatePresence はそのまま children を描画するパススルーにする
+vi.mock("framer-motion", () => {
+  const React = require("react");
+  return {
+    motion: new Proxy(
+      {},
+      {
+        get: (_: unknown, tag: string) =>
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          React.forwardRef(({ children, ...props }: any, ref: any) =>
+            React.createElement(tag, { ...props, ref }, children)
+          ),
+      }
+    ),
+    AnimatePresence: ({ children }: { children: React.ReactNode }) => children,
+  };
+});
+
 // localStorage をモック（jsdom 環境では clear() が未実装のため）
 const localStorageMock = (() => {
   let store: Record<string, string> = {};
@@ -142,20 +161,6 @@ describe("AssistantChatPanel", () => {
   });
 
   it("送信後にメッセージが吹き出しとして表示される", async () => {
-    global.fetch = vi.fn().mockImplementation((url: string) => {
-      if (url === "/api/chat/send") {
-        return Promise.resolve({
-          ok: true,
-          json: async () => ({ ok: true, messageId: "msg-001" }),
-        });
-      }
-      // poll
-      return Promise.resolve({
-        ok: true,
-        json: async () => ({ messages: [] }),
-      });
-    });
-
     render(<AssistantChatPanel userId="test-user" />);
     fireEvent.click(screen.getByTestId("assistant-chat-fab"));
 
@@ -165,6 +170,38 @@ describe("AssistantChatPanel", () => {
 
     await waitFor(() => {
       expect(screen.getByText("こんにちは")).toBeTruthy();
+    });
+  });
+
+  it("/estimate コマンドを送信すると秘書の返答が表示される", async () => {
+    render(<AssistantChatPanel userId="test-user" />);
+    fireEvent.click(screen.getByTestId("assistant-chat-fab"));
+
+    const textarea = screen.getByLabelText("メッセージ入力");
+    fireEvent.change(textarea, { target: { value: "/estimate 壁紙 LDK 30㎡" } });
+    fireEvent.click(screen.getByLabelText("送信"));
+
+    await waitFor(() => {
+      expect(screen.getByText("/estimate 壁紙 LDK 30㎡")).toBeTruthy();
+    });
+    // 秘書の返答に見積が含まれる
+    await waitFor(() => {
+      const texts = screen.getAllByText(/見積/);
+      expect(texts.length).toBeGreaterThan(0);
+    });
+  });
+
+  it("/help コマンドを送信するとコマンド一覧が表示される", async () => {
+    render(<AssistantChatPanel userId="test-user" />);
+    fireEvent.click(screen.getByTestId("assistant-chat-fab"));
+
+    const textarea = screen.getByLabelText("メッセージ入力");
+    fireEvent.change(textarea, { target: { value: "/help" } });
+    fireEvent.click(screen.getByLabelText("送信"));
+
+    await waitFor(() => {
+      const texts = screen.getAllByText(/\/estimate/);
+      expect(texts.length).toBeGreaterThan(0);
     });
   });
 });
