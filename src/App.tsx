@@ -40,6 +40,7 @@ const ProgressReviewPage = lazy(() => import("./pages/ProgressReviewPage.js").th
 const PhotoPage = lazy(() => import("./pages/PhotoPage.js").then((m) => ({ default: m.PhotoPage })));
 const FreeePage = lazy(() => import("./pages/FreeePage.js").then((m) => ({ default: m.FreeePage })));
 const FinishingSchedulePage = lazy(() => import("./pages/FinishingSchedulePage.js").then((m) => ({ default: m.FinishingSchedulePage })));
+const ScheduleFromEstimatePage = lazy(() => import("./pages/ScheduleFromEstimatePage.js").then((m) => ({ default: m.ScheduleFromEstimatePage })));
 import { ErrorBoundary } from "./components/ErrorBoundary.js";
 import { AuthGuard } from "./components/AuthGuard.js";
 import { OnboardingWizard, useOnboardingDone } from "./components/OnboardingWizard.js";
@@ -134,7 +135,7 @@ function AppShell() {
       icon: "☰",
       path: "/notifications",
       matchRoute: (currentRoute) =>
-        ["/today", "/invoice", "/estimate", "/contractors", "/notifications", "/help", "/node-schedule", "/cost-management", "/weather", "/safety", "/procurement", "/orders", "/crm", "/reports", "/invoices", "/cross-project-gantt", "/progress-review", "/photos", "/freee", "/finishing"].includes(currentRoute) || currentRoute.startsWith("/reports/") || currentRoute.startsWith("/freee?") || currentRoute.startsWith("/finishing"),
+        ["/today", "/invoice", "/estimate", "/contractors", "/notifications", "/help", "/node-schedule", "/cost-management", "/weather", "/safety", "/procurement", "/orders", "/crm", "/reports", "/invoices", "/cross-project-gantt", "/progress-review", "/photos", "/freee", "/finishing", "/schedule"].includes(currentRoute) || currentRoute.startsWith("/reports/") || currentRoute.startsWith("/freee?") || currentRoute.startsWith("/finishing"),
     },
   ];
 
@@ -224,6 +225,13 @@ function AppShell() {
       icon: "📋",
       path: "/finishing",
       matchRoute: (currentRoute) => currentRoute === "/finishing" || currentRoute.startsWith("/finishing/"),
+    },
+    {
+      key: "schedule",
+      label: "工程表",
+      icon: "📅",
+      path: "/schedule",
+      matchRoute: (currentRoute) => currentRoute === "/schedule",
     },
   ];
 
@@ -366,6 +374,13 @@ function AppShell() {
         </ErrorBoundary>
       );
     }
+    if (route === "/schedule") {
+      return (
+        <ErrorBoundary fallbackTitle="工程表エラー">
+          <ScheduleFromEstimatePage />
+        </ErrorBoundary>
+      );
+    }
     if (ganttMatch) {
       return <GanttPage initialProjectId={ganttProjectId} />;
     }
@@ -504,6 +519,7 @@ function AppShell() {
     { key: "cost", label: t("common:nav.cost"), icon: "💹", path: "/cost-management", active: route === "/cost-management" },
     { key: "freee", label: t("common:nav.freee"), icon: "📗", path: "/freee", active: route === "/freee" || route.startsWith("/freee?") },
     { key: "finishing", label: "仕上表", icon: "📋", path: "/finishing", active: route === "/finishing" || route.startsWith("/finishing/") },
+    { key: "schedule", label: "工程表", icon: "📅", path: "/schedule", active: route === "/schedule" },
     { key: "help", label: t("common:nav.help"), icon: "❓", path: "/help", active: route === "/help" },
   ];
 
