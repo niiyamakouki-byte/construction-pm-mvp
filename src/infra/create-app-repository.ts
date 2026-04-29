@@ -9,6 +9,10 @@ import { SupabaseRepository } from "./supabase-repository.js";
 // test helpers and component instances operate on the same data store.
 const testRepoCache = new Map<string, InMemoryRepository<BaseEntity>>();
 
+function isE2EBypass(): boolean {
+  return typeof window !== "undefined" && (window as { __E2E_BYPASS_AUTH__?: boolean }).__E2E_BYPASS_AUTH__ === true;
+}
+
 export function createAppRepository<T extends BaseEntity>(
   tableName: string,
   _getOrganizationId?: () => string | null,
@@ -18,6 +22,14 @@ export function createAppRepository<T extends BaseEntity>(
       testRepoCache.set(tableName, new InMemoryRepository<BaseEntity>());
     }
     return testRepoCache.get(tableName) as unknown as Repository<T>;
+  }
+
+  // E2E tests bypass AuthGuard but have no authenticated Supabase session.
+  // Calling Supabase with only the anon key would trigger RLS violations on
+  // tables that require auth.uid(). Fall back to localStorage so E2E runs
+  // against local state without hitting the DB.
+  if (isE2EBypass()) {
+    return new LocalStorageRepository<T>(tableName);
   }
 
   if (hasSupabaseEnv()) {
