@@ -87,7 +87,7 @@ describe("ScheduleFromEstimatePage — タスク行", () => {
 
   it("工事名が行内に表示される", () => {
     renderPage();
-    expect(screen.getByText("解体撤去工事")).toBeDefined();
+    expect(screen.getAllByText("解体撤去工事")[0]).toBeDefined();
     expect(screen.getByText("クロス張り工事")).toBeDefined();
   });
 
