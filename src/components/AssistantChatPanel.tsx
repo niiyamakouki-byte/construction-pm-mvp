@@ -1,4 +1,16 @@
+/**
+ * AssistantChatPanel — ラポルタ秘書チャット (Sprint 3-3 v2-cozy)
+ *
+ * 変更点:
+ * - v2-cozy カラー (ベージュ/セージグリーン) に全面刷新
+ * - 吹き出し型メッセージ (秘書=左/ベージュ, ユーザー=右/セージグリーン)
+ * - framer-motion で開閉アニメーション (slide-up 0.3s)
+ * - スラッシュコマンド5本をローカル処理 (API課金ゼロ)
+ * - 初回起動時の挨拶メッセージ
+ */
 import { useCallback, useEffect, useRef, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { handleInput } from "../lib/assistantCommands.js";
 
 type ChatMessage = {
   id: string;
@@ -7,7 +19,7 @@ type ChatMessage = {
   timestamp: string;
 };
 
-const STORAGE_KEY = "genbahub_assistant_chat";
+const STORAGE_KEY = "genbahub_assistant_chat_v3";
 const POS_KEY = "genbahub_chat_pos";
 const SIZE_KEY = "genbahub_chat_size";
 const MAX_STORED = 50;
@@ -31,7 +43,7 @@ function saveHistory(messages: ChatMessage[]): void {
     const trimmed = messages.slice(-MAX_STORED);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(trimmed));
   } catch {
-    // localStorage unavailable (e.g. private mode quota)
+    // localStorage unavailable
   }
 }
 
@@ -76,7 +88,6 @@ function saveSize(size: { w: number; h: number }): void {
   }
 }
 
-/** FABのデフォルト右下座標を返す（viewport基準のright/bottom的な位置をleft/topに変換） */
 function defaultPos(): { x: number; y: number } {
   return {
     x: window.innerWidth - 80,
@@ -85,10 +96,9 @@ function defaultPos(): { x: number; y: number } {
 }
 
 function defaultSize(): { w: number; h: number } {
-  return { w: 420, h: 560 };
+  return { w: 350, h: 500 };
 }
 
-/** パネルがviewport内に収まるようにクランプ */
 function clampPanelPos(x: number, y: number, w: number, h: number): { x: number; y: number } {
   const vw = window.innerWidth;
   const vh = window.innerHeight;
@@ -98,20 +108,33 @@ function clampPanelPos(x: number, y: number, w: number, h: number): { x: number;
   };
 }
 
+/** 初回起動挨拶メッセージ */
+const WELCOME_MESSAGE: ChatMessage = {
+  id: "welcome-0",
+  role: "bot",
+  content:
+    "こんにちは！ラポルタ秘書でございます 🌿\n" +
+    "現場管理・見積・工程・安全管理などをお手伝いいたします。\n" +
+    "`/help` でコマンド一覧をご覧になれます。",
+  timestamp: new Date().toISOString(),
+};
+
 type Props = {
-  /** ユーザー識別子。ログイン不要の demo 画面は "demo-user" を渡す */
   userId?: string;
 };
 
 export function AssistantChatPanel({ userId = "demo-user" }: Props) {
   const [open, setOpen] = useState(false);
-  const [messages, setMessages] = useState<ChatMessage[]>(() => loadHistory());
+  const [messages, setMessages] = useState<ChatMessage[]>(() => {
+    const history = loadHistory();
+    // 履歴が空なら挨拶メッセージを追加
+    if (history.length === 0) return [WELCOME_MESSAGE];
+    return history;
+  });
   const [input, setInput] = useState("");
-  const [sending, setSending] = useState(false);
   const [unread, setUnread] = useState(0);
   const [lastMessageId, setLastMessageId] = useState<string | undefined>(undefined);
 
-  // FAB / panel position (top-left corner of panel when open, FAB center when closed)
   const [pos, setPos] = useState<{ x: number; y: number }>(() => loadPos() ?? defaultPos());
   const [size, setSize] = useState<{ w: number; h: number }>(() => loadSize() ?? defaultSize());
 
@@ -119,12 +142,10 @@ export function AssistantChatPanel({ userId = "demo-user" }: Props) {
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
 
-  // Drag state
   const dragRef = useRef<{ startMouseX: number; startMouseY: number; startPosX: number; startPosY: number } | null>(null);
-  // Resize state
   const resizeRef = useRef<{ startMouseX: number; startMouseY: number; startW: number; startH: number } | null>(null);
 
-  // 初回マウント時に最新メッセージIDを設定
+  // 初回マウント時に最新Botメッセージ IDを設定
   useEffect(() => {
     const stored = loadHistory();
     if (stored.length > 0) {
@@ -153,7 +174,6 @@ export function AssistantChatPanel({ userId = "demo-user" }: Props) {
     return () => document.removeEventListener("keydown", onKeyDown);
   }, [open]);
 
-  // メッセージ追加ヘルパー
   const addMessages = useCallback((newMsgs: ChatMessage[]) => {
     setMessages((prev) => {
       const merged = [...prev, ...newMsgs];
@@ -162,7 +182,7 @@ export function AssistantChatPanel({ userId = "demo-user" }: Props) {
     });
   }, []);
 
-  // Discord polling
+  // Discord polling（既存の非コマンドメッセージを補完）
   useEffect(() => {
     let active = true;
 
@@ -182,7 +202,7 @@ export function AssistantChatPanel({ userId = "demo-user" }: Props) {
         if (data.messages.length > 0) {
           const newMsgs: ChatMessage[] = data.messages.map((m) => ({
             id: m.id,
-            role: "bot",
+            role: "bot" as const,
             content: m.content,
             timestamp: m.timestamp,
           }));
@@ -196,7 +216,7 @@ export function AssistantChatPanel({ userId = "demo-user" }: Props) {
           }
         }
       } catch {
-        // ネットワークエラーは無視（次のポーリングで再試行）
+        // ネットワークエラーは無視
       }
     };
 
@@ -207,11 +227,10 @@ export function AssistantChatPanel({ userId = "demo-user" }: Props) {
     };
   }, [userId, lastMessageId, open, addMessages]);
 
-  // 展開時にスクロール & 未読クリア & focus trap & 位置クランプ
+  // 展開時: スクロール & 未読クリア & 位置クランプ
   useEffect(() => {
     if (open) {
       setUnread(0);
-      // パネルがvieport内に完全に収まるよう位置を補正
       setPos((p) => clampPanelPos(p.x, p.y, size.w, size.h));
       setTimeout(() => {
         messagesEndRef.current?.scrollIntoView?.({ behavior: "smooth" });
@@ -227,9 +246,8 @@ export function AssistantChatPanel({ userId = "demo-user" }: Props) {
     }
   }, [messages, open]);
 
-  // -- Drag: header mousedown --
+  // ドラッグ
   const onDragStart = useCallback((e: React.MouseEvent) => {
-    // パネルが開いていないとFABドラッグ
     e.preventDefault();
     dragRef.current = {
       startMouseX: e.clientX,
@@ -265,7 +283,7 @@ export function AssistantChatPanel({ userId = "demo-user" }: Props) {
     document.addEventListener("mouseup", onUp);
   }, [pos, open, size]);
 
-  // -- Resize: bottom-right corner mousedown --
+  // リサイズ
   const onResizeStart = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -304,11 +322,11 @@ export function AssistantChatPanel({ userId = "demo-user" }: Props) {
     document.addEventListener("mouseup", onUp);
   }, [size]);
 
-  const handleSend = useCallback(async () => {
+  const handleSend = useCallback(() => {
     const text = input.trim();
-    if (!text || sending) return;
+    if (!text) return;
 
-    const optimistic: ChatMessage = {
+    const userMsg: ChatMessage = {
       id: `local-${Date.now()}`,
       role: "user",
       content: text,
@@ -316,50 +334,26 @@ export function AssistantChatPanel({ userId = "demo-user" }: Props) {
     };
 
     setInput("");
-    setSending(true);
-    addMessages([optimistic]);
+    addMessages([userMsg]);
 
-    try {
-      const res = await fetch("/api/chat/send", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId, text }),
-      });
-
-      if (!res.ok) {
-        const err = (await res.json()) as { error?: string };
-        addMessages([
-          {
-            id: `err-${Date.now()}`,
-            role: "bot",
-            content: `[送信エラー] ${err.error ?? "不明なエラーが発生しました"}`,
-            timestamp: new Date().toISOString(),
-          },
-        ]);
-      }
-    } catch {
-      addMessages([
-        {
-          id: `err-${Date.now()}`,
-          role: "bot",
-          content: "[送信エラー] ネットワーク接続を確認してください",
-          timestamp: new Date().toISOString(),
-        },
-      ]);
-    } finally {
-      setSending(false);
-    }
-  }, [input, sending, userId, addMessages]);
+    // コマンド処理（ローカル完結・API不使用）
+    const result = handleInput(text);
+    const botMsg: ChatMessage = {
+      id: `bot-${Date.now() + 1}`,
+      role: "bot",
+      content: result.text,
+      timestamp: new Date().toISOString(),
+    };
+    addMessages([botMsg]);
+  }, [input, addMessages]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
-      void handleSend();
+      handleSend();
     }
   };
 
-  // パネルがopen時: left/top = pos (パネル左上)
-  // FABのみ時: FABの中心がposになるよう -28px オフセット
   const fabStyle: React.CSSProperties = {
     position: "fixed",
     left: pos.x - (open ? 0 : 28),
@@ -372,154 +366,207 @@ export function AssistantChatPanel({ userId = "demo-user" }: Props) {
 
   return (
     <div style={fabStyle}>
-      {/* チャットウィンドウ */}
-      {open && (
-        <div
-          ref={dialogRef}
-          className="flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl"
-          style={{ width: size.w, height: size.h, marginBottom: "0" }}
-          role="dialog"
-          aria-modal="true"
-          aria-label="ラポルタ秘書チャット"
-        >
-          {/* ヘッダー（ドラッグハンドル） */}
-          <div
-            className="flex items-center justify-between bg-blue-600 px-4 py-3 text-white cursor-grab active:cursor-grabbing select-none"
-            onMouseDown={onDragStart}
+      {/* チャットウィンドウ (framer-motion slide-up) */}
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            key="chat-panel"
+            initial={{ opacity: 0, y: 24, scale: 0.97 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 16, scale: 0.97 }}
+            transition={{ duration: 0.3, ease: "easeOut" }}
+            ref={dialogRef}
+            className="flex flex-col overflow-hidden rounded-2xl shadow-2xl"
+            style={{
+              width: size.w,
+              height: size.h,
+              background: "#FDF8F0",
+              border: "1px solid #E8DFD3",
+            }}
+            role="dialog"
+            aria-modal="true"
+            aria-label="ラポルタ秘書チャット"
           >
-            <div className="flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-white/20 text-sm font-bold">
-                AI
-              </div>
-              <div>
-                <div className="text-sm font-semibold">ラポルタ秘書</div>
-                <div className="text-xs text-blue-200">Discord 中継</div>
-              </div>
-            </div>
-            <div className="flex items-center gap-1">
-              <span className="text-xs text-blue-300 mr-1 hidden sm:block">{shortcutLabel}</span>
-              <button
-                onMouseDown={(e) => e.stopPropagation()}
-                onClick={() => setOpen(false)}
-                className="rounded-lg p-1 hover:bg-white/20"
-                aria-label="チャットを閉じる"
-              >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M18 6L6 18M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-          </div>
-
-          {/* メッセージ一覧 */}
-          <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3">
-            {messages.length === 0 && (
-              <div className="text-center text-slate-400 text-sm py-8">
-                <div className="text-2xl mb-2">💬</div>
-                <div>何でも聞いてください</div>
-                <div className="text-xs mt-1">現場管理・見積・スケジュールなど</div>
-              </div>
-            )}
-            {messages.map((msg) => (
-              <div
-                key={msg.id}
-                className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
-              >
-                <div
-                  className={`max-w-[80%] rounded-2xl px-3 py-2 text-sm ${
-                    msg.role === "user"
-                      ? "bg-blue-600 text-white rounded-br-sm"
-                      : "bg-slate-100 text-slate-900 rounded-bl-sm"
-                  }`}
-                >
-                  <div className="whitespace-pre-wrap break-words">{msg.content}</div>
-                  <div
-                    className={`mt-1 text-xs ${
-                      msg.role === "user" ? "text-blue-200 text-right" : "text-slate-400"
-                    }`}
-                  >
-                    {formatTime(msg.timestamp)}
-                  </div>
-                </div>
-              </div>
-            ))}
-            {sending && (
-              <div className="flex justify-start">
-                <div className="rounded-2xl rounded-bl-sm bg-slate-100 px-3 py-2">
-                  <div className="flex gap-1">
-                    <span className="h-2 w-2 animate-bounce rounded-full bg-slate-400" style={{ animationDelay: "0ms" }} />
-                    <span className="h-2 w-2 animate-bounce rounded-full bg-slate-400" style={{ animationDelay: "150ms" }} />
-                    <span className="h-2 w-2 animate-bounce rounded-full bg-slate-400" style={{ animationDelay: "300ms" }} />
-                  </div>
-                </div>
-              </div>
-            )}
-            <div ref={messagesEndRef} />
-          </div>
-
-          {/* 入力エリア */}
-          <div className="border-t border-slate-100 bg-white px-3 py-3">
-            <div className="flex items-end gap-2">
-              <textarea
-                ref={inputRef}
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder="メッセージを入力... (Enter で送信)"
-                className="flex-1 resize-none rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:border-blue-400 focus:bg-white focus:outline-none"
-                rows={2}
-                maxLength={2000}
-                aria-label="メッセージ入力"
-              />
-              <button
-                onClick={() => void handleSend()}
-                disabled={!input.trim() || sending}
-                className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-                aria-label="送信"
-              >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
-                </svg>
-              </button>
-            </div>
-          </div>
-
-          {/* リサイズハンドル（右下） */}
-          <div
-            onMouseDown={onResizeStart}
-            className="absolute bottom-0 right-0 h-4 w-4 cursor-se-resize"
-            aria-hidden="true"
-            style={{ background: "transparent" }}
-          >
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="text-slate-300">
-              <path d="M14 2L2 14M14 8L8 14M14 14H14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-            </svg>
-          </div>
-        </div>
-      )}
-
-      {/* FAB ボタン（パネル閉時のみ表示） */}
-      {!open && (
-        <button
-          onMouseDown={onDragStart}
-          onClick={() => setOpen(true)}
-          className="relative flex h-14 w-14 items-center justify-center rounded-full bg-blue-600 text-white shadow-lg hover:bg-blue-700 transition-colors cursor-grab active:cursor-grabbing"
-          aria-label={`ラポルタ秘書を開く (${shortcutLabel})`}
-          data-testid="assistant-chat-fab"
-        >
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z" />
-          </svg>
-          {unread > 0 && (
-            <span
-              className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs font-bold text-white animate-pulse"
-              aria-label={`${unread}件の新着メッセージ`}
+            {/* ヘッダー */}
+            <div
+              className="flex items-center justify-between px-4 py-3 cursor-grab active:cursor-grabbing select-none"
+              style={{ background: "#7BA88A", color: "#fff" }}
+              onMouseDown={onDragStart}
             >
-              {unread > 9 ? "9+" : unread}
-            </span>
-          )}
-        </button>
-      )}
+              <div className="flex items-center gap-2">
+                {/* アバター */}
+                <div
+                  className="flex h-9 w-9 items-center justify-center rounded-full text-xl"
+                  style={{ background: "rgba(255,255,255,0.25)" }}
+                >
+                  🌿
+                </div>
+                <div>
+                  <div className="text-sm font-semibold">ラポルタ秘書</div>
+                  <div className="text-xs" style={{ color: "rgba(255,255,255,0.75)" }}>
+                    現場管理アシスタント
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-center gap-1">
+                <span className="text-xs mr-1 hidden sm:block" style={{ color: "rgba(255,255,255,0.7)" }}>
+                  {shortcutLabel}
+                </span>
+                <button
+                  onMouseDown={(e) => e.stopPropagation()}
+                  onClick={() => setOpen(false)}
+                  className="rounded-lg p-1.5 transition-colors"
+                  style={{ background: "rgba(255,255,255,0)" }}
+                  onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.2)"; }}
+                  onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0)"; }}
+                  aria-label="チャットを閉じる"
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <path d="M18 6L6 18M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            {/* メッセージ一覧 */}
+            <div
+              className="flex-1 overflow-y-auto px-4 py-3 space-y-3"
+              style={{ background: "#F5F0E8" }}
+            >
+              {messages.map((msg) => (
+                <div
+                  key={msg.id}
+                  className={`flex items-end gap-2 ${msg.role === "user" ? "justify-end" : "justify-start"}`}
+                >
+                  {/* 秘書アバター (左) */}
+                  {msg.role === "bot" && (
+                    <div
+                      className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-base"
+                      style={{ background: "#E8F2EB" }}
+                    >
+                      🌿
+                    </div>
+                  )}
+
+                  <div
+                    className="max-w-[80%] rounded-2xl px-3 py-2 text-sm"
+                    style={
+                      msg.role === "user"
+                        ? {
+                            background: "#7BA88A",
+                            color: "#fff",
+                            borderBottomRightRadius: "4px",
+                          }
+                        : {
+                            background: "#FDF8F0",
+                            color: "#3D3529",
+                            border: "1px solid #E8DFD3",
+                            borderBottomLeftRadius: "4px",
+                          }
+                    }
+                  >
+                    <div className="whitespace-pre-wrap break-words">{msg.content}</div>
+                    <div
+                      className="mt-1 text-xs"
+                      style={
+                        msg.role === "user"
+                          ? { color: "rgba(255,255,255,0.7)", textAlign: "right" }
+                          : { color: "#A69E93" }
+                      }
+                    >
+                      {formatTime(msg.timestamp)}
+                    </div>
+                  </div>
+                </div>
+              ))}
+              <div ref={messagesEndRef} />
+            </div>
+
+            {/* 入力エリア */}
+            <div
+              className="px-3 py-3"
+              style={{ background: "#FDF8F0", borderTop: "1px solid #E8DFD3" }}
+            >
+              <div className="flex items-end gap-2">
+                <textarea
+                  ref={inputRef}
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder="メッセージを入力してください"
+                  className="flex-1 resize-none text-sm focus:outline-none"
+                  style={{
+                    borderRadius: "14px",
+                    border: "1px solid #E8DFD3",
+                    background: "#F5F0E8",
+                    color: "#3D3529",
+                    padding: "8px 12px",
+                  }}
+                  rows={2}
+                  maxLength={2000}
+                  aria-label="メッセージ入力"
+                />
+                <button
+                  onClick={handleSend}
+                  disabled={!input.trim()}
+                  className="flex h-9 w-9 items-center justify-center rounded-xl transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                  style={{ background: "#7BA88A", color: "#fff" }}
+                  onMouseEnter={(e) => { if (!e.currentTarget.disabled) (e.currentTarget as HTMLButtonElement).style.background = "#5E8A6C"; }}
+                  onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "#7BA88A"; }}
+                  aria-label="送信"
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
+                  </svg>
+                </button>
+              </div>
+              <div className="mt-1 text-xs" style={{ color: "#A69E93" }}>
+                /help でコマンド一覧 · Enter で送信 · Shift+Enter で改行
+              </div>
+            </div>
+
+            {/* リサイズハンドル */}
+            <div
+              onMouseDown={onResizeStart}
+              className="absolute bottom-0 right-0 h-4 w-4 cursor-se-resize"
+              aria-hidden="true"
+            >
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ color: "#A69E93" }}>
+                <path d="M14 2L2 14M14 8L8 14M14 14H14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+              </svg>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* FAB ボタン */}
+      <AnimatePresence>
+        {!open && (
+          <motion.button
+            key="chat-fab"
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.8, opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            onMouseDown={onDragStart}
+            onClick={() => setOpen(true)}
+            className="relative flex h-14 w-14 items-center justify-center rounded-full shadow-lg cursor-grab active:cursor-grabbing"
+            style={{ background: "#7BA88A", color: "#fff" }}
+            aria-label={`ラポルタ秘書を開く (${shortcutLabel})`}
+            data-testid="assistant-chat-fab"
+          >
+            <span className="text-2xl">🌿</span>
+            {unread > 0 && (
+              <span
+                className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs font-bold text-white animate-pulse"
+                aria-label={`${unread}件の新着メッセージ`}
+              >
+                {unread > 9 ? "9+" : unread}
+              </span>
+            )}
+          </motion.button>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
