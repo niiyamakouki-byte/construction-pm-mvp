@@ -5,6 +5,7 @@ import { navigate } from "../hooks/useHashRouter.js";
 export function SignupPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [passwordConfirm, setPasswordConfirm] = useState("");
   const [companyName, setCompanyName] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -18,6 +19,10 @@ export function SignupPage() {
     }
     if (password.length < 8) {
       setError("パスワードは8文字以上で設定してください");
+      return;
+    }
+    if (password !== passwordConfirm) {
+      setError("パスワードが一致しません。もう一度ご確認ください。");
       return;
     }
     setLoading(true);
@@ -142,6 +147,22 @@ export function SignupPage() {
                 minLength={8}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200"
+                placeholder="••••••••"
+              />
+            </div>
+            <div>
+              <label htmlFor="password-confirm" className="mb-1 block text-sm font-medium text-slate-700">
+                パスワード（確認）
+              </label>
+              <input
+                id="password-confirm"
+                type="password"
+                autoComplete="new-password"
+                required
+                minLength={8}
+                value={passwordConfirm}
+                onChange={(e) => setPasswordConfirm(e.target.value)}
                 className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200"
                 placeholder="••••••••"
               />
