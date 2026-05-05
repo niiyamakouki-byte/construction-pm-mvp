@@ -2,7 +2,8 @@
  * Vercel Serverless Function: POST /api/checkout-session
  *
  * Stripe Checkout Session を作成し、リダイレクト先 URL を返す。
- * TEST MODE 専用。環境変数 STRIPE_TEST_SECRET_KEY が必要。
+ * 環境変数 STRIPE_SECRET_KEY が必要。
+ * 本番: sk_live_ プレフィックス必須 / 開発: sk_test_ プレフィックス必須。
  *
  * セキュリティ:
  *   - Authorization: Bearer <supabase jwt> が必須（未認証は 401）
@@ -86,11 +87,28 @@ export default async function handler(
     return;
   }
 
-  const secretKey = process.env.STRIPE_TEST_SECRET_KEY;
+  const secretKey = process.env.STRIPE_SECRET_KEY;
   if (!secretKey) {
     res.status(500).json({
       error:
-        "STRIPE_TEST_SECRET_KEY が未設定です。Vercel の環境変数を設定してください。",
+        "STRIPE_SECRET_KEY が未設定です。Vercel の環境変数を設定してください。",
+    });
+    return;
+  }
+
+  // 本番環境では live キーを必須とし、test キーを禁止する
+  if (process.env.NODE_ENV === "production" && !secretKey.startsWith("sk_live_")) {
+    res.status(500).json({
+      error:
+        "本番環境では STRIPE_SECRET_KEY に sk_live_ プレフィックスのキーが必要です。",
+    });
+    return;
+  }
+  // 非本番環境では test キーのみ許可
+  if (process.env.NODE_ENV !== "production" && !secretKey.startsWith("sk_test_")) {
+    res.status(500).json({
+      error:
+        "開発環境では STRIPE_SECRET_KEY に sk_test_ プレフィックスのキーを使用してください。",
     });
     return;
   }
