@@ -112,7 +112,7 @@ function addWorkingDays(start: Date, days: number, skipWeekends: boolean): Date 
     result.setDate(result.getDate() + Math.max(0, days - 1));
     return result;
   }
-  let current = new Date(start);
+  const current = new Date(start);
   let remaining = days - 1; // start day already counted
   while (remaining > 0) {
     current.setDate(current.getDate() + 1);

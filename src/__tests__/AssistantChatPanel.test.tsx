@@ -9,8 +9,8 @@ import { AssistantChatPanel } from "../components/AssistantChatPanel.js";
 
 // framer-motion をスタブ化: jsdom では exit アニメーションが DOM に残るため
 // AnimatePresence はそのまま children を描画するパススルーにする
-vi.mock("framer-motion", () => {
-  const React = require("react");
+vi.mock("framer-motion", async () => {
+  const React = await vi.importActual<typeof import("react")>("react");
   return {
     motion: new Proxy(
       {},

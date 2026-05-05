@@ -47,7 +47,6 @@ import { OnboardingWizard, useOnboardingDone } from "./components/OnboardingWiza
 import { TourGuide, useTourDone } from "./components/TourGuide.js";
 import { AuthProvider, useAuth } from "./contexts/AuthContext.js";
 import { OrganizationProvider } from "./contexts/OrganizationContext.js";
-import { hasSupabaseEnv } from "./infra/supabase-client.js";
 import { SubscriptionProvider } from "./contexts/SubscriptionContext.js";
 import { PersonaProvider, usePersona } from "./contexts/PersonaContext.js";
 import { useHashRoute, navigate } from "./hooks/useHashRouter.js";

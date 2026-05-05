@@ -133,7 +133,14 @@ export function AssistantChatPanel({ userId = "demo-user" }: Props) {
   });
   const [input, setInput] = useState("");
   const [unread, setUnread] = useState(0);
-  const [lastMessageId, setLastMessageId] = useState<string | undefined>(undefined);
+  const [lastMessageId, setLastMessageId] = useState<string | undefined>(() => {
+    const stored = loadHistory();
+    if (stored.length > 0) {
+      const last = stored[stored.length - 1];
+      if (last.role === "bot") return last.id;
+    }
+    return undefined;
+  });
 
   const [pos, setPos] = useState<{ x: number; y: number }>(() => loadPos() ?? defaultPos());
   const [size, setSize] = useState<{ w: number; h: number }>(() => loadSize() ?? defaultSize());
@@ -145,17 +152,6 @@ export function AssistantChatPanel({ userId = "demo-user" }: Props) {
   const dragRef = useRef<{ startMouseX: number; startMouseY: number; startPosX: number; startPosY: number } | null>(null);
   const resizeRef = useRef<{ startMouseX: number; startMouseY: number; startW: number; startH: number } | null>(null);
 
-  // 初回マウント時に最新Botメッセージ IDを設定
-  useEffect(() => {
-    const stored = loadHistory();
-    if (stored.length > 0) {
-      const last = stored[stored.length - 1];
-      if (last.role === "bot") {
-        setLastMessageId(last.id);
-      }
-    }
-  }, []);
-
   // ⌘K / Ctrl+K でトグル
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
@@ -163,7 +159,13 @@ export function AssistantChatPanel({ userId = "demo-user" }: Props) {
       const trigger = isMac ? e.metaKey && e.key.toLowerCase() === "k" : e.ctrlKey && e.key.toLowerCase() === "k";
       if (trigger) {
         e.preventDefault();
-        setOpen((v) => !v);
+        setOpen((v) => {
+          if (!v) {
+            setUnread(0);
+            setPos((p) => clampPanelPos(p.x, p.y, size.w, size.h));
+          }
+          return !v;
+        });
         return;
       }
       if (e.key === "Escape" && open) {
@@ -172,7 +174,7 @@ export function AssistantChatPanel({ userId = "demo-user" }: Props) {
     };
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
-  }, [open]);
+  }, [open, size.w, size.h]);
 
   const addMessages = useCallback((newMsgs: ChatMessage[]) => {
     setMessages((prev) => {
@@ -227,17 +229,15 @@ export function AssistantChatPanel({ userId = "demo-user" }: Props) {
     };
   }, [userId, lastMessageId, open, addMessages]);
 
-  // 展開時: スクロール & 未読クリア & 位置クランプ
+  // 展開時: スクロール (未読クリア・位置クランプはopenPanel/togglePanelで行う)
   useEffect(() => {
     if (open) {
-      setUnread(0);
-      setPos((p) => clampPanelPos(p.x, p.y, size.w, size.h));
       setTimeout(() => {
         messagesEndRef.current?.scrollIntoView?.({ behavior: "smooth" });
         inputRef.current?.focus();
       }, 100);
     }
-  }, [open, size.w, size.h]);
+  }, [open]);
 
   // メッセージ追加時に自動スクロール
   useEffect(() => {
@@ -549,7 +549,7 @@ export function AssistantChatPanel({ userId = "demo-user" }: Props) {
             exit={{ scale: 0.8, opacity: 0 }}
             transition={{ duration: 0.2 }}
             onMouseDown={onDragStart}
-            onClick={() => setOpen(true)}
+            onClick={() => { setOpen(true); setUnread(0); setPos((p) => clampPanelPos(p.x, p.y, size.w, size.h)); }}
             className="relative flex h-14 w-14 items-center justify-center rounded-full shadow-lg cursor-grab active:cursor-grabbing"
             style={{ background: "#7BA88A", color: "#fff" }}
             aria-label={`ラポルタ秘書を開く (${shortcutLabel})`}

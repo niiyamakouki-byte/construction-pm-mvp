@@ -135,7 +135,7 @@ function buildInitialRows(): RowData[] {
 // ── CSV エクスポート ──────────────────────────────────────────────────────────
 
 function exportCsv(rows: RowData[], projectName: string): void {
-  const headers = ["部屋", ...PARTS.map((p) => `${p}_品名`), ...PARTS.map((p) => `${p}_品番`), ...PARTS.map((p) => `${p}_色`),];
+  // headers はorderedHeadersに置き換え済みのため削除
 
   // 列順序: 部屋, 部位×(品名/品番/色) をまとめた形式に変更
   const orderedHeaders = ["部屋"];

@@ -14,7 +14,6 @@ import { FinishingSchedulePage } from "./FinishingSchedulePage.js";
 
 // URL.createObjectURL / URL.revokeObjectURL をモック
 const mockObjectUrl = "blob:mock-url";
-let createdBlobContent = "";
 
 beforeEach(() => {
   vi.stubGlobal("URL", {
@@ -96,7 +95,7 @@ describe("FinishingSchedulePage — 行追加/削除", () => {
     const rows = screen.getAllByTestId("finishing-row");
     const before = rows.length;
     // 最初の行の削除ボタンを取得
-    const firstRowId = rows[0].getAttribute("data-testid");
+    const _firstRowId = rows[0].getAttribute("data-testid");
     // delete-row-{id} ボタンを探す
     const deleteButtons = document.querySelectorAll("[data-testid^='delete-row-']");
     expect(deleteButtons.length).toBeGreaterThan(0);

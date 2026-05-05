@@ -12,7 +12,6 @@ import {
   getSelectionItemsByProject,
   selectOption,
   setStatus,
-  updateSelectionItem,
 } from "../lib/selection-board.js";
 import {
   SelectionRepository,

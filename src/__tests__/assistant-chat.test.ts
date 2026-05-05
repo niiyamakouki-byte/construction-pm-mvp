@@ -4,7 +4,7 @@
  * (1) chat send POST のロジックテスト
  * (2) chat poll のフィルタリングロジックテスト
  */
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect } from "vitest";
 
 // ── テスト用型定義 ─────────────────────────────────────────────
 type MockRequest = {
