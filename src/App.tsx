@@ -41,6 +41,7 @@ const PhotoPage = lazy(() => import("./pages/PhotoPage.js").then((m) => ({ defau
 const FreeePage = lazy(() => import("./pages/FreeePage.js").then((m) => ({ default: m.FreeePage })));
 const FinishingSchedulePage = lazy(() => import("./pages/FinishingSchedulePage.js").then((m) => ({ default: m.FinishingSchedulePage })));
 const ScheduleFromEstimatePage = lazy(() => import("./pages/ScheduleFromEstimatePage.js").then((m) => ({ default: m.ScheduleFromEstimatePage })));
+const AccountSettingsPage = lazy(() => import("./pages/AccountSettingsPage.js").then((m) => ({ default: m.AccountSettingsPage })));
 import { ErrorBoundary } from "./components/ErrorBoundary.js";
 import { AuthGuard } from "./components/AuthGuard.js";
 import { OnboardingWizard, useOnboardingDone } from "./components/OnboardingWizard.js";
@@ -487,6 +488,13 @@ function AppShell() {
         </ErrorBoundary>
       );
     }
+    if (route === "/account") {
+      return (
+        <Suspense fallback={pageFallback}>
+          <AccountSettingsPage />
+        </Suspense>
+      );
+    }
     return (
       <div className="mx-auto max-w-lg px-4 py-12 text-center" role="alert">
         <div className="rounded-2xl border-2 border-dashed border-slate-200 bg-white p-8">
@@ -520,6 +528,7 @@ function AppShell() {
     { key: "finishing", label: "仕上表", icon: "📋", path: "/finishing", active: route === "/finishing" || route.startsWith("/finishing/") },
     { key: "schedule", label: "工程表", icon: "📅", path: "/schedule", active: route === "/schedule" },
     { key: "help", label: t("common:nav.help"), icon: "❓", path: "/help", active: route === "/help" },
+    { key: "account", label: "アカウント設定", icon: "⚙️", path: "/account", active: route === "/account" },
   ];
 
   return (
