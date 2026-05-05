@@ -108,6 +108,33 @@ export function LoginPage() {
     }
   };
 
+  const handlePasswordReset = async () => {
+    if (!hasSupabaseEnv()) {
+      setError("Supabase が設定されていません");
+      return;
+    }
+    if (!email.trim()) {
+      setError("メールアドレスを入力してからパスワードリセットをお試しください。");
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    setSuccessMessage(null);
+    try {
+      const client = await getSupabaseClient();
+      const { error: authError } = await client.auth.resetPasswordForEmail(email.trim());
+      if (authError) {
+        setError("パスワードリセットメールの送信に失敗しました。");
+      } else {
+        setSuccessMessage("パスワードリセット用のメールを送信しました。メールをご確認ください。");
+      }
+    } catch {
+      setError("パスワードリセットに失敗しました。もう一度お試しください。");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleRememberLoginChange = (checked: boolean) => {
     setRememberLogin(checked);
     setRememberLoginPreference(checked);
@@ -166,9 +193,19 @@ export function LoginPage() {
               />
             </div>
             <div>
-              <label htmlFor="password" className="mb-1 block text-sm font-medium text-slate-700">
-                パスワード
-              </label>
+              <div className="mb-1 flex items-center justify-between">
+                <label htmlFor="password" className="block text-sm font-medium text-slate-700">
+                  パスワード
+                </label>
+                <button
+                  type="button"
+                  onClick={handlePasswordReset}
+                  disabled={loading}
+                  className="text-xs text-brand-600 hover:text-brand-700 hover:underline disabled:opacity-50"
+                >
+                  パスワードを忘れた方
+                </button>
+              </div>
               <div className="relative">
                 <input
                   id="password"

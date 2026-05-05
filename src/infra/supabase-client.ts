@@ -135,6 +135,7 @@ type SupabaseAuthClient = {
   signInWithOAuth(options: { provider: string; options?: { redirectTo?: string } }): Promise<{ data: unknown; error: { message: string } | null }>;
   signUp(credentials: { email: string; password: string; options?: { data?: Record<string, unknown> } }): Promise<{ data: { session: SupabaseSession | null }; error: { message: string } | null }>;
   signOut(): Promise<{ error: { message: string } | null }>;
+  resetPasswordForEmail(email: string, options?: { redirectTo?: string }): Promise<{ data: unknown; error: { message: string } | null }>;
   onAuthStateChange(callback: (event: AuthChangeEvent, session: SupabaseSession | null) => void): { data: { subscription: { unsubscribe(): void } } };
 };
 
