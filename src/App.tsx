@@ -42,6 +42,7 @@ const FreeePage = lazy(() => import("./pages/FreeePage.js").then((m) => ({ defau
 const FinishingSchedulePage = lazy(() => import("./pages/FinishingSchedulePage.js").then((m) => ({ default: m.FinishingSchedulePage })));
 const ScheduleFromEstimatePage = lazy(() => import("./pages/ScheduleFromEstimatePage.js").then((m) => ({ default: m.ScheduleFromEstimatePage })));
 const AccountSettingsPage = lazy(() => import("./pages/AccountSettingsPage.js").then((m) => ({ default: m.AccountSettingsPage })));
+const LineCallbackPage = lazy(() => import("./pages/LineCallbackPage.js").then((m) => ({ default: m.LineCallbackPage })));
 import { ErrorBoundary } from "./components/ErrorBoundary.js";
 import { AuthGuard } from "./components/AuthGuard.js";
 import { OnboardingWizard, useOnboardingDone } from "./components/OnboardingWizard.js";
@@ -304,6 +305,7 @@ function AppShell() {
   }
   if (route === "/login") return <Suspense fallback={pageFallback}><LoginPage /></Suspense>;
   if (route === "/signup") return <Suspense fallback={pageFallback}><SignupPage /></Suspense>;
+  if (route === "/auth/line/callback" || route.startsWith("/auth/line/callback?")) return <Suspense fallback={pageFallback}><LineCallbackPage /></Suspense>;
   if (legalMatch) {
     const section = legalMatch[1] as "tokushoho" | "privacy" | "tos" | undefined;
     return <Suspense fallback={pageFallback}><LegalPages section={section} /></Suspense>;

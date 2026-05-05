@@ -4,7 +4,7 @@
  * Stripe イベントを受けて public.subscriptions と public.checkout_sessions を更新する。
  *
  * 必要な環境変数:
- *   - STRIPE_TEST_SECRET_KEY
+ *   - STRIPE_SECRET_KEY
  *   - STRIPE_WEBHOOK_SECRET       (Stripe ダッシュボードから発行)
  *   - SUPABASE_URL
  *   - SUPABASE_SERVICE_ROLE_KEY
@@ -197,14 +197,28 @@ export default async function handler(
     return;
   }
 
-  const secretKey = process.env.STRIPE_TEST_SECRET_KEY;
+  const secretKey = process.env.STRIPE_SECRET_KEY;
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
   const supabaseUrl = process.env.SUPABASE_URL;
   const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!secretKey || !webhookSecret || !supabaseUrl || !supabaseServiceKey) {
     res.status(500).json({
       error:
-        "STRIPE_TEST_SECRET_KEY / STRIPE_WEBHOOK_SECRET / SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY のいずれかが未設定です",
+        "STRIPE_SECRET_KEY / STRIPE_WEBHOOK_SECRET / SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY のいずれかが未設定です",
+    });
+    return;
+  }
+
+  // 本番環境では live キーを必須とし、test キーを禁止する
+  if (process.env.NODE_ENV === "production" && !secretKey.startsWith("sk_live_")) {
+    res.status(500).json({
+      error: "本番環境では STRIPE_SECRET_KEY に sk_live_ プレフィックスのキーが必要です。",
+    });
+    return;
+  }
+  if (process.env.NODE_ENV !== "production" && !secretKey.startsWith("sk_test_")) {
+    res.status(500).json({
+      error: "開発環境では STRIPE_SECRET_KEY に sk_test_ プレフィックスのキーを使用してください。",
     });
     return;
   }
