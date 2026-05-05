@@ -8,6 +8,7 @@ import { navigate } from "../hooks/useHashRouter.js";
 import { useOrganizationContext } from "../contexts/OrganizationContext.js";
 import { filterScheduleTasks } from "../lib/cost-management.js";
 import { ProjectDetailTabs } from "../components/ProjectDetailTabs.js";
+import { ProjectMapEmbed } from "../components/ProjectMapEmbed.js";
 import { ProjectFlowWidget } from "../components/ProjectFlowWidget.js";
 import { createInitialStageProgresses } from "../lib/project-flow.js";
 import { ProjectChat } from "../components/ProjectChat.js";
@@ -531,6 +532,14 @@ export function ProjectDetailPage({
         currentStage="inquiry"
         stageProgresses={createInitialStageProgresses()}
       />
+
+      {/* 現場ロケーション */}
+      {project.address && (
+        <div>
+          <h2 className="mb-2 px-1 text-xs font-semibold text-slate-500 uppercase tracking-wider">現場ロケーション</h2>
+          <ProjectMapEmbed address={project.address} />
+        </div>
+      )}
 
       {/* Settings */}
       <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
