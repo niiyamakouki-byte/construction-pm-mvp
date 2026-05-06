@@ -56,4 +56,12 @@ describe("ProjectMapEmbed", () => {
     expect(screen.getByText("駐車場")).toBeDefined();
     expect(screen.getByText("ホームセンター")).toBeDefined();
   });
+
+  it("nearby search links include both the query label and site address", () => {
+    render(<ProjectMapEmbed address="東京都港区南青山1-1-1" />);
+    const link = screen.getByText("建材店");
+    const href = link.getAttribute("href");
+    expect(href).toContain("maps/search/?api=1&query=");
+    expect(href).toContain(encodeURIComponent("建材店 東京都港区南青山1-1-1"));
+  });
 });

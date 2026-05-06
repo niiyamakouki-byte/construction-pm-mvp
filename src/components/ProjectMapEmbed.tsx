@@ -59,7 +59,7 @@ export function ProjectMapEmbed({ address }: Props) {
         {NEARBY_SEARCHES.map(({ label, query }) => (
           <a
             key={label}
-            href={`https://www.google.com/maps/search/${encodeURIComponent(query)}/@${encoded}`}
+            href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${query} ${normalizedAddress}`)}`}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-1 rounded-lg border border-slate-100 bg-slate-50 px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-100 transition-colors"
