@@ -142,11 +142,11 @@ export function getActualGrossProfit(deal: DealProfit): number {
   return revenue - cost;
 }
 
-/** 粗利率（見積ベース）。売上が0の場合は0を返す */
+/** 粗利率（見積ベース）。売上が0の場合は0を返す。小数第2位で丸める */
 export function getGrossProfitRate(deal: DealProfit): number {
   const revenue = deal.estimatedRevenue;
   if (revenue === 0) return 0;
-  return (getGrossProfit(deal) / revenue) * 100;
+  return Math.round((getGrossProfit(deal) / revenue) * 10000) / 100;
 }
 
 // ─── 一覧取得 ────────────────────────────────────────────────
@@ -231,7 +231,7 @@ export function getMonthlyProfitTrend(): MonthlyProfitTrend[] {
         actualRevenue,
         actualCost,
         actualGrossProfit,
-        grossProfitRate: actualRevenue > 0 ? (actualGrossProfit / actualRevenue) * 100 : 0,
+        grossProfitRate: actualRevenue > 0 ? Math.round((actualGrossProfit / actualRevenue) * 10000) / 100 : 0,
       };
     });
 }
