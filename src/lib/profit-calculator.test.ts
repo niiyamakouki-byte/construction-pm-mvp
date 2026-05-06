@@ -94,3 +94,34 @@ describe("simulateMultiple", () => {
     expect(results[1].estimatePrice).toBeLessThan(results[2].estimatePrice);
   });
 });
+
+describe("marginPercent float precision", () => {
+  it("calculateFromMargin: 粗利率30%の逆算でmarginPercentが浮動小数点誤差を含まない", () => {
+    // 300000 / 0.7 = 428571.42... → Math.round = 428571
+    // grossProfit = 128571, estimatePrice = 428571
+    // raw: (128571 / 428571) * 100 = 29.9999299999...
+    // rounded: 30.00
+    const result = calculateFromMargin(items, 30, false);
+    expect(result.marginPercent).toBe(30);
+  });
+
+  it("calculateFromMargin: 粗利率25%の逆算でmarginPercentが正確", () => {
+    const result = calculateFromMargin(items, 25, false);
+    expect(result.marginPercent).toBe(25);
+  });
+
+  it("calculateFromPrice: 粗利率のfloat誤差が丸められる", () => {
+    // targetPrice=400000, totalCost=300000
+    // grossProfit=100000, marginPercent=25.0 (exact in this case)
+    const result = calculateFromPrice(items, 400000, false);
+    expect(result.marginPercent).toBe(25);
+  });
+
+  it("calculateFromPrice: 割り切れない粗利率でもfloat誤差が2桁以内に丸められる", () => {
+    // totalCost=300000, targetPrice=450000, grossProfit=150000
+    // raw: (150000/450000)*100 = 33.333333...
+    // rounded to 2dp: 33.33
+    const result = calculateFromPrice(items, 450000, false);
+    expect(result.marginPercent).toBe(33.33);
+  });
+});
