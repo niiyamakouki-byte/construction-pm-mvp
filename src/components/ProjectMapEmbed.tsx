@@ -10,7 +10,9 @@ const NEARBY_SEARCHES = [
 ] as const;
 
 export function ProjectMapEmbed({ address }: Props) {
-  if (!address) {
+  const normalizedAddress = address.trim();
+
+  if (!normalizedAddress) {
     return (
       <div className="rounded-xl border border-slate-200 bg-white px-4 py-6 shadow-sm text-center text-sm text-slate-400">
         住所未登録
@@ -18,7 +20,7 @@ export function ProjectMapEmbed({ address }: Props) {
     );
   }
 
-  const encoded = encodeURIComponent(address);
+  const encoded = encodeURIComponent(normalizedAddress);
   const mapSrc = `https://www.google.com/maps?q=${encoded}&output=embed`;
   const routeUrl = `https://www.google.com/maps/dir/?api=1&destination=${encoded}`;
   const streetViewUrl = `https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${encoded}`;

@@ -20,6 +20,13 @@ describe("ProjectMapEmbed", () => {
     expect(iframe).toBeNull();
   });
 
+  it("shows 住所未登録 when address is whitespace only", () => {
+    render(<ProjectMapEmbed address="   " />);
+    expect(screen.getByText("住所未登録")).toBeDefined();
+    const iframe = document.querySelector("iframe");
+    expect(iframe).toBeNull();
+  });
+
   it("iframe src contains encoded address", () => {
     render(<ProjectMapEmbed address="東京都港区南青山1-1-1" />);
     const iframe = document.querySelector("iframe");
