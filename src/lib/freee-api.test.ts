@@ -46,6 +46,11 @@ describe("isExpired", () => {
       false,
     );
   });
+  it("Invalid Date 文字列は expired 扱い（サイレント誤判定を防ぐ）", () => {
+    expect(isExpired("not-a-date")).toBe(true);
+    expect(isExpired("")).toBe(true);
+    expect(isExpired("2025-13-99")).toBe(true);
+  });
 });
 
 // ── getCompanies ─────────────────────────────────────
@@ -238,5 +243,24 @@ describe("FreeeApi refresh flow", () => {
       fetchImpl: fetchMock as unknown as typeof fetch,
     });
     await expect(api.getCompanies()).rejects.toThrow(/500/);
+  });
+
+  it("429 なら Retry-After を含むエラーをスロー（無限ループ防止）", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 429,
+      headers: { get: (name: string) => (name === "Retry-After" ? "30" : null) },
+      json: async () => ({}),
+    });
+    const api = new FreeeApi({
+      store: makeStore(validToken()),
+      clientId: "cid",
+      clientSecret: "csec",
+      fetchImpl: fetchMock as unknown as typeof fetch,
+    });
+    await expect(api.getCompanies()).rejects.toThrow(/429/);
+    await expect(api.getCompanies()).rejects.toThrow(/30s/);
+    // fetch は再試行されていない（429 で即 throw）
+    expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 });
