@@ -362,6 +362,7 @@ function GanttPageContent({ initialProjectId = null }: GanttPageProps) {
   const [connectMode, setConnectMode] = useState(false);
   const [connectState, setConnectState] = useState<ConnectState | null>(null);
   const [pdfExporting, setPdfExporting] = useState(false);
+  const [pdfError, setPdfError] = useState<string | null>(null);
   const [undoing, setUndoing] = useState(false);
   const [canUndo, setCanUndo] = useState(() => undoStack.canUndo());
   const [showMilestones, setShowMilestones] = useState(true);
@@ -842,7 +843,7 @@ function GanttPageContent({ initialProjectId = null }: GanttPageProps) {
         chartLayout?.totalDays ?? 0,
       );
     } catch (err) {
-      window.alert(err instanceof Error ? err.message : "PDF出力に失敗しました");
+      setPdfError(err instanceof Error ? err.message : "PDF出力に失敗しました");
     } finally {
       setPdfExporting(false);
     }
@@ -1182,14 +1183,19 @@ function GanttPageContent({ initialProjectId = null }: GanttPageProps) {
             >
               雨天中止
             </button>
-            <button
-              type="button"
-              disabled={pdfExporting}
-              onClick={handlePdfExport}
-              className="rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50"
-            >
-              {pdfExporting ? "出力中..." : "PDF出力"}
-            </button>
+            <div className="flex flex-col items-end gap-1">
+              <button
+                type="button"
+                disabled={pdfExporting}
+                onClick={() => { setPdfError(null); handlePdfExport(); }}
+                className="rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50"
+              >
+                {pdfExporting ? "出力中..." : "PDF出力"}
+              </button>
+              {pdfError && (
+                <p className="text-xs text-red-600" role="alert">{pdfError}</p>
+              )}
+            </div>
             <button
               type="button"
               onClick={() => {
