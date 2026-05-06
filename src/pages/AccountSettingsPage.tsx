@@ -6,6 +6,10 @@
 import { useState, type FormEvent } from "react";
 import { useAuth } from "../contexts/AuthContext.js";
 import { getSupabaseClient, hasSupabaseEnv } from "../infra/supabase-client.js";
+import {
+  clearPasswordRecoveryMode,
+  isPasswordRecoveryMode,
+} from "../lib/password-recovery.js";
 
 export function AccountSettingsPage() {
   const { user } = useAuth();
@@ -15,6 +19,7 @@ export function AccountSettingsPage() {
   const [newPassword, setNewPassword] = useState("");
   const [newPasswordConfirm, setNewPasswordConfirm] = useState("");
   const [showNewPassword, setShowNewPassword] = useState(false);
+  const [recoveryMode, setRecoveryMode] = useState(() => isPasswordRecoveryMode());
   const [pwLoading, setPwLoading] = useState(false);
   const [pwError, setPwError] = useState<string | null>(null);
   const [pwSuccess, setPwSuccess] = useState<string | null>(null);
@@ -39,7 +44,7 @@ export function AccountSettingsPage() {
     try {
       const client = await getSupabaseClient();
       // まず現在のパスワードで再認証
-      if (user?.email) {
+      if (!recoveryMode && user?.email) {
         const { error: signInError } = await client.auth.signInWithPassword({
           email: user.email,
           password: currentPassword,
@@ -53,7 +58,9 @@ export function AccountSettingsPage() {
       if (error) {
         setPwError("パスワードの変更に失敗しました。もう一度お試しください。");
       } else {
-        setPwSuccess("パスワードを変更しました");
+        clearPasswordRecoveryMode();
+        setRecoveryMode(false);
+        setPwSuccess(recoveryMode ? "新しいパスワードを設定しました" : "パスワードを変更しました");
         setCurrentPassword("");
         setNewPassword("");
         setNewPasswordConfirm("");
@@ -88,6 +95,12 @@ export function AccountSettingsPage() {
       <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
         <h2 className="mb-4 text-base font-semibold text-slate-800">パスワード変更</h2>
 
+        {recoveryMode && (
+          <div className="mb-4 rounded-lg bg-amber-50 px-4 py-3 text-sm text-amber-800" role="status">
+            パスワード再設定モードです。新しいパスワードを設定してください。
+          </div>
+        )}
+
         {pwError && (
           <div className="mb-4 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">
             {pwError}
@@ -100,21 +113,23 @@ export function AccountSettingsPage() {
         )}
 
         <form onSubmit={handlePasswordChange} className="space-y-4">
-          <div>
-            <label htmlFor="current-password" className="mb-1 block text-sm font-medium text-slate-700">
-              現在のパスワード
-            </label>
-            <input
-              id="current-password"
-              type="password"
-              autoComplete="current-password"
-              required
-              value={currentPassword}
-              onChange={(e) => setCurrentPassword(e.target.value)}
-              className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200"
-              placeholder="••••••••"
-            />
-          </div>
+          {!recoveryMode && (
+            <div>
+              <label htmlFor="current-password" className="mb-1 block text-sm font-medium text-slate-700">
+                現在のパスワード
+              </label>
+              <input
+                id="current-password"
+                type="password"
+                autoComplete="current-password"
+                required
+                value={currentPassword}
+                onChange={(e) => setCurrentPassword(e.target.value)}
+                className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200"
+                placeholder="••••••••"
+              />
+            </div>
+          )}
           <div>
             <label htmlFor="new-password" className="mb-1 block text-sm font-medium text-slate-700">
               新しいパスワード

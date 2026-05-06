@@ -6,6 +6,10 @@ import {
   setRememberLoginPreference,
 } from "../infra/supabase-client.js";
 import { navigate } from "../hooks/useHashRouter.js";
+import {
+  getOAuthRedirectUrl,
+  getPasswordRecoveryRedirectUrl,
+} from "../lib/auth-redirect.js";
 
 export function LoginPage() {
   const [email, setEmail] = useState("");
@@ -28,7 +32,8 @@ export function LoginPage() {
     setSuccessMessage(null);
     try {
       const client = await getSupabaseClient();
-      const { error: authError } = await client.auth.signInWithPassword({ email, password });
+      const normalizedEmail = email.trim();
+      const { error: authError } = await client.auth.signInWithPassword({ email: normalizedEmail, password });
       if (authError) {
         if (authError.message.toLowerCase().includes("email not confirmed")) {
           setError("メールアドレスが確認されていません。確認メールのリンクをクリックしてからログインしてください。");
@@ -62,13 +67,9 @@ export function LoginPage() {
     setSuccessMessage(null);
     try {
       const client = await getSupabaseClient();
-      const redirectTo =
-        window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"
-          ? window.location.origin
-          : "https://construction-pm-mvp.vercel.app";
       await client.auth.signInWithOAuth({
         provider: "google",
-        options: { redirectTo },
+        options: { redirectTo: getOAuthRedirectUrl() },
       });
     } catch (err) {
       console.error("Failed to start Google login", err);
@@ -122,7 +123,9 @@ export function LoginPage() {
     setSuccessMessage(null);
     try {
       const client = await getSupabaseClient();
-      const { error: authError } = await client.auth.resetPasswordForEmail(email.trim());
+      const { error: authError } = await client.auth.resetPasswordForEmail(email.trim(), {
+        redirectTo: getPasswordRecoveryRedirectUrl(),
+      });
       if (authError) {
         setError("パスワードリセットメールの送信に失敗しました。");
       } else {
