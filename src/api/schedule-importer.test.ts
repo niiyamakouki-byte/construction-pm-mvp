@@ -72,6 +72,25 @@ describe("schedule importer", () => {
     ]);
   });
 
+  it("UTF-8 BOM 付き CSV を正しく取り込める (Excel エクスポート対策)", () => {
+    const csvWithoutBom = [
+      "工事名,開始日,完了日,担当",
+      "軽量下地,2026-04-10,2026-04-12,山田内装",
+    ].join("\n");
+    // Prepend UTF-8 BOM (U+FEFF)
+    const bomPrefix = "\uFEFF";
+    const tasks = parseScheduleImportFile({
+      buffer: Buffer.from(bomPrefix + csvWithoutBom, "utf8"),
+      filename: "schedule.csv",
+    });
+
+    expect(tasks).toHaveLength(1);
+    expect(tasks[0].name).toBe("軽量下地");
+    expect(tasks[0].startDate).toBe("2026-04-10");
+    expect(tasks[0].endDate).toBe("2026-04-12");
+    expect(tasks[0].contractor).toBe("山田内装");
+  });
+
   it("日本の代表的な日付表記ゆれを正規化できる", () => {
     const buffer = createMockXlsxBuffer([
       ["作業名", "着工日", "竣工日"],
