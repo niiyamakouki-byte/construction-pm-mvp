@@ -632,7 +632,7 @@ export function exportContractCSV(contracts: ElectronicContract[]): string {
       const s = String(v ?? "");
       // Always quote if the value contains special CSV characters OR starts with a
       // character that spreadsheet apps interpret as a formula (=, +, -, @, tab, CR).
-      if (s.includes(",") || s.includes('"') || s.includes("\n") || /^[=+\-@\t\r]/.test(s)) {
+      if (s.includes(",") || s.includes('"') || s.includes("\n") || s.includes("\r") || /^[=+\-@\t\r]/.test(s)) {
         return `"${s.replace(/"/g, '""')}"`;
       }
       return s;
