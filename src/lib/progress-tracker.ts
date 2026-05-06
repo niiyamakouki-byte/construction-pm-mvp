@@ -25,6 +25,15 @@ function round(value: number): number {
   return Math.round(value * 100) / 100;
 }
 
+/** Returns today's date as YYYY-MM-DD in local time (not UTC). */
+function localToday(): string {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
 function formatValue(value: number): string {
   if (!Number.isFinite(value)) return "N/A";
   return round(value).toLocaleString("en-US", {
@@ -36,7 +45,7 @@ function formatValue(value: number): string {
 export function generateProgressReport(
   project: Project,
   tasks: ProgressTask[],
-  asOfDate = new Date().toISOString().slice(0, 10),
+  asOfDate = localToday(),
 ): string {
   const budget = project.budget ?? 0;
   const progress = calculateProjectProgress(tasks);

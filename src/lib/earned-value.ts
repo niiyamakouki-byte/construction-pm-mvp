@@ -24,6 +24,15 @@ function round(value: number): number {
   return Math.round(value * 100) / 100;
 }
 
+/** Returns today's date as YYYY-MM-DD in local time (not UTC). */
+function localToday(): string {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
 function clampPercentage(value: number): number {
   return Math.max(0, Math.min(100, value));
 }
@@ -121,7 +130,7 @@ export function calculateProjectProgress(tasks: ProgressTask[]): number {
 export function calculateEarnedValue(
   tasks: ProgressTask[],
   budget: number,
-  asOfDate = new Date().toISOString().slice(0, 10),
+  asOfDate = localToday(),
 ): EarnedValueMetrics {
   const bac = inferBudget(tasks, budget);
   const weights = getTaskWeights(tasks);
@@ -154,7 +163,7 @@ export function calculateEarnedValue(
 export function schedulePerformanceIndex(
   tasks: ProgressTask[],
   budget = 0,
-  asOfDate = new Date().toISOString().slice(0, 10),
+  asOfDate = localToday(),
 ): number {
   const metrics = calculateEarnedValue(tasks, budget, asOfDate);
   return safeRatio(metrics.ev, metrics.pv);
@@ -174,7 +183,7 @@ export function costPerformanceIndex(
   tasksOrCosts: ProgressTask[] | ActualCostsInput,
   actualCostsOrBudget?: ActualCostsInput | number,
   budget = 0,
-  asOfDate = new Date().toISOString().slice(0, 10),
+  asOfDate = localToday(),
 ): number {
   if (isProgressTaskArray(tasksOrCosts)) {
     const metrics = calculateEarnedValue(tasksOrCosts, budget, asOfDate);
@@ -198,7 +207,7 @@ export function generateEVReport(
   project: Project,
   tasks: ProgressTask[],
   actualCosts?: ActualCostsInput,
-  asOfDate = new Date().toISOString().slice(0, 10),
+  asOfDate = localToday(),
 ): string {
   const budget = project.budget ?? 0;
   const metrics = calculateEarnedValue(tasks, budget, asOfDate);
