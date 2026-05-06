@@ -650,6 +650,15 @@ function GanttPageContent({ initialProjectId = null }: GanttPageProps) {
     event.preventDefault();
     if (!taskDetail) return;
 
+    if (
+      taskDetail.editStartDate &&
+      taskDetail.editDueDate &&
+      taskDetail.editDueDate < taskDetail.editStartDate
+    ) {
+      setError("終了日は開始日以降に設定してください");
+      return;
+    }
+
     const previousStartDate = taskDetail.task.startDate;
     const nextStartDate = taskDetail.editStartDate || undefined;
     const previousContractorId = taskDetail.task.contractorId;

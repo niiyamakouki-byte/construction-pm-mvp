@@ -509,8 +509,13 @@ export function validateRecord(
       field.validation?.pattern &&
       typeof value === "string"
     ) {
-      const re = new RegExp(field.validation.pattern);
-      if (!re.test(value)) {
+      let re: RegExp | null = null;
+      try {
+        re = new RegExp(field.validation.pattern);
+      } catch {
+        // invalid regex pattern — skip validation rather than crash
+      }
+      if (re && !re.test(value)) {
         errors.push({
           fieldId: field.id,
           fieldLabel: field.label,
