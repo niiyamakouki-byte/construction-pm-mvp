@@ -25,6 +25,7 @@ import {
   addDaysSkipWeekends,
   daysBetween,
   formatScheduleDate,
+  hasCycle,
   toLocalDateString,
 } from "../components/gantt/utils.js";
 import { getHolidayName } from "../lib/japanese-holidays.js";
@@ -736,6 +737,12 @@ function GanttPageContent({ initialProjectId = null }: GanttPageProps) {
 
     // Prevent duplicate dependencies
     if (toTask.dependencies?.includes(fromTaskId)) return;
+
+    // Prevent circular dependencies (A→B→A)
+    if (hasCycle(ganttTasks, fromTaskId, toTaskId)) {
+      setError("循環依存関係が発生するため、この接続はできません。");
+      return;
+    }
 
     try {
       await taskRepository.update(toTaskId, {
