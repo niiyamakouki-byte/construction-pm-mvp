@@ -144,4 +144,44 @@ describe("ProjectDetailPage", () => {
       dueDate: "2025-01-04",
     });
   });
+
+  it("refreshes weather when the projectId changes", async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ current: { temperature_2m: 20, weather_code: 0 } }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ current: { temperature_2m: 24, weather_code: 61 } }),
+      });
+    vi.stubGlobal("fetch", fetchMock);
+    mockProjectFindById.mockImplementation(async (projectId: string) => {
+      if (projectId === "proj-2") {
+        return {
+          ...baseProject,
+          id: "proj-2",
+          name: "渋谷改装",
+          latitude: 35.66,
+          longitude: 139.7,
+        };
+      }
+      return {
+        ...baseProject,
+        latitude: 35.67,
+        longitude: 139.73,
+      };
+    });
+
+    const { rerender } = render(<ProjectDetailPage projectId="proj-1" />);
+
+    await screen.findByText("20°C");
+
+    rerender(<ProjectDetailPage projectId="proj-2" />);
+
+    await screen.findByText("24°C");
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(fetchMock.mock.calls[0]?.[0]).toContain("latitude=35.67");
+    expect(fetchMock.mock.calls[1]?.[0]).toContain("latitude=35.66");
+  });
 });

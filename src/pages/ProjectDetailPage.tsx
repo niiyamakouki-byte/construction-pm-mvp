@@ -189,7 +189,7 @@ export function ProjectDetailPage({
   const [applyingTemplate, setApplyingTemplate] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [deletingTaskId, setDeletingTaskId] = useState<string | null>(null);
-  const weatherFetched = useRef(false);
+  const weatherFetchKeyRef = useRef<string | null>(null);
   const [selectedPhase, setSelectedPhase] = useState<string>(ConstructionPhase.demolition);
   const [completedChecklistIds, setCompletedChecklistIds] = useState<Set<string>>(new Set());
   const [todayEntryLog, setTodayEntryLog] = useState<SiteEntryRecord[]>([]);
@@ -209,10 +209,16 @@ export function ProjectDetailPage({
       setCostItems(allCosts.filter((c) => c.projectId === projectId));
       setExpenses(allExpenses.filter((e) => e.projectId === projectId));
 
-      if (p?.latitude && p?.longitude && !weatherFetched.current) {
-        weatherFetched.current = true;
-        const w = await fetchWeather(p.latitude, p.longitude);
-        setWeather(w);
+      if (p?.latitude && p?.longitude) {
+        const weatherKey = `${projectId}:${p.latitude}:${p.longitude}`;
+        if (weatherFetchKeyRef.current !== weatherKey) {
+          weatherFetchKeyRef.current = weatherKey;
+          const w = await fetchWeather(p.latitude, p.longitude);
+          setWeather(w);
+        }
+      } else {
+        weatherFetchKeyRef.current = null;
+        setWeather(null);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "データの読み込みに失敗しました");
