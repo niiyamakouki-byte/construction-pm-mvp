@@ -301,7 +301,7 @@ export function ProjectDetailPage({
           description: "",
           status: "todo",
           startDate: addDaysToDate(baseDate, t.startOffsetDays),
-          dueDate: addDaysToDate(baseDate, t.startOffsetDays + t.durationDays),
+          dueDate: addDaysToDate(baseDate, t.startOffsetDays + Math.max(0, t.durationDays - 1)),
           progress: 0,
           dependencies: [],
           createdAt: now.toISOString(),
