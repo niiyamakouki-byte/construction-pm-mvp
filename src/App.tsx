@@ -43,6 +43,7 @@ const FreeePage = lazy(() => import("./pages/FreeePage.js").then((m) => ({ defau
 const FinishingSchedulePage = lazy(() => import("./pages/FinishingSchedulePage.js").then((m) => ({ default: m.FinishingSchedulePage })));
 const ScheduleFromEstimatePage = lazy(() => import("./pages/ScheduleFromEstimatePage.js").then((m) => ({ default: m.ScheduleFromEstimatePage })));
 const AccountSettingsPage = lazy(() => import("./pages/AccountSettingsPage.js").then((m) => ({ default: m.AccountSettingsPage })));
+const InvoiceReconcilePage = lazy(() => import("./pages/InvoiceReconcilePage.js").then((m) => ({ default: m.InvoiceReconcilePage })));
 import { ErrorBoundary } from "./components/ErrorBoundary.js";
 import { AuthGuard } from "./components/AuthGuard.js";
 import { OnboardingWizard, useOnboardingDone } from "./components/OnboardingWizard.js";
@@ -136,7 +137,7 @@ function AppShell() {
       icon: "☰",
       path: "/notifications",
       matchRoute: (currentRoute) =>
-        ["/today", "/invoice", "/estimate", "/contractors", "/notifications", "/help", "/node-schedule", "/cost-management", "/weather", "/safety", "/procurement", "/orders", "/crm", "/reports", "/invoices", "/cross-project-gantt", "/progress-review", "/photos", "/freee", "/finishing", "/schedule"].includes(currentRoute) || currentRoute.startsWith("/reports/") || currentRoute.startsWith("/freee?") || currentRoute.startsWith("/finishing"),
+        ["/today", "/invoice", "/estimate", "/contractors", "/notifications", "/help", "/node-schedule", "/cost-management", "/weather", "/safety", "/procurement", "/orders", "/crm", "/reports", "/invoices", "/invoices/reconcile", "/cross-project-gantt", "/progress-review", "/photos", "/freee", "/finishing", "/schedule"].includes(currentRoute) || currentRoute.startsWith("/reports/") || currentRoute.startsWith("/freee?") || currentRoute.startsWith("/finishing"),
     },
   ];
 
@@ -423,6 +424,13 @@ function AppShell() {
       return (
         <ErrorBoundary fallbackTitle={t("errors:page_error.invoice_management")}>
           <InvoiceManagementPage />
+        </ErrorBoundary>
+      );
+    }
+    if (route === "/invoices/reconcile") {
+      return (
+        <ErrorBoundary fallbackTitle="入金照合エラー">
+          <InvoiceReconcilePage />
         </ErrorBoundary>
       );
     }
