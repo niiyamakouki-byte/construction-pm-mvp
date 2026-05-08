@@ -2,6 +2,7 @@ import { lazy, Suspense, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts.js";
 import { KeyboardShortcutHelp } from "./components/KeyboardShortcutHelp.js";
+import { InstallPrompt } from "./components/InstallPrompt.js";
 
 const ProjectListPage = lazy(() => import("./pages/ProjectListPage.js").then((m) => ({ default: m.ProjectListPage })));
 const TodayDashboardPage = lazy(() => import("./pages/TodayDashboardPage.js").then((m) => ({ default: m.TodayDashboardPage })));
@@ -712,6 +713,7 @@ function AppShell() {
         {onboardingDone && !tourDone && showTour ? <TourGuide onComplete={markTourDone} /> : null}
         {showShortcutHelp ? <KeyboardShortcutHelp onClose={() => setShowShortcutHelp(false)} /> : null}
         <AssistantChatPanel userId={user?.email ?? "anonymous"} />
+        <InstallPrompt />
       </div>
     </AuthGuard>
   );
