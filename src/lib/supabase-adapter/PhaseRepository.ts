@@ -5,8 +5,9 @@
  */
 
 import { SupabaseRepository } from '../repository/supabase-repository.js';
+import { supabase } from '../repository/supabase-client.js';
 
-export type PhaseStatus = 'planned' | 'in_progress' | 'done' | 'skipped';
+export type PhaseStatus = 'planned' | 'in_progress' | 'blocked' | 'done' | 'canceled';
 
 /** 3階層工程エントリ。level: 1=大項目, 2=中項目, 3=小項目 */
 export type PhaseRecord = {
@@ -23,6 +24,36 @@ export type PhaseRecord = {
   createdAt: string;
   updatedAt: string;
 };
+
+/** phase_status_history テーブルの1行 */
+export type PhaseStatusHistoryRecord = {
+  id: string;
+  phaseId: string;
+  oldStatus: PhaseStatus | null;
+  newStatus: PhaseStatus;
+  changedAt: string;
+  changedBy: string | null;
+};
+
+type PhaseStatusHistoryRow = {
+  id: string;
+  phase_id: string;
+  old_status: string | null;
+  new_status: string;
+  changed_at: string;
+  changed_by: string | null;
+};
+
+function rowToHistory(row: PhaseStatusHistoryRow): PhaseStatusHistoryRecord {
+  return {
+    id: row.id,
+    phaseId: row.phase_id,
+    oldStatus: (row.old_status as PhaseStatus) ?? null,
+    newStatus: row.new_status as PhaseStatus,
+    changedAt: row.changed_at,
+    changedBy: row.changed_by ?? null,
+  };
+}
 
 // DB 行 (snake_case) ↔ アプリ型 (camelCase) のマッピング
 type PhaseRow = {
@@ -83,6 +114,7 @@ function isSupabaseEnabled(): boolean {
 
 export class PhaseRepository {
   private store = new Map<string, PhaseRecord>();
+  private historyStore: PhaseStatusHistoryRecord[] = [];
   private supabase: SupabaseRepository<PhaseRow> | null;
 
   /**
@@ -142,5 +174,72 @@ export class PhaseRepository {
       }
     }
     return this.store.delete(id);
+  }
+
+  /**
+   * ステータスを更新する。Supabase モードではトリガーが履歴を自動挿入する。
+   * InMemory モードでは historyStore に手動記録する。
+   */
+  async updateStatus(
+    phaseId: string,
+    newStatus: PhaseStatus,
+    changedBy?: string,
+  ): Promise<void> {
+    if (this.supabase) {
+      const { error } = await supabase
+        .from('phases')
+        .update({ status: newStatus })
+        .eq('id', phaseId);
+      if (error) throw new Error(error.message);
+      return;
+    }
+    const phase = this.store.get(phaseId);
+    if (!phase) throw new Error(`Phase "${phaseId}" not found`);
+    const oldStatus = phase.status;
+    this.store.set(phaseId, { ...phase, status: newStatus });
+    this.historyStore.push({
+      id: crypto.randomUUID(),
+      phaseId,
+      oldStatus,
+      newStatus,
+      changedAt: new Date().toISOString(),
+      changedBy: changedBy ?? null,
+    });
+  }
+
+  /**
+   * ステータス変更履歴を返す (changed_at 昇順)。
+   */
+  async getStatusHistory(phaseId: string): Promise<PhaseStatusHistoryRecord[]> {
+    if (this.supabase) {
+      const { data, error } = await supabase
+        .from('phase_status_history')
+        .select('*')
+        .eq('phase_id', phaseId)
+        .order('changed_at', { ascending: true });
+      if (error) throw new Error(error.message);
+      return ((data ?? []) as PhaseStatusHistoryRow[]).map(rowToHistory);
+    }
+    return this.historyStore
+      .filter((h) => h.phaseId === phaseId)
+      .sort((a, b) => a.changedAt.localeCompare(b.changedAt));
+  }
+
+  /**
+   * プロジェクト内のフェーズをステータスでフィルタして返す。
+   */
+  async listByStatus(projectId: string, status: PhaseStatus): Promise<PhaseRecord[]> {
+    if (this.supabase) {
+      const { data, error } = await supabase
+        .from('phases')
+        .select('*')
+        .eq('project_id', projectId)
+        .eq('status', status)
+        .order('order_index', { ascending: true });
+      if (error) throw new Error(error.message);
+      return ((data ?? []) as PhaseRow[]).map(rowToPhase);
+    }
+    const all = await this.listByProjectAsync(projectId);
+    return all.filter((p) => p.status === status);
   }
 }
