@@ -43,6 +43,8 @@ import {
 } from "../lib/change-order-tracker.js";
 import type { ConnectState } from "../components/gantt/types.js";
 import { undoStack } from "../lib/undo-stack.js";
+import { getCategories } from "../lib/task-categories.js";
+import { expandWBSToPhases } from "../lib/work-breakdown/expansion.js";
 
 const MAX_CHART_DAYS = 240;
 const MIN_DAY_WIDTH = 8;
@@ -373,6 +375,11 @@ function GanttPageContent({ initialProjectId = null }: GanttPageProps) {
   const [rainAffected, setRainAffected] = useState<Map<string, { startDate: string; endDate: string }> | null>(null);
   const [showRiskPanel, setShowRiskPanel] = useState(false);
   const [showChatPanel, setShowChatPanel] = useState(false);
+  const [wbsModalOpen, setWbsModalOpen] = useState(false);
+  const [wbsSelectedMajors, setWbsSelectedMajors] = useState<Set<string>>(
+    () => new Set(getCategories()),
+  );
+  const [wbsApplying, setWbsApplying] = useState(false);
 
   // ─── 工種フィルタ ──────────────────────────────────────────────────────────
   const TRADE_CATEGORIES = ["painting", "framing", "electrical", "plumbing", "finishing", "other"] as const;
@@ -969,6 +976,34 @@ function GanttPageContent({ initialProjectId = null }: GanttPageProps) {
     }
   }, [loadData, rainAffected, taskRepository]);
 
+  const handleWbsApply = useCallback(async () => {
+    if (!selectedProject || wbsSelectedMajors.size === 0) return;
+    setWbsApplying(true);
+    try {
+      const phases = expandWBSToPhases({
+        projectId: selectedProject.id,
+        projectStartDate: selectedProject.startDate,
+        selectedMajors: wbsSelectedMajors,
+        includeWeekends: selectedProject.includeWeekends,
+      });
+      const now = new Date().toISOString();
+      for (const phase of phases) {
+        await taskRepository.create({
+          id: crypto.randomUUID(),
+          createdAt: now,
+          updatedAt: now,
+          ...phase,
+        });
+      }
+      setWbsModalOpen(false);
+      await loadData();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "工程テンプレートの適用に失敗しました");
+    } finally {
+      setWbsApplying(false);
+    }
+  }, [loadData, selectedProject, taskRepository, wbsSelectedMajors]);
+
   if (loading) return <GanttPageSkeleton />;
 
   if (error) {
@@ -1119,6 +1154,71 @@ function GanttPageContent({ initialProjectId = null }: GanttPageProps) {
         </div>
       ) : null}
 
+      {wbsModalOpen ? (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="工程テンプレート適用"
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-4 sm:items-center"
+        >
+          <div className="w-full max-w-md rounded-[28px] bg-white p-6 shadow-2xl">
+            <h2 className="text-lg font-bold text-slate-900">工程テンプレート適用</h2>
+            <p className="mt-1 text-sm text-slate-500">
+              適用する大項目を選択してください。選択した工種のタスクが一括生成されます。
+            </p>
+            <div className="mt-4 space-y-2 max-h-64 overflow-y-auto">
+              {getCategories().map((major) => {
+                const checked = wbsSelectedMajors.has(major);
+                return (
+                  <label
+                    key={major}
+                    className="flex cursor-pointer items-center gap-3 rounded-xl px-3 py-2 hover:bg-slate-50"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      onChange={() => {
+                        setWbsSelectedMajors((prev) => {
+                          const next = new Set(prev);
+                          if (checked) {
+                            next.delete(major);
+                          } else {
+                            next.add(major);
+                          }
+                          return next;
+                        });
+                      }}
+                      className="h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500"
+                    />
+                    <span className="text-sm font-medium text-slate-700">{major}</span>
+                  </label>
+                );
+              })}
+            </div>
+            <p className="mt-3 text-xs text-slate-400">
+              {wbsSelectedMajors.size} / {getCategories().length} 大項目選択中
+            </p>
+            <div className="mt-5 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setWbsModalOpen(false)}
+                className="min-h-[44px] rounded-2xl border border-slate-200 bg-white px-5 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50"
+              >
+                キャンセル
+              </button>
+              <button
+                type="button"
+                disabled={wbsSelectedMajors.size === 0 || wbsApplying}
+                onClick={() => void handleWbsApply()}
+                className="min-h-[44px] rounded-2xl bg-brand-600 px-5 py-2 text-sm font-semibold text-white shadow-sm disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {wbsApplying ? "適用中..." : "適用"}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
       <section className="rounded-[28px] bg-[linear-gradient(145deg,#fff8ef_0%,#f7fbff_55%,#eef6ff_100%)] px-4 py-5 shadow-sm ring-1 ring-slate-200 sm:px-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
@@ -1191,6 +1291,13 @@ function GanttPageContent({ initialProjectId = null }: GanttPageProps) {
                   ? "接続先を選択"
                   : "接続元を選択"
                 : "依存関係を接続"}
+            </button>
+            <button
+              type="button"
+              onClick={() => setWbsModalOpen(true)}
+              className="rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50"
+            >
+              工程テンプレート
             </button>
             <button
               type="button"
