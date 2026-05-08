@@ -26,13 +26,35 @@
 
 ## ステップ 2：データベースのスキーマを作成する
 
+### 方法 A（推奨）：Supabase CLI でマイグレーションを適用する
+
+```bash
+# Supabase CLI がない場合
+npm install -g supabase
+
+# プロジェクトをリンク（Project ID は Supabase ダッシュボードの URL から取得）
+supabase link --project-ref your-project-id
+
+# 全マイグレーションを適用（001〜022 を順番に実行）
+supabase db push
+```
+
+> Phase 1 で追加されたマイグレーション（022_phases_and_rls_enable.sql）が自動で適用されます。
+
+### 方法 B：SQL Editor で手動実行
+
 1. 左メニューの **「SQL Editor」** をクリック
 2. **「New query」** をクリックして空のエディタを開く
-3. このプロジェクトの `db/schema.sql` ファイルの内容を全選択してコピー
-4. SQL エディタに貼り付けて **「Run」** ボタンをクリック
-5. 「Success. No rows returned」と表示されれば完了
+3. `supabase/migrations/` フォルダ内のファイルを **番号順に** 一つずつコピーして実行
+   - `001_initial_schema.sql` → ... → `022_phases_and_rls_enable.sql`
+4. 「Success. No rows returned」と表示されれば完了
 
 > 「already exists」エラーが出ても無視して OK。テーブルがすでに存在するだけです。
+
+### Phase 1 で追加されたテーブル
+
+- **phases**: 3階層工程エントリ（大項目/中項目/小項目）。`supabase/migrations/022_phases_and_rls_enable.sql` で定義。
+- **RLS 再有効化**: projects / tasks テーブルの Row Level Security を有効化（migration 012 で一時無効化されていた状態を解消）。
 
 ---
 
