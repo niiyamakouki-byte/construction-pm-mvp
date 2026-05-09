@@ -67,6 +67,12 @@ import {
   monthlyRewardPayoutJpy,
   mostProductiveAmbassadorName,
 } from "../owner-ambassador/portfolio-ambassador-metrics.js";
+import {
+  activeFollowupSchedules,
+  upcomingCheckpointsNext30Days,
+  urgentRenovationLeadsCount,
+  avgDegradationScoreByYear,
+} from "../longterm-followup/portfolio-followup-metrics.js";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -197,6 +203,14 @@ export type PortfolioSummary = {
   monthlyRewardPayoutJpy?: number;
   /** 最多紹介者アンバサダー名 (Sprint 18-C) */
   mostProductiveAmbassadorName?: string | null;
+  /** アクティブなフォローアップスケジュール数 (Sprint 19-A) */
+  activeFollowupSchedules?: number;
+  /** 直近30日のチェックポイント数 (Sprint 19-A) */
+  upcomingCheckpointsNext30Days?: number;
+  /** 緊急リフォームリード数 (Sprint 19-A) */
+  urgentRenovationLeadsCount?: number;
+  /** 年数別平均劣化スコア (Sprint 19-A) */
+  avgDegradationScoreByYear?: { 1: number; 3: number; 5: number; 10: number };
 };
 
 // ── Helpers ────────────────────────────────────────────────────────────────
@@ -271,6 +285,10 @@ export function aggregatePortfolio(entries: ProjectPortfolioEntry[]): PortfolioS
       pendingReferralInquiries: 0,
       monthlyRewardPayoutJpy: 0,
       mostProductiveAmbassadorName: null,
+      activeFollowupSchedules: 0,
+      upcomingCheckpointsNext30Days: 0,
+      urgentRenovationLeadsCount: 0,
+      avgDegradationScoreByYear: { 1: 0, 3: 0, 5: 0, 10: 0 },
     };
   }
 
@@ -439,5 +457,9 @@ export function aggregatePortfolio(entries: ProjectPortfolioEntry[]): PortfolioS
     pendingReferralInquiries: pendingReferralInquiries(),
     monthlyRewardPayoutJpy: monthlyRewardPayoutJpy(),
     mostProductiveAmbassadorName: mostProductiveAmbassadorName(),
+    activeFollowupSchedules: activeFollowupSchedules(),
+    upcomingCheckpointsNext30Days: upcomingCheckpointsNext30Days(),
+    urgentRenovationLeadsCount: urgentRenovationLeadsCount(),
+    avgDegradationScoreByYear: avgDegradationScoreByYear(),
   };
 }

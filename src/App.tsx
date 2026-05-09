@@ -59,6 +59,7 @@ const HandoverPackagePageLazy = lazy(() => import("./components/HandoverPackageP
 const OwnerSuggestionPageLazy = lazy(() => import("./components/OwnerSuggestionPage.js").then((m) => ({ default: m.OwnerSuggestionPage })));
 const SiteLivestreamPageLazy = lazy(() => import("./components/SiteLivestreamPage.js").then((m) => ({ default: m.SiteLivestreamPage })));
 const OwnerAmbassadorPageLazy = lazy(() => import("./components/OwnerAmbassadorPage.js").then((m) => ({ default: m.OwnerAmbassadorPage })));
+const LongtermFollowupPageLazy = lazy(() => import("./components/LongtermFollowupPage.js").then((m) => ({ default: m.LongtermFollowupPage })));
 import { ErrorBoundary } from "./components/ErrorBoundary.js";
 import { AuthGuard } from "./components/AuthGuard.js";
 import { OnboardingWizard, useOnboardingDone } from "./components/OnboardingWizard.js";
@@ -519,6 +520,15 @@ function AppShell() {
         <ErrorBoundary fallbackTitle="施主アンバサダーエラー">
           <Suspense fallback={pageFallback}>
             <OwnerAmbassadorPageLazy />
+          </Suspense>
+        </ErrorBoundary>
+      );
+    }
+    if (route === "/longterm-followup") {
+      return (
+        <ErrorBoundary fallbackTitle="長期フォローアップエラー">
+          <Suspense fallback={pageFallback}>
+            <LongtermFollowupPageLazy />
           </Suspense>
         </ErrorBoundary>
       );
