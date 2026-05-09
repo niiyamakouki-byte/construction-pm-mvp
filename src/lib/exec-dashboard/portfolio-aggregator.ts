@@ -8,6 +8,7 @@ import { detectDangerSignals, type DangerSignal } from "./danger-signals.js";
 import { getPredictionStore } from "../delay-predictor/prediction-store.js";
 import { marginAlertStore } from "../margin-watch/margin-alert-store.js";
 import { buildAllProjectMetrics } from "../profit-ranking/metrics-builder.js";
+import { crewOptimizationStore } from "../crew-optimizer/optimization-store.js";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -64,6 +65,10 @@ export type PortfolioSummary = {
   topMarginRatioPct?: number;
   /** Lowest margin ratio across all projects (%) */
   bottomMarginRatioPct?: number;
+  /** Number of critical crew conflicts in the last 24h */
+  crewConflictCount?: number;
+  /** Average crew utilization percentage from the latest optimization snapshot */
+  avgCrewUtilizationPct?: number;
 };
 
 // ── Helpers ────────────────────────────────────────────────────────────────
@@ -101,6 +106,8 @@ export function aggregatePortfolio(entries: ProjectPortfolioEntry[]): PortfolioS
       highDelayCount: 0,
       criticalMarginCount: 0,
       warningMarginCount: 0,
+      crewConflictCount: 0,
+      avgCrewUtilizationPct: 0,
     };
   }
 
@@ -187,6 +194,21 @@ export function aggregatePortfolio(entries: ProjectPortfolioEntry[]): PortfolioS
     bottomMarginRatioPct = sorted[sorted.length - 1].marginRatioPct;
   }
 
+  // Crew optimizer fields — from latest snapshot
+  const latestCrew = crewOptimizationStore.latest();
+  let crewConflictCount: number | undefined;
+  let avgCrewUtilizationPct: number | undefined;
+  if (latestCrew) {
+    const since24h = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    const isRecent = new Date(latestCrew.generatedAt) >= since24h;
+    crewConflictCount = isRecent
+      ? latestCrew.schedules
+          .flatMap((s) => s.conflicts)
+          .filter((c) => c.severity === "critical").length
+      : undefined;
+    avgCrewUtilizationPct = latestCrew.avgUtilizationPct;
+  }
+
   return {
     totalProjects: entries.length,
     totalGrossProfit,
@@ -204,5 +226,7 @@ export function aggregatePortfolio(entries: ProjectPortfolioEntry[]): PortfolioS
     bottomProfitProjectId,
     topMarginRatioPct,
     bottomMarginRatioPct,
+    crewConflictCount,
+    avgCrewUtilizationPct,
   };
 }

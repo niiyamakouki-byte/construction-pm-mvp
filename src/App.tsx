@@ -48,6 +48,7 @@ const OwnerAppPageLazy = lazy(() => import("./components/OwnerAppPage.js").then(
 const OwnerShareTokenPanelLazy = lazy(() => import("./components/OwnerShareTokenPanel.js").then((m) => ({ default: m.OwnerShareTokenPanel })));
 const MarginWatchPageLazy = lazy(() => import("./components/MarginWatchPage.js").then((m) => ({ default: m.MarginWatchPage })));
 const ProfitRankingPageLazy = lazy(() => import("./components/ProfitRankingPage.js").then((m) => ({ default: m.ProfitRankingPage })));
+const CrewOptimizerPageLazy = lazy(() => import("./components/CrewOptimizerPage.js").then((m) => ({ default: m.CrewOptimizerPage })));
 import { ErrorBoundary } from "./components/ErrorBoundary.js";
 import { AuthGuard } from "./components/AuthGuard.js";
 import { OnboardingWizard, useOnboardingDone } from "./components/OnboardingWizard.js";
@@ -409,6 +410,15 @@ function AppShell() {
         <ErrorBoundary fallbackTitle="粗利ランキングエラー">
           <Suspense fallback={pageFallback}>
             <ProfitRankingPageLazy />
+          </Suspense>
+        </ErrorBoundary>
+      );
+    }
+    if (route === "/crew-optimizer") {
+      return (
+        <ErrorBoundary fallbackTitle="職人スケジュールエラー">
+          <Suspense fallback={pageFallback}>
+            <CrewOptimizerPageLazy />
           </Suspense>
         </ErrorBoundary>
       );
