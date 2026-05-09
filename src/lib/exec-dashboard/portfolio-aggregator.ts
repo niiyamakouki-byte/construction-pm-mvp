@@ -61,6 +61,12 @@ import {
   avgDailyEngagement,
   mostActiveChannelKind,
 } from "../site-livestream/portfolio-livestream-metrics.js";
+import {
+  totalActiveAmbassadors,
+  pendingReferralInquiries,
+  monthlyRewardPayoutJpy,
+  mostProductiveAmbassadorName,
+} from "../owner-ambassador/portfolio-ambassador-metrics.js";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -183,6 +189,14 @@ export type PortfolioSummary = {
   avgDailyEngagement?: number;
   /** 最多投稿チャネル種別 (Sprint 18-B) */
   mostActiveChannelKind?: StreamChannelKind | null;
+  /** アクティブアンバサダー総数 (Sprint 18-C) */
+  totalActiveAmbassadors?: number;
+  /** 未処理紹介問合せ数 (Sprint 18-C) */
+  pendingReferralInquiries?: number;
+  /** 今月報酬支払予定合計 JPY (Sprint 18-C) */
+  monthlyRewardPayoutJpy?: number;
+  /** 最多紹介者アンバサダー名 (Sprint 18-C) */
+  mostProductiveAmbassadorName?: string | null;
 };
 
 // ── Helpers ────────────────────────────────────────────────────────────────
@@ -253,6 +267,10 @@ export function aggregatePortfolio(entries: ProjectPortfolioEntry[]): PortfolioS
       livestreamPostsThisWeek: 0,
       avgDailyEngagement: 0,
       mostActiveChannelKind: null,
+      totalActiveAmbassadors: 0,
+      pendingReferralInquiries: 0,
+      monthlyRewardPayoutJpy: 0,
+      mostProductiveAmbassadorName: null,
     };
   }
 
@@ -417,5 +435,9 @@ export function aggregatePortfolio(entries: ProjectPortfolioEntry[]): PortfolioS
     livestreamPostsThisWeek: livestreamPostsThisWeek(),
     avgDailyEngagement: avgDailyEngagement(),
     mostActiveChannelKind: mostActiveChannelKind(),
+    totalActiveAmbassadors: totalActiveAmbassadors(),
+    pendingReferralInquiries: pendingReferralInquiries(),
+    monthlyRewardPayoutJpy: monthlyRewardPayoutJpy(),
+    mostProductiveAmbassadorName: mostProductiveAmbassadorName(),
   };
 }

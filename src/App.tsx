@@ -58,6 +58,7 @@ const ChangeOrderPageLazy = lazy(() => import("./components/ChangeOrderPage.js")
 const HandoverPackagePageLazy = lazy(() => import("./components/HandoverPackagePage.js").then((m) => ({ default: m.HandoverPackagePage })));
 const OwnerSuggestionPageLazy = lazy(() => import("./components/OwnerSuggestionPage.js").then((m) => ({ default: m.OwnerSuggestionPage })));
 const SiteLivestreamPageLazy = lazy(() => import("./components/SiteLivestreamPage.js").then((m) => ({ default: m.SiteLivestreamPage })));
+const OwnerAmbassadorPageLazy = lazy(() => import("./components/OwnerAmbassadorPage.js").then((m) => ({ default: m.OwnerAmbassadorPage })));
 import { ErrorBoundary } from "./components/ErrorBoundary.js";
 import { AuthGuard } from "./components/AuthGuard.js";
 import { OnboardingWizard, useOnboardingDone } from "./components/OnboardingWizard.js";
@@ -509,6 +510,15 @@ function AppShell() {
         <ErrorBoundary fallbackTitle="現場ライブストリームエラー">
           <Suspense fallback={pageFallback}>
             <SiteLivestreamPageLazy />
+          </Suspense>
+        </ErrorBoundary>
+      );
+    }
+    if (route === "/owner-ambassador") {
+      return (
+        <ErrorBoundary fallbackTitle="施主アンバサダーエラー">
+          <Suspense fallback={pageFallback}>
+            <OwnerAmbassadorPageLazy />
           </Suspense>
         </ErrorBoundary>
       );
