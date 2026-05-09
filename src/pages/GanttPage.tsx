@@ -45,6 +45,8 @@ import type { ConnectState } from "../components/gantt/types.js";
 import { undoStack } from "../lib/undo-stack.js";
 import { getCategories } from "../lib/task-categories.js";
 import { expandWBSToPhases } from "../lib/work-breakdown/expansion.js";
+import { getMasterCategories, getMasterEntries } from "../lib/work-schedule-master.js";
+import { readMasterPresetHistory, writeMasterPresetHistory } from "../lib/gantt-master-preset.js";
 
 const MAX_CHART_DAYS = 240;
 const MIN_DAY_WIDTH = 8;
@@ -380,6 +382,13 @@ function GanttPageContent({ initialProjectId = null }: GanttPageProps) {
     () => new Set(getCategories()),
   );
   const [wbsApplying, setWbsApplying] = useState(false);
+
+  // ─── マスタープリセット ───────────────────────────────────────────────────
+  const [masterModalOpen, setMasterModalOpen] = useState(false);
+  const [masterSelectedCategoryId, setMasterSelectedCategoryId] = useState<string>(
+    () => readMasterPresetHistory().lastCategoryId ?? getMasterCategories()[0]?.id ?? "",
+  );
+  const [masterApplying, setMasterApplying] = useState(false);
 
   // ─── 工種フィルタ ──────────────────────────────────────────────────────────
   const TRADE_CATEGORIES = ["painting", "framing", "electrical", "plumbing", "finishing", "other"] as const;
@@ -976,6 +985,56 @@ function GanttPageContent({ initialProjectId = null }: GanttPageProps) {
     }
   }, [loadData, rainAffected, taskRepository]);
 
+  const handleMasterApply = useCallback(async () => {
+    if (!selectedProject || !masterSelectedCategoryId) return;
+    setMasterApplying(true);
+    try {
+      const entries = getMasterEntries(masterSelectedCategoryId);
+      const categories = getMasterCategories();
+      const category = categories.find((c) => c.id === masterSelectedCategoryId);
+      if (!category || entries.length === 0) return;
+
+      writeMasterPresetHistory({ lastCategoryId: masterSelectedCategoryId });
+
+      const now = new Date().toISOString();
+      let cursor = selectedProject.startDate;
+
+      for (const entry of entries) {
+        const startDate = cursor;
+        const endDateObj = new Date(startDate);
+        endDateObj.setDate(endDateObj.getDate() + entry.defaultDays - 1);
+        const dueDate = endDateObj.toISOString().slice(0, 10);
+
+        await taskRepository.create({
+          id: crypto.randomUUID(),
+          createdAt: now,
+          updatedAt: now,
+          projectId: selectedProject.id,
+          name: entry.name,
+          description: category.name,
+          status: "todo",
+          startDate,
+          dueDate,
+          progress: 0,
+          dependencies: [],
+          majorCategory: category.name,
+          includeWeekends: selectedProject.includeWeekends,
+        });
+
+        const nextDate = new Date(dueDate);
+        nextDate.setDate(nextDate.getDate() + 1);
+        cursor = nextDate.toISOString().slice(0, 10);
+      }
+
+      setMasterModalOpen(false);
+      await loadData();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "マスタープリセットの適用に失敗しました");
+    } finally {
+      setMasterApplying(false);
+    }
+  }, [loadData, masterSelectedCategoryId, selectedProject, taskRepository]);
+
   const handleWbsApply = useCallback(async () => {
     if (!selectedProject || wbsSelectedMajors.size === 0) return;
     setWbsApplying(true);
@@ -1154,6 +1213,72 @@ function GanttPageContent({ initialProjectId = null }: GanttPageProps) {
         </div>
       ) : null}
 
+      {masterModalOpen ? (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="マスタから読み込む"
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-4 sm:items-center"
+        >
+          <div className="w-full max-w-md rounded-[28px] bg-white p-6 shadow-2xl">
+            <h2 className="text-lg font-bold text-slate-900">マスタから読み込む</h2>
+            <p className="mt-1 text-sm text-slate-500">
+              大項目を選択すると工程が一括追加されます。新規案件の標準工程表として使えます。
+            </p>
+
+            <div className="mt-4">
+              <label htmlFor="master-category-select" className="block text-xs font-semibold tracking-[0.16em] text-slate-500">
+                大項目
+              </label>
+              <select
+                id="master-category-select"
+                value={masterSelectedCategoryId}
+                onChange={(e) => setMasterSelectedCategoryId(e.target.value)}
+                className="mt-2 w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500"
+              >
+                {getMasterCategories().map((cat) => (
+                  <option key={cat.id} value={cat.id}>{cat.name}</option>
+                ))}
+              </select>
+            </div>
+
+            {masterSelectedCategoryId && (
+              <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 max-h-48 overflow-y-auto">
+                <p className="text-xs font-semibold tracking-[0.14em] text-slate-500 mb-2">
+                  追加されるエントリ ({getMasterEntries(masterSelectedCategoryId).length}件)
+                </p>
+                <ul className="space-y-1">
+                  {getMasterEntries(masterSelectedCategoryId).map((entry) => (
+                    <li key={entry.id} className="flex items-center justify-between text-sm text-slate-700">
+                      <span className="truncate">{entry.name}</span>
+                      <span className="ml-2 shrink-0 tabular-nums text-xs text-slate-400">{entry.defaultDays}日</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            <div className="mt-5 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setMasterModalOpen(false)}
+                className="min-h-[44px] rounded-2xl border border-slate-200 bg-white px-5 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50"
+              >
+                キャンセル
+              </button>
+              <button
+                type="button"
+                disabled={!masterSelectedCategoryId || masterApplying}
+                onClick={() => void handleMasterApply()}
+                className="min-h-[44px] rounded-2xl bg-brand-600 px-5 py-2 text-sm font-semibold text-white shadow-sm disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {masterApplying ? "追加中..." : "ガントに追加"}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
       {wbsModalOpen ? (
         <div
           role="dialog"
@@ -1291,6 +1416,13 @@ function GanttPageContent({ initialProjectId = null }: GanttPageProps) {
                   ? "接続先を選択"
                   : "接続元を選択"
                 : "依存関係を接続"}
+            </button>
+            <button
+              type="button"
+              onClick={() => setMasterModalOpen(true)}
+              className="rounded-2xl bg-brand-600 px-4 py-3 text-sm font-semibold text-white shadow-sm hover:bg-brand-700 transition-colors"
+            >
+              マスタから読み込む
             </button>
             <button
               type="button"
