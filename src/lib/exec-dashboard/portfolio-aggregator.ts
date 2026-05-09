@@ -47,6 +47,13 @@ import {
   expiringWarranties,
   mostFrequentDocumentKind,
 } from "../handover-package/portfolio-handover-metrics.js";
+import type { SuggestionPlanKind } from "../owner-suggestion/types.js";
+import {
+  pendingOwnerSuggestions,
+  acceptedSuggestionRate,
+  mostPopularPlanKind,
+  avgBudgetGap,
+} from "../owner-suggestion/portfolio-owner-suggestion-metrics.js";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -153,6 +160,14 @@ export type PortfolioSummary = {
   expiringWarranties?: number;
   /** 最多書類種別 (Sprint 17-C) */
   mostFrequentDocumentKind?: HandoverDocumentKind | null;
+  /** 未決定施主提案数 (Sprint 18-A) */
+  pendingOwnerSuggestions?: number;
+  /** 施主提案採用率 (Sprint 18-A) */
+  acceptedSuggestionRate?: number;
+  /** 最人気プランKind (Sprint 18-A) */
+  mostPopularPlanKind?: SuggestionPlanKind | null;
+  /** 採用プランと予算の平均差分 JPY (Sprint 18-A) */
+  avgBudgetGap?: number;
 };
 
 // ── Helpers ────────────────────────────────────────────────────────────────
@@ -215,6 +230,10 @@ export function aggregatePortfolio(entries: ProjectPortfolioEntry[]): PortfolioS
       avgHandoverPreparationDays: 0,
       expiringWarranties: 0,
       mostFrequentDocumentKind: null,
+      pendingOwnerSuggestions: 0,
+      acceptedSuggestionRate: 0,
+      mostPopularPlanKind: null,
+      avgBudgetGap: 0,
     };
   }
 
@@ -371,5 +390,9 @@ export function aggregatePortfolio(entries: ProjectPortfolioEntry[]): PortfolioS
     avgHandoverPreparationDays: avgHandoverPreparationDays(),
     expiringWarranties: expiringWarranties(),
     mostFrequentDocumentKind: mostFrequentDocumentKind(),
+    pendingOwnerSuggestions: pendingOwnerSuggestions(),
+    acceptedSuggestionRate: acceptedSuggestionRate(),
+    mostPopularPlanKind: mostPopularPlanKind(),
+    avgBudgetGap: avgBudgetGap(),
   };
 }
