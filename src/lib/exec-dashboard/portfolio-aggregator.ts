@@ -28,6 +28,11 @@ import {
   topRequestedWorkCategory,
 } from "../proposal-generator/portfolio-proposal-metrics.js";
 import type { WorkCategory } from "../proposal-generator/types.js";
+import {
+  meetingsThisMonth,
+  avgUnresolvedItemsCount,
+  mostActiveProjectId,
+} from "../meeting-runner/portfolio-meeting-metrics.js";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -112,6 +117,12 @@ export type PortfolioSummary = {
   avgProposalLeadHours?: number;
   /** 最もリクエストされた工事種別 */
   topRequestedWorkCategory?: WorkCategory | null;
+  /** 今月開催された工程会議の件数 (Sprint 17-A) */
+  meetingsThisMonth?: number;
+  /** 全会議の平均未解決事項数 (Sprint 17-A) */
+  avgUnresolvedItemsCount?: number;
+  /** 最も会議が多いプロジェクトID (Sprint 17-A) */
+  mostActiveMeetingProjectId?: string | null;
 };
 
 // ── Helpers ────────────────────────────────────────────────────────────────
@@ -163,6 +174,9 @@ export function aggregatePortfolio(entries: ProjectPortfolioEntry[]): PortfolioS
       proposalsThisMonthCount: 0,
       avgProposalLeadHours: 0,
       topRequestedWorkCategory: null,
+      meetingsThisMonth: 0,
+      avgUnresolvedItemsCount: 0,
+      mostActiveMeetingProjectId: null,
     };
   }
 
@@ -308,5 +322,8 @@ export function aggregatePortfolio(entries: ProjectPortfolioEntry[]): PortfolioS
     proposalsThisMonthCount: proposalsThisMonthCount(),
     avgProposalLeadHours: avgGenerationLeadHours(),
     topRequestedWorkCategory: topRequestedWorkCategory(),
+    meetingsThisMonth: meetingsThisMonth(),
+    avgUnresolvedItemsCount: avgUnresolvedItemsCount(),
+    mostActiveMeetingProjectId: mostActiveProjectId(),
   };
 }

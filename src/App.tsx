@@ -53,6 +53,7 @@ const RepeatPredictorPageLazy = lazy(() => import("./components/RepeatPredictorP
 const InquiryResponderPageLazy = lazy(() => import("./components/InquiryResponderPage.js").then((m) => ({ default: m.InquiryResponderPage })));
 const SalesPipelinePageLazy = lazy(() => import("./components/SalesPipelinePage.js").then((m) => ({ default: m.SalesPipelinePage })));
 const ProposalGeneratorPageLazy = lazy(() => import("./components/ProposalGeneratorPage.js").then((m) => ({ default: m.ProposalGeneratorPage })));
+const MeetingRunnerPageLazy = lazy(() => import("./components/MeetingRunnerPage.js").then((m) => ({ default: m.MeetingRunnerPage })));
 import { ErrorBoundary } from "./components/ErrorBoundary.js";
 import { AuthGuard } from "./components/AuthGuard.js";
 import { OnboardingWizard, useOnboardingDone } from "./components/OnboardingWizard.js";
@@ -459,6 +460,15 @@ function AppShell() {
         <ErrorBoundary fallbackTitle="提案書生成エラー">
           <Suspense fallback={pageFallback}>
             <ProposalGeneratorPageLazy />
+          </Suspense>
+        </ErrorBoundary>
+      );
+    }
+    if (route === "/meeting-runner") {
+      return (
+        <ErrorBoundary fallbackTitle="工程会議AIエラー">
+          <Suspense fallback={pageFallback}>
+            <MeetingRunnerPageLazy />
           </Suspense>
         </ErrorBoundary>
       );
