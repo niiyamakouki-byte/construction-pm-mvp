@@ -51,6 +51,7 @@ const ProfitRankingPageLazy = lazy(() => import("./components/ProfitRankingPage.
 const CrewOptimizerPageLazy = lazy(() => import("./components/CrewOptimizerPage.js").then((m) => ({ default: m.CrewOptimizerPage })));
 const RepeatPredictorPageLazy = lazy(() => import("./components/RepeatPredictorPage.js").then((m) => ({ default: m.RepeatPredictorPage })));
 const InquiryResponderPageLazy = lazy(() => import("./components/InquiryResponderPage.js").then((m) => ({ default: m.InquiryResponderPage })));
+const SalesPipelinePageLazy = lazy(() => import("./components/SalesPipelinePage.js").then((m) => ({ default: m.SalesPipelinePage })));
 import { ErrorBoundary } from "./components/ErrorBoundary.js";
 import { AuthGuard } from "./components/AuthGuard.js";
 import { OnboardingWizard, useOnboardingDone } from "./components/OnboardingWizard.js";
@@ -439,6 +440,15 @@ function AppShell() {
         <ErrorBoundary fallbackTitle="問合せ返信AIエラー">
           <Suspense fallback={pageFallback}>
             <InquiryResponderPageLazy />
+          </Suspense>
+        </ErrorBoundary>
+      );
+    }
+    if (route === "/sales-pipeline") {
+      return (
+        <ErrorBoundary fallbackTitle="営業パイプラインエラー">
+          <Suspense fallback={pageFallback}>
+            <SalesPipelinePageLazy />
           </Suspense>
         </ErrorBoundary>
       );

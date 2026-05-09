@@ -17,6 +17,11 @@ import {
   urgentInquiryCount,
   pendingReplyCount,
 } from "../inquiry-responder/portfolio-inquiry-metrics.js";
+import {
+  weightedPipelineJpy,
+  criticalRiskDealCount,
+  expectedClosesThisMonthJpy,
+} from "../sales-pipeline/portfolio-pipeline-metrics.js";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -89,6 +94,12 @@ export type PortfolioSummary = {
   urgentInquiryCount?: number;
   /** 返信待ち (new / triaged) 問合せ数 */
   pendingReplyCount?: number;
+  /** 加重パイプライン合計 (JPY) — from sales-pipeline */
+  weightedPipelineJpy?: number;
+  /** critical リスクアラートを持つ商談数 */
+  criticalRiskDealCount?: number;
+  /** 今月クローズ予定の加重金額合計 (JPY) */
+  expectedClosesThisMonthJpy?: number;
 };
 
 // ── Helpers ────────────────────────────────────────────────────────────────
@@ -134,6 +145,9 @@ export function aggregatePortfolio(entries: ProjectPortfolioEntry[]): PortfolioS
       newInquiryCount24h: 0,
       urgentInquiryCount: 0,
       pendingReplyCount: 0,
+      weightedPipelineJpy: 0,
+      criticalRiskDealCount: 0,
+      expectedClosesThisMonthJpy: 0,
     };
   }
 
@@ -273,5 +287,8 @@ export function aggregatePortfolio(entries: ProjectPortfolioEntry[]): PortfolioS
     newInquiryCount24h: newInquiryCount24h(),
     urgentInquiryCount: urgentInquiryCount(),
     pendingReplyCount: pendingReplyCount(),
+    weightedPipelineJpy: weightedPipelineJpy(),
+    criticalRiskDealCount: criticalRiskDealCount(),
+    expectedClosesThisMonthJpy: expectedClosesThisMonthJpy(),
   };
 }
