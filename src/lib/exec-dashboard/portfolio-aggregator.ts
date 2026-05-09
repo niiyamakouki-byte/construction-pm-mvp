@@ -7,6 +7,7 @@ import type { Project, Invoice, Task, ChatMessage, Photo } from "../../domain/ty
 import { detectDangerSignals, type DangerSignal } from "./danger-signals.js";
 import { getPredictionStore } from "../delay-predictor/prediction-store.js";
 import { marginAlertStore } from "../margin-watch/margin-alert-store.js";
+import { buildAllProjectMetrics } from "../profit-ranking/metrics-builder.js";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -55,6 +56,14 @@ export type PortfolioSummary = {
   criticalMarginCount?: number;
   /** Number of projects with warning margin alerts (粗利率 15–25%, last 24h) */
   warningMarginCount?: number;
+  /** Project ID with highest margin ratio */
+  topProfitProjectId?: string;
+  /** Project ID with lowest margin ratio */
+  bottomProfitProjectId?: string;
+  /** Highest margin ratio across all projects (%) */
+  topMarginRatioPct?: number;
+  /** Lowest margin ratio across all projects (%) */
+  bottomMarginRatioPct?: number;
 };
 
 // ── Helpers ────────────────────────────────────────────────────────────────
@@ -164,6 +173,20 @@ export function aggregatePortfolio(entries: ProjectPortfolioEntry[]): PortfolioS
   const criticalMarginCount = recentAlerts.filter((a) => a.level === "critical").length;
   const warningMarginCount = recentAlerts.filter((a) => a.level === "warning").length;
 
+  // Profit ranking fields — top/bottom project by margin ratio
+  const profitMetrics = buildAllProjectMetrics();
+  let topProfitProjectId: string | undefined;
+  let bottomProfitProjectId: string | undefined;
+  let topMarginRatioPct: number | undefined;
+  let bottomMarginRatioPct: number | undefined;
+  if (profitMetrics.length > 0) {
+    const sorted = [...profitMetrics].sort((a, b) => b.marginRatioPct - a.marginRatioPct);
+    topProfitProjectId = sorted[0].projectId;
+    topMarginRatioPct = sorted[0].marginRatioPct;
+    bottomProfitProjectId = sorted[sorted.length - 1].projectId;
+    bottomMarginRatioPct = sorted[sorted.length - 1].marginRatioPct;
+  }
+
   return {
     totalProjects: entries.length,
     totalGrossProfit,
@@ -177,5 +200,9 @@ export function aggregatePortfolio(entries: ProjectPortfolioEntry[]): PortfolioS
     highDelayCount,
     criticalMarginCount,
     warningMarginCount,
+    topProfitProjectId,
+    bottomProfitProjectId,
+    topMarginRatioPct,
+    bottomMarginRatioPct,
   };
 }

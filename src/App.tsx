@@ -47,6 +47,7 @@ const InvoiceReconcilePage = lazy(() => import("./pages/InvoiceReconcilePage.js"
 const OwnerAppPageLazy = lazy(() => import("./components/OwnerAppPage.js").then((m) => ({ default: m.OwnerAppPage })));
 const OwnerShareTokenPanelLazy = lazy(() => import("./components/OwnerShareTokenPanel.js").then((m) => ({ default: m.OwnerShareTokenPanel })));
 const MarginWatchPageLazy = lazy(() => import("./components/MarginWatchPage.js").then((m) => ({ default: m.MarginWatchPage })));
+const ProfitRankingPageLazy = lazy(() => import("./components/ProfitRankingPage.js").then((m) => ({ default: m.ProfitRankingPage })));
 import { ErrorBoundary } from "./components/ErrorBoundary.js";
 import { AuthGuard } from "./components/AuthGuard.js";
 import { OnboardingWizard, useOnboardingDone } from "./components/OnboardingWizard.js";
@@ -399,6 +400,15 @@ function AppShell() {
         <ErrorBoundary fallbackTitle="粗利ウォッチエラー">
           <Suspense fallback={pageFallback}>
             <MarginWatchPageLazy />
+          </Suspense>
+        </ErrorBoundary>
+      );
+    }
+    if (route === "/profit-ranking") {
+      return (
+        <ErrorBoundary fallbackTitle="粗利ランキングエラー">
+          <Suspense fallback={pageFallback}>
+            <ProfitRankingPageLazy />
           </Suspense>
         </ErrorBoundary>
       );
