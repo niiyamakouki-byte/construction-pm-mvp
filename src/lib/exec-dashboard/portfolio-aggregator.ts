@@ -22,6 +22,12 @@ import {
   criticalRiskDealCount,
   expectedClosesThisMonthJpy,
 } from "../sales-pipeline/portfolio-pipeline-metrics.js";
+import {
+  proposalsThisMonthCount,
+  avgGenerationLeadHours,
+  topRequestedWorkCategory,
+} from "../proposal-generator/portfolio-proposal-metrics.js";
+import type { WorkCategory } from "../proposal-generator/types.js";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -100,6 +106,12 @@ export type PortfolioSummary = {
   criticalRiskDealCount?: number;
   /** 今月クローズ予定の加重金額合計 (JPY) */
   expectedClosesThisMonthJpy?: number;
+  /** 今月生成された提案書の件数 */
+  proposalsThisMonthCount?: number;
+  /** 提案書生成の平均リードタイム (hours) */
+  avgProposalLeadHours?: number;
+  /** 最もリクエストされた工事種別 */
+  topRequestedWorkCategory?: WorkCategory | null;
 };
 
 // ── Helpers ────────────────────────────────────────────────────────────────
@@ -148,6 +160,9 @@ export function aggregatePortfolio(entries: ProjectPortfolioEntry[]): PortfolioS
       weightedPipelineJpy: 0,
       criticalRiskDealCount: 0,
       expectedClosesThisMonthJpy: 0,
+      proposalsThisMonthCount: 0,
+      avgProposalLeadHours: 0,
+      topRequestedWorkCategory: null,
     };
   }
 
@@ -290,5 +305,8 @@ export function aggregatePortfolio(entries: ProjectPortfolioEntry[]): PortfolioS
     weightedPipelineJpy: weightedPipelineJpy(),
     criticalRiskDealCount: criticalRiskDealCount(),
     expectedClosesThisMonthJpy: expectedClosesThisMonthJpy(),
+    proposalsThisMonthCount: proposalsThisMonthCount(),
+    avgProposalLeadHours: avgGenerationLeadHours(),
+    topRequestedWorkCategory: topRequestedWorkCategory(),
   };
 }

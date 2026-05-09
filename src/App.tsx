@@ -52,6 +52,7 @@ const CrewOptimizerPageLazy = lazy(() => import("./components/CrewOptimizerPage.
 const RepeatPredictorPageLazy = lazy(() => import("./components/RepeatPredictorPage.js").then((m) => ({ default: m.RepeatPredictorPage })));
 const InquiryResponderPageLazy = lazy(() => import("./components/InquiryResponderPage.js").then((m) => ({ default: m.InquiryResponderPage })));
 const SalesPipelinePageLazy = lazy(() => import("./components/SalesPipelinePage.js").then((m) => ({ default: m.SalesPipelinePage })));
+const ProposalGeneratorPageLazy = lazy(() => import("./components/ProposalGeneratorPage.js").then((m) => ({ default: m.ProposalGeneratorPage })));
 import { ErrorBoundary } from "./components/ErrorBoundary.js";
 import { AuthGuard } from "./components/AuthGuard.js";
 import { OnboardingWizard, useOnboardingDone } from "./components/OnboardingWizard.js";
@@ -449,6 +450,15 @@ function AppShell() {
         <ErrorBoundary fallbackTitle="営業パイプラインエラー">
           <Suspense fallback={pageFallback}>
             <SalesPipelinePageLazy />
+          </Suspense>
+        </ErrorBoundary>
+      );
+    }
+    if (route === "/proposal-generator") {
+      return (
+        <ErrorBoundary fallbackTitle="提案書生成エラー">
+          <Suspense fallback={pageFallback}>
+            <ProposalGeneratorPageLazy />
           </Suspense>
         </ErrorBoundary>
       );
