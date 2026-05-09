@@ -54,6 +54,13 @@ import {
   mostPopularPlanKind,
   avgBudgetGap,
 } from "../owner-suggestion/portfolio-owner-suggestion-metrics.js";
+import type { StreamChannelKind } from "../site-livestream/types.js";
+import {
+  pendingLivestreamReviews,
+  livestreamPostsThisWeek,
+  avgDailyEngagement,
+  mostActiveChannelKind,
+} from "../site-livestream/portfolio-livestream-metrics.js";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -168,6 +175,14 @@ export type PortfolioSummary = {
   mostPopularPlanKind?: SuggestionPlanKind | null;
   /** 採用プランと予算の平均差分 JPY (Sprint 18-A) */
   avgBudgetGap?: number;
+  /** 審査待ちライブストリーム投稿数 (Sprint 18-B) */
+  pendingLivestreamReviews?: number;
+  /** 今週のライブストリーム投稿数 (Sprint 18-B) */
+  livestreamPostsThisWeek?: number;
+  /** 1日あたりの平均視聴数 (Sprint 18-B) */
+  avgDailyEngagement?: number;
+  /** 最多投稿チャネル種別 (Sprint 18-B) */
+  mostActiveChannelKind?: StreamChannelKind | null;
 };
 
 // ── Helpers ────────────────────────────────────────────────────────────────
@@ -234,6 +249,10 @@ export function aggregatePortfolio(entries: ProjectPortfolioEntry[]): PortfolioS
       acceptedSuggestionRate: 0,
       mostPopularPlanKind: null,
       avgBudgetGap: 0,
+      pendingLivestreamReviews: 0,
+      livestreamPostsThisWeek: 0,
+      avgDailyEngagement: 0,
+      mostActiveChannelKind: null,
     };
   }
 
@@ -394,5 +413,9 @@ export function aggregatePortfolio(entries: ProjectPortfolioEntry[]): PortfolioS
     acceptedSuggestionRate: acceptedSuggestionRate(),
     mostPopularPlanKind: mostPopularPlanKind(),
     avgBudgetGap: avgBudgetGap(),
+    pendingLivestreamReviews: pendingLivestreamReviews(),
+    livestreamPostsThisWeek: livestreamPostsThisWeek(),
+    avgDailyEngagement: avgDailyEngagement(),
+    mostActiveChannelKind: mostActiveChannelKind(),
   };
 }

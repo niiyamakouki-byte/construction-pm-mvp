@@ -57,6 +57,7 @@ const MeetingRunnerPageLazy = lazy(() => import("./components/MeetingRunnerPage.
 const ChangeOrderPageLazy = lazy(() => import("./components/ChangeOrderPage.js").then((m) => ({ default: m.ChangeOrderPage })));
 const HandoverPackagePageLazy = lazy(() => import("./components/HandoverPackagePage.js").then((m) => ({ default: m.HandoverPackagePage })));
 const OwnerSuggestionPageLazy = lazy(() => import("./components/OwnerSuggestionPage.js").then((m) => ({ default: m.OwnerSuggestionPage })));
+const SiteLivestreamPageLazy = lazy(() => import("./components/SiteLivestreamPage.js").then((m) => ({ default: m.SiteLivestreamPage })));
 import { ErrorBoundary } from "./components/ErrorBoundary.js";
 import { AuthGuard } from "./components/AuthGuard.js";
 import { OnboardingWizard, useOnboardingDone } from "./components/OnboardingWizard.js";
@@ -499,6 +500,15 @@ function AppShell() {
         <ErrorBoundary fallbackTitle="施主提案AIエラー">
           <Suspense fallback={pageFallback}>
             <OwnerSuggestionPageLazy />
+          </Suspense>
+        </ErrorBoundary>
+      );
+    }
+    if (route === "/site-livestream") {
+      return (
+        <ErrorBoundary fallbackTitle="現場ライブストリームエラー">
+          <Suspense fallback={pageFallback}>
+            <SiteLivestreamPageLazy />
           </Suspense>
         </ErrorBoundary>
       );
