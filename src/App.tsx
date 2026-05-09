@@ -60,6 +60,7 @@ const OwnerSuggestionPageLazy = lazy(() => import("./components/OwnerSuggestionP
 const SiteLivestreamPageLazy = lazy(() => import("./components/SiteLivestreamPage.js").then((m) => ({ default: m.SiteLivestreamPage })));
 const OwnerAmbassadorPageLazy = lazy(() => import("./components/OwnerAmbassadorPage.js").then((m) => ({ default: m.OwnerAmbassadorPage })));
 const LongtermFollowupPageLazy = lazy(() => import("./components/LongtermFollowupPage.js").then((m) => ({ default: m.LongtermFollowupPage })));
+const LocalSeoPageLazy = lazy(() => import("./components/LocalSeoPage.js").then((m) => ({ default: m.LocalSeoPage })));
 import { ErrorBoundary } from "./components/ErrorBoundary.js";
 import { AuthGuard } from "./components/AuthGuard.js";
 import { OnboardingWizard, useOnboardingDone } from "./components/OnboardingWizard.js";
@@ -529,6 +530,15 @@ function AppShell() {
         <ErrorBoundary fallbackTitle="長期フォローアップエラー">
           <Suspense fallback={pageFallback}>
             <LongtermFollowupPageLazy />
+          </Suspense>
+        </ErrorBoundary>
+      );
+    }
+    if (route === "/local-seo") {
+      return (
+        <ErrorBoundary fallbackTitle="地域SEOエラー">
+          <Suspense fallback={pageFallback}>
+            <LocalSeoPageLazy />
           </Suspense>
         </ErrorBoundary>
       );

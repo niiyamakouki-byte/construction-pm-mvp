@@ -73,6 +73,12 @@ import {
   urgentRenovationLeadsCount,
   avgDegradationScoreByYear,
 } from "../longterm-followup/portfolio-followup-metrics.js";
+import {
+  publishedArticleCount,
+  top10KeywordCount,
+  estimatedMonthlySearchImpressions,
+  gbpActionCount,
+} from "../local-seo/portfolio-local-seo-metrics.js";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -211,6 +217,14 @@ export type PortfolioSummary = {
   urgentRenovationLeadsCount?: number;
   /** 年数別平均劣化スコア (Sprint 19-A) */
   avgDegradationScoreByYear?: { 1: number; 3: number; 5: number; 10: number };
+  /** 公開済み地域SEO記事数 (Sprint 19-B) */
+  publishedSeoArticleCount?: number;
+  /** TOP10獲得キーワード数 (Sprint 19-B) */
+  top10KeywordCount?: number;
+  /** 月間検索流入推定 (Sprint 19-B) */
+  estimatedMonthlySearchImpressions?: number;
+  /** GBPアクション数 (Sprint 19-B) */
+  gbpActionCount?: number;
 };
 
 // ── Helpers ────────────────────────────────────────────────────────────────
@@ -289,6 +303,10 @@ export function aggregatePortfolio(entries: ProjectPortfolioEntry[]): PortfolioS
       upcomingCheckpointsNext30Days: 0,
       urgentRenovationLeadsCount: 0,
       avgDegradationScoreByYear: { 1: 0, 3: 0, 5: 0, 10: 0 },
+      publishedSeoArticleCount: 0,
+      top10KeywordCount: 0,
+      estimatedMonthlySearchImpressions: 0,
+      gbpActionCount: 0,
     };
   }
 
@@ -461,5 +479,9 @@ export function aggregatePortfolio(entries: ProjectPortfolioEntry[]): PortfolioS
     upcomingCheckpointsNext30Days: upcomingCheckpointsNext30Days(),
     urgentRenovationLeadsCount: urgentRenovationLeadsCount(),
     avgDegradationScoreByYear: avgDegradationScoreByYear(),
+    publishedSeoArticleCount: publishedArticleCount(),
+    top10KeywordCount: top10KeywordCount(),
+    estimatedMonthlySearchImpressions: estimatedMonthlySearchImpressions(),
+    gbpActionCount: gbpActionCount(),
   };
 }
