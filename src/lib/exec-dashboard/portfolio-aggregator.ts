@@ -33,6 +33,13 @@ import {
   avgUnresolvedItemsCount,
   mostActiveProjectId,
 } from "../meeting-runner/portfolio-meeting-metrics.js";
+import type { ChangeOrderKind } from "../change-order/types.js";
+import {
+  pendingChangeOrders,
+  avgApprovalCycleDays,
+  costDeltaTotalJpy,
+  mostFrequentChangeKind,
+} from "../change-order/portfolio-change-order-metrics.js";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -123,6 +130,14 @@ export type PortfolioSummary = {
   avgUnresolvedItemsCount?: number;
   /** 最も会議が多いプロジェクトID (Sprint 17-A) */
   mostActiveMeetingProjectId?: string | null;
+  /** 承認待ち変更指示数 (Sprint 17-B) */
+  pendingChangeOrders?: number;
+  /** 承認サイクル平均日数 (Sprint 17-B) */
+  avgApprovalCycleDays?: number;
+  /** 変更金額差分合計 JPY (Sprint 17-B) */
+  costDeltaTotalJpy?: number;
+  /** 最多変更種別 (Sprint 17-B) */
+  mostFrequentChangeKind?: ChangeOrderKind | null;
 };
 
 // ── Helpers ────────────────────────────────────────────────────────────────
@@ -177,6 +192,10 @@ export function aggregatePortfolio(entries: ProjectPortfolioEntry[]): PortfolioS
       meetingsThisMonth: 0,
       avgUnresolvedItemsCount: 0,
       mostActiveMeetingProjectId: null,
+      pendingChangeOrders: 0,
+      avgApprovalCycleDays: 0,
+      costDeltaTotalJpy: 0,
+      mostFrequentChangeKind: null,
     };
   }
 
@@ -325,5 +344,9 @@ export function aggregatePortfolio(entries: ProjectPortfolioEntry[]): PortfolioS
     meetingsThisMonth: meetingsThisMonth(),
     avgUnresolvedItemsCount: avgUnresolvedItemsCount(),
     mostActiveMeetingProjectId: mostActiveProjectId(),
+    pendingChangeOrders: pendingChangeOrders(),
+    avgApprovalCycleDays: avgApprovalCycleDays(),
+    costDeltaTotalJpy: costDeltaTotalJpy(),
+    mostFrequentChangeKind: mostFrequentChangeKind(),
   };
 }
