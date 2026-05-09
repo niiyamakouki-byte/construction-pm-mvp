@@ -55,6 +55,7 @@ const SalesPipelinePageLazy = lazy(() => import("./components/SalesPipelinePage.
 const ProposalGeneratorPageLazy = lazy(() => import("./components/ProposalGeneratorPage.js").then((m) => ({ default: m.ProposalGeneratorPage })));
 const MeetingRunnerPageLazy = lazy(() => import("./components/MeetingRunnerPage.js").then((m) => ({ default: m.MeetingRunnerPage })));
 const ChangeOrderPageLazy = lazy(() => import("./components/ChangeOrderPage.js").then((m) => ({ default: m.ChangeOrderPage })));
+const HandoverPackagePageLazy = lazy(() => import("./components/HandoverPackagePage.js").then((m) => ({ default: m.HandoverPackagePage })));
 import { ErrorBoundary } from "./components/ErrorBoundary.js";
 import { AuthGuard } from "./components/AuthGuard.js";
 import { OnboardingWizard, useOnboardingDone } from "./components/OnboardingWizard.js";
@@ -479,6 +480,15 @@ function AppShell() {
         <ErrorBoundary fallbackTitle="変更管理エラー">
           <Suspense fallback={pageFallback}>
             <ChangeOrderPageLazy />
+          </Suspense>
+        </ErrorBoundary>
+      );
+    }
+    if (route === "/handover-package") {
+      return (
+        <ErrorBoundary fallbackTitle="引渡しパッケージエラー">
+          <Suspense fallback={pageFallback}>
+            <HandoverPackagePageLazy />
           </Suspense>
         </ErrorBoundary>
       );

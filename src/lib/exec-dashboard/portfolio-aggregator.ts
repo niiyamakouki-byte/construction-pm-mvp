@@ -40,6 +40,13 @@ import {
   costDeltaTotalJpy,
   mostFrequentChangeKind,
 } from "../change-order/portfolio-change-order-metrics.js";
+import type { HandoverDocumentKind } from "../handover-package/types.js";
+import {
+  pendingHandoverPackages,
+  avgHandoverPreparationDays,
+  expiringWarranties,
+  mostFrequentDocumentKind,
+} from "../handover-package/portfolio-handover-metrics.js";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -138,6 +145,14 @@ export type PortfolioSummary = {
   costDeltaTotalJpy?: number;
   /** 最多変更種別 (Sprint 17-B) */
   mostFrequentChangeKind?: ChangeOrderKind | null;
+  /** 未引渡しパッケージ数 (Sprint 17-C) */
+  pendingHandoverPackages?: number;
+  /** 平均引渡し準備日数 (Sprint 17-C) */
+  avgHandoverPreparationDays?: number;
+  /** 保証期限30日以内の件数 (Sprint 17-C) */
+  expiringWarranties?: number;
+  /** 最多書類種別 (Sprint 17-C) */
+  mostFrequentDocumentKind?: HandoverDocumentKind | null;
 };
 
 // ── Helpers ────────────────────────────────────────────────────────────────
@@ -196,6 +211,10 @@ export function aggregatePortfolio(entries: ProjectPortfolioEntry[]): PortfolioS
       avgApprovalCycleDays: 0,
       costDeltaTotalJpy: 0,
       mostFrequentChangeKind: null,
+      pendingHandoverPackages: 0,
+      avgHandoverPreparationDays: 0,
+      expiringWarranties: 0,
+      mostFrequentDocumentKind: null,
     };
   }
 
@@ -348,5 +367,9 @@ export function aggregatePortfolio(entries: ProjectPortfolioEntry[]): PortfolioS
     avgApprovalCycleDays: avgApprovalCycleDays(),
     costDeltaTotalJpy: costDeltaTotalJpy(),
     mostFrequentChangeKind: mostFrequentChangeKind(),
+    pendingHandoverPackages: pendingHandoverPackages(),
+    avgHandoverPreparationDays: avgHandoverPreparationDays(),
+    expiringWarranties: expiringWarranties(),
+    mostFrequentDocumentKind: mostFrequentDocumentKind(),
   };
 }
