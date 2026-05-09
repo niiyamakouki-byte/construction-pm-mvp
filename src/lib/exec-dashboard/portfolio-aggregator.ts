@@ -6,6 +6,7 @@
 import type { Project, Invoice, Task, ChatMessage, Photo } from "../../domain/types.js";
 import { detectDangerSignals, type DangerSignal } from "./danger-signals.js";
 import { getPredictionStore } from "../delay-predictor/prediction-store.js";
+import { marginAlertStore } from "../margin-watch/margin-alert-store.js";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -50,6 +51,10 @@ export type PortfolioSummary = {
   criticalDelayCount?: number;
   /** Number of tasks with high delay risk (from delay-predictor) */
   highDelayCount?: number;
+  /** Number of projects with critical margin alerts (粗利率 < 15%, last 24h) */
+  criticalMarginCount?: number;
+  /** Number of projects with warning margin alerts (粗利率 15–25%, last 24h) */
+  warningMarginCount?: number;
 };
 
 // ── Helpers ────────────────────────────────────────────────────────────────
@@ -85,6 +90,8 @@ export function aggregatePortfolio(entries: ProjectPortfolioEntry[]): PortfolioS
       criticalLossCount: 0,
       criticalDelayCount: 0,
       highDelayCount: 0,
+      criticalMarginCount: 0,
+      warningMarginCount: 0,
     };
   }
 
@@ -151,6 +158,12 @@ export function aggregatePortfolio(entries: ProjectPortfolioEntry[]): PortfolioS
     highDelayCount += preds.filter((p) => p.riskLevel === "high").length;
   }
 
+  // Margin alert counts from last 24h
+  const since24h = new Date(Date.now() - 24 * 60 * 60 * 1000);
+  const recentAlerts = marginAlertStore.since(since24h);
+  const criticalMarginCount = recentAlerts.filter((a) => a.level === "critical").length;
+  const warningMarginCount = recentAlerts.filter((a) => a.level === "warning").length;
+
   return {
     totalProjects: entries.length,
     totalGrossProfit,
@@ -162,5 +175,7 @@ export function aggregatePortfolio(entries: ProjectPortfolioEntry[]): PortfolioS
     criticalLossCount,
     criticalDelayCount,
     highDelayCount,
+    criticalMarginCount,
+    warningMarginCount,
   };
 }

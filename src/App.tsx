@@ -46,6 +46,7 @@ const AccountSettingsPage = lazy(() => import("./pages/AccountSettingsPage.js").
 const InvoiceReconcilePage = lazy(() => import("./pages/InvoiceReconcilePage.js").then((m) => ({ default: m.InvoiceReconcilePage })));
 const OwnerAppPageLazy = lazy(() => import("./components/OwnerAppPage.js").then((m) => ({ default: m.OwnerAppPage })));
 const OwnerShareTokenPanelLazy = lazy(() => import("./components/OwnerShareTokenPanel.js").then((m) => ({ default: m.OwnerShareTokenPanel })));
+const MarginWatchPageLazy = lazy(() => import("./components/MarginWatchPage.js").then((m) => ({ default: m.MarginWatchPage })));
 import { ErrorBoundary } from "./components/ErrorBoundary.js";
 import { AuthGuard } from "./components/AuthGuard.js";
 import { OnboardingWizard, useOnboardingDone } from "./components/OnboardingWizard.js";
@@ -390,6 +391,15 @@ function AppShell() {
       return (
         <ErrorBoundary fallbackTitle="工程表エラー">
           <ScheduleFromEstimatePage />
+        </ErrorBoundary>
+      );
+    }
+    if (route === "/margin-watch") {
+      return (
+        <ErrorBoundary fallbackTitle="粗利ウォッチエラー">
+          <Suspense fallback={pageFallback}>
+            <MarginWatchPageLazy />
+          </Suspense>
         </ErrorBoundary>
       );
     }
