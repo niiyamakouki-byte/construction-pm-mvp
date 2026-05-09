@@ -44,6 +44,8 @@ const FinishingSchedulePage = lazy(() => import("./pages/FinishingSchedulePage.j
 const ScheduleFromEstimatePage = lazy(() => import("./pages/ScheduleFromEstimatePage.js").then((m) => ({ default: m.ScheduleFromEstimatePage })));
 const AccountSettingsPage = lazy(() => import("./pages/AccountSettingsPage.js").then((m) => ({ default: m.AccountSettingsPage })));
 const InvoiceReconcilePage = lazy(() => import("./pages/InvoiceReconcilePage.js").then((m) => ({ default: m.InvoiceReconcilePage })));
+const OwnerAppPageLazy = lazy(() => import("./components/OwnerAppPage.js").then((m) => ({ default: m.OwnerAppPage })));
+const OwnerShareTokenPanelLazy = lazy(() => import("./components/OwnerShareTokenPanel.js").then((m) => ({ default: m.OwnerShareTokenPanel })));
 import { ErrorBoundary } from "./components/ErrorBoundary.js";
 import { AuthGuard } from "./components/AuthGuard.js";
 import { OnboardingWizard, useOnboardingDone } from "./components/OnboardingWizard.js";
@@ -264,6 +266,7 @@ function AppShell() {
   const selectionMatch = route.match(/^\/selection\/([^/]+)$/);
   const moodBoardMatch = route.match(/^\/mood-board\/([^/]+)$/);
   const clientMatch = route.match(/^\/client\/([^/]+)$/);
+  const ownerAppMatch = route.match(/^\/owner-app\/([^/?]+)/);
   const finishingMatch = route.match(/^\/finishing(?:\/([^/]+))?$/);
   const projectId = projectDetailMatch?.[1]
     ? decodeURIComponent(projectDetailMatch[1])
@@ -278,6 +281,11 @@ function AppShell() {
   const selectionProjectId = selectionMatch?.[1] ? decodeURIComponent(selectionMatch[1]) : null;
   const moodBoardProjectId = moodBoardMatch?.[1] ? decodeURIComponent(moodBoardMatch[1]) : null;
   const clientProjectId = clientMatch?.[1] ? decodeURIComponent(clientMatch[1]) : null;
+  const ownerAppProjectId = ownerAppMatch?.[1] ? decodeURIComponent(ownerAppMatch[1]) : null;
+  // Extract token from hash query string: /#/owner-app/xxx?token=yyy
+  const ownerAppToken = ownerAppProjectId
+    ? (window.location.hash.match(/[?&]token=([^&]+)/)?.[1] ?? "")
+    : null;
 
   const pageFallback = <div className="flex items-center justify-center py-20 text-slate-400 text-sm">{t("common:status.loading")}</div>;
 
@@ -294,6 +302,8 @@ function AppShell() {
       </div>
     );
   }
+  if (ownerAppProjectId && ownerAppToken !== null) return <Suspense fallback={pageFallback}><OwnerAppPageLazy projectId={ownerAppProjectId} token={ownerAppToken} /></Suspense>;
+  if (route === "/share-tokens") return <Suspense fallback={pageFallback}><OwnerShareTokenPanelLazy /></Suspense>;
   if (clientProjectId) return <Suspense fallback={pageFallback}><ClientViewerPage projectId={clientProjectId} /></Suspense>;
   if (entryProjectId) return <Suspense fallback={pageFallback}><SiteEntryPage projectId={entryProjectId} /></Suspense>;
   if (portalProjectId) return <Suspense fallback={pageFallback}><ContractorPortalPage projectId={portalProjectId} company={portalCompany} /></Suspense>;
