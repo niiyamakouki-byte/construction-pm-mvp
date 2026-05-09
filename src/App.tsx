@@ -50,6 +50,7 @@ const MarginWatchPageLazy = lazy(() => import("./components/MarginWatchPage.js")
 const ProfitRankingPageLazy = lazy(() => import("./components/ProfitRankingPage.js").then((m) => ({ default: m.ProfitRankingPage })));
 const CrewOptimizerPageLazy = lazy(() => import("./components/CrewOptimizerPage.js").then((m) => ({ default: m.CrewOptimizerPage })));
 const RepeatPredictorPageLazy = lazy(() => import("./components/RepeatPredictorPage.js").then((m) => ({ default: m.RepeatPredictorPage })));
+const InquiryResponderPageLazy = lazy(() => import("./components/InquiryResponderPage.js").then((m) => ({ default: m.InquiryResponderPage })));
 import { ErrorBoundary } from "./components/ErrorBoundary.js";
 import { AuthGuard } from "./components/AuthGuard.js";
 import { OnboardingWizard, useOnboardingDone } from "./components/OnboardingWizard.js";
@@ -429,6 +430,15 @@ function AppShell() {
         <ErrorBoundary fallbackTitle="リピート予測エラー">
           <Suspense fallback={pageFallback}>
             <RepeatPredictorPageLazy />
+          </Suspense>
+        </ErrorBoundary>
+      );
+    }
+    if (route === "/inquiry-responder") {
+      return (
+        <ErrorBoundary fallbackTitle="問合せ返信AIエラー">
+          <Suspense fallback={pageFallback}>
+            <InquiryResponderPageLazy />
           </Suspense>
         </ErrorBoundary>
       );

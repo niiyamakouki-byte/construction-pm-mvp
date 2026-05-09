@@ -12,6 +12,11 @@ import { crewOptimizationStore } from "../crew-optimizer/optimization-store.js";
 import { customerStore } from "../repeat-predictor/customer-store.js";
 import { extractSignal } from "../repeat-predictor/signal-extractor.js";
 import { predictRepeat } from "../repeat-predictor/repeat-predictor.js";
+import {
+  newInquiryCount24h,
+  urgentInquiryCount,
+  pendingReplyCount,
+} from "../inquiry-responder/portfolio-inquiry-metrics.js";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -78,6 +83,12 @@ export type PortfolioSummary = {
   atRiskCustomerCount?: number;
   /** Number of customers with predicted next order within 90 days */
   next90DaysOrderForecast?: number;
+  /** 過去24時間以内に受け付けた新規問合せ数 */
+  newInquiryCount24h?: number;
+  /** 未完了の urgent / high 問合せ数 */
+  urgentInquiryCount?: number;
+  /** 返信待ち (new / triaged) 問合せ数 */
+  pendingReplyCount?: number;
 };
 
 // ── Helpers ────────────────────────────────────────────────────────────────
@@ -120,6 +131,9 @@ export function aggregatePortfolio(entries: ProjectPortfolioEntry[]): PortfolioS
       vipCustomerCount: 0,
       atRiskCustomerCount: 0,
       next90DaysOrderForecast: 0,
+      newInquiryCount24h: 0,
+      urgentInquiryCount: 0,
+      pendingReplyCount: 0,
     };
   }
 
@@ -256,5 +270,8 @@ export function aggregatePortfolio(entries: ProjectPortfolioEntry[]): PortfolioS
     vipCustomerCount,
     atRiskCustomerCount,
     next90DaysOrderForecast,
+    newInquiryCount24h: newInquiryCount24h(),
+    urgentInquiryCount: urgentInquiryCount(),
+    pendingReplyCount: pendingReplyCount(),
   };
 }
