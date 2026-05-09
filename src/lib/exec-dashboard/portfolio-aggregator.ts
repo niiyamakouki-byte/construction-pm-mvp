@@ -20,6 +20,10 @@ export type ProjectPortfolioEntry = {
   eac?: number;
   /** Gross profit amount (contractAmount − totalCost) */
   grossProfit?: number;
+  /** Total estimated cost loss in JPY for this project (from cost-loss-detector) */
+  totalLossYen?: number;
+  /** Number of critical loss signals for this project */
+  criticalLossCount?: number;
 };
 
 export type PortfolioSummary = {
@@ -37,6 +41,10 @@ export type PortfolioSummary = {
   dangerSignals: DangerSignal[];
   /** Number of projects with at least one danger signal */
   dangerProjectCount: number;
+  /** Total estimated cost loss in JPY (from cost-loss-detector) */
+  totalLossYen?: number;
+  /** Number of critical loss signals across all projects */
+  criticalLossCount?: number;
 };
 
 // ── Helpers ────────────────────────────────────────────────────────────────
@@ -68,11 +76,15 @@ export function aggregatePortfolio(entries: ProjectPortfolioEntry[]): PortfolioS
       unpaidAmount: 0,
       dangerSignals: [],
       dangerProjectCount: 0,
+      totalLossYen: 0,
+      criticalLossCount: 0,
     };
   }
 
   let totalGrossProfit = 0;
   let unpaidAmount = 0;
+  let totalLossYen = 0;
+  let criticalLossCount = 0;
   const allSignals: DangerSignal[] = [];
   const dangerProjectIds = new Set<string>();
 
@@ -88,6 +100,8 @@ export function aggregatePortfolio(entries: ProjectPortfolioEntry[]): PortfolioS
 
     totalGrossProfit += resolvedGrossProfit;
     unpaidAmount += computeUnpaid(invoices);
+    totalLossYen += entry.totalLossYen ?? 0;
+    criticalLossCount += entry.criticalLossCount ?? 0;
 
     const progress = computeProjectProgress(tasks);
     simpleProgressSum += progress;
@@ -126,5 +140,7 @@ export function aggregatePortfolio(entries: ProjectPortfolioEntry[]): PortfolioS
     unpaidAmount,
     dangerSignals: allSignals,
     dangerProjectCount: dangerProjectIds.size,
+    totalLossYen,
+    criticalLossCount,
   };
 }
