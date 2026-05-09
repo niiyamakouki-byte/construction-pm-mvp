@@ -9,6 +9,9 @@ import { getPredictionStore } from "../delay-predictor/prediction-store.js";
 import { marginAlertStore } from "../margin-watch/margin-alert-store.js";
 import { buildAllProjectMetrics } from "../profit-ranking/metrics-builder.js";
 import { crewOptimizationStore } from "../crew-optimizer/optimization-store.js";
+import { customerStore } from "../repeat-predictor/customer-store.js";
+import { extractSignal } from "../repeat-predictor/signal-extractor.js";
+import { predictRepeat } from "../repeat-predictor/repeat-predictor.js";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -69,6 +72,12 @@ export type PortfolioSummary = {
   crewConflictCount?: number;
   /** Average crew utilization percentage from the latest optimization snapshot */
   avgCrewUtilizationPct?: number;
+  /** Number of VIP customers */
+  vipCustomerCount?: number;
+  /** Number of at-risk customers */
+  atRiskCustomerCount?: number;
+  /** Number of customers with predicted next order within 90 days */
+  next90DaysOrderForecast?: number;
 };
 
 // ── Helpers ────────────────────────────────────────────────────────────────
@@ -108,6 +117,9 @@ export function aggregatePortfolio(entries: ProjectPortfolioEntry[]): PortfolioS
       warningMarginCount: 0,
       crewConflictCount: 0,
       avgCrewUtilizationPct: 0,
+      vipCustomerCount: 0,
+      atRiskCustomerCount: 0,
+      next90DaysOrderForecast: 0,
     };
   }
 
@@ -209,6 +221,19 @@ export function aggregatePortfolio(entries: ProjectPortfolioEntry[]): PortfolioS
     avgCrewUtilizationPct = latestCrew.avgUtilizationPct;
   }
 
+  // Repeat predictor fields — VIP / at_risk / next 90 days forecast
+  const customers = customerStore.all();
+  let vipCustomerCount = 0;
+  let atRiskCustomerCount = 0;
+  let next90DaysOrderForecast = 0;
+  for (const history of customers) {
+    const signal = extractSignal(history);
+    const pred = predictRepeat(history.customerId, signal);
+    if (pred.segment === "vip") vipCustomerCount++;
+    if (pred.segment === "at_risk") atRiskCustomerCount++;
+    if (pred.predictedNextOrderMonths <= 3) next90DaysOrderForecast++;
+  }
+
   return {
     totalProjects: entries.length,
     totalGrossProfit,
@@ -228,5 +253,8 @@ export function aggregatePortfolio(entries: ProjectPortfolioEntry[]): PortfolioS
     bottomMarginRatioPct,
     crewConflictCount,
     avgCrewUtilizationPct,
+    vipCustomerCount,
+    atRiskCustomerCount,
+    next90DaysOrderForecast,
   };
 }

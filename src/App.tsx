@@ -49,6 +49,7 @@ const OwnerShareTokenPanelLazy = lazy(() => import("./components/OwnerShareToken
 const MarginWatchPageLazy = lazy(() => import("./components/MarginWatchPage.js").then((m) => ({ default: m.MarginWatchPage })));
 const ProfitRankingPageLazy = lazy(() => import("./components/ProfitRankingPage.js").then((m) => ({ default: m.ProfitRankingPage })));
 const CrewOptimizerPageLazy = lazy(() => import("./components/CrewOptimizerPage.js").then((m) => ({ default: m.CrewOptimizerPage })));
+const RepeatPredictorPageLazy = lazy(() => import("./components/RepeatPredictorPage.js").then((m) => ({ default: m.RepeatPredictorPage })));
 import { ErrorBoundary } from "./components/ErrorBoundary.js";
 import { AuthGuard } from "./components/AuthGuard.js";
 import { OnboardingWizard, useOnboardingDone } from "./components/OnboardingWizard.js";
@@ -419,6 +420,15 @@ function AppShell() {
         <ErrorBoundary fallbackTitle="職人スケジュールエラー">
           <Suspense fallback={pageFallback}>
             <CrewOptimizerPageLazy />
+          </Suspense>
+        </ErrorBoundary>
+      );
+    }
+    if (route === "/repeat-predictor") {
+      return (
+        <ErrorBoundary fallbackTitle="リピート予測エラー">
+          <Suspense fallback={pageFallback}>
+            <RepeatPredictorPageLazy />
           </Suspense>
         </ErrorBoundary>
       );
