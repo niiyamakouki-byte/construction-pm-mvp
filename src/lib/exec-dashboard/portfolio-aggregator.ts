@@ -5,6 +5,7 @@
 
 import type { Project, Invoice, Task, ChatMessage, Photo } from "../../domain/types.js";
 import { detectDangerSignals, type DangerSignal } from "./danger-signals.js";
+import { getPredictionStore } from "../delay-predictor/prediction-store.js";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -45,6 +46,10 @@ export type PortfolioSummary = {
   totalLossYen?: number;
   /** Number of critical loss signals across all projects */
   criticalLossCount?: number;
+  /** Number of tasks with critical delay risk (from delay-predictor) */
+  criticalDelayCount?: number;
+  /** Number of tasks with high delay risk (from delay-predictor) */
+  highDelayCount?: number;
 };
 
 // ── Helpers ────────────────────────────────────────────────────────────────
@@ -78,6 +83,8 @@ export function aggregatePortfolio(entries: ProjectPortfolioEntry[]): PortfolioS
       dangerProjectCount: 0,
       totalLossYen: 0,
       criticalLossCount: 0,
+      criticalDelayCount: 0,
+      highDelayCount: 0,
     };
   }
 
@@ -133,6 +140,17 @@ export function aggregatePortfolio(entries: ProjectPortfolioEntry[]): PortfolioS
       ? Math.round((weightedProgressSum / totalWeight) * 10) / 10
       : Math.round((simpleProgressSum / entries.length) * 10) / 10;
 
+  // Delay prediction counts — read from PredictionStore
+  const projectIds = entries.map((e) => e.project.id);
+  const predStore = getPredictionStore();
+  let criticalDelayCount = 0;
+  let highDelayCount = 0;
+  for (const projectId of projectIds) {
+    const preds = predStore.queryByProject(projectId);
+    criticalDelayCount += preds.filter((p) => p.riskLevel === "critical").length;
+    highDelayCount += preds.filter((p) => p.riskLevel === "high").length;
+  }
+
   return {
     totalProjects: entries.length,
     totalGrossProfit,
@@ -142,5 +160,7 @@ export function aggregatePortfolio(entries: ProjectPortfolioEntry[]): PortfolioS
     dangerProjectCount: dangerProjectIds.size,
     totalLossYen,
     criticalLossCount,
+    criticalDelayCount,
+    highDelayCount,
   };
 }
