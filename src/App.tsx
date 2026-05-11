@@ -63,6 +63,7 @@ const OwnerAmbassadorPageLazy = lazy(() => import("./components/OwnerAmbassadorP
 const LongtermFollowupPageLazy = lazy(() => import("./components/LongtermFollowupPage.js").then((m) => ({ default: m.LongtermFollowupPage })));
 const LocalSeoPageLazy = lazy(() => import("./components/LocalSeoPage.js").then((m) => ({ default: m.LocalSeoPage })));
 const InsuranceAssessmentPageLazy = lazy(() => import("./pages/InsuranceAssessmentPage.js").then((m) => ({ default: m.InsuranceAssessmentPage })));
+const PhaseTemplateLibraryPage = lazy(() => import("./pages/PhaseTemplateLibraryPage.js").then((m) => ({ default: m.PhaseTemplateLibraryPage })));
 import { ErrorBoundary } from "./components/ErrorBoundary.js";
 import { AuthGuard } from "./components/AuthGuard.js";
 import { OnboardingWizard, useOnboardingDone } from "./components/OnboardingWizard.js";
@@ -156,7 +157,7 @@ function AppShell() {
       icon: "☰",
       path: "/notifications",
       matchRoute: (currentRoute) =>
-        ["/today", "/invoice", "/estimate", "/contractors", "/notifications", "/help", "/node-schedule", "/cost-management", "/weather", "/safety", "/procurement", "/orders", "/crm", "/reports", "/invoices", "/invoices/reconcile", "/cross-project-gantt", "/progress-review", "/photos", "/freee", "/finishing", "/schedule"].includes(currentRoute) || currentRoute.startsWith("/reports/") || currentRoute.startsWith("/freee?") || currentRoute.startsWith("/finishing"),
+        ["/today", "/invoice", "/estimate", "/contractors", "/notifications", "/help", "/node-schedule", "/cost-management", "/weather", "/safety", "/procurement", "/orders", "/crm", "/reports", "/invoices", "/invoices/reconcile", "/cross-project-gantt", "/progress-review", "/photos", "/freee", "/finishing", "/schedule", "/phase-templates"].includes(currentRoute) || currentRoute.startsWith("/reports/") || currentRoute.startsWith("/freee?") || currentRoute.startsWith("/finishing"),
     },
   ];
 
@@ -253,6 +254,13 @@ function AppShell() {
       icon: "📅",
       path: "/schedule",
       matchRoute: (currentRoute) => currentRoute === "/schedule",
+    },
+    {
+      key: "phase-templates",
+      label: "テンプレライブラリ",
+      icon: "📐",
+      path: "/phase-templates",
+      matchRoute: (currentRoute) => currentRoute === "/phase-templates",
     },
   ];
 
@@ -678,6 +686,15 @@ function AppShell() {
         </Suspense>
       );
     }
+    if (route === "/phase-templates") {
+      return (
+        <ErrorBoundary fallbackTitle="工程テンプレートライブラリエラー">
+          <Suspense fallback={pageFallback}>
+            <PhaseTemplateLibraryPage />
+          </Suspense>
+        </ErrorBoundary>
+      );
+    }
     return (
       <div className="mx-auto max-w-lg px-4 py-12 text-center" role="alert">
         <div className="rounded-2xl border-2 border-dashed border-slate-200 bg-white p-8">
@@ -710,6 +727,7 @@ function AppShell() {
     { key: "freee", label: t("common:nav.freee"), icon: "📗", path: "/freee", active: route === "/freee" || route.startsWith("/freee?") },
     { key: "finishing", label: "仕上表", icon: "📋", path: "/finishing", active: route === "/finishing" || route.startsWith("/finishing/") },
     { key: "schedule", label: "工程表", icon: "📅", path: "/schedule", active: route === "/schedule" },
+    { key: "phase-templates", label: "テンプレライブラリ", icon: "📐", path: "/phase-templates", active: route === "/phase-templates" },
     { key: "help", label: t("common:nav.help"), icon: "❓", path: "/help", active: route === "/help" },
     { key: "account", label: "アカウント設定", icon: "⚙️", path: "/account", active: route === "/account" },
   ];
