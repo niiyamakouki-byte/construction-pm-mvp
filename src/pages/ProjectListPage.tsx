@@ -7,6 +7,11 @@ import { geocodeAddress } from "../infra/geocode.js";
 import { navigate } from "../hooks/useHashRouter.js";
 import { useOrganizationContext } from "../contexts/OrganizationContext.js";
 import { writeLastProjectId } from "../lib/last-project.js";
+import {
+  getTemplateMajorNames,
+  getTemplateIdsByMajor,
+} from "../lib/phase-template-master.js";
+import { expandWBSToPhases } from "../lib/work-breakdown/expansion.js";
 
 function toLocalDateString(date: Date): string {
   const y = date.getFullYear();
@@ -39,6 +44,9 @@ export function ProjectListPage() {
   const [nameError, setNameError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  // Sprint 70: 工程テンプレ選択 (大項目名 Set)
+  const [selectedTemplateMajors, setSelectedTemplateMajors] = useState<Set<string>>(new Set());
+  const templateMajorNames = useMemo(() => getTemplateMajorNames(), []);
 
   const loadProjects = useCallback(async () => {
     try {
@@ -88,25 +96,48 @@ export function ProjectListPage() {
         }
       }
 
+      const projectId = crypto.randomUUID();
+      const projectStartDate = startDate || toLocalDateString(now);
+
       await projectRepository.create({
-        id: crypto.randomUUID(),
+        id: projectId,
         name: name.trim(),
         description: description.trim(),
         address: trimmedAddress || undefined,
         latitude,
         longitude,
         status,
-        startDate: startDate || toLocalDateString(now),
+        startDate: projectStartDate,
         includeWeekends: true,
         createdAt: now.toISOString(),
         updatedAt: now.toISOString(),
       });
+
+      // Sprint 70: 選択された大項目の工程を一括投入
+      if (selectedTemplateMajors.size > 0) {
+        const phases = expandWBSToPhases({
+          projectId,
+          projectStartDate,
+          selectedMajors: selectedTemplateMajors,
+          includeWeekends: true,
+        });
+        const nowIso = now.toISOString();
+        for (const phase of phases) {
+          await taskRepository.create({
+            id: crypto.randomUUID(),
+            createdAt: nowIso,
+            updatedAt: nowIso,
+            ...phase,
+          });
+        }
+      }
 
       setName("");
       setDescription("");
       setAddress("");
       setStatus("planning");
       setStartDate("");
+      setSelectedTemplateMajors(new Set());
       setShowForm(false);
       await loadProjects();
     } catch (err) {
@@ -297,6 +328,52 @@ export function ProjectListPage() {
                   className="mt-1.5 w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm focus:border-[#007AFF] focus:outline-none focus:ring-2 focus:ring-[#007AFF]/20"
                 />
               </div>
+            </div>
+
+            {/* Sprint 70: 工程テンプレライブラリ選択 */}
+            <div>
+              <p className="block text-sm font-medium text-slate-700">
+                工程テンプレ（任意）
+              </p>
+              <p className="mt-0.5 text-xs text-slate-400">選択した大項目の工程を作成後に一括投入します</p>
+              <div className="mt-2 grid grid-cols-2 gap-x-4 gap-y-2 sm:grid-cols-3">
+                {templateMajorNames.map((majorName) => {
+                  const checked = selectedTemplateMajors.has(majorName);
+                  return (
+                    <label
+                      key={majorName}
+                      className="flex cursor-pointer items-center gap-2 text-sm text-slate-700"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={() => {
+                          setSelectedTemplateMajors((prev) => {
+                            const next = new Set(prev);
+                            if (next.has(majorName)) {
+                              next.delete(majorName);
+                            } else {
+                              next.add(majorName);
+                            }
+                            return next;
+                          });
+                        }}
+                        className="h-4 w-4 rounded border-slate-300 text-[#007AFF] focus:ring-[#007AFF]/30"
+                      />
+                      {majorName}
+                    </label>
+                  );
+                })}
+              </div>
+              {selectedTemplateMajors.size > 0 && (
+                <p className="mt-2 text-xs text-[#007AFF]">
+                  {selectedTemplateMajors.size}大項目 /{" "}
+                  {[...selectedTemplateMajors]
+                    .flatMap((m) => getTemplateIdsByMajor(m))
+                    .length}
+                  工程エントリを投入予定
+                </p>
+              )}
             </div>
 
             <div className="flex items-center gap-3 pt-2">
