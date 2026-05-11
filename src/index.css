@@ -422,3 +422,15 @@ textarea::placeholder {
   outline: 2px solid #007AFF;
   outline-offset: 2px;
 }
+
+/* AN1: Honor prefers-reduced-motion for all animations */
+@media (prefers-reduced-motion: reduce) {
+  .page-enter,
+  .status-pulse,
+  .voice-recording,
+  .sheet-enter,
+  .modal-scroll {
+    animation: none !important;
+    transition: none !important;
+  }
+}
