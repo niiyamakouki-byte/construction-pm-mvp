@@ -317,7 +317,7 @@ export function ExecutiveDashboardPage() {
               value={kindFilter}
               onChange={(e) => setKindFilter(e.target.value as DangerSignalKindType | "")}
               aria-label="シグナル種別フィルタ"
-              className="h-8 rounded-lg border border-slate-200 bg-white px-2 text-xs text-slate-700 shadow-sm focus:outline-none"
+              className="h-8 rounded-lg border border-slate-200 bg-white px-2 text-xs text-slate-700 shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/40"
             >
               <option value="">全種別</option>
               {ALL_SIGNAL_KINDS.map((k) => (
