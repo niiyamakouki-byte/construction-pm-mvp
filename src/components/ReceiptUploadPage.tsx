@@ -7,7 +7,7 @@
  */
 
 import { useState, useCallback } from "react";
-import { parseReceiptText, type ReceiptData } from "../lib/receipt-ocr.js";
+import { parseReceiptTextLegacy as parseReceiptText, type ReceiptData } from "../lib/receipt-ocr.js";
 import { mapToJournal, type FreeeJournalDraft } from "../lib/freee-journal-mapper.js";
 import { submitJournal, type SubmitResult } from "../lib/freee-api-client.js";
 

@@ -7,6 +7,37 @@
 
 // ── 型 ────────────────────────────────────────────────
 
+/** Sprint 67: 品目行の構造化データ */
+export type ReceiptItem = {
+  /** 品目名 */
+  name: string;
+  /** 数量 (取得できた場合) */
+  quantity?: number;
+  /** 単価 (取得できた場合) */
+  unitPrice?: number;
+  /** 小計金額 */
+  amount: number;
+};
+
+/** Sprint 67: parseReceiptText の新インターフェース (ReceiptData の上位互換) */
+export type ReceiptOCRResult = {
+  /** 店名・事業者名 */
+  storeName: string;
+  /** ISO 8601 日付文字列 (例: "2025-04-15") */
+  date: string;
+  /** 品目リスト */
+  items: ReceiptItem[];
+  /** 小計（税抜）。取得できた場合のみ */
+  subtotal?: number;
+  /** 消費税額。取得できた場合のみ */
+  tax?: number;
+  /** 合計金額（税込）。整数（円） */
+  total: number;
+  /** 支払い方法 */
+  paymentMethod?: string;
+};
+
+/** 後方互換: 既存コードが使う ReceiptData 型 */
 export type ReceiptData = {
   /** ISO 8601 日付文字列 (例: "2025-04-15") */
   date: string;
@@ -232,15 +263,110 @@ export function parseReducedTaxItems(text: string): string[] {
   return items;
 }
 
-// ── メインエントリ ────────────────────────────────────
+// ── 品目行パース ──────────────────────────────────────
 
 /**
- * OCR後の生テキストからレシート構造データを抽出する。
+ * テキストから品目行を抽出する。
+ * 対応パターン:
+ *   - 品目名  数量  単価  小計
+ *   - 品目名  金額
+ * 合計/小計/税/日付/店名行はスキップする。
+ */
+export function parseItemsFromText(text: string): ReceiptItem[] {
+  const lines = text.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+  const items: ReceiptItem[] = [];
+
+  // スキップするキーワード行
+  const skipPattern = /^(?:合計|小計|消費税|内税|外税|税額|税込|TAX|TOTAL|subtotal|お会計|請求|ご請求|領収|レシート|お買上|お客様|ありがとう|店名|店舗|電話|TEL|FAX|住所|〒|\d{4}[年/\-])/i;
+
+  for (const line of lines) {
+    if (skipPattern.test(line)) continue;
+
+    // パターン1: 品目 数量 単価 小計 (4フィールド)
+    // 例: "コーヒー 2 300 600" or "コーヒー 2点 ¥300 ¥600"
+    const pat4 = /^(.+?)\s+(\d+)[点個本枚袋箱]?\s+[¥￥]?([\d,]+)\s+[¥￥]?([\d,]+)\s*$/;
+    const m4 = line.match(pat4);
+    if (m4) {
+      const name = m4[1].trim();
+      if (name.length === 0) continue;
+      items.push({
+        name,
+        quantity: parseInt(m4[2], 10),
+        unitPrice: parseMoney(m4[3]),
+        amount: parseMoney(m4[4]),
+      });
+      continue;
+    }
+
+    // パターン2: 品目 金額 (2フィールド、金額は末尾)
+    // 例: "コーヒー ¥500" or "コーヒー 500"
+    const pat2 = /^(.+?)\s+[¥￥]?([\d,]+)\s*(?:円)?\s*$/;
+    const m2 = line.match(pat2);
+    if (m2) {
+      const name = m2[1].trim();
+      // 名前が数字だけ/記号のみの場合はスキップ
+      if (name.length === 0 || /^[\d,¥￥\s]+$/.test(name)) continue;
+      // 金額が0の場合もスキップ
+      const amount = parseMoney(m2[2]);
+      if (amount === 0) continue;
+      items.push({ name, amount });
+      continue;
+    }
+  }
+
+  return items;
+}
+
+// ── 支払い方法抽出 ────────────────────────────────────
+
+/**
+ * テキストから支払い方法を抽出する。
+ * キーワードマッチで最初に見つかったものを返す。
+ */
+export function parsePaymentMethodFromText(text: string): string | undefined {
+  if (/PayPay|ペイペイ/i.test(text)) return "PayPay";
+  if (/楽天ペイ|RakutenPay/i.test(text)) return "楽天ペイ";
+  if (/LINE\s*Pay|ラインペイ/i.test(text)) return "LINE Pay";
+  if (/Suica|スイカ|PASMO|パスモ|交通系/i.test(text)) return "電子マネー";
+  if (/電子マネー|iD|QUICPay|nanaco|WAON/i.test(text)) return "電子マネー";
+  if (/クレジット|credit|VISA|visa|Mastercard|JCB|AMEX|Diners|カード払い/i.test(text)) return "カード";
+  if (/現金|CASH|cash/i.test(text)) return "現金";
+  return undefined;
+}
+
+// ── メインエントリ (Sprint 67) ────────────────────────
+
+/**
+ * OCR後の生テキストからレシート構造データを抽出する (Sprint 67 版)。
+ * ReceiptOCRResult を返す。items / paymentMethod を含む。
  *
  * @param rawText - OCRが出力したテキスト（または手動貼付けテキスト）
- * @returns ReceiptData - 構造化されたレシートデータ
+ * @returns ReceiptOCRResult - 構造化されたレシートデータ
  */
-export function parseReceiptText(rawText: string): ReceiptData {
+export function parseReceiptText(rawText: string): ReceiptOCRResult {
+  const date = parseDateFromText(rawText);
+  const storeName = parseVendorFromText(rawText);
+  const { total, subtotal, tax } = parseAmountsFromText(rawText);
+  const items = parseItemsFromText(rawText);
+  const paymentMethod = parsePaymentMethodFromText(rawText);
+
+  return {
+    storeName,
+    date,
+    items,
+    ...(subtotal !== undefined && { subtotal }),
+    ...(tax !== undefined && { tax }),
+    total,
+    ...(paymentMethod !== undefined && { paymentMethod }),
+  };
+}
+
+/**
+ * 後方互換ラッパー: ReceiptData を返す旧形式。
+ * 既存の ReceiptUploadPage / freee-journal-mapper が使う。
+ * @deprecated Sprint 67-2 で parseReceiptText に統一予定
+ */
+export function parseReceiptTextLegacy(rawText: string): ReceiptData {
   const date = parseDateFromText(rawText);
   const vendor = parseVendorFromText(rawText);
   const { total, subtotal, tax } = parseAmountsFromText(rawText);
