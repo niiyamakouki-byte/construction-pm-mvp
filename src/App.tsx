@@ -61,6 +61,7 @@ const SiteLivestreamPageLazy = lazy(() => import("./components/SiteLivestreamPag
 const OwnerAmbassadorPageLazy = lazy(() => import("./components/OwnerAmbassadorPage.js").then((m) => ({ default: m.OwnerAmbassadorPage })));
 const LongtermFollowupPageLazy = lazy(() => import("./components/LongtermFollowupPage.js").then((m) => ({ default: m.LongtermFollowupPage })));
 const LocalSeoPageLazy = lazy(() => import("./components/LocalSeoPage.js").then((m) => ({ default: m.LocalSeoPage })));
+const InsuranceAssessmentPageLazy = lazy(() => import("./pages/InsuranceAssessmentPage.js").then((m) => ({ default: m.InsuranceAssessmentPage })));
 import { ErrorBoundary } from "./components/ErrorBoundary.js";
 import { AuthGuard } from "./components/AuthGuard.js";
 import { OnboardingWizard, useOnboardingDone } from "./components/OnboardingWizard.js";
@@ -539,6 +540,15 @@ function AppShell() {
         <ErrorBoundary fallbackTitle="地域SEOエラー">
           <Suspense fallback={pageFallback}>
             <LocalSeoPageLazy />
+          </Suspense>
+        </ErrorBoundary>
+      );
+    }
+    if (route === "/insurance-assessment") {
+      return (
+        <ErrorBoundary fallbackTitle="工事保険AI査定エラー">
+          <Suspense fallback={pageFallback}>
+            <InsuranceAssessmentPageLazy />
           </Suspense>
         </ErrorBoundary>
       );
