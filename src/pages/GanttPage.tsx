@@ -388,6 +388,9 @@ function GanttPageContent({ initialProjectId = null }: GanttPageProps) {
   const [masterSelectedCategoryId, setMasterSelectedCategoryId] = useState<string>(
     () => readMasterPresetHistory().lastCategoryId ?? getMasterCategories()[0]?.id ?? "",
   );
+  const [masterSelectedEntryIds, setMasterSelectedEntryIds] = useState<Set<string>>(
+    () => new Set(getMasterEntries(readMasterPresetHistory().lastCategoryId ?? getMasterCategories()[0]?.id ?? "").map((e) => e.id)),
+  );
   const [masterApplying, setMasterApplying] = useState(false);
 
   // ─── 工種フィルタ ──────────────────────────────────────────────────────────
@@ -989,7 +992,8 @@ function GanttPageContent({ initialProjectId = null }: GanttPageProps) {
     if (!selectedProject || !masterSelectedCategoryId) return;
     setMasterApplying(true);
     try {
-      const entries = getMasterEntries(masterSelectedCategoryId);
+      const allEntries = getMasterEntries(masterSelectedCategoryId);
+      const entries = allEntries.filter((e) => masterSelectedEntryIds.has(e.id));
       const categories = getMasterCategories();
       const category = categories.find((c) => c.id === masterSelectedCategoryId);
       if (!category || entries.length === 0) return;
@@ -1005,6 +1009,10 @@ function GanttPageContent({ initialProjectId = null }: GanttPageProps) {
         endDateObj.setDate(endDateObj.getDate() + entry.defaultDays - 1);
         const dueDate = endDateObj.toISOString().slice(0, 10);
 
+        // entryのgroupIdからmiddleCategory名を取得
+        const group = category.groups.find((g) => g.tasks.some((t) => t.id === entry.id) || `wbs-entry-${g.id}` === entry.id);
+        const middleCategory = group?.name;
+
         await taskRepository.create({
           id: crypto.randomUUID(),
           createdAt: now,
@@ -1018,6 +1026,7 @@ function GanttPageContent({ initialProjectId = null }: GanttPageProps) {
           progress: 0,
           dependencies: [],
           majorCategory: category.name,
+          middleCategory,
           includeWeekends: selectedProject.includeWeekends,
         });
 
@@ -1033,7 +1042,7 @@ function GanttPageContent({ initialProjectId = null }: GanttPageProps) {
     } finally {
       setMasterApplying(false);
     }
-  }, [loadData, masterSelectedCategoryId, selectedProject, taskRepository]);
+  }, [loadData, masterSelectedCategoryId, masterSelectedEntryIds, selectedProject, taskRepository]);
 
   const handleWbsApply = useCallback(async () => {
     if (!selectedProject || wbsSelectedMajors.size === 0) return;
@@ -1221,11 +1230,12 @@ function GanttPageContent({ initialProjectId = null }: GanttPageProps) {
           className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-4 sm:items-center"
         >
           <div className="w-full max-w-md rounded-[28px] bg-white p-6 shadow-2xl">
-            <h2 className="text-lg font-bold text-slate-900">マスタから読み込む</h2>
+            <h2 className="text-lg font-bold text-slate-900">テンプレートから工程を追加</h2>
             <p className="mt-1 text-sm text-slate-500">
-              大項目を選択すると工程が一括追加されます。新規案件の標準工程表として使えます。
+              大項目を選んで追加する工程をチェックしてください。
             </p>
 
+            {/* 大項目 (Level 1) */}
             <div className="mt-4">
               <label htmlFor="master-category-select" className="block text-xs font-semibold tracking-[0.16em] text-slate-500">
                 大項目
@@ -1233,7 +1243,11 @@ function GanttPageContent({ initialProjectId = null }: GanttPageProps) {
               <select
                 id="master-category-select"
                 value={masterSelectedCategoryId}
-                onChange={(e) => setMasterSelectedCategoryId(e.target.value)}
+                onChange={(e) => {
+                  const nextId = e.target.value;
+                  setMasterSelectedCategoryId(nextId);
+                  setMasterSelectedEntryIds(new Set(getMasterEntries(nextId).map((entry) => entry.id)));
+                }}
                 className="mt-2 w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500"
               >
                 {getMasterCategories().map((cat) => (
@@ -1242,21 +1256,104 @@ function GanttPageContent({ initialProjectId = null }: GanttPageProps) {
               </select>
             </div>
 
-            {masterSelectedCategoryId && (
-              <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 max-h-48 overflow-y-auto">
-                <p className="text-xs font-semibold tracking-[0.14em] text-slate-500 mb-2">
-                  追加されるエントリ ({getMasterEntries(masterSelectedCategoryId).length}件)
-                </p>
-                <ul className="space-y-1">
-                  {getMasterEntries(masterSelectedCategoryId).map((entry) => (
-                    <li key={entry.id} className="flex items-center justify-between text-sm text-slate-700">
-                      <span className="truncate">{entry.name}</span>
-                      <span className="ml-2 shrink-0 tabular-nums text-xs text-slate-400">{entry.defaultDays}日</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
+            {/* 中項目 → 小項目 3階層ツリー (Level 2 & 3) */}
+            {masterSelectedCategoryId && (() => {
+              const cat = getMasterCategories().find((c) => c.id === masterSelectedCategoryId);
+              if (!cat) return null;
+              const allEntries = getMasterEntries(masterSelectedCategoryId);
+              const selectedCount = allEntries.filter((e) => masterSelectedEntryIds.has(e.id)).length;
+              const allChecked = selectedCount === allEntries.length;
+              return (
+                <div className="mt-4" aria-label="中項目・小項目ツリー">
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-xs font-semibold tracking-[0.14em] text-slate-500">
+                      中項目 / 小項目
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (allChecked) {
+                          setMasterSelectedEntryIds(new Set());
+                        } else {
+                          setMasterSelectedEntryIds(new Set(allEntries.map((e) => e.id)));
+                        }
+                      }}
+                      className="text-xs font-semibold text-brand-600 hover:text-brand-700"
+                    >
+                      {allChecked ? "全解除" : "全選択"} ({selectedCount}/{allEntries.length})
+                    </button>
+                  </div>
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 max-h-56 overflow-y-auto space-y-3">
+                    {cat.groups.map((group) => {
+                      const groupEntries = allEntries.filter((e) =>
+                        group.tasks.some((t) => t.id === e.id) || `wbs-entry-${group.id}` === e.id,
+                      );
+                      const groupCheckedCount = groupEntries.filter((e) => masterSelectedEntryIds.has(e.id)).length;
+                      const groupAllChecked = groupCheckedCount === groupEntries.length && groupEntries.length > 0;
+                      return (
+                        <div key={group.id}>
+                          {/* 中項目 (Level 2) */}
+                          <label className="flex cursor-pointer items-center gap-2 py-1">
+                            <input
+                              type="checkbox"
+                              checked={groupAllChecked}
+                              onChange={() => {
+                                setMasterSelectedEntryIds((prev) => {
+                                  const next = new Set(prev);
+                                  if (groupAllChecked) {
+                                    groupEntries.forEach((e) => next.delete(e.id));
+                                  } else {
+                                    groupEntries.forEach((e) => next.add(e.id));
+                                  }
+                                  return next;
+                                });
+                              }}
+                              className="h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500"
+                              aria-label={`中項目: ${group.name}`}
+                            />
+                            <span className="text-xs font-semibold text-slate-600">{group.name}</span>
+                            <span className="ml-auto text-xs tabular-nums text-slate-400">{groupCheckedCount}/{groupEntries.length}</span>
+                          </label>
+                          {/* 小項目 (Level 3) */}
+                          {groupEntries.length > 0 && (
+                            <ul className="ml-6 space-y-0.5">
+                              {groupEntries.map((entry) => {
+                                const checked = masterSelectedEntryIds.has(entry.id);
+                                return (
+                                  <li key={entry.id}>
+                                    <label className="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1 hover:bg-white">
+                                      <input
+                                        type="checkbox"
+                                        checked={checked}
+                                        onChange={() => {
+                                          setMasterSelectedEntryIds((prev) => {
+                                            const next = new Set(prev);
+                                            if (checked) {
+                                              next.delete(entry.id);
+                                            } else {
+                                              next.add(entry.id);
+                                            }
+                                            return next;
+                                          });
+                                        }}
+                                        className="h-3.5 w-3.5 rounded border-slate-300 text-brand-600 focus:ring-brand-500"
+                                        aria-label={`小項目: ${entry.name}`}
+                                      />
+                                      <span className="flex-1 text-sm text-slate-700 truncate">{entry.name}</span>
+                                      <span className="shrink-0 tabular-nums text-xs text-slate-400">{entry.defaultDays}日</span>
+                                    </label>
+                                  </li>
+                                );
+                              })}
+                            </ul>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })()}
 
             <div className="mt-5 flex justify-end gap-3">
               <button
@@ -1268,11 +1365,11 @@ function GanttPageContent({ initialProjectId = null }: GanttPageProps) {
               </button>
               <button
                 type="button"
-                disabled={!masterSelectedCategoryId || masterApplying}
+                disabled={!masterSelectedCategoryId || masterSelectedEntryIds.size === 0 || masterApplying}
                 onClick={() => void handleMasterApply()}
                 className="min-h-[44px] rounded-2xl bg-brand-600 px-5 py-2 text-sm font-semibold text-white shadow-sm disabled:cursor-not-allowed disabled:opacity-50"
               >
-                {masterApplying ? "追加中..." : "ガントに追加"}
+                {masterApplying ? "追加中..." : `ガントに追加 (${masterSelectedEntryIds.size}件)`}
               </button>
             </div>
           </div>
