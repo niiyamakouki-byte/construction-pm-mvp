@@ -82,8 +82,12 @@ body {
 }
 
 /* Smooth transitions for interactive elements */
-button, a, input, select, textarea {
-  transition: all 0.15s ease;
+/* AN3/AP3: List properties explicitly instead of `transition: all` */
+button, a {
+  transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
+}
+input, select, textarea {
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 input, select, textarea {
