@@ -573,3 +573,128 @@ describe("GanttPage — テンプレートから工程を追加 (Sprint 63)", ()
     expect(screen.queryByRole("dialog", { name: "マスタから読み込む" })).toBeNull();
   });
 });
+
+// ─── Sprint 63: 既存タスクがある場合の衝突確認ダイアログ ────────────────────────
+
+function setupProjectWithTasks() {
+  const now = "2025-01-01T00:00:00.000Z";
+  mockProjectRepository.findAll.mockResolvedValue([
+    {
+      id: "p1",
+      name: "南青山ビル改修",
+      description: "",
+      status: "active",
+      startDate: "2025-01-10",
+      includeWeekends: true,
+      createdAt: now,
+      updatedAt: now,
+    },
+  ]);
+  mockTaskRepository.findAll.mockResolvedValue([
+    {
+      id: "t1",
+      projectId: "p1",
+      name: "既存工程",
+      description: "",
+      status: "todo",
+      startDate: "2025-01-10",
+      dueDate: "2025-01-12",
+      progress: 0,
+      dependencies: [],
+      createdAt: now,
+      updatedAt: now,
+    },
+  ]);
+  mockContractorRepository.findAll.mockResolvedValue([]);
+  mockTaskRepository.create.mockResolvedValue({});
+}
+
+describe("GanttPage — 既存タスクあり衝突確認ダイアログ (Sprint 63)", () => {
+  beforeEach(() => {
+    cleanup();
+    mockTaskRepository.findAll.mockReset();
+    mockTaskRepository.create.mockReset();
+    mockTaskRepository.update.mockReset();
+    mockTaskRepository.delete.mockReset();
+    mockProjectRepository.findAll.mockReset();
+    mockContractorRepository.findAll.mockReset();
+    mockExportGanttToPdf.mockReset();
+  });
+
+  it("既存タスクがある状態でガントに追加ボタンを押すと確認ダイアログが出る", async () => {
+    setupProjectWithTasks();
+    const user = userEvent.setup();
+    render(<GanttPage initialProjectId="p1" />);
+
+    await screen.findByRole("figure", { name: "ガントチャート: 1タスク" });
+    await user.click(screen.getByRole("button", { name: "マスタから読み込む" }));
+    await user.click(screen.getByRole("button", { name: /ガントに追加/ }));
+
+    expect(await screen.findByRole("dialog", { name: "工程追加の確認" })).toBeDefined();
+  });
+
+  it("確認ダイアログに既存タスク件数が表示される", async () => {
+    setupProjectWithTasks();
+    const user = userEvent.setup();
+    render(<GanttPage initialProjectId="p1" />);
+
+    await screen.findByRole("figure", { name: "ガントチャート: 1タスク" });
+    await user.click(screen.getByRole("button", { name: "マスタから読み込む" }));
+    await user.click(screen.getByRole("button", { name: /ガントに追加/ }));
+
+    await screen.findByRole("dialog", { name: "工程追加の確認" });
+    expect(screen.getByText(/1 件の工程/)).toBeDefined();
+  });
+
+  it("確認ダイアログでキャンセルするとcreateは呼ばれない", async () => {
+    setupProjectWithTasks();
+    const user = userEvent.setup();
+    render(<GanttPage initialProjectId="p1" />);
+
+    await screen.findByRole("figure", { name: "ガントチャート: 1タスク" });
+    await user.click(screen.getByRole("button", { name: "マスタから読み込む" }));
+    await user.click(screen.getByRole("button", { name: /ガントに追加/ }));
+
+    const conflictDialog = await screen.findByRole("dialog", { name: "工程追加の確認" });
+    // scope キャンセルクリックを確認ダイアログ内に限定
+    const { getByRole: getByRoleWithin } = await import("@testing-library/react");
+    await user.click(getByRoleWithin(conflictDialog, "button", { name: "キャンセル" }));
+
+    expect(mockTaskRepository.create).not.toHaveBeenCalled();
+    expect(screen.queryByRole("dialog", { name: "工程追加の確認" })).toBeNull();
+  });
+
+  it("確認ダイアログで追加するを押すとcreateが呼ばれる", async () => {
+    setupProjectWithTasks();
+    const user = userEvent.setup();
+    render(<GanttPage initialProjectId="p1" />);
+
+    await screen.findByRole("figure", { name: "ガントチャート: 1タスク" });
+    await user.click(screen.getByRole("button", { name: "マスタから読み込む" }));
+    await user.click(screen.getByRole("button", { name: /ガントに追加/ }));
+
+    await screen.findByRole("dialog", { name: "工程追加の確認" });
+    await user.click(screen.getByRole("button", { name: "追加する" }));
+
+    await waitFor(() => {
+      expect(mockTaskRepository.create).toHaveBeenCalled();
+    });
+  });
+
+  it("既存タスクがない場合は確認ダイアログを挟まずcreateが呼ばれる", async () => {
+    setupProject();
+    const user = userEvent.setup();
+    render(<GanttPage initialProjectId="p1" />);
+
+    await screen.findByRole("heading", { name: "南青山ビル改修" });
+    await user.click(screen.getByRole("button", { name: "マスタから読み込む" }));
+    await user.click(screen.getByRole("button", { name: /ガントに追加/ }));
+
+    // 確認ダイアログは出ない
+    expect(screen.queryByRole("dialog", { name: "工程追加の確認" })).toBeNull();
+
+    await waitFor(() => {
+      expect(mockTaskRepository.create).toHaveBeenCalled();
+    });
+  });
+});

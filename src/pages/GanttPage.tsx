@@ -392,6 +392,7 @@ function GanttPageContent({ initialProjectId = null }: GanttPageProps) {
     () => new Set(getMasterEntries(readMasterPresetHistory().lastCategoryId ?? getMasterCategories()[0]?.id ?? "").map((e) => e.id)),
   );
   const [masterApplying, setMasterApplying] = useState(false);
+  const [masterConflictPending, setMasterConflictPending] = useState(false);
 
   // ─── 工種フィルタ ──────────────────────────────────────────────────────────
   const TRADE_CATEGORIES = ["painting", "framing", "electrical", "plumbing", "finishing", "other"] as const;
@@ -988,8 +989,9 @@ function GanttPageContent({ initialProjectId = null }: GanttPageProps) {
     }
   }, [loadData, rainAffected, taskRepository]);
 
-  const handleMasterApply = useCallback(async () => {
+  const handleMasterApplyConfirmed = useCallback(async () => {
     if (!selectedProject || !masterSelectedCategoryId) return;
+    setMasterConflictPending(false);
     setMasterApplying(true);
     try {
       const allEntries = getMasterEntries(masterSelectedCategoryId);
@@ -1043,6 +1045,16 @@ function GanttPageContent({ initialProjectId = null }: GanttPageProps) {
       setMasterApplying(false);
     }
   }, [loadData, masterSelectedCategoryId, masterSelectedEntryIds, selectedProject, taskRepository]);
+
+  const handleMasterApply = useCallback(() => {
+    if (!selectedProject || !masterSelectedCategoryId) return;
+    if (selectedProjectTasks.length > 0) {
+      // 既存タスクがある場合は確認ダイアログを表示
+      setMasterConflictPending(true);
+    } else {
+      void handleMasterApplyConfirmed();
+    }
+  }, [handleMasterApplyConfirmed, masterSelectedCategoryId, selectedProject, selectedProjectTasks.length]);
 
   const handleWbsApply = useCallback(async () => {
     if (!selectedProject || wbsSelectedMajors.size === 0) return;
@@ -1366,10 +1378,42 @@ function GanttPageContent({ initialProjectId = null }: GanttPageProps) {
               <button
                 type="button"
                 disabled={!masterSelectedCategoryId || masterSelectedEntryIds.size === 0 || masterApplying}
-                onClick={() => void handleMasterApply()}
+                onClick={handleMasterApply}
                 className="min-h-[44px] rounded-2xl bg-brand-600 px-5 py-2 text-sm font-semibold text-white shadow-sm disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {masterApplying ? "追加中..." : `ガントに追加 (${masterSelectedEntryIds.size}件)`}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {masterConflictPending ? (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="工程追加の確認"
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-4 sm:items-center"
+        >
+          <div className="w-full max-w-sm rounded-[28px] bg-white p-6 shadow-2xl">
+            <h2 className="text-lg font-bold text-slate-900">工程を追加しますか？</h2>
+            <p className="mt-2 text-sm text-slate-500">
+              この案件にはすでに {selectedProjectTasks.length} 件の工程があります。テンプレートの工程を追加します。
+            </p>
+            <div className="mt-5 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setMasterConflictPending(false)}
+                className="min-h-[44px] rounded-2xl border border-slate-200 bg-white px-5 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50"
+              >
+                キャンセル
+              </button>
+              <button
+                type="button"
+                onClick={() => void handleMasterApplyConfirmed()}
+                className="min-h-[44px] rounded-2xl bg-brand-600 px-5 py-2 text-sm font-semibold text-white shadow-sm"
+              >
+                追加する
               </button>
             </div>
           </div>
