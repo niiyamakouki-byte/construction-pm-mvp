@@ -1396,34 +1396,54 @@ function PickupSidebar({
         </button>
       </div>
 
-      {/* Summary table */}
+      {/* Summary table with cost totals */}
       {summaryRows.length > 0 && (
         <div className="flex flex-col gap-1">
-          <p className="text-xs font-semibold text-slate-700">数量集計</p>
-          {summaryRows.map((row, idx) => {
+          <div className="flex items-center justify-between">
+            <p className="text-xs font-semibold text-slate-700">数量集計</p>
+            {totalCost > 0 && (
+              <p className="text-xs font-bold text-emerald-700">
+                合計 ¥{totalCost.toLocaleString()}
+              </p>
+            )}
+          </div>
+          {costRows.map((row, idx) => {
             const isExpanded = expandedRowIdx === idx;
             const suggestions = isExpanded
               ? suggestForRow(row, costMaster, 3)
               : [];
+            const catColor = TAKEOFF_CATEGORY_COLORS[row.category] ?? "#6b7280";
             return (
               <div
                 key={`${row.category}-${row.measureKind}`}
                 className="rounded-xl border border-slate-200 bg-white overflow-hidden"
+                style={{ borderLeftColor: catColor, borderLeftWidth: 3 }}
               >
                 <button
                   type="button"
                   onClick={() => onExpandRow(isExpanded ? null : idx)}
                   className="w-full flex items-center justify-between px-3 py-2 text-left hover:bg-slate-50"
                 >
-                  <span className="text-xs font-bold text-slate-700">
+                  <span className="text-xs font-bold text-slate-700 flex items-center gap-1">
+                    <span
+                      className="inline-block w-2 h-2 rounded-full"
+                      style={{ backgroundColor: catColor }}
+                    />
                     {row.category}
                     <span className="ml-1 font-normal text-slate-500">
                       ({row.segmentCount}箇所)
                     </span>
                   </span>
-                  <span className="text-xs font-bold text-orange-600">
-                    {row.totalValue.toFixed(2)} {row.unit}
-                  </span>
+                  <div className="flex flex-col items-end">
+                    <span className="text-xs font-bold" style={{ color: catColor }}>
+                      {row.totalValue.toFixed(2)} {row.unit}
+                    </span>
+                    {row.totalCost > 0 && (
+                      <span className="text-[10px] text-emerald-600 font-semibold">
+                        ¥{row.totalCost.toLocaleString()}
+                      </span>
+                    )}
+                  </div>
                 </button>
 
                 {isExpanded && (
