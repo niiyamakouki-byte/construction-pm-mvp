@@ -1,10 +1,18 @@
 /**
- * phase-cascade.test.ts — Phase 2.0
+ * phase-cascade.test.ts — Phase 2.0 + Sprint 68
  * BFS DAG 伝播エンジンのユニットテスト
  */
 import { describe, it, expect } from 'vitest';
-import { computeCascade, applyRainDelay } from './phase-cascade.js';
+import {
+  computeCascade,
+  applyRainDelay,
+  cascadeDelay,
+  detectCycles,
+  applyCascade,
+  previewCascade,
+} from './phase-cascade.js';
 import type { PhaseRecord } from './supabase-adapter/PhaseRepository.js';
+import type { CascadeNode } from './phase-cascade.js';
 
 function makePhase(overrides: Partial<PhaseRecord> & { id: string }): PhaseRecord {
   return {
@@ -118,5 +126,260 @@ describe('applyRainDelay', () => {
     expect(result.delayDays).toBe(3);
     const x = result.affected.find((s) => s.phaseId === 'X')!;
     expect(x.newStartDate).toBe('2026-07-04');
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Sprint 68: CascadeNode ベースのカスケード計算テスト
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** UTC 日付文字列から Date を作るヘルパー */
+function d(dateStr: string): Date {
+  return new Date(`${dateStr}T00:00:00.000Z`);
+}
+
+/** CascadeNode のファクトリ */
+function makeNode(
+  id: string,
+  start: string,
+  end: string,
+  dependsOn: string[] = [],
+  opts: Partial<Omit<CascadeNode, 'id' | 'start' | 'end' | 'dependsOn'>> = {},
+): CascadeNode {
+  const startDate = d(start);
+  const endDate = d(end);
+  const duration = Math.floor((endDate.getTime() - startDate.getTime()) / 86_400_000);
+  return {
+    id,
+    start: startDate,
+    end: endDate,
+    duration,
+    dependsOn,
+    dependencyType: 'FS',
+    ...opts,
+  };
+}
+
+describe('detectCycles', () => {
+  it('循環なしのグラフでは throw しない', () => {
+    const nodes = [
+      makeNode('A', '2026-06-01', '2026-06-05'),
+      makeNode('B', '2026-06-06', '2026-06-10', ['A']),
+      makeNode('C', '2026-06-11', '2026-06-15', ['B']),
+    ];
+    expect(() => detectCycles(nodes)).not.toThrow();
+  });
+
+  it('直接循環 A->B->A を検出して throw する', () => {
+    const nodes = [
+      makeNode('A', '2026-06-01', '2026-06-05', ['B']),
+      makeNode('B', '2026-06-06', '2026-06-10', ['A']),
+    ];
+    expect(() => detectCycles(nodes)).toThrow(/循環依存/);
+  });
+
+  it('間接循環 A->B->C->A を検出して throw する', () => {
+    const nodes = [
+      makeNode('A', '2026-06-01', '2026-06-05', ['C']),
+      makeNode('B', '2026-06-06', '2026-06-10', ['A']),
+      makeNode('C', '2026-06-11', '2026-06-15', ['B']),
+    ];
+    expect(() => detectCycles(nodes)).toThrow(/循環依存/);
+  });
+});
+
+describe('cascadeDelay — FS (Finish-to-Start)', () => {
+  it('上流終了日が下流開始日になり duration を保つ', () => {
+    // A: 1-5 → B: 6-10 (duration=4). A を 3 日遅延 → end=8
+    const nodes = [
+      makeNode('A', '2026-06-01', '2026-06-05'),
+      makeNode('B', '2026-06-06', '2026-06-10', ['A'], { dependencyType: 'FS' }),
+    ];
+    const map = cascadeDelay(nodes, 'A', 3);
+    // A: 4-8
+    expect(map['A'].newStart).toEqual(d('2026-06-04'));
+    expect(map['A'].newEnd).toEqual(d('2026-06-08'));
+    // B: FS → start = A.end = 2026-06-08, end = 08 + 4 = 12
+    expect(map['B'].newStart).toEqual(d('2026-06-08'));
+    expect(map['B'].newEnd).toEqual(d('2026-06-12'));
+    expect(map['B'].delta).toBeGreaterThan(0);
+  });
+
+  it('複数下流に分岐して伝播する', () => {
+    const nodes = [
+      makeNode('A', '2026-06-01', '2026-06-05'),
+      makeNode('B', '2026-06-06', '2026-06-10', ['A'], { dependencyType: 'FS' }),
+      makeNode('C', '2026-06-06', '2026-06-12', ['A'], { dependencyType: 'FS' }),
+    ];
+    const map = cascadeDelay(nodes, 'A', 2);
+    expect(map['B']).toBeDefined();
+    expect(map['C']).toBeDefined();
+    expect(map['B'].delta).toBeGreaterThan(0);
+    expect(map['C'].delta).toBeGreaterThan(0);
+  });
+});
+
+describe('cascadeDelay — SS (Start-to-Start)', () => {
+  it('下流の start が上流 start に揃い duration を保つ', () => {
+    // A: 1-5 (4d). B: 3-7 (4d) SS→A. A 5日遅延: start=6
+    const nodes = [
+      makeNode('A', '2026-06-01', '2026-06-05'),
+      makeNode('B', '2026-06-03', '2026-06-07', ['A'], { dependencyType: 'SS' }),
+    ];
+    const map = cascadeDelay(nodes, 'A', 5);
+    // A.start = 2026-06-06
+    // B.start = A.start = 2026-06-06, B duration=4, end=2026-06-10
+    expect(map['B'].newStart).toEqual(map['A'].newStart);
+    const bDuration = Math.floor(
+      (map['B'].newEnd.getTime() - map['B'].newStart.getTime()) / 86_400_000,
+    );
+    expect(bDuration).toBe(4);
+  });
+});
+
+describe('cascadeDelay — FF (Finish-to-Finish)', () => {
+  it('下流の end が上流 end に揃い duration を保つ', () => {
+    // A: 1-5 (4d). B: 2-6 (4d) FF→A. A 3日遅延: end=8
+    const nodes = [
+      makeNode('A', '2026-06-01', '2026-06-05'),
+      makeNode('B', '2026-06-02', '2026-06-06', ['A'], { dependencyType: 'FF' }),
+    ];
+    const map = cascadeDelay(nodes, 'A', 3);
+    // A.end = 2026-06-08
+    // B.end = A.end = 2026-06-08, duration=4, start=2026-06-04
+    expect(map['B'].newEnd).toEqual(map['A'].newEnd);
+    const bDuration = Math.floor(
+      (map['B'].newEnd.getTime() - map['B'].newStart.getTime()) / 86_400_000,
+    );
+    expect(bDuration).toBe(4);
+  });
+});
+
+describe('cascadeDelay — SF (Start-to-Finish)', () => {
+  it('下流の end が上流 start に揃い duration を保つ', () => {
+    // A: 10-15. B: 5-9 (4d) SF→A. A 2日遅延: start=12
+    const nodes = [
+      makeNode('A', '2026-06-10', '2026-06-15'),
+      makeNode('B', '2026-06-05', '2026-06-09', ['A'], { dependencyType: 'SF' }),
+    ];
+    const map = cascadeDelay(nodes, 'A', 2);
+    // A.start = 2026-06-12
+    // B.end = A.start = 2026-06-12, duration=4, start=2026-06-08
+    expect(map['B'].newEnd).toEqual(map['A'].newStart);
+    const bDuration = Math.floor(
+      (map['B'].newEnd.getTime() - map['B'].newStart.getTime()) / 86_400_000,
+    );
+    expect(bDuration).toBe(4);
+  });
+});
+
+describe('cascadeDelay — locked ノード吸収', () => {
+  it('locked ノードは移動せず delta=0 になる', () => {
+    const nodes = [
+      makeNode('A', '2026-06-01', '2026-06-05'),
+      makeNode('B', '2026-06-06', '2026-06-10', ['A'], { locked: true }),
+      makeNode('C', '2026-06-11', '2026-06-15', ['B'], { dependencyType: 'FS' }),
+    ];
+    const map = cascadeDelay(nodes, 'A', 3);
+    expect(map['B'].delta).toBe(0);
+    expect(map['B'].newStart).toEqual(d('2026-06-06'));
+    expect(map['B'].newEnd).toEqual(d('2026-06-10'));
+    // C は locked な B の元日程を参照するので delta は実質 B.end=6/10 基準
+    expect(map['C']).toBeDefined();
+  });
+
+  it('起点ノード自体が locked の場合も delta=0', () => {
+    const nodes = [
+      makeNode('A', '2026-06-01', '2026-06-05', [], { locked: true }),
+      makeNode('B', '2026-06-06', '2026-06-10', ['A']),
+    ];
+    const map = cascadeDelay(nodes, 'A', 5);
+    expect(map['A'].delta).toBe(0);
+  });
+});
+
+describe('cascadeDelay — 循環依存で throw', () => {
+  it('循環を含むノード配列で cascadeDelay を呼ぶと throw する', () => {
+    const nodes = [
+      makeNode('X', '2026-06-01', '2026-06-05', ['Y']),
+      makeNode('Y', '2026-06-06', '2026-06-10', ['X']),
+    ];
+    expect(() => cascadeDelay(nodes, 'X', 1)).toThrow(/循環依存/);
+  });
+});
+
+describe('cascadeDelay — 3 ノード直列伝播', () => {
+  it('A→B→C で A 遅延が C まで伝わる', () => {
+    const nodes = [
+      makeNode('A', '2026-06-01', '2026-06-05'),
+      makeNode('B', '2026-06-05', '2026-06-10', ['A'], { dependencyType: 'FS' }),
+      makeNode('C', '2026-06-10', '2026-06-15', ['B'], { dependencyType: 'FS' }),
+    ];
+    const map = cascadeDelay(nodes, 'A', 3);
+    expect(map['A']).toBeDefined();
+    expect(map['B']).toBeDefined();
+    expect(map['C']).toBeDefined();
+    expect(map['C'].delta).toBeGreaterThan(0);
+  });
+});
+
+describe('applyCascade', () => {
+  it('cascadeMap を元ノード配列に適用して新配列を返す', () => {
+    const nodes = [
+      makeNode('A', '2026-06-01', '2026-06-05'),
+      makeNode('B', '2026-06-06', '2026-06-10', ['A']),
+    ];
+    const map = cascadeDelay(nodes, 'A', 3);
+    const updated = applyCascade(nodes, map);
+
+    // immutable: 元ノードは変化しない
+    expect(nodes[0].start).toEqual(d('2026-06-01'));
+
+    // 更新後のノードは cascadeMap に従う
+    const a = updated.find((n) => n.id === 'A')!;
+    expect(a.start).toEqual(map['A'].newStart);
+    expect(a.end).toEqual(map['A'].newEnd);
+
+    const b = updated.find((n) => n.id === 'B')!;
+    expect(b.start).toEqual(map['B'].newStart);
+  });
+
+  it('cascadeMap にないノードは変化しない', () => {
+    const nodes = [
+      makeNode('A', '2026-06-01', '2026-06-05'),
+      makeNode('Z', '2026-07-01', '2026-07-10'), // no dependency
+    ];
+    const map = cascadeDelay(nodes, 'A', 2);
+    const updated = applyCascade(nodes, map);
+    const z = updated.find((n) => n.id === 'Z')!;
+    expect(z.start).toEqual(d('2026-07-01'));
+  });
+});
+
+describe('previewCascade', () => {
+  it('影響するノードの delta サマリを返す', () => {
+    const nodes = [
+      makeNode('A', '2026-06-01', '2026-06-05'),
+      makeNode('B', '2026-06-05', '2026-06-10', ['A']),
+      makeNode('C', '2026-06-10', '2026-06-15', ['B']),
+    ];
+    const preview = previewCascade(nodes, 'A', 4);
+    const ids = preview.map((p) => p.id);
+    expect(ids).toContain('A');
+    expect(ids).toContain('B');
+    expect(ids).toContain('C');
+    const aItem = preview.find((p) => p.id === 'A')!;
+    expect(aItem.delta).toBe(4);
+  });
+
+  it('locked ノードは delta=0 / locked=true で返る', () => {
+    const nodes = [
+      makeNode('A', '2026-06-01', '2026-06-05'),
+      makeNode('B', '2026-06-05', '2026-06-10', ['A'], { locked: true }),
+    ];
+    const preview = previewCascade(nodes, 'A', 3);
+    const bItem = preview.find((p) => p.id === 'B')!;
+    expect(bItem.delta).toBe(0);
+    expect(bItem.locked).toBe(true);
   });
 });
