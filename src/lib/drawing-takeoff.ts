@@ -374,3 +374,124 @@ export function calculateCostEstimate(
 
 // Repository-pattern accessor (for gradual migration to Supabase)
 export const takeoffSessionRepository = createRepository<TakeoffSession>('takeoff_sessions');
+
+// ── Sprint 64: スナップ + AI補完 ──────────────────────────────────────────────
+
+/**
+ * Snap a candidate point to the nearest existing point if it is within the
+ * snap radius.  Returns the snapped point (or the original if nothing is near).
+ *
+ * @param candidate   The raw clicked pixel position
+ * @param existing    Previously placed points in the current trace
+ * @param snapRadius  Maximum pixel distance to trigger snapping (default 12 px)
+ */
+export function snapToExistingPoint(
+  candidate: TakeoffPoint,
+  existing: TakeoffPoint[],
+  snapRadius = 12,
+): TakeoffPoint {
+  let nearest: TakeoffPoint | null = null;
+  let nearestDist = Infinity;
+  for (const pt of existing) {
+    const dx = candidate.x - pt.x;
+    const dy = candidate.y - pt.y;
+    const d = Math.sqrt(dx * dx + dy * dy);
+    if (d < snapRadius && d < nearestDist) {
+      nearest = pt;
+      nearestDist = d;
+    }
+  }
+  return nearest ?? candidate;
+}
+
+/**
+ * Snap a candidate point to the nearest axis-aligned extension of any segment
+ * defined by the existing points list.  This approximates "wall-line snapping"
+ * — if the cursor is within `snapRadius` px of a horizontal or vertical
+ * projection of an existing segment, the point is projected onto that line.
+ *
+ * Returns the (possibly snapped) point.
+ */
+export function snapToAxisLine(
+  candidate: TakeoffPoint,
+  existing: TakeoffPoint[],
+  snapRadius = 10,
+): TakeoffPoint {
+  if (existing.length === 0) return candidate;
+  let bestDist = snapRadius;
+  let best: TakeoffPoint = candidate;
+  for (const pt of existing) {
+    // Horizontal snap: candidate.y close to pt.y
+    const dy = Math.abs(candidate.y - pt.y);
+    if (dy < bestDist) {
+      bestDist = dy;
+      best = { x: candidate.x, y: pt.y };
+    }
+    // Vertical snap: candidate.x close to pt.x
+    const dx = Math.abs(candidate.x - pt.x);
+    if (dx < bestDist) {
+      bestDist = dx;
+      best = { x: pt.x, y: candidate.y };
+    }
+  }
+  return best;
+}
+
+/**
+ * Determine whether a candidate point is close enough to the first point of an
+ * open polygon to trigger auto-close.
+ *
+ * @param candidate  Newly clicked point
+ * @param first      First point of the current trace
+ * @param threshold  Pixel distance to trigger close (default 16 px)
+ */
+export function isNearFirstPoint(
+  candidate: TakeoffPoint,
+  first: TakeoffPoint,
+  threshold = 16,
+): boolean {
+  const dx = candidate.x - first.x;
+  const dy = candidate.y - first.y;
+  return Math.sqrt(dx * dx + dy * dy) < threshold;
+}
+
+/**
+ * Predict the most likely next point in an open polyline based on the
+ * direction and step size of the most recent segment.  If fewer than two
+ * points exist, returns null.
+ *
+ * Algorithm: simple linear extrapolation from the last two points.
+ * Pure numerical, no LLM required.
+ *
+ * @param points  Current list of traced points (≥ 2 required)
+ * @returns Predicted next point, or null if not enough data
+ */
+export function predictNextPoint(
+  points: TakeoffPoint[],
+): TakeoffPoint | null {
+  if (points.length < 2) return null;
+  const last = points[points.length - 1]!;
+  const prev = points[points.length - 2]!;
+  const dx = last.x - prev.x;
+  const dy = last.y - prev.y;
+  return { x: last.x + dx, y: last.y + dy };
+}
+
+/**
+ * Snap and predict pipeline: apply axis-line snap, then point snap, then
+ * optionally return a ghost prediction for the next point.
+ *
+ * Returns `{ snapped, prediction }` where prediction may be null.
+ */
+export function processPickupPoint(
+  candidate: TakeoffPoint,
+  existing: TakeoffPoint[],
+  snapRadius = 12,
+  axisSnapRadius = 10,
+): { snapped: TakeoffPoint; prediction: TakeoffPoint | null } {
+  const axisSnapped = snapToAxisLine(candidate, existing, axisSnapRadius);
+  const snapped = snapToExistingPoint(axisSnapped, existing, snapRadius);
+  const allPoints = [...existing, snapped];
+  const prediction = predictNextPoint(allPoints);
+  return { snapped, prediction };
+}

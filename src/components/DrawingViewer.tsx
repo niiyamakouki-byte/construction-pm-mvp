@@ -25,6 +25,8 @@ import {
   removeSegment,
   updateSegment,
   summariseSession,
+  summariseWithCost,
+  sessionTotalCost,
   suggestForRow,
   exportSessionCSV,
   exportSessionJSON,
@@ -34,10 +36,18 @@ import {
   createTakeoffUndoStack,
   withUndo,
   TAKEOFF_SEGMENT_CATEGORIES,
+  TAKEOFF_CATEGORY_COLORS,
+  polylineLengthPx,
+  pxLengthToMetres,
   type TakeoffSessionState,
   type TakeoffSegmentCategory,
 } from "../lib/takeoff-session.js";
 import type { CostMasterEntry } from "../lib/measurement-to-estimate-link.js";
+import {
+  processPickupPoint,
+  isNearFirstPoint,
+} from "../lib/drawing-takeoff.js";
+import type { TakeoffPoint } from "../lib/drawing-takeoff.js";
 
 type ViewerMode = "pin" | "calibrate" | "measure" | "area" | "diff" | "pickup";
 
@@ -126,6 +136,8 @@ export function DrawingViewer({
   // Pickup drawing points (for line or area tracing)
   const [pickupPoints, setPickupPoints] = useState<Point[]>([]);
   const [pickupDrawing, setPickupDrawing] = useState(false);
+  // AI prediction: ghost point for next likely position
+  const [pickupPrediction, setPickupPrediction] = useState<TakeoffPoint | null>(null);
 
   // Load persisted scale on mount
   useEffect(() => {
@@ -247,8 +259,23 @@ export function DrawingViewer({
         if (!scale) return;
         const px = getPixelPos(pos.clientX, pos.clientY);
         if (!px) return;
-        setPickupPoints((pts) => [...pts, px]);
-        setPickupDrawing(true);
+        setPickupPoints((pts) => {
+          const { snapped, prediction } = processPickupPoint(px, pts);
+          // Auto-close: if area mode and near first point (≥3 pts), treat as finalize
+          const first = pts[0];
+          if (pickupKind === "area" && pts.length >= 3 && first && isNearFirstPoint(snapped, first)) {
+            // Trigger finalize on next render via a synthetic flag — we can't call
+            // finalizePickupSegment here (closure over stale pts). Instead just
+            // return pts unchanged and set a flag via an effect workaround.
+            // Simpler: close the polygon by adding the first point so the segment
+            // is computed correctly on finalizePickupSegment.
+            setPickupPrediction(null);
+            return [...pts, first];
+          }
+          setPickupPrediction(prediction);
+          setPickupDrawing(true);
+          return [...pts, snapped];
+        });
         return;
       }
     },
@@ -365,21 +392,56 @@ export function DrawingViewer({
     }
     if (mode === "pickup" && pickupPoints.length > 0) {
       ctx.beginPath();
+      // Per-category color for the active trace
+      const catColor = TAKEOFF_CATEGORY_COLORS[pickupCategory] ?? "#f97316";
       ctx.moveTo(pickupPoints[0]!.x, pickupPoints[0]!.y);
       for (let i = 1; i < pickupPoints.length; i++) {
         ctx.lineTo(pickupPoints[i]!.x, pickupPoints[i]!.y);
       }
-      ctx.strokeStyle = "#f97316";
-      ctx.lineWidth = 2;
+      ctx.strokeStyle = catColor;
+      ctx.lineWidth = 2.5;
       ctx.stroke();
       pickupPoints.forEach((p) => {
         ctx.beginPath();
         ctx.arc(p.x, p.y, 4, 0, Math.PI * 2);
-        ctx.fillStyle = "#f97316";
+        ctx.fillStyle = catColor;
         ctx.fill();
+        ctx.strokeStyle = "#fff";
+        ctx.lineWidth = 1;
+        ctx.stroke();
       });
+      // Draw prediction ghost point (ベクトル延長補完)
+      if (pickupPrediction) {
+        const last = pickupPoints[pickupPoints.length - 1]!;
+        ctx.beginPath();
+        ctx.moveTo(last.x, last.y);
+        ctx.lineTo(pickupPrediction.x, pickupPrediction.y);
+        ctx.strokeStyle = catColor + "55";
+        ctx.lineWidth = 1.5;
+        ctx.setLineDash([4, 4]);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.beginPath();
+        ctx.arc(pickupPrediction.x, pickupPrediction.y, 5, 0, Math.PI * 2);
+        ctx.fillStyle = catColor + "55";
+        ctx.fill();
+        ctx.strokeStyle = catColor + "99";
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+      }
+      // Draw snap-to-close indicator when near first point
+      if (pickupKind === "area" && pickupPoints.length >= 3) {
+        const first = pickupPoints[0]!;
+        ctx.beginPath();
+        ctx.arc(first.x, first.y, 10, 0, Math.PI * 2);
+        ctx.strokeStyle = "rgba(34,197,94,0.7)";
+        ctx.lineWidth = 2;
+        ctx.setLineDash([3, 3]);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
     }
-  }, [mode, calibrateState, measureState, areaState, pickupPoints]);
+  }, [mode, calibrateState, measureState, areaState, pickupPoints, pickupPrediction, pickupKind, pickupCategory]);
 
   const confirmCalibrate = () => {
     if (calibrateState.stage !== "dialog") return;
@@ -413,13 +475,9 @@ export function DrawingViewer({
       // measureArea returns ㎡
       value = measureArea(pickupPoints, scale);
     } else {
-      // measureDistance between first and last point (straight line)
-      const { valueM } = measureDistance(
-        pickupPoints[0]!,
-        pickupPoints[pickupPoints.length - 1]!,
-        scale,
-      );
-      value = valueM;
+      // Sum all polyline segment lengths (not just first→last straight line)
+      const totalPx = polylineLengthPx(pickupPoints);
+      value = pxLengthToMetres(totalPx, scale);
     }
     if (value <= 0) return;
     const next = withUndo(pickupUndoStack.current, pickupSession, (s) =>
@@ -435,12 +493,29 @@ export function DrawingViewer({
     setPickupPoints([]);
     setPickupDrawing(false);
     setPickupLabel("");
+    setPickupPrediction(null);
   }, [scale, pickupPoints, pickupKind, pickupCategory, pickupLabel, pickupSession]);
 
   const resetPickupPoints = useCallback(() => {
     setPickupPoints([]);
     setPickupDrawing(false);
+    setPickupPrediction(null);
   }, []);
+
+  // Keyboard: Enter or Escape in pickup mode
+  useEffect(() => {
+    if (mode !== "pickup") return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        finalizePickupSegment();
+      } else if (e.key === "Escape") {
+        resetPickupPoints();
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [mode, finalizePickupSegment, resetPickupPoints]);
 
   const undoPickup = useCallback(() => {
     const prev = pickupUndoStack.current.undo();
@@ -497,7 +572,7 @@ export function DrawingViewer({
     if (next !== "measure") setMeasureState({ stage: "idle" });
     if (next !== "area") setAreaState({ stage: "collecting", points: [] });
     if (next !== "diff") { setDiffResult(null); }
-    if (next !== "pickup") { setPickupPoints([]); setPickupDrawing(false); }
+    if (next !== "pickup") { setPickupPoints([]); setPickupDrawing(false); setPickupPrediction(null); }
   };
 
   // Run diff when switching to diff mode with both images loaded
@@ -771,7 +846,9 @@ export function DrawingViewer({
         {mode === "pickup" && scale && (
           <div className="absolute inset-0 border-2 border-orange-400 rounded-2xl pointer-events-none flex items-start justify-center pt-3">
             <span className="bg-orange-500 text-white text-xs px-3 py-1 rounded-full shadow">
-              {pickupDrawing
+              {pickupDrawing && pickupKind === "area" && pickupPoints.length >= 3
+                ? `${pickupPoints.length}点 — 最初の点付近でオートクローズ`
+                : pickupDrawing
                 ? `${pickupPoints.length}点 — 確定 or リセット`
                 : "図面をタップして計測"}
             </span>
@@ -1216,13 +1293,15 @@ function PickupSidebar({
   onExportCSV,
   onExportJSON,
 }: PickupSidebarProps) {
+  const costRows = summariseWithCost(session, costMaster);
   const summaryRows = summariseSession(session);
+  const totalCost = sessionTotalCost(session, costMaster);
   const minPoints = measureKind === "area" ? 3 : 2;
   const canFinalize = hasScale && points.length >= minPoints;
 
   return (
     <div className="flex flex-col gap-3">
-      {/* Category selector */}
+      {/* Category selector with color dots */}
       <div className="flex flex-col gap-1">
         <span className="text-xs font-medium text-slate-600">カテゴリ</span>
         <div className="grid grid-cols-3 gap-1">
@@ -1231,12 +1310,21 @@ function PickupSidebar({
               key={cat}
               type="button"
               onClick={() => onCategoryChange(cat)}
-              className={`rounded-xl py-1.5 text-xs font-bold transition-colors ${
+              style={
                 category === cat
-                  ? "bg-orange-500 text-white"
+                  ? { backgroundColor: TAKEOFF_CATEGORY_COLORS[cat], color: "#fff" }
+                  : undefined
+              }
+              className={`rounded-xl py-1.5 text-xs font-bold transition-colors flex items-center justify-center gap-1 ${
+                category === cat
+                  ? ""
                   : "bg-slate-100 text-slate-600 hover:bg-slate-200"
               }`}
             >
+              <span
+                className="inline-block w-2 h-2 rounded-full flex-shrink-0"
+                style={{ backgroundColor: TAKEOFF_CATEGORY_COLORS[cat] }}
+              />
               {cat}
             </button>
           ))}

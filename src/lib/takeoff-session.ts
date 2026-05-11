@@ -17,11 +17,30 @@ export const TAKEOFF_SEGMENT_CATEGORIES = [
   "床",
   "天井",
   "巾木",
+  "廻り縁",
+  "天井見切",
+  "床見切",
   "開口部",
   "その他",
 ] as const;
 
 export type TakeoffSegmentCategory = (typeof TAKEOFF_SEGMENT_CATEGORIES)[number];
+
+/**
+ * Per-category color map for canvas overlay rendering.
+ * Used by DrawingViewer to color-code each line type distinctly.
+ */
+export const TAKEOFF_CATEGORY_COLORS: Record<TakeoffSegmentCategory, string> = {
+  壁: "#ef4444",       // red
+  床: "#8b5cf6",       // purple
+  天井: "#3b82f6",     // blue
+  巾木: "#f97316",     // orange
+  廻り縁: "#06b6d4",   // cyan
+  天井見切: "#10b981", // emerald
+  床見切: "#eab308",   // yellow
+  開口部: "#ec4899",   // pink
+  その他: "#6b7280",   // gray
+};
 
 export const MAX_UNDO_STEPS = 20;
 
@@ -399,4 +418,167 @@ export function withUndo(
 ): TakeoffSessionState {
   stack.push(current);
   return op(current);
+}
+
+// ── Polyline geometry helpers ─────────────────────────────────────────────────
+
+export type TracePoint = { x: number; y: number };
+
+/**
+ * Sum the total length of a polyline (pixel space).
+ * Replaces the previous first→last straight-line distance.
+ */
+export function polylineLengthPx(points: TracePoint[]): number {
+  if (points.length < 2) return 0;
+  let total = 0;
+  for (let i = 0; i < points.length - 1; i++) {
+    const a = points[i]!;
+    const b = points[i + 1]!;
+    const dx = b.x - a.x;
+    const dy = b.y - a.y;
+    total += Math.sqrt(dx * dx + dy * dy);
+  }
+  return total;
+}
+
+/**
+ * Convert pixel length to metres using scale (px/mm).
+ */
+export function pxLengthToMetres(pixelLength: number, scalePxPerMm: number): number {
+  if (scalePxPerMm <= 0) return 0;
+  return pixelLength / scalePxPerMm / 1000;
+}
+
+// ── Snap / autocomplete (pure math, no external API) ──────────────────────────
+
+/**
+ * Predict the next point by extending the last segment of a polyline by
+ * `extensionPx` pixels. Uses vector extrapolation.
+ *
+ * Returns null if fewer than 2 points are provided.
+ */
+export function predictNextPoint(
+  points: TracePoint[],
+  extensionPx: number,
+): TracePoint | null {
+  if (points.length < 2) return null;
+  const a = points[points.length - 2]!;
+  const b = points[points.length - 1]!;
+  const dx = b.x - a.x;
+  const dy = b.y - a.y;
+  const len = Math.sqrt(dx * dx + dy * dy);
+  if (len === 0) return null;
+  const nx = dx / len;
+  const ny = dy / len;
+  return { x: b.x + nx * extensionPx, y: b.y + ny * extensionPx };
+}
+
+/**
+ * Snap a candidate point to the nearest endpoint in an existing segment list,
+ * if it is within `snapRadiusPx` pixels. Returns the snapped point or the
+ * original candidate if no snap target is close enough.
+ */
+export function snapToNearestEndpoint(
+  candidate: TracePoint,
+  existingPoints: TracePoint[],
+  snapRadiusPx: number,
+): { point: TracePoint; snapped: boolean } {
+  let bestDist = Infinity;
+  let bestPoint: TracePoint | null = null;
+
+  for (const p of existingPoints) {
+    const dx = candidate.x - p.x;
+    const dy = candidate.y - p.y;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    if (dist < bestDist) {
+      bestDist = dist;
+      bestPoint = p;
+    }
+  }
+
+  if (bestPoint && bestDist <= snapRadiusPx) {
+    return { point: bestPoint, snapped: true };
+  }
+  return { point: candidate, snapped: false };
+}
+
+/**
+ * Project a point onto the nearest axis-aligned direction from the last
+ * polyline point (horizontal or vertical snap at 0°/90°/180°/270°).
+ * Enables ortho-lock when the user is drawing near-straight lines.
+ *
+ * Returns the orthogonally-snapped point, or null if fewer than 1 point.
+ */
+export function orthoSnap(
+  points: TracePoint[],
+  candidate: TracePoint,
+): TracePoint | null {
+  if (points.length === 0) return null;
+  const last = points[points.length - 1]!;
+  const dx = candidate.x - last.x;
+  const dy = candidate.y - last.y;
+  // If more horizontal than vertical, lock to horizontal
+  if (Math.abs(dx) >= Math.abs(dy)) {
+    return { x: candidate.x, y: last.y };
+  }
+  return { x: last.x, y: candidate.y };
+}
+
+// ── Cost-per-category summary ─────────────────────────────────────────────────
+
+export type CategoryCostRow = CategorySummaryRow & {
+  unitPrice: number;
+  totalCost: number;
+  linkedCostCode?: string;
+  linkedCostName?: string;
+};
+
+/**
+ * Build a cost-enriched summary: for each category row, find the linked cost
+ * code from the first linked segment in that row, then compute unit price ×
+ * total quantity.
+ *
+ * @param session    Current session state
+ * @param costMaster Flat cost-master list
+ */
+export function summariseWithCost(
+  session: TakeoffSessionState,
+  costMaster: CostMasterEntry[],
+): CategoryCostRow[] {
+  const summaryRows = summariseSession(session);
+  const byCode = new Map(costMaster.map((e) => [e.code, e]));
+
+  return summaryRows.map((row) => {
+    // Find first linked segment for this row
+    const linkedSeg = session.segments.find(
+      (s) =>
+        s.category === row.category &&
+        s.measureKind === row.measureKind &&
+        s.linkedCostCode,
+    );
+    const entry = linkedSeg?.linkedCostCode
+      ? byCode.get(linkedSeg.linkedCostCode)
+      : undefined;
+    const unitPrice = entry?.unitPrice ?? 0;
+    return {
+      ...row,
+      unitPrice,
+      totalCost: Math.round(row.totalValue * unitPrice),
+      linkedCostCode: linkedSeg?.linkedCostCode,
+      linkedCostName: linkedSeg?.linkedCostName,
+    };
+  });
+}
+
+/**
+ * Compute the grand-total estimated cost across all linked rows.
+ */
+export function sessionTotalCost(
+  session: TakeoffSessionState,
+  costMaster: CostMasterEntry[],
+): number {
+  return summariseWithCost(session, costMaster).reduce(
+    (sum, r) => sum + r.totalCost,
+    0,
+  );
 }
