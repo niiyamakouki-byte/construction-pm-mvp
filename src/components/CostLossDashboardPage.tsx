@@ -187,7 +187,7 @@ export function CostLossDashboardPage({
           value={selectedProjectId}
           onChange={(e) => setSelectedProjectId(e.target.value)}
           aria-label="案件選択"
-          className="h-9 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700 shadow-sm focus:outline-none"
+          className="h-9 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700 shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/40"
         >
           {projectIds.map((id) => (
             <option key={id} value={id}>
@@ -241,7 +241,7 @@ export function CostLossDashboardPage({
           value={severityFilter}
           onChange={(e) => setSeverityFilter(e.target.value as Severity | "")}
           aria-label="severity フィルタ"
-          className="h-8 rounded-lg border border-slate-200 bg-white px-2 text-xs text-slate-700 shadow-sm focus:outline-none"
+          className="h-8 rounded-lg border border-slate-200 bg-white px-2 text-xs text-slate-700 shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/40"
         >
           <option value="">全severity</option>
           {ALL_SEVERITIES.map((s) => (
@@ -252,7 +252,7 @@ export function CostLossDashboardPage({
           value={kindFilter}
           onChange={(e) => setKindFilter(e.target.value as LossKind | "")}
           aria-label="kind フィルタ"
-          className="h-8 rounded-lg border border-slate-200 bg-white px-2 text-xs text-slate-700 shadow-sm focus:outline-none"
+          className="h-8 rounded-lg border border-slate-200 bg-white px-2 text-xs text-slate-700 shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/40"
         >
           <option value="">全種別</option>
           {ALL_KINDS.map((k) => (
@@ -264,14 +264,14 @@ export function CostLossDashboardPage({
           value={dateFrom}
           onChange={(e) => setDateFrom(e.target.value)}
           aria-label="開始日"
-          className="h-8 rounded-lg border border-slate-200 bg-white px-2 text-xs text-slate-700 shadow-sm focus:outline-none"
+          className="h-8 rounded-lg border border-slate-200 bg-white px-2 text-xs text-slate-700 shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/40"
         />
         <input
           type="date"
           value={dateTo}
           onChange={(e) => setDateTo(e.target.value)}
           aria-label="終了日"
-          className="h-8 rounded-lg border border-slate-200 bg-white px-2 text-xs text-slate-700 shadow-sm focus:outline-none"
+          className="h-8 rounded-lg border border-slate-200 bg-white px-2 text-xs text-slate-700 shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/40"
         />
         {(severityFilter || kindFilter || dateFrom || dateTo) && (
           <button
