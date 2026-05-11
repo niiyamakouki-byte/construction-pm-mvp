@@ -56,18 +56,18 @@ describe("OwnerShareTokenPanel", () => {
     expect(screen.getByText("ベータ現場")).toBeDefined();
   });
 
-  it("shows 施主用URL生成 button for each project", async () => {
+  it("shows 共有リンクを発行 button for each project", async () => {
     const { findAllByText } = render(<OwnerShareTokenPanel />);
-    const buttons = await findAllByText("施主用URL生成", {}, { timeout: 3000 });
+    const buttons = await findAllByText("共有リンクを発行", {}, { timeout: 3000 });
     expect(buttons.length).toBe(2);
   });
 
-  it("generates and displays a URL when button clicked", async () => {
+  it("shows issue form when 共有リンクを発行 is clicked", async () => {
     const { findAllByText } = render(<OwnerShareTokenPanel />);
-    const buttons = await findAllByText("施主用URL生成", {}, { timeout: 3000 });
+    const buttons = await findAllByText("共有リンクを発行", {}, { timeout: 3000 });
     fireEvent.click(buttons[0]);
-    // Should now display a copy button
-    expect(screen.getAllByText("コピー").length).toBeGreaterThanOrEqual(1);
+    // Should now display the issue form with 発行する button
+    expect(screen.getByText("発行する")).toBeDefined();
   });
 
   it("shows existing tokens on mount", async () => {

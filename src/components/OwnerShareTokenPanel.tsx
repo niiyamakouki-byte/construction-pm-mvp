@@ -102,18 +102,97 @@ function TokenRow({
   );
 }
 
+const EXPIRY_OPTIONS = [
+  { label: "7日間", days: 7 },
+  { label: "30日間", days: 30 },
+  { label: "90日間", days: 90 },
+];
+
+function IssueForm({
+  projectId,
+  onIssue,
+  onCancel,
+}: {
+  projectId: string;
+  onIssue: (days: number, password: string) => void;
+  onCancel: () => void;
+}) {
+  const [days, setDays] = useState(30);
+  const [password, setPassword] = useState("");
+
+  return (
+    <div className="mt-3 rounded-lg border border-slate-100 bg-slate-50 p-3 text-xs">
+      <p className="mb-2 font-semibold text-slate-700">共有リンクを発行</p>
+      <div className="mb-3">
+        <p className="mb-1 text-slate-500">有効期限</p>
+        <div className="flex gap-2">
+          {EXPIRY_OPTIONS.map((opt) => (
+            <button
+              key={opt.days}
+              type="button"
+              onClick={() => setDays(opt.days)}
+              className="rounded-full px-3 py-1 text-[11px] font-medium transition-colors"
+              style={
+                days === opt.days
+                  ? { background: "#6B8E5A", color: "#fff" }
+                  : { background: "#e2e8f0", color: "#475569" }
+              }
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+      </div>
+      <div className="mb-3">
+        <p className="mb-1 text-slate-500">パスワード（任意）</p>
+        <input
+          type="password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          placeholder="未入力でパスワードなし"
+          className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs outline-none focus:border-[#6B8E5A]"
+        />
+      </div>
+      <div className="flex gap-2">
+        <button
+          type="button"
+          onClick={() => onIssue(days, password)}
+          className="rounded-lg px-3 py-1.5 text-xs text-white"
+          style={{ background: "#6B8E5A" }}
+        >
+          発行する
+        </button>
+        <button
+          type="button"
+          onClick={onCancel}
+          className="rounded-lg px-3 py-1.5 text-xs text-slate-600"
+          style={{ background: "#e2e8f0" }}
+        >
+          キャンセル
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function ProjectPanel({
   row,
   onGenerate,
   onRevoke,
 }: {
   row: ProjectRow;
-  onGenerate: (projectId: string) => void;
+  onGenerate: (projectId: string, days: number, password: string) => void;
   onRevoke: (token: string) => void;
 }) {
+  const [showForm, setShowForm] = useState(false);
   const active = row.tokens.filter(
     (t) => !t.revoked && Date.now() <= t.expiresAt,
   );
+
+  function handleIssue(days: number, password: string) {
+    onGenerate(row.project.id, days, password);
+    setShowForm(false);
+  }
 
   return (
     <div className="rounded-xl border border-slate-100 bg-white p-4 shadow-sm">
@@ -122,19 +201,29 @@ function ProjectPanel({
           <h2 className="text-sm font-semibold text-slate-800">{row.project.name}</h2>
           <p className="text-xs text-slate-400">ID: {row.project.id}</p>
         </div>
-        <button
-          onClick={() => onGenerate(row.project.id)}
-          className="rounded-lg px-3 py-1.5 text-xs text-white"
-          style={{ background: "#6B8E5A" }}
-        >
-          施主用URL生成
-        </button>
+        {!showForm && (
+          <button
+            onClick={() => setShowForm(true)}
+            className="rounded-lg px-3 py-1.5 text-xs text-white"
+            style={{ background: "#6B8E5A" }}
+          >
+            共有リンクを発行
+          </button>
+        )}
       </div>
 
+      {showForm && (
+        <IssueForm
+          projectId={row.project.id}
+          onIssue={handleIssue}
+          onCancel={() => setShowForm(false)}
+        />
+      )}
+
       {row.tokens.length === 0 ? (
-        <p className="text-xs text-slate-400">URLはまだ発行されていません</p>
+        <p className="mt-2 text-xs text-slate-400">URLはまだ発行されていません</p>
       ) : (
-        <div className="space-y-2">
+        <div className="mt-3 space-y-2">
           {row.tokens.map((t) => (
             <TokenRow
               key={t.token}
@@ -172,8 +261,9 @@ export function OwnerShareTokenPanel() {
     loadProjects();
   }, []);
 
-  function handleGenerate(projectId: string) {
-    generateShareToken(projectId, 30);
+  function handleGenerate(projectId: string, days: number, _password: string) {
+    // password is intentionally not stored in the owner-app token (stored separately in JWT flow)
+    generateShareToken(projectId, days);
     setRows((prev) =>
       prev.map((r) =>
         r.project.id === projectId

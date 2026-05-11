@@ -191,3 +191,149 @@ export function verifyShareToken(
 
   return { ok: true, payload };
 }
+
+// ── Sprint 66: HMAC-SHA256 署名 + パスワード保護付き share token ──────────────
+
+const DEV_SECRET = "genbahub-dev-secret-change-in-production";
+
+function getSecret(): string {
+  const secret =
+    typeof import.meta !== "undefined"
+      ? (import.meta.env?.VITE_SHARE_TOKEN_SECRET as string | undefined)
+      : undefined;
+  if (!secret) {
+    if (typeof import.meta !== "undefined" && import.meta.env?.PROD) {
+      console.warn(
+        "[share-token] VITE_SHARE_TOKEN_SECRET is not set in production!",
+      );
+    }
+    return DEV_SECRET;
+  }
+  return secret;
+}
+
+async function hmacSign(data: string, secret: string): Promise<string> {
+  const enc = new TextEncoder();
+  const key = await crypto.subtle.importKey(
+    "raw",
+    enc.encode(secret),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"],
+  );
+  const sig = await crypto.subtle.sign("HMAC", key, enc.encode(data));
+  const bytes = new Uint8Array(sig);
+  let bin = "";
+  for (const b of bytes) bin += String.fromCharCode(b);
+  return btoa(bin).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+
+/**
+ * SHA-256 ハッシュを base64url で返す。パスワード保存・比較に使用。
+ */
+export async function hashPassword(plain: string): Promise<string> {
+  const enc = new TextEncoder();
+  const buf = await crypto.subtle.digest("SHA-256", enc.encode(plain));
+  const bytes = new Uint8Array(buf);
+  let bin = "";
+  for (const b of bytes) bin += String.fromCharCode(b);
+  return btoa(bin).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+
+export type SignedTokenOptions = {
+  expiresInDays: number;
+  password?: string;
+};
+
+export type SignedTokenVerifyResult = {
+  valid: boolean;
+  projectId?: string;
+  expired?: boolean;
+  requiresPassword?: boolean;
+  tampered?: boolean;
+};
+
+type SignedTokenClaims = {
+  projectId: string;
+  issuedAt: number;
+  expiresAt: number;
+  passwordHash?: string;
+};
+
+/**
+ * HMAC-SHA256 署名付き共有トークンを発行する。
+ * @returns "claimsB64.signature" 形式の base64url トークン
+ */
+export async function createShareToken(
+  projectId: string,
+  options: SignedTokenOptions,
+): Promise<string> {
+  const { expiresInDays, password } = options;
+  const now = Date.now();
+  const expiresAt = now + expiresInDays * 24 * 60 * 60 * 1000;
+
+  const claims: SignedTokenClaims = { projectId, issuedAt: now, expiresAt };
+
+  if (password !== undefined && password !== "") {
+    claims.passwordHash = await hashPassword(password);
+  }
+
+  const claimsJson = JSON.stringify(claims);
+  const enc = new TextEncoder();
+  const claimsB64 = btoa(
+    String.fromCharCode(...enc.encode(claimsJson)),
+  )
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/, "");
+
+  const sig = await hmacSign(claimsB64, getSecret());
+  return `${claimsB64}.${sig}`;
+}
+
+/**
+ * HMAC-SHA256 署名付きトークンを検証する。
+ */
+export async function verifySignedToken(
+  token: string,
+  password?: string,
+): Promise<SignedTokenVerifyResult> {
+  const dotIdx = token.lastIndexOf(".");
+  if (dotIdx === -1) {
+    return { valid: false, tampered: true };
+  }
+
+  const claimsB64 = token.slice(0, dotIdx);
+  const providedSig = token.slice(dotIdx + 1);
+
+  const expectedSig = await hmacSign(claimsB64, getSecret());
+  if (expectedSig !== providedSig) {
+    return { valid: false, tampered: true };
+  }
+
+  let claims: SignedTokenClaims;
+  try {
+    const json = atob(claimsB64.replace(/-/g, "+").replace(/_/g, "/"));
+    claims = JSON.parse(json) as SignedTokenClaims;
+  } catch {
+    return { valid: false, tampered: true };
+  }
+
+  const { projectId, expiresAt, passwordHash } = claims;
+
+  if (Date.now() > expiresAt) {
+    return { valid: false, projectId, expired: true };
+  }
+
+  if (passwordHash !== undefined) {
+    if (password === undefined || password === "") {
+      return { valid: false, projectId, requiresPassword: true };
+    }
+    const inputHash = await hashPassword(password);
+    if (inputHash !== passwordHash) {
+      return { valid: false, projectId, requiresPassword: true };
+    }
+  }
+
+  return { valid: true, projectId };
+}

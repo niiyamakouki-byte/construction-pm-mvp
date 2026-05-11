@@ -1,5 +1,5 @@
-import { describe, it, expect, beforeEach } from "vitest";
-import { generateShareToken, verifyShareToken } from "../lib/share-token.js";
+import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
+import { generateShareToken, verifyShareToken, createShareToken, verifySignedToken, hashPassword } from "../lib/share-token.js";
 import { _resetForTest, revoke, markRedeemed } from "../lib/share-token-store.js";
 
 beforeEach(() => {
@@ -143,5 +143,186 @@ describe("verifyShareToken", () => {
     const result = verifyShareToken("not-a-valid-token!!!");
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.reason).toBe("invalid");
+  });
+});
+
+// ── Sprint 66: createShareToken / verifySignedToken / hashPassword ────────────
+
+describe("hashPassword", () => {
+  it("returns a non-empty string", async () => {
+    const h = await hashPassword("secret");
+    expect(typeof h).toBe("string");
+    expect(h.length).toBeGreaterThan(0);
+  });
+
+  it("same input always yields same hash", async () => {
+    const h1 = await hashPassword("mypassword");
+    const h2 = await hashPassword("mypassword");
+    expect(h1).toBe(h2);
+  });
+
+  it("different inputs yield different hashes", async () => {
+    const h1 = await hashPassword("abc");
+    const h2 = await hashPassword("xyz");
+    expect(h1).not.toBe(h2);
+  });
+
+  it("empty string produces a valid hash", async () => {
+    const h = await hashPassword("");
+    expect(typeof h).toBe("string");
+    expect(h.length).toBeGreaterThan(0);
+  });
+});
+
+describe("createShareToken", () => {
+  it("returns a dot-separated token string", async () => {
+    const token = await createShareToken("proj-A", { expiresInDays: 30 });
+    const parts = token.split(".");
+    expect(parts).toHaveLength(2);
+    expect(parts[0].length).toBeGreaterThan(0);
+    expect(parts[1].length).toBeGreaterThan(0);
+  });
+
+  it("two calls for same project produce different tokens (timestamp differs)", async () => {
+    const t1 = await createShareToken("proj-A", { expiresInDays: 7 });
+    await new Promise((r) => setTimeout(r, 2));
+    const t2 = await createShareToken("proj-A", { expiresInDays: 7 });
+    expect(t1).not.toBe(t2);
+  });
+
+  it("embedded projectId round-trips via verifySignedToken", async () => {
+    const token = await createShareToken("proj-roundtrip", { expiresInDays: 1 });
+    const result = await verifySignedToken(token);
+    expect(result.valid).toBe(true);
+    expect(result.projectId).toBe("proj-roundtrip");
+  });
+
+  it("expiresInDays=7 sets expiry within expected range", async () => {
+    const before = Date.now();
+    const token = await createShareToken("proj-exp", { expiresInDays: 7 });
+    const after = Date.now();
+    // Decode claims part to check expiresAt
+    const claimsB64 = token.split(".")[0];
+    const json = atob(claimsB64.replace(/-/g, "+").replace(/_/g, "/"));
+    const claims = JSON.parse(json) as { expiresAt: number };
+    const expected7d = 7 * 24 * 60 * 60 * 1000;
+    expect(claims.expiresAt).toBeGreaterThanOrEqual(before + expected7d - 100);
+    expect(claims.expiresAt).toBeLessThanOrEqual(after + expected7d + 100);
+  });
+
+  it("token with password embeds passwordHash in claims", async () => {
+    const token = await createShareToken("proj-pw", { expiresInDays: 30, password: "s3cr3t" });
+    const claimsB64 = token.split(".")[0];
+    const json = atob(claimsB64.replace(/-/g, "+").replace(/_/g, "/"));
+    const claims = JSON.parse(json) as { passwordHash?: string };
+    expect(typeof claims.passwordHash).toBe("string");
+    expect(claims.passwordHash!.length).toBeGreaterThan(0);
+  });
+
+  it("token without password has no passwordHash in claims", async () => {
+    const token = await createShareToken("proj-nopw", { expiresInDays: 30 });
+    const claimsB64 = token.split(".")[0];
+    const json = atob(claimsB64.replace(/-/g, "+").replace(/_/g, "/"));
+    const claims = JSON.parse(json) as { passwordHash?: string };
+    expect(claims.passwordHash).toBeUndefined();
+  });
+});
+
+describe("verifySignedToken", () => {
+  it("valid no-password token returns valid=true and projectId", async () => {
+    const token = await createShareToken("proj-B", { expiresInDays: 30 });
+    const result = await verifySignedToken(token);
+    expect(result.valid).toBe(true);
+    expect(result.projectId).toBe("proj-B");
+  });
+
+  it("expired token returns valid=false and expired=true", async () => {
+    const token = await createShareToken("proj-C", { expiresInDays: -1 });
+    const result = await verifySignedToken(token);
+    expect(result.valid).toBe(false);
+    expect(result.expired).toBe(true);
+  });
+
+  it("expired token returns projectId even when invalid", async () => {
+    const token = await createShareToken("proj-expid", { expiresInDays: -1 });
+    const result = await verifySignedToken(token);
+    expect(result.projectId).toBe("proj-expid");
+  });
+
+  it("tampered signature returns valid=false and tampered=true", async () => {
+    const token = await createShareToken("proj-D", { expiresInDays: 7 });
+    const tampered = token.slice(0, -4) + "XXXX";
+    const result = await verifySignedToken(tampered);
+    expect(result.valid).toBe(false);
+    expect(result.tampered).toBe(true);
+  });
+
+  it("completely garbled token returns tampered=true", async () => {
+    const result = await verifySignedToken("garbage-token-no-dot-separator");
+    expect(result.valid).toBe(false);
+    expect(result.tampered).toBe(true);
+  });
+
+  it("password-protected token without password returns requiresPassword=true", async () => {
+    const token = await createShareToken("proj-E", { expiresInDays: 30, password: "pw123" });
+    const result = await verifySignedToken(token);
+    expect(result.valid).toBe(false);
+    expect(result.requiresPassword).toBe(true);
+  });
+
+  it("password-protected token with correct password returns valid=true", async () => {
+    const token = await createShareToken("proj-F", { expiresInDays: 30, password: "correct" });
+    const result = await verifySignedToken(token, "correct");
+    expect(result.valid).toBe(true);
+    expect(result.projectId).toBe("proj-F");
+  });
+
+  it("password-protected token with wrong password returns requiresPassword=true", async () => {
+    const token = await createShareToken("proj-G", { expiresInDays: 30, password: "right" });
+    const result = await verifySignedToken(token, "wrong");
+    expect(result.valid).toBe(false);
+    expect(result.requiresPassword).toBe(true);
+  });
+
+  it("password-protected token with empty string password returns requiresPassword=true", async () => {
+    const token = await createShareToken("proj-H", { expiresInDays: 30, password: "secret" });
+    const result = await verifySignedToken(token, "");
+    expect(result.valid).toBe(false);
+    expect(result.requiresPassword).toBe(true);
+  });
+
+  it("Date.now mock: token valid just before expiry", async () => {
+    const token = await createShareToken("proj-I", { expiresInDays: 1 });
+    // Mock Date.now to 1 ms before expiry
+    const claimsB64 = token.split(".")[0];
+    const claims = JSON.parse(atob(claimsB64.replace(/-/g, "+").replace(/_/g, "/"))) as { expiresAt: number };
+    vi.spyOn(Date, "now").mockReturnValue(claims.expiresAt - 1);
+    const result = await verifySignedToken(token);
+    vi.restoreAllMocks();
+    expect(result.valid).toBe(true);
+  });
+
+  it("Date.now mock: token expired 1 ms after expiry", async () => {
+    const token = await createShareToken("proj-J", { expiresInDays: 1 });
+    const claimsB64 = token.split(".")[0];
+    const claims = JSON.parse(atob(claimsB64.replace(/-/g, "+").replace(/_/g, "/"))) as { expiresAt: number };
+    vi.spyOn(Date, "now").mockReturnValue(claims.expiresAt + 1);
+    const result = await verifySignedToken(token);
+    vi.restoreAllMocks();
+    expect(result.valid).toBe(false);
+    expect(result.expired).toBe(true);
+  });
+
+  it("modifying claims payload invalidates signature", async () => {
+    const token = await createShareToken("proj-K", { expiresInDays: 30 });
+    const [claimsB64, sig] = token.split(".");
+    const claims = JSON.parse(atob(claimsB64.replace(/-/g, "+").replace(/_/g, "/"))) as { projectId: string; issuedAt: number; expiresAt: number };
+    // Extend expiry by 1 day
+    claims.expiresAt += 24 * 60 * 60 * 1000;
+    const newPayload = btoa(JSON.stringify(claims)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+    const tampered = `${newPayload}.${sig}`;
+    const result = await verifySignedToken(tampered);
+    expect(result.valid).toBe(false);
+    expect(result.tampered).toBe(true);
   });
 });
