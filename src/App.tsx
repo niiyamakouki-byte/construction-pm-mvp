@@ -29,6 +29,7 @@ const ProcurementPage = lazy(() => import("./pages/ProcurementPage.js").then((m)
 const SiteEntryPage = lazy(() => import("./pages/SiteEntryPage.js").then((m) => ({ default: m.SiteEntryPage })));
 const AttendanceHistoryPage = lazy(() => import("./pages/AttendanceHistoryPage.js").then((m) => ({ default: m.AttendanceHistoryPage })));
 const ContractorPortalPage = lazy(() => import("./pages/ContractorPortalPage.js").then((m) => ({ default: m.ContractorPortalPage })));
+const SharePortalPage = lazy(() => import("./pages/SharePortalPage.js").then((m) => ({ default: m.SharePortalPage })));
 const ClientViewerPage = lazy(() => import("./pages/ClientViewerPage.js").then((m) => ({ default: m.ClientViewerPage })));
 const SelectionBoardPage = lazy(() => import("./pages/SelectionBoardPage.js").then((m) => ({ default: m.SelectionBoardPage })));
 const MoodBoardPage = lazy(() => import("./pages/MoodBoardPage.js").then((m) => ({ default: m.MoodBoardPage })));
@@ -278,6 +279,7 @@ function AppShell() {
   const entryMatch = route.match(/^\/entry\/(.+)$/);
   const historyMatch = route.match(/^\/attendance-history\/(.+)$/);
   const reportsMatch = route.match(/^\/reports(?:\/(.+))?$/);
+  const sharePortalMatch = route.match(/^\/portal\/share\/(.+)$/);
   const portalMatch = route.match(/^\/portal\/([^/]+)(?:\/(.+))?$/);
   const selectionMatch = route.match(/^\/selection\/([^/]+)$/);
   const moodBoardMatch = route.match(/^\/mood-board\/([^/]+)$/);
@@ -292,6 +294,7 @@ function AppShell() {
   const entryProjectId = entryMatch?.[1] ? decodeURIComponent(entryMatch[1]) : null;
   const historyProjectId = historyMatch?.[1] ? decodeURIComponent(historyMatch[1]) : null;
   const reportsProjectId = reportsMatch?.[1] ? decodeURIComponent(reportsMatch[1]) : undefined;
+  const sharePortalToken = sharePortalMatch?.[1] ? decodeURIComponent(sharePortalMatch[1]) : null;
   const portalProjectId = portalMatch?.[1] ? decodeURIComponent(portalMatch[1]) : null;
   const portalCompany = portalMatch?.[2] ? decodeURIComponent(portalMatch[2]) : undefined;
   const selectionProjectId = selectionMatch?.[1] ? decodeURIComponent(selectionMatch[1]) : null;
@@ -322,6 +325,7 @@ function AppShell() {
   if (route === "/share-tokens") return <Suspense fallback={pageFallback}><OwnerShareTokenPanelLazy /></Suspense>;
   if (clientProjectId) return <Suspense fallback={pageFallback}><ClientViewerPage projectId={clientProjectId} /></Suspense>;
   if (entryProjectId) return <Suspense fallback={pageFallback}><SiteEntryPage projectId={entryProjectId} /></Suspense>;
+  if (sharePortalToken) return <Suspense fallback={pageFallback}><SharePortalPage token={sharePortalToken} /></Suspense>;
   if (portalProjectId) return <Suspense fallback={pageFallback}><ContractorPortalPage projectId={portalProjectId} company={portalCompany} /></Suspense>;
   if (selectionProjectId) return <Suspense fallback={pageFallback}><SelectionBoardPage projectId={selectionProjectId} /></Suspense>;
   if (finishingMatch) return <Suspense fallback={pageFallback}><FinishingSchedulePage projectName={finishingMatch[1] ? decodeURIComponent(finishingMatch[1]) : undefined} /></Suspense>;
