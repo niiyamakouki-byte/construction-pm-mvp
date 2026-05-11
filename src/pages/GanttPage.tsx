@@ -47,6 +47,8 @@ import { getCategories } from "../lib/task-categories.js";
 import { expandWBSToPhases } from "../lib/work-breakdown/expansion.js";
 import { getMasterCategories, getMasterEntries } from "../lib/work-schedule-master.js";
 import { readMasterPresetHistory, writeMasterPresetHistory } from "../lib/gantt-master-preset.js";
+import { savePhaseTemplate } from "../lib/phase-template/storage.js";
+import type { PhaseTemplate, PhaseTemplateTag } from "../lib/phase-template/types.js";
 
 const MAX_CHART_DAYS = 240;
 const MIN_DAY_WIDTH = 8;
@@ -393,6 +395,13 @@ function GanttPageContent({ initialProjectId = null }: GanttPageProps) {
   );
   const [masterApplying, setMasterApplying] = useState(false);
   const [masterConflictPending, setMasterConflictPending] = useState(false);
+
+  // ─── テンプレ保存モーダル ──────────────────────────────────────────────────
+  const [templateSaveOpen, setTemplateSaveOpen] = useState(false);
+  const [templateSaveName, setTemplateSaveName] = useState("");
+  const [templateSaveDesc, setTemplateSaveDesc] = useState("");
+  const [templateSaveTags, setTemplateSaveTags] = useState<Set<PhaseTemplateTag>>(new Set());
+  const [templateSaving, setTemplateSaving] = useState(false);
 
   // ─── 工種フィルタ ──────────────────────────────────────────────────────────
   const TRADE_CATEGORIES = ["painting", "framing", "electrical", "plumbing", "finishing", "other"] as const;
@@ -1084,6 +1093,66 @@ function GanttPageContent({ initialProjectId = null }: GanttPageProps) {
     }
   }, [loadData, selectedProject, taskRepository, wbsSelectedMajors]);
 
+  // ─── テンプレ保存ハンドラ ──────────────────────────────────────────────────
+  const handleTemplateSave = useCallback(() => {
+    if (!selectedProject || !templateSaveName.trim()) return;
+    setTemplateSaving(true);
+    try {
+      // GanttTask[] → WBSCategory[] (3階層)
+      const byCategory = new Map<string, Map<string, { name: string; defaultDays: number }[]>>();
+      for (const task of selectedProjectTasks) {
+        const major = task.majorCategory ?? "その他";
+        const middle = task.middleCategory ?? "その他";
+        if (!byCategory.has(major)) byCategory.set(major, new Map());
+        const groupMap = byCategory.get(major)!;
+        if (!groupMap.has(middle)) groupMap.set(middle, []);
+        const durDays = task.startDate && task.endDate
+          ? Math.max(1, Math.round((new Date(task.endDate).getTime() - new Date(task.startDate).getTime()) / 86400000) + 1)
+          : 1;
+        groupMap.get(middle)!.push({ name: task.name, defaultDays: durDays });
+      }
+
+      const phases = Array.from(byCategory.entries()).map(([majorName, groupMap]) => {
+        const groups = Array.from(groupMap.entries()).map(([middleName, tasks]) => ({
+          id: `wbs-grp-${majorName}-${middleName}`,
+          categoryId: `wbs-cat-${majorName}`,
+          name: middleName,
+          defaultDays: tasks.reduce((s, t) => s + t.defaultDays, 0),
+          tasks: tasks.map((t, i) => ({
+            id: `wbs-task-${majorName}-${middleName}-${i}`,
+            groupId: `wbs-grp-${majorName}-${middleName}`,
+            categoryId: `wbs-cat-${majorName}`,
+            name: t.name,
+            defaultDays: t.defaultDays,
+          })),
+        }));
+        const totalDays = groups.reduce((s, g) => s + g.defaultDays, 0);
+        return {
+          id: `wbs-cat-${majorName}`,
+          name: majorName,
+          defaultDays: totalDays,
+          groups,
+        };
+      });
+
+      const template: PhaseTemplate = {
+        id: crypto.randomUUID(),
+        name: templateSaveName.trim(),
+        description: templateSaveDesc.trim(),
+        tags: Array.from(templateSaveTags),
+        phases,
+        createdAt: new Date().toISOString(),
+      };
+      savePhaseTemplate(template);
+      setTemplateSaveOpen(false);
+      setTemplateSaveName("");
+      setTemplateSaveDesc("");
+      setTemplateSaveTags(new Set());
+    } finally {
+      setTemplateSaving(false);
+    }
+  }, [selectedProject, selectedProjectTasks, templateSaveDesc, templateSaveName, templateSaveTags]);
+
   if (loading) return <GanttPageSkeleton />;
 
   if (error) {
@@ -1574,6 +1643,14 @@ function GanttPageContent({ initialProjectId = null }: GanttPageProps) {
             </button>
             <button
               type="button"
+              disabled={selectedProjectTasks.length === 0}
+              onClick={() => setTemplateSaveOpen(true)}
+              className="rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50 disabled:opacity-50 transition-colors"
+            >
+              テンプレ保存
+            </button>
+            <button
+              type="button"
               onClick={() => { setRainDate(""); setRainAffected(null); setRainDialogOpen(true); }}
               className="rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50"
             >
@@ -1836,6 +1913,96 @@ function GanttPageContent({ initialProjectId = null }: GanttPageProps) {
       >
         +
       </button>
+
+      {templateSaveOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50"
+          onClick={() => setTemplateSaveOpen(false)}
+        >
+          <div
+            className="rounded-[26px] bg-white shadow-2xl w-full max-w-md mx-4"
+            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-label="テンプレ保存"
+          >
+            <div className="px-5 py-4 border-b border-slate-100">
+              <h2 className="text-base font-bold text-slate-900">工程をテンプレとして保存</h2>
+              <p className="text-xs text-slate-500 mt-1">
+                「{selectedProject.name}」の工程 ({selectedProjectTasks.length} タスク) をライブラリに保存します。
+              </p>
+            </div>
+            <div className="px-5 py-4 space-y-3">
+              <div>
+                <label htmlFor="template-name" className="block text-xs font-semibold text-slate-700 mb-1">
+                  テンプレ名 <span aria-hidden="true" className="text-red-500">*</span>
+                </label>
+                <input
+                  id="template-name"
+                  type="text"
+                  value={templateSaveName}
+                  onChange={(e) => setTemplateSaveName(e.target.value)}
+                  placeholder="例: 住宅リフォーム標準工程"
+                  className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                />
+              </div>
+              <div>
+                <label htmlFor="template-desc" className="block text-xs font-semibold text-slate-700 mb-1">
+                  説明 (任意)
+                </label>
+                <input
+                  id="template-desc"
+                  type="text"
+                  value={templateSaveDesc}
+                  onChange={(e) => setTemplateSaveDesc(e.target.value)}
+                  placeholder="例: 60m²以下の内装リフォーム向け"
+                  className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                />
+              </div>
+              <fieldset>
+                <legend className="text-xs font-semibold text-slate-700 mb-1">タグ (複数可)</legend>
+                <div className="flex flex-wrap gap-2">
+                  {(["住宅", "店舗", "オフィス"] as const).map((tag) => (
+                    <label key={tag} className="flex items-center gap-1.5 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={templateSaveTags.has(tag)}
+                        onChange={() => {
+                          setTemplateSaveTags((prev) => {
+                            const next = new Set(prev);
+                            if (next.has(tag)) next.delete(tag);
+                            else next.add(tag);
+                            return next;
+                          });
+                        }}
+                        className="h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500"
+                      />
+                      <span className="text-sm text-slate-700">{tag}</span>
+                    </label>
+                  ))}
+                </div>
+              </fieldset>
+            </div>
+            <div className="flex items-center justify-end gap-2 px-5 py-4 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => setTemplateSaveOpen(false)}
+                className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50 focus-visible:ring-2 focus-visible:ring-brand-500"
+              >
+                キャンセル
+              </button>
+              <button
+                type="button"
+                disabled={templateSaving || !templateSaveName.trim()}
+                onClick={handleTemplateSave}
+                className="rounded-xl bg-brand-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-brand-700 disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-brand-500 transition-colors"
+              >
+                {templateSaving ? "保存中..." : "保存する"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
