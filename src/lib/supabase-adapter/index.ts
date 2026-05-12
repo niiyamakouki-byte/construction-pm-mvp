@@ -70,3 +70,10 @@ export type {
 
 export { SiteEntryRepository } from './SiteEntryRepository.js';
 export type { SiteEntryRecord } from './SiteEntryRepository.js';
+
+export { SafetyRepository } from './SafetyRepository.js';
+export type {
+  KyActivityRecord,
+  NearMissReportRecord,
+  NearMissSeverity,
+} from './SafetyRepository.js';
