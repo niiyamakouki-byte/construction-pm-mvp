@@ -17,6 +17,9 @@ export type {
   ChangeOrder,
   ChangeOrderStatus,
   Photo,
+  ProjectPaymentPlan,
+  PaymentPlanStatus,
+  ExecutionBudget,
 } from "./schemas.js";
 
 /** 全エンティティ共通フィールド */
@@ -140,3 +143,5 @@ export type Notification = BaseEntity & {
   scheduledAt?: string;
   sentAt?: string;
 };
+
+// ProjectPaymentPlan / ExecutionBudget は schemas.ts 側で zod 定義済 (Task #41)
