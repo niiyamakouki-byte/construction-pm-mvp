@@ -60,3 +60,10 @@ export type {
   PurchaseOrderItemRecord,
   PurchaseOrderStatus,
 } from './OrderRepository.js';
+
+export { LaborRepository } from './LaborRepository.js';
+export type {
+  LaborTimeEntryRecord,
+  CrewAssignmentRecord,
+  LaborEntryStatus,
+} from './LaborRepository.js';
