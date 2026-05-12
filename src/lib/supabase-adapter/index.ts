@@ -67,3 +67,6 @@ export type {
   CrewAssignmentRecord,
   LaborEntryStatus,
 } from './LaborRepository.js';
+
+export { SiteEntryRepository } from './SiteEntryRepository.js';
+export type { SiteEntryRecord } from './SiteEntryRepository.js';
