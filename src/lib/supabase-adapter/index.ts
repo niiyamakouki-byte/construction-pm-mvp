@@ -110,3 +110,11 @@ export type {
   ClaimDocumentType,
   DisputeStatus,
 } from './ClaimRepository.js';
+
+export { PermitRepository } from './PermitRepository.js';
+export type {
+  PermitApplicationRecord,
+  PermitInspectionRecord,
+  PermitStatus,
+  PermitInspectionStatus,
+} from './PermitRepository.js';
