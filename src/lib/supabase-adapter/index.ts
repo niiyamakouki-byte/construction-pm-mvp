@@ -100,3 +100,13 @@ export type {
   ComplianceAuditEntryRecord,
   ComplianceStatus,
 } from './ComplianceRepository.js';
+
+export { ClaimRepository } from './ClaimRepository.js';
+export type {
+  InsuranceClaimRecord,
+  ClaimDocumentRecord,
+  ClaimDisputeRecord,
+  ClaimStatus,
+  ClaimDocumentType,
+  DisputeStatus,
+} from './ClaimRepository.js';
