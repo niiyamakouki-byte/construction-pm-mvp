@@ -93,3 +93,10 @@ export type {
   EquipmentUsageLogRecord,
   EquipmentRentalStatus,
 } from './EquipmentRepository.js';
+
+export { ComplianceRepository } from './ComplianceRepository.js';
+export type {
+  ComplianceRequirementRecord,
+  ComplianceAuditEntryRecord,
+  ComplianceStatus,
+} from './ComplianceRepository.js';
