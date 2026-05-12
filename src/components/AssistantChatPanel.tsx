@@ -190,6 +190,9 @@ export function AssistantChatPanel({ userId = "demo-user" }: Props) {
 
     const poll = async () => {
       if (!active) return;
+      // Vite dev サーバーには /api/* serverless function ハンドラがないため dev では polling skip
+      // (vite:esbuild がメアド末尾 .jp を loader と誤認識して overlay エラー化するのも回避)
+      if (import.meta.env.DEV) return;
       try {
         const params = new URLSearchParams({ userId });
         if (lastMessageId) params.set("after", lastMessageId);
