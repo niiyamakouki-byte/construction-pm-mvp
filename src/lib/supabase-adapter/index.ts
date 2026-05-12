@@ -86,3 +86,10 @@ export type {
   PunchListStatus,
   PunchListHistoryAction,
 } from './PunchListRepository.js';
+
+export { EquipmentRepository } from './EquipmentRepository.js';
+export type {
+  EquipmentRentalRecord,
+  EquipmentUsageLogRecord,
+  EquipmentRentalStatus,
+} from './EquipmentRepository.js';
