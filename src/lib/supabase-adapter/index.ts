@@ -126,3 +126,10 @@ export type {
   MeetingAttendee,
   ActionItemStatus,
 } from './MeetingRepository.js';
+
+export { WarrantyRepository } from './WarrantyRepository.js';
+export type {
+  WarrantyItemRecord,
+  WarrantyClaimRecord,
+  WarrantyClaimStatus,
+} from './WarrantyRepository.js';
