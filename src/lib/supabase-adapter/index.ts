@@ -118,3 +118,11 @@ export type {
   PermitStatus,
   PermitInspectionStatus,
 } from './PermitRepository.js';
+
+export { MeetingRepository } from './MeetingRepository.js';
+export type {
+  MeetingMinutesRecord,
+  MeetingActionItemRecord,
+  MeetingAttendee,
+  ActionItemStatus,
+} from './MeetingRepository.js';
