@@ -431,3 +431,45 @@ export const CRMDealSchema = BaseEntitySchema.extend({
 export type CRMContact = z.infer<typeof CRMContactSchema>;
 export type CRMDealStage = z.infer<typeof CRMDealStageSchema>;
 export type CRMDeal = z.infer<typeof CRMDealSchema>;
+
+// ── ProjectPaymentPlan (入金計画) ───────────────────────────────────────────
+// Task #41
+
+export const PaymentPlanStatusSchema = z.enum([
+  "planned",
+  "invoiced",
+  "paid",
+  "overdue",
+  "cancelled",
+]);
+
+export const ProjectPaymentPlanSchema = BaseEntitySchema.extend({
+  projectId: z.string(),
+  milestoneLabel: z.string(),
+  scheduledDate: isoDateString,
+  scheduledAmount: z.number().finite().nonnegative(),
+  invoiceId: z.string().optional(),
+  actualPaidDate: isoDateString.optional(),
+  actualAmount: z.number().finite().nonnegative().optional(),
+  freeeDealId: z.string().optional(),
+  status: PaymentPlanStatusSchema,
+  notes: z.string().optional(),
+});
+
+export type PaymentPlanStatus = z.infer<typeof PaymentPlanStatusSchema>;
+export type ProjectPaymentPlan = z.infer<typeof ProjectPaymentPlanSchema>;
+
+// ── ExecutionBudget (実行予算) ─────────────────────────────────────────────
+// Task #41
+
+export const ExecutionBudgetSchema = BaseEntitySchema.extend({
+  projectId: z.string(),
+  category: z.string(),
+  plannedAmount: z.number().finite().nonnegative(),
+  committedAmount: z.number().finite().nonnegative(),
+  actualAmount: z.number().finite().nonnegative(),
+  freeeAccountCode: z.string().optional(),
+  notes: z.string().optional(),
+});
+
+export type ExecutionBudget = z.infer<typeof ExecutionBudgetSchema>;
