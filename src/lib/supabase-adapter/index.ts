@@ -77,3 +77,12 @@ export type {
   NearMissReportRecord,
   NearMissSeverity,
 } from './SafetyRepository.js';
+
+export { PunchListRepository } from './PunchListRepository.js';
+export type {
+  PunchListItemRecord,
+  PunchListHistoryRecord,
+  PunchListPriority,
+  PunchListStatus,
+  PunchListHistoryAction,
+} from './PunchListRepository.js';
