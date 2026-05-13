@@ -21,11 +21,28 @@ type DbPhotoRow = {
   taken_at: string;
   created_at: string;
   updated_at: string;
+  ai_category?: string | null;
+  ai_confidence?: number | null;
+  ai_subcategory?: string | null;
+  ai_tags?: string[] | null;
+  ai_location?: string | null;
+  ai_floor?: number | null;
+  ai_room?: string | null;
 };
 
 export type PhotoUploadOptions = {
   category?: string;
   caption?: string;
+};
+
+export type AiPhotoClassification = {
+  category: string;
+  confidence: number; // 0..1
+  subcategory?: string;
+  tags?: string[];
+  location?: string;
+  floor?: number;
+  room?: string;
 };
 
 export type UploadedPhoto = {
@@ -42,6 +59,7 @@ export type UploadedPhoto = {
   takenAt: string;
   createdAt: string;
   updatedAt: string;
+  aiClassification?: AiPhotoClassification;
 };
 
 export type PhotoRepositoryDeps = {
@@ -86,6 +104,18 @@ function defaultIdGenerator(): string {
 }
 
 function rowToPhoto(row: DbPhotoRow, url: string = row.url): UploadedPhoto {
+  const aiClassification: AiPhotoClassification | undefined =
+    row.ai_category != null && row.ai_confidence != null
+      ? {
+          category: row.ai_category,
+          confidence: row.ai_confidence,
+          subcategory: row.ai_subcategory ?? undefined,
+          tags: Array.isArray(row.ai_tags) ? row.ai_tags : undefined,
+          location: row.ai_location ?? undefined,
+          floor: row.ai_floor ?? undefined,
+          room: row.ai_room ?? undefined,
+        }
+      : undefined;
   return {
     id: row.id,
     url,
@@ -100,6 +130,7 @@ function rowToPhoto(row: DbPhotoRow, url: string = row.url): UploadedPhoto {
     takenAt: row.taken_at,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+    aiClassification,
   };
 }
 
@@ -182,6 +213,42 @@ export class PhotoRepository {
       throw new Error(error.message || "写真メタデータの保存に失敗しました");
     }
     return rowToPhoto((data ?? row) as DbPhotoRow, signedUrl);
+  }
+
+  async updatePhotoClassification(
+    photoId: string,
+    classification: AiPhotoClassification,
+  ): Promise<UploadedPhoto> {
+    if (!photoId) throw new Error("photoId は必須です");
+    if (
+      !Number.isFinite(classification.confidence) ||
+      classification.confidence < 0 ||
+      classification.confidence > 1
+    ) {
+      throw new Error("confidence は 0.0 〜 1.0 の数値で指定してください");
+    }
+    const client = await this.getClient();
+    const patch = {
+      ai_category: classification.category,
+      ai_confidence: classification.confidence,
+      ai_subcategory: classification.subcategory ?? null,
+      ai_tags: Array.isArray(classification.tags) ? classification.tags : [],
+      ai_location: classification.location ?? null,
+      ai_floor: classification.floor ?? null,
+      ai_room: classification.room ?? null,
+      updated_at: this.now().toISOString(),
+    };
+    const { data, error } = await client
+      .from("photos")
+      .update(patch)
+      .eq("id", photoId)
+      .select("*")
+      .single();
+    assertNoSupabaseError(error, "写真AI分類の保存に失敗しました");
+    if (!data) throw new Error("対象の写真が見つかりません");
+    const row = data as DbPhotoRow;
+    const signedUrl = await this.createSignedUrl(client, row.storage_path);
+    return rowToPhoto(row, signedUrl);
   }
 
   async listPhotosByProject(projectId: string): Promise<UploadedPhoto[]> {
