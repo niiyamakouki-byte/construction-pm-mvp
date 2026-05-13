@@ -13,6 +13,7 @@ import type {
   ChangeRequestStatus,
   OwnerDashboardSnapshot,
   OwnerMessage,
+  OwnerPaymentMilestone,
   OwnerSession,
 } from "../lib/owner-app/types.js";
 import { buildOwnerSnapshot } from "../lib/owner-app/snapshot-builder.js";
@@ -261,6 +262,79 @@ function ChatPanel({
           送信
         </button>
       </div>
+    </div>
+  );
+}
+
+function PaymentSchedule({
+  milestones,
+}: {
+  milestones: OwnerPaymentMilestone[];
+}) {
+  const total = milestones.reduce((sum, m) => sum + m.scheduledAmount, 0);
+  const paid = milestones
+    .filter((m) => m.status === "paid")
+    .reduce((sum, m) => sum + m.scheduledAmount, 0);
+
+  function statusBadge(s: OwnerPaymentMilestone["status"]): { label: string; color: string } {
+    if (s === "paid") return { label: "入金済", color: "#6B8E5A" };
+    if (s === "invoiced") return { label: "請求中", color: "#f59e0b" };
+    if (s === "overdue") return { label: "期日超過", color: "#C53030" };
+    return { label: "予定", color: "#9ca3af" };
+  }
+
+  return (
+    <div className="rounded-xl border border-slate-100 bg-white p-4">
+      <h2 className="text-sm font-semibold text-slate-700 mb-3">入金スケジュール</h2>
+      {milestones.length === 0 ? (
+        <p className="text-xs text-slate-400">入金計画はまだ登録されていません</p>
+      ) : (
+        <>
+          <div className="mb-3 grid grid-cols-2 gap-2 text-xs">
+            <div className="rounded-lg bg-slate-50 px-3 py-2">
+              <p className="text-slate-500">予定合計</p>
+              <p className="font-bold text-slate-700">¥{total.toLocaleString()}</p>
+            </div>
+            <div className="rounded-lg bg-slate-50 px-3 py-2">
+              <p className="text-slate-500">入金済</p>
+              <p className="font-bold" style={{ color: "#6B8E5A" }}>
+                ¥{paid.toLocaleString()}
+              </p>
+            </div>
+          </div>
+          <ul className="space-y-2">
+            {milestones.map((m) => {
+              const badge = statusBadge(m.status);
+              return (
+                <li key={m.id} className="rounded-lg bg-slate-50 px-3 py-2 text-xs">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-medium text-slate-700 truncate flex-1">
+                      {m.label}
+                    </span>
+                    <span
+                      className="rounded-full px-2 py-0.5 text-[10px] text-white shrink-0"
+                      style={{ background: badge.color }}
+                    >
+                      {badge.label}
+                    </span>
+                  </div>
+                  <div className="mt-1 flex items-center justify-between text-slate-500">
+                    <span>{m.scheduledDate}</span>
+                    <span className="font-mono">
+                      ¥{m.scheduledAmount.toLocaleString()}
+                    </span>
+                  </div>
+                  {m.actualPaidDate && (
+                    <p className="mt-0.5 text-[10px] text-slate-400">
+                      入金日: {m.actualPaidDate}
+                    </p>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        </>
+      )}
     </div>
   );
 }
@@ -533,9 +607,10 @@ export function OwnerAppPage({ projectId, token }: Props) {
           className="grid gap-4"
           style={{ gridTemplateColumns: "1fr 1fr" }}
         >
-          {/* Left: Gantt mini */}
+          {/* Left: Gantt mini + Payment schedule */}
           <div className="flex flex-col gap-4">
             <GanttMini projectId={projectId} />
+            <PaymentSchedule milestones={snapshot.paymentMilestones} />
           </div>
 
           {/* Right: Photos + Chat + Requests */}

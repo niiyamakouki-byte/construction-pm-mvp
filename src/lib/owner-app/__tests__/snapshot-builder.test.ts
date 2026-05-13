@@ -25,7 +25,15 @@ vi.mock("../../project-tasks-store.js", () => ({
   fetchProjectTasks: vi.fn().mockResolvedValue([]),
 }));
 
+// Mock payment-plan-store
+vi.mock("../../../stores/payment-plan-store.js", () => ({
+  paymentPlanRepository: {
+    findAll: vi.fn().mockResolvedValue([]),
+  },
+}));
+
 import { fetchProjectTasks } from "../../project-tasks-store.js";
+import { paymentPlanRepository } from "../../../stores/payment-plan-store.js";
 
 beforeEach(() => {
   localStorage.clear();
@@ -172,5 +180,63 @@ describe("buildOwnerSnapshot", () => {
     vi.mocked(fetchProjectTasks).mockResolvedValue([]);
     const snap = await buildOwnerSnapshot("p-empty", "P");
     expect(snap.currentPhase).toBe("施工中");
+  });
+
+  it("includes paymentMilestones filtered by projectId, sorted by scheduledDate", async () => {
+    vi.mocked(fetchProjectTasks).mockResolvedValue([]);
+    vi.mocked(paymentPlanRepository.findAll).mockResolvedValue([
+      {
+        id: "pp-2",
+        projectId: "p-pay",
+        milestoneLabel: "中間金",
+        scheduledDate: "2026-08-01",
+        scheduledAmount: 500000,
+        status: "planned",
+        createdAt: "",
+        updatedAt: "",
+      },
+      {
+        id: "pp-1",
+        projectId: "p-pay",
+        milestoneLabel: "着手金",
+        scheduledDate: "2026-06-01",
+        scheduledAmount: 300000,
+        status: "paid",
+        actualPaidDate: "2026-06-03",
+        createdAt: "",
+        updatedAt: "",
+      },
+      {
+        id: "pp-cancelled",
+        projectId: "p-pay",
+        milestoneLabel: "キャンセル分",
+        scheduledDate: "2026-07-01",
+        scheduledAmount: 100000,
+        status: "cancelled",
+        createdAt: "",
+        updatedAt: "",
+      },
+      {
+        id: "pp-other",
+        projectId: "p-other",
+        milestoneLabel: "他案件",
+        scheduledDate: "2026-06-15",
+        scheduledAmount: 200000,
+        status: "planned",
+        createdAt: "",
+        updatedAt: "",
+      },
+    ] as never);
+    const snap = await buildOwnerSnapshot("p-pay", "P");
+    expect(snap.paymentMilestones).toHaveLength(2);
+    expect(snap.paymentMilestones[0].id).toBe("pp-1");
+    expect(snap.paymentMilestones[1].id).toBe("pp-2");
+  });
+
+  it("returns empty paymentMilestones when repository throws", async () => {
+    vi.mocked(fetchProjectTasks).mockResolvedValue([]);
+    vi.mocked(paymentPlanRepository.findAll).mockRejectedValueOnce(new Error("supabase offline"));
+    const snap = await buildOwnerSnapshot("p-err", "P");
+    expect(snap.paymentMilestones).toEqual([]);
   });
 });

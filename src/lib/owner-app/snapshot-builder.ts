@@ -3,10 +3,15 @@
  * GanttStore / PhotoStore / ChatStore / OwnerStore から集約する。
  */
 
-import type { OwnerDashboardSnapshot, OwnerMessage } from "./types.js";
+import type {
+  OwnerDashboardSnapshot,
+  OwnerMessage,
+  OwnerPaymentMilestone,
+} from "./types.js";
 import { ownerStore } from "./owner-store.js";
 import { getMessages } from "../chat-store.js";
 import { fetchProjectTasks } from "../project-tasks-store.js";
+import { paymentPlanRepository } from "../../stores/payment-plan-store.js";
 
 function todayIso(): string {
   return new Date().toISOString().split("T")[0];
@@ -86,6 +91,8 @@ export async function buildOwnerSnapshot(
   const { requests } = ownerStore.getSnapshot(projectId);
   const pendingRequests = requests.filter((r) => r.status === "pending");
 
+  const paymentMilestones = await loadPaymentMilestones(projectId);
+
   return {
     projectId,
     projectName,
@@ -94,5 +101,32 @@ export async function buildOwnerSnapshot(
     todaysPhotos: todaysPhotos.slice(0, 6),
     recentMessages,
     pendingRequests,
+    paymentMilestones,
   };
+}
+
+/**
+ * project_payment_plans から施主向けマイルストーンを抽出。
+ * 取得失敗時は空配列（Supabase 未接続環境でもダッシュボードを描画する）。
+ * cancelled 状態は施主に見せない。期日昇順。
+ */
+async function loadPaymentMilestones(
+  projectId: string,
+): Promise<OwnerPaymentMilestone[]> {
+  try {
+    const plans = await paymentPlanRepository.findAll();
+    return plans
+      .filter((p) => p.projectId === projectId && p.status !== "cancelled")
+      .map((p) => ({
+        id: p.id,
+        label: p.milestoneLabel,
+        scheduledDate: p.scheduledDate,
+        scheduledAmount: p.scheduledAmount,
+        status: p.status,
+        actualPaidDate: p.actualPaidDate,
+      }))
+      .sort((a, b) => a.scheduledDate.localeCompare(b.scheduledDate));
+  } catch {
+    return [];
+  }
 }

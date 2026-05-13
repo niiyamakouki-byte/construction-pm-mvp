@@ -29,6 +29,15 @@ export type ChangeRequest = {
   ts: string; // ISO datetime
 };
 
+export type OwnerPaymentMilestone = {
+  id: string;
+  label: string;
+  scheduledDate: string;
+  scheduledAmount: number;
+  status: "planned" | "invoiced" | "paid" | "overdue" | "cancelled";
+  actualPaidDate?: string;
+};
+
 export type OwnerDashboardSnapshot = {
   projectId: string;
   projectName: string;
@@ -37,4 +46,5 @@ export type OwnerDashboardSnapshot = {
   todaysPhotos: string[];
   recentMessages: OwnerMessage[];
   pendingRequests: ChangeRequest[];
+  paymentMilestones: OwnerPaymentMilestone[];
 };
