@@ -3,6 +3,7 @@ import type { ProjectPaymentPlan, ExecutionBudget } from "../domain/types.js";
 import { createPaymentPlanRepository } from "../stores/payment-plan-store.js";
 import { createExecutionBudgetRepository } from "../stores/execution-budget-store.js";
 import { useOrganizationContext } from "../contexts/OrganizationContext.js";
+import { ChangeRequestAdminPanel } from "./ChangeRequestAdminPanel.js";
 
 const currency = new Intl.NumberFormat("ja-JP", {
   style: "currency",
@@ -350,6 +351,8 @@ export function ProjectFinancePanel({ projectId }: { projectId: string }) {
           </ul>
         )}
       </section>
+
+      <ChangeRequestAdminPanel projectId={projectId} />
     </div>
   );
 }
