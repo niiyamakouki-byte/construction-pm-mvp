@@ -12,6 +12,7 @@ import { ProjectMapEmbed } from "../components/ProjectMapEmbed.js";
 import { ProjectFlowWidget } from "../components/ProjectFlowWidget.js";
 import { createInitialStageProgresses } from "../lib/project-flow.js";
 import { ProjectChat } from "../components/ProjectChat.js";
+import { ProjectFinancePanel } from "../components/ProjectFinancePanel.js";
 import {
   ConstructionPhase,
   getPhaseChecklist,
@@ -520,7 +521,11 @@ export function ProjectDetailPage({
 
       <ProjectDetailTabs
         projectId={projectId}
-        activeTab={subPath === "chat" ? "chat" : "overview"}
+        activeTab={
+          subPath === "chat" ? "chat" :
+          subPath === "finance" ? "finance" :
+          "overview"
+        }
       />
 
       {/* Chat tab */}
@@ -530,8 +535,13 @@ export function ProjectDetailPage({
         </div>
       )}
 
+      {/* Finance tab (Task #41) */}
+      {subPath === "finance" && (
+        <ProjectFinancePanel projectId={projectId} />
+      )}
+
       {/* Overview tab content */}
-      {subPath !== "chat" && <>
+      {subPath !== "chat" && subPath !== "finance" && <>
 
       {/* Project Flow */}
       <ProjectFlowWidget
