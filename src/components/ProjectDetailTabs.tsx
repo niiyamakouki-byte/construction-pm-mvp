@@ -2,7 +2,7 @@ import { navigate } from "../hooks/useHashRouter.js";
 
 type ProjectDetailTabsProps = {
   projectId: string;
-  activeTab: "overview" | "documents" | "chat";
+  activeTab: "overview" | "documents" | "chat" | "finance";
 };
 
 export function ProjectDetailTabs({ projectId, activeTab }: ProjectDetailTabsProps) {
@@ -48,6 +48,18 @@ export function ProjectDetailTabs({ projectId, activeTab }: ProjectDetailTabsPro
         }`}
       >
         チャット
+      </button>
+      <button
+        type="button"
+        aria-current={activeTab === "finance" ? "page" : undefined}
+        onClick={() => navigate(`/project/${encodedProjectId}/finance`)}
+        className={`flex-1 rounded-xl px-4 py-2 text-sm font-semibold ${
+          activeTab === "finance"
+            ? "bg-brand-600 text-white shadow-sm"
+            : "text-slate-600 hover:bg-slate-50"
+        }`}
+      >
+        収支
       </button>
     </nav>
   );
