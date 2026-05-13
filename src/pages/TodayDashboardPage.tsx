@@ -563,6 +563,21 @@ function TodayDashboardPageContent() {
       });
       setPhotoPreviewUrl(uploaded.url);
       setPhotoUploadStatus("写真を保存しました");
+      // Sprint 69: ファイル名から AI分類を推定して永続化（失敗してもアップロード成功扱い）
+      try {
+        const { classifyByFilename } = await import("../lib/photo-classifier.js");
+        const classification = classifyByFilename(file.name);
+        if (classification.confidence > 0 && classification.category !== "other") {
+          await photoStore.updatePhotoClassification(uploaded.id, {
+            category: classification.category,
+            confidence: classification.confidence,
+            subcategory: classification.subcategory,
+            tags: classification.tags,
+          });
+        }
+      } catch (classifyErr) {
+        console.warn("photo classification persistence failed", classifyErr);
+      }
     } catch (err) {
       setPhotoUploadError(err instanceof Error ? err.message : "写真の保存に失敗しました");
     } finally {
