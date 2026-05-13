@@ -53,6 +53,9 @@ export function ProjectFinancePanel({ projectId }: { projectId: string }) {
   const [budgetCategory, setBudgetCategory] = useState("");
   const [budgetPlanned, setBudgetPlanned] = useState("");
 
+  const [syncing, setSyncing] = useState(false);
+  const [syncMessage, setSyncMessage] = useState<string | null>(null);
+
   const loadData = useCallback(async () => {
     try {
       setError(null);
@@ -95,6 +98,52 @@ export function ProjectFinancePanel({ projectId }: { projectId: string }) {
       await loadData();
     } catch (err) {
       setError(err instanceof Error ? err.message : "入金計画の追加に失敗しました");
+    }
+  };
+
+  const handleSyncFreee = async () => {
+    setSyncing(true);
+    setSyncMessage(null);
+    setError(null);
+    try {
+      const { getSupabaseClient, hasSupabaseEnv } = await import("../infra/supabase-client.js");
+      if (!hasSupabaseEnv()) {
+        throw new Error("Supabase 未設定です");
+      }
+      const supabase = await getSupabaseClient();
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
+      if (!token) throw new Error("ログインしてください");
+
+      const companiesRes = await fetch("/api/freee/companies", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!companiesRes.ok) {
+        const body = (await companiesRes.json().catch(() => ({}))) as { error?: string };
+        throw new Error(body.error ?? `companies 取得失敗 (${companiesRes.status})`);
+      }
+      const { companies } = (await companiesRes.json()) as { companies: Array<{ id: number }> };
+      if (!companies?.length) throw new Error("freee に事業所がありません");
+      const companyId = companies[0].id;
+
+      const syncRes = await fetch(
+        `/api/freee/sync-payment-plans?company_id=${companyId}&project_id=${encodeURIComponent(projectId)}`,
+        { method: "POST", headers: { Authorization: `Bearer ${token}` } },
+      );
+      const body = (await syncRes.json().catch(() => ({}))) as {
+        updated?: number;
+        checked?: number;
+        error?: string;
+      };
+      if (!syncRes.ok) {
+        throw new Error(body.error ?? `同期失敗 (${syncRes.status})`);
+      }
+      setSyncMessage(`freee 同期完了: ${body.updated ?? 0} / ${body.checked ?? 0} 件 更新`);
+      await loadData();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "freee 同期に失敗しました");
+    } finally {
+      setSyncing(false);
     }
   };
 
@@ -147,9 +196,25 @@ export function ProjectFinancePanel({ projectId }: { projectId: string }) {
         </div>
       )}
 
+      {syncMessage && (
+        <div className="rounded-lg bg-emerald-50 border border-emerald-200 px-4 py-3 text-sm text-emerald-700">
+          {syncMessage}
+        </div>
+      )}
+
       {/* 入金計画サマリ */}
       <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-        <h3 className="text-base font-bold text-slate-800 mb-3">入金計画</h3>
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-base font-bold text-slate-800">入金計画</h3>
+          <button
+            type="button"
+            onClick={handleSyncFreee}
+            disabled={syncing}
+            className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+          >
+            {syncing ? "freee 同期中..." : "freee 同期"}
+          </button>
+        </div>
         <div className="grid grid-cols-3 gap-2 mb-4 text-center">
           <div className="rounded-lg bg-slate-50 p-2">
             <p className="text-[10px] text-slate-500">予定合計</p>
