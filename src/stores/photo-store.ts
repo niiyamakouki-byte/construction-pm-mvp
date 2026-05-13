@@ -1,5 +1,6 @@
 import {
   createPhotoRepository,
+  type AiPhotoClassification,
   type PhotoRepository,
   type PhotoUploadOptions,
   type UploadedPhoto,
@@ -13,6 +14,10 @@ export type PhotoStore = {
     options?: PhotoUploadOptions,
   ): Promise<UploadedPhoto>;
   listPhotosByProject(projectId: string): Promise<UploadedPhoto[]>;
+  updatePhotoClassification(
+    photoId: string,
+    classification: AiPhotoClassification,
+  ): Promise<UploadedPhoto>;
 };
 
 export function createPhotoStore(
@@ -21,5 +26,6 @@ export function createPhotoStore(
   return {
     uploadPhoto: repository.uploadPhoto.bind(repository),
     listPhotosByProject: repository.listPhotosByProject.bind(repository),
+    updatePhotoClassification: repository.updatePhotoClassification.bind(repository),
   };
 }

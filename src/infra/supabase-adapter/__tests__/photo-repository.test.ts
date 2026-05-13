@@ -155,4 +155,79 @@ describe("PhotoRepository", () => {
     const mock = makeClient({ list: { data: null, error: { message: "network down" } } });
     await expect(makeRepo(mock.client).listPhotosByProject("project-1")).rejects.toThrow("network down");
   });
+
+  describe("updatePhotoClassification (Sprint 69)", () => {
+    function makeUpdateClient(updateResult: QueryResult) {
+      const updateBuilder = {} as Record<string, ReturnType<typeof vi.fn>>;
+      const chain = () => updateBuilder;
+      updateBuilder.update = vi.fn(chain);
+      updateBuilder.eq = vi.fn(chain);
+      updateBuilder.select = vi.fn(chain);
+      updateBuilder.single = vi.fn(() => Promise.resolve(updateResult));
+      const createSignedUrl = vi.fn(() =>
+        Promise.resolve({ data: { signedUrl: "https://signed.example/updated" }, error: null }),
+      );
+      const client = {
+        from: vi.fn(() => updateBuilder),
+        storage: { from: vi.fn(() => ({ createSignedUrl })) },
+        auth: {} as SupabaseClientLike["auth"],
+      } as unknown as SupabaseClientLike;
+      return { client, updateBuilder, createSignedUrl };
+    }
+
+    it("persists ai classification fields and returns updated photo", async () => {
+      const updatedRow = makeRow({
+        ai_category: "framing",
+        ai_confidence: 0.92,
+        ai_subcategory: "wall_studs",
+        ai_tags: ["framing", "2nd_floor"],
+        ai_location: "north wing",
+        ai_floor: 2,
+        ai_room: "LDK",
+      });
+      const mock = makeUpdateClient({ data: updatedRow, error: null });
+      const result = await makeRepo(mock.client).updatePhotoClassification(fixedId, {
+        category: "framing",
+        confidence: 0.92,
+        subcategory: "wall_studs",
+        tags: ["framing", "2nd_floor"],
+        location: "north wing",
+        floor: 2,
+        room: "LDK",
+      });
+      expect(mock.updateBuilder.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          ai_category: "framing",
+          ai_confidence: 0.92,
+          ai_tags: ["framing", "2nd_floor"],
+          ai_floor: 2,
+        }),
+      );
+      expect(mock.updateBuilder.eq).toHaveBeenCalledWith("id", fixedId);
+      expect(result.aiClassification?.category).toBe("framing");
+      expect(result.aiClassification?.confidence).toBe(0.92);
+      expect(result.aiClassification?.tags).toEqual(["framing", "2nd_floor"]);
+    });
+
+    it("rejects confidence out of range", async () => {
+      const mock = makeUpdateClient({ data: null, error: null });
+      await expect(
+        makeRepo(mock.client).updatePhotoClassification(fixedId, {
+          category: "exterior",
+          confidence: 1.5,
+        }),
+      ).rejects.toThrow("confidence");
+      expect(mock.updateBuilder.update).not.toHaveBeenCalled();
+    });
+
+    it("propagates supabase errors", async () => {
+      const mock = makeUpdateClient({ data: null, error: { message: "rls denied" } });
+      await expect(
+        makeRepo(mock.client).updatePhotoClassification(fixedId, {
+          category: "safety",
+          confidence: 0.5,
+        }),
+      ).rejects.toThrow("rls denied");
+    });
+  });
 });
