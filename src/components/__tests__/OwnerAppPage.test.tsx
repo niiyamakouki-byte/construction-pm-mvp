@@ -32,6 +32,7 @@ vi.mock("../../lib/owner-app/snapshot-builder.js", () => ({
       { id: "m1", sender: "pm", text: "本日の工事は順調です", ts: "2026-01-01T10:00:00" },
     ],
     pendingRequests: [],
+    paymentMilestones: [],
   }),
 }));
 
