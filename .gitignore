@@ -11,3 +11,8 @@ supabase/.temp/
 # Test artifacts
 e2e/screenshots/
 test-results/
+
+# Beads / Dolt files (added by bd init)
+.dolt/
+*.db
+.beads-credential-key

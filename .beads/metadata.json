@@ -1,0 +1,7 @@
+{
+  "database": "dolt",
+  "backend": "dolt",
+  "dolt_mode": "embedded",
+  "dolt_database": "construction_pm_mvp",
+  "project_id": "49add792-2d7b-483c-9bf6-c0adfc5ba6cd"
+}
