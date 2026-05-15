@@ -13,6 +13,10 @@ function isE2EBypass(): boolean {
   return typeof window !== "undefined" && (window as { __E2E_BYPASS_AUTH__?: boolean }).__E2E_BYPASS_AUTH__ === true;
 }
 
+function isSupabaseEnabled(): boolean {
+  return import.meta.env.VITE_USE_SUPABASE === "true";
+}
+
 export function createAppRepository<T extends BaseEntity>(
   tableName: string,
   _getOrganizationId?: () => string | null,
@@ -32,7 +36,7 @@ export function createAppRepository<T extends BaseEntity>(
     return new LocalStorageRepository<T>(tableName);
   }
 
-  if (hasSupabaseEnv()) {
+  if (isSupabaseEnabled() && hasSupabaseEnv()) {
     return new SupabaseRepository<T>(tableName);
   }
 
