@@ -5,6 +5,14 @@
 
 import { describe, it, expect, beforeEach, vi } from "vitest";
 
+const publishHpPostMock = vi.hoisted(() => vi.fn());
+
+vi.mock("../hp-publisher.js", () => ({
+  publishHpPost: publishHpPostMock,
+  isSlugCollisionError: (error: unknown) =>
+    error instanceof Error && error.message.includes("Slug already exists"),
+}));
+
 // ── localStorage mock ──────────────────────────────────────────────────────
 
 const _ls: Record<string, string> = {};
@@ -59,6 +67,7 @@ beforeEach(() => {
   _resetSnapshotCounter();
   _resetArticleCounter();
   _resetGbpActionCount();
+  publishHpPostMock.mockReset();
   localStorage.clear();
 });
 
@@ -116,10 +125,48 @@ describe("publishToHp", () => {
     registerCompletion("proj-001", SAMPLE_META, "city_setagaya", undefined, NOW);
     const article = generateAndSaveArticle("proj-001", "世田谷区 マンション リフォーム", [], NOW);
     expect(article).not.toBeNull();
-    const published = publishToHp(article!.id, undefined, NOW);
+    const published = publishToHp(article!.id, undefined, NOW, true);
     expect(published?.status).toBe("published");
     expect(published?.publishedUrl).toContain("laporta.co.jp");
     expect(published?.publishedAt).toBeTruthy();
+  });
+
+  it("dryRun=false の場合は laporta-hp-blog-mcp createPost に記事を渡す", () => {
+    publishHpPostMock.mockReturnValue({ slug: "art-001", sha: "abc1234" });
+    registerCompletion("proj-001", SAMPLE_META, "city_setagaya", undefined, NOW);
+    const article = generateAndSaveArticle("proj-001", "世田谷区 マンション リフォーム", ["内装リノベーション"], NOW);
+
+    const published = publishToHp(article!.id, undefined, NOW);
+
+    expect(publishHpPostMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        slug: article!.id,
+        title: article!.title,
+        keywords: ["世田谷区 マンション リフォーム", "内装リノベーション"],
+        category: "interior-seo",
+      }),
+    );
+    const params = publishHpPostMock.mock.calls[0][0] as { body: string };
+    expect(params.body).toContain(`# ${article!.title}`);
+    expect(published?.publishedUrl).toBe("https://laporta.co.jp/case/art-001");
+  });
+
+  it("slug 衝突時は articleId 末尾に timestamp を付与してリトライする", () => {
+    publishHpPostMock
+      .mockImplementationOnce(() => {
+        throw new Error("Slug already exists: art-001");
+      })
+      .mockReturnValueOnce({ slug: "art-001-20260509100000", sha: "def5678" });
+    registerCompletion("proj-001", SAMPLE_META, "city_setagaya", undefined, NOW);
+    const article = generateAndSaveArticle("proj-001", "世田谷区 マンション リフォーム", [], NOW);
+
+    const published = publishToHp(article!.id, undefined, NOW);
+
+    expect(publishHpPostMock).toHaveBeenCalledTimes(2);
+    expect(publishHpPostMock.mock.calls[1][0]).toEqual(
+      expect.objectContaining({ slug: `${article!.id}-20260509100000` }),
+    );
+    expect(published?.publishedUrl).toBe("https://laporta.co.jp/case/art-001-20260509100000");
   });
 
   it("存在しない ID は null を返す", () => {
@@ -178,6 +225,7 @@ describe("runFullWorkflow — 世田谷区松原サンプル", () => {
       "local_purchase",
       30,
       NOW,
+      true,
     );
 
     expect(result.top5).toHaveLength(5);
@@ -195,6 +243,7 @@ describe("runFullWorkflow — 世田谷区松原サンプル", () => {
       "local_purchase",
       30,
       NOW,
+      true,
     );
     expect(result.article?.publishedUrl).toContain("laporta.co.jp");
   });
@@ -207,6 +256,7 @@ describe("runFullWorkflow — 世田谷区松原サンプル", () => {
       "local_purchase",
       30,
       NOW,
+      true,
     );
     const top10 = result.serpSnapshots.filter(
       (s) => s.bucket === "top3" || s.bucket === "top10",
@@ -227,6 +277,7 @@ describe("runFullWorkflow — 世田谷区松原サンプル", () => {
       "local_purchase",
       30,
       NOW,
+      true,
     );
     expect(gbpActionCount()).toBeGreaterThan(0);
   });

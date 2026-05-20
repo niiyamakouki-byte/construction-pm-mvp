@@ -57,7 +57,7 @@ describe("publishedArticleCount", () => {
   });
 
   it("runFullWorkflow 後は 1 以上", () => {
-    runFullWorkflow("proj-001", SAMPLE_META, "city_setagaya", "local_purchase", 30, NOW);
+    runFullWorkflow("proj-001", SAMPLE_META, "city_setagaya", "local_purchase", 30, NOW, true);
     expect(publishedArticleCount()).toBeGreaterThanOrEqual(1);
   });
 });
@@ -68,7 +68,7 @@ describe("top10KeywordCount", () => {
   });
 
   it("runFullWorkflow 30日後は 1 以上", () => {
-    runFullWorkflow("proj-001", SAMPLE_META, "city_setagaya", "local_purchase", 30, NOW);
+    runFullWorkflow("proj-001", SAMPLE_META, "city_setagaya", "local_purchase", 30, NOW, true);
     expect(top10KeywordCount()).toBeGreaterThanOrEqual(1);
   });
 });
@@ -79,7 +79,7 @@ describe("estimatedMonthlySearchImpressions", () => {
   });
 
   it("TOP10 KW がある場合は正の数", () => {
-    runFullWorkflow("proj-001", SAMPLE_META, "city_setagaya", "local_purchase", 30, NOW);
+    runFullWorkflow("proj-001", SAMPLE_META, "city_setagaya", "local_purchase", 30, NOW, true);
     const impressions = estimatedMonthlySearchImpressions();
     // TOP10 KW が 1 件以上あれば impressions > 0
     if (top10KeywordCount() > 0) {
@@ -96,7 +96,7 @@ describe("gbpActionCount", () => {
   });
 
   it("runFullWorkflow 後は 0 より大きい", () => {
-    runFullWorkflow("proj-001", SAMPLE_META, "city_setagaya", "local_purchase", 30, NOW);
+    runFullWorkflow("proj-001", SAMPLE_META, "city_setagaya", "local_purchase", 30, NOW, true);
     expect(gbpActionCount()).toBeGreaterThan(0);
   });
 });
