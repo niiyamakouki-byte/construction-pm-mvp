@@ -13,5 +13,8 @@ export default defineConfig({
   test: {
     include: ["src/**/*.test.ts", "src/**/*.test.tsx"],
     environment: "jsdom",
+    env: {
+      VITE_USE_SUPABASE: "false",
+    },
   },
 });

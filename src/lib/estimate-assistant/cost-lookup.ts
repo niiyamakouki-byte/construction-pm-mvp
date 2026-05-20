@@ -165,7 +165,7 @@ export function lookupEstimate(intent: EstimateIntent, costMaster: CostMaster): 
   }
 
   // 対象カテゴリからアイテム候補を収集
-  let candidates: CostMasterItem[] = [];
+  const candidates: CostMasterItem[] = [];
   for (const cat of costMaster.categories) {
     if (!categoryIds.has(cat.id)) continue;
     for (const item of cat.items) {
