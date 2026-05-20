@@ -25,6 +25,8 @@ import { generateArticle } from "./article-generator.js";
 import { snapshotRankBatch } from "./serp-tracker.js";
 import { syncToGbp } from "./gbp-syncer.js";
 import type { GbpSyncResult } from "./gbp-syncer.js";
+import { isSlugCollisionError, publishHpPost } from "./hp-publisher.js";
+import type { HpPostParams } from "./hp-publisher.js";
 
 // ── In-memory state ────────────────────────────────────────────────────────
 
@@ -113,17 +115,27 @@ export function generateAndSaveArticle(
 }
 
 /**
- * Step 3: laporta-hp へ記事を mock 公開する。
- * 実際の投稿は laporta-hp MCP 経由だが、ここでは status を published に変更。
+ * Step 3: laporta-hp へ記事を公開する。
+ * dryRun=true の場合は従来の mock 公開 URL を使う。
  */
 export function publishToHp(
   articleId: SeoArticleId,
   mockUrl?: string,
   now = new Date(),
+  dryRun = false,
 ): SeoArticle | null {
+  const article = localSeoStore.getArticle(articleId);
+  if (!article) return null;
+
+  const slugBase = toHpSlug(articleId);
+  const publishedSlug = dryRun
+    ? slugBase
+    : publishArticleWithRetry(buildHpPostParams(article, slugBase), now);
   const publishedUrl =
-    mockUrl ??
-    `https://laporta.co.jp/case/${articleId}-${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}`;
+    dryRun
+      ? mockUrl ??
+        `https://laporta.co.jp/case/${articleId}-${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}`
+      : `https://laporta.co.jp/case/${publishedSlug}`;
 
   const updated = localSeoStore.updateArticle(articleId, {
     status: "published",
@@ -194,6 +206,7 @@ export function runFullWorkflow(
   intentFilter?: KeywordIntent,
   daysElapsed = 30,
   now = new Date(),
+  dryRun = false,
 ): {
   strategy: LocalSeoStrategy;
   allKeywords: KeywordTarget[];
@@ -217,7 +230,7 @@ export function runFullWorkflow(
 
   let publishedArticle: SeoArticle | null = null;
   if (article) {
-    publishedArticle = publishToHp(article.id, undefined, now);
+    publishedArticle = publishToHp(article.id, undefined, now, dryRun);
   }
 
   const serpSnapshots = trackSerp(projectId, daysElapsed, now);
@@ -309,4 +322,64 @@ function extractTownName(siteName: string): string | undefined {
   const match2 = siteName.match(/市(.+?)[0-9０-９]/);
   if (match2?.[1]) return match2[1];
   return undefined;
+}
+
+function publishArticleWithRetry(params: HpPostParams, now: Date): string {
+  try {
+    return publishHpPost(params).slug;
+  } catch (error) {
+    if (!isSlugCollisionError(error)) {
+      throw error;
+    }
+  }
+
+  const retryParams = {
+    ...params,
+    slug: `${params.slug}-${formatTimestamp(now)}`,
+  };
+  return publishHpPost(retryParams).slug;
+}
+
+function buildHpPostParams(article: SeoArticle, slug: string): HpPostParams {
+  const keywords = [article.primaryKeyword, ...article.secondaryKeywords]
+    .map((keyword) => keyword.trim())
+    .filter((keyword) => keyword.length > 0);
+
+  return {
+    slug,
+    title: article.title,
+    description: buildDescription(article),
+    keywords,
+    category: "interior-seo",
+    body: buildMarkdownBody(article),
+  };
+}
+
+function buildMarkdownBody(article: SeoArticle): string {
+  const sections = article.bodySections.map(
+    (section) => `## ${section.heading}\n\n${section.content}`,
+  );
+  return [`# ${article.title}`, ...sections].join("\n\n");
+}
+
+function buildDescription(article: SeoArticle): string {
+  const text = article.bodySections[0]?.content.replace(/\s+/g, " ").trim() ?? article.title;
+  return text.length > 160 ? `${text.slice(0, 157)}...` : text;
+}
+
+function toHpSlug(articleId: SeoArticleId): string {
+  return articleId
+    .toLowerCase()
+    .replace(/[^a-z0-9-]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+function formatTimestamp(now: Date): string {
+  const y = now.getUTCFullYear();
+  const m = String(now.getUTCMonth() + 1).padStart(2, "0");
+  const d = String(now.getUTCDate()).padStart(2, "0");
+  const hh = String(now.getUTCHours()).padStart(2, "0");
+  const mm = String(now.getUTCMinutes()).padStart(2, "0");
+  const ss = String(now.getUTCSeconds()).padStart(2, "0");
+  return `${y}${m}${d}${hh}${mm}${ss}`;
 }
