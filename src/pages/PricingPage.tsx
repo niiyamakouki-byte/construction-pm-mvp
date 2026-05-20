@@ -41,12 +41,12 @@ function StripeNotReadyModal({ onClose }: { onClose: () => void }) {
           id="stripe-modal-title"
           className="text-lg font-bold text-slate-900"
         >
-          Stripe連携準備中
+          このプランは現在ご利用いただけません
         </h2>
         <p className="mt-2 text-sm text-slate-600">
-          現在、Stripe決済の設定を準備中です。
+          有料プランへのお申し込みを希望される場合は、
           <br />
-          サービスリリース後にご利用いただけるようになります。
+          下記サポート窓口へ直接ご連絡ください。
         </p>
         <p className="mt-3 text-sm text-slate-500">
           ご質問は{" "}
