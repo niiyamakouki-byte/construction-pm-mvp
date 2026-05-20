@@ -83,23 +83,23 @@ describe("PricingPage", () => {
     const user = userEvent.setup();
     render(<PricingPage />);
     await user.click(screen.getByRole("button", { name: "スタンダードプランを選択" }));
-    expect(screen.getByText("Stripe連携準備中")).toBeDefined();
+    expect(screen.getByText("このプランは現在ご利用いただけません")).toBeDefined();
   });
 
   it("Stripe未設定モーダルを閉じられる", async () => {
     const user = userEvent.setup();
     render(<PricingPage />);
     await user.click(screen.getByRole("button", { name: "スタンダードプランを選択" }));
-    expect(screen.getByText("Stripe連携準備中")).toBeDefined();
+    expect(screen.getByText("このプランは現在ご利用いただけません")).toBeDefined();
     await user.click(screen.getByText("閉じる"));
-    expect(screen.queryByText("Stripe連携準備中")).toBeNull();
+    expect(screen.queryByText("このプランは現在ご利用いただけません")).toBeNull();
   });
 
   it("プロプランの選択ボタンも機能する", async () => {
     const user = userEvent.setup();
     render(<PricingPage />);
     await user.click(screen.getByRole("button", { name: "プロプランを選択" }));
-    expect(screen.getByText("Stripe連携準備中")).toBeDefined();
+    expect(screen.getByText("このプランは現在ご利用いただけません")).toBeDefined();
   });
 
   it("「アプリに戻る」ボタンが存在する", () => {
