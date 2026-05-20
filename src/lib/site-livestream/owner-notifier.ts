@@ -43,7 +43,6 @@ function isInQuietHours(quietHours: { start: string; end: string }, now: Date): 
 
 /** Mock: 実際の通知送信 (console.log) */
 function sendMockNotification(method: NotificationMethod, ownerName: string, post: LivestreamPost): void {
-  // eslint-disable-next-line no-console
   console.log(
     `[owner-notifier] ${method.toUpperCase()} → ${ownerName}: 新しい投稿「${post.title}」が届きました。`,
   );

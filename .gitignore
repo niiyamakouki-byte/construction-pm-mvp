@@ -16,3 +16,4 @@ test-results/
 .dolt/
 *.db
 .beads-credential-key
+.beads/

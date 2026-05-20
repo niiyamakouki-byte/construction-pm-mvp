@@ -15,11 +15,12 @@ import {
 import type { JwtVerifyResult } from "../lib/share-token-jwt.js";
 import { ContractorPortalPage } from "./ContractorPortalPage.js";
 
+type JwtVerifyFailureReason = Extract<JwtVerifyResult, { ok: false }>["reason"];
+
 type VerifyState =
   | { phase: "checking" }
-  | { phase: "password_required" }
-  | { phase: "verified"; projectId: string }
-  | { phase: "error"; reason: JwtVerifyResult extends { ok: false } ? string : never };
+  | { phase: "verified"; token: string; projectId: string }
+  | { phase: "error"; reason: JwtVerifyFailureReason };
 
 function ErrorCard({ message }: { message: string }) {
   return (
@@ -113,23 +114,41 @@ type Props = {
 
 export function SharePortalPage({ token }: Props) {
   const [state, setState] = useState<VerifyState>({ phase: "checking" });
+  const requiresPassword = jwtTokenRequiresPassword(token);
 
   useEffect(() => {
-    // パスワード保護の有無をまず同期チェック（署名検証なし）
-    if (jwtTokenRequiresPassword(token)) {
-      setState({ phase: "password_required" });
-      return;
-    }
+    if (requiresPassword) return;
 
     // パスワードなし → 直接検証
-    verifyJwtShareToken(token).then((result) => {
-      if (result.ok) {
-        setState({ phase: "verified", projectId: result.payload.sub });
-      } else {
-        setState({ phase: "error", reason: result.reason });
-      }
-    });
-  }, [token]);
+    let cancelled = false;
+    Promise.resolve()
+      .then(() => {
+        setState({ phase: "checking" });
+        return verifyJwtShareToken(token);
+      })
+      .then((result) => {
+        if (cancelled) return;
+        if (result.ok) {
+          setState({ phase: "verified", token, projectId: result.payload.sub });
+        } else {
+          setState({ phase: "error", reason: result.reason });
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [requiresPassword, token]);
+
+  const verifiedForCurrentToken = state.phase === "verified" && state.token === token;
+
+  if (requiresPassword && !verifiedForCurrentToken) {
+    return (
+      <PasswordForm
+        token={token}
+        onVerified={(projectId) => setState({ phase: "verified", token, projectId })}
+      />
+    );
+  }
 
   if (state.phase === "checking") {
     return (
@@ -139,17 +158,8 @@ export function SharePortalPage({ token }: Props) {
     );
   }
 
-  if (state.phase === "password_required") {
-    return (
-      <PasswordForm
-        token={token}
-        onVerified={(projectId) => setState({ phase: "verified", projectId })}
-      />
-    );
-  }
-
   if (state.phase === "error") {
-    const messages: Record<string, string> = {
+    const messages: Record<JwtVerifyFailureReason, string> = {
       expired: "リンクの有効期限が切れています。担当者に新しいURLをご依頼ください。",
       invalid_signature: "リンクが無効です。担当者にご確認ください。",
       malformed: "リンクの形式が正しくありません。",
@@ -160,6 +170,9 @@ export function SharePortalPage({ token }: Props) {
     return <ErrorCard message={msg} />;
   }
 
-  // phase === "verified"
+  if (!verifiedForCurrentToken) {
+    return <ErrorCard message="アクセスできません。担当者にご確認ください。" />;
+  }
+
   return <ContractorPortalPage projectId={state.projectId} />;
 }

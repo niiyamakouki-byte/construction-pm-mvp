@@ -89,13 +89,18 @@ describe("formatDiscordContent", () => {
 
 describe("postToDiscord", () => {
   it("POSTs JSON body to given url", async () => {
-    const fetchMock = vi.fn(async () => ({ ok: true, text: async () => "" }) as Response);
+    let capturedUrl: Parameters<typeof fetch>[0] | undefined;
+    let capturedInit: Parameters<typeof fetch>[1] | undefined;
+    const fetchMock = vi.fn(async (url: Parameters<typeof fetch>[0], init?: Parameters<typeof fetch>[1]) => {
+      capturedUrl = url;
+      capturedInit = init;
+      return { ok: true, text: async () => "" } as Response;
+    });
     await postToDiscord("https://discord.example/webhook", "hello", fetchMock as unknown as typeof fetch);
     expect(fetchMock).toHaveBeenCalledOnce();
-    const [url, init] = fetchMock.mock.calls[0];
-    expect(url).toBe("https://discord.example/webhook");
-    expect((init as RequestInit).method).toBe("POST");
-    const body = JSON.parse((init as { body: string }).body) as { content: string };
+    expect(capturedUrl).toBe("https://discord.example/webhook");
+    expect(capturedInit?.method).toBe("POST");
+    const body = JSON.parse(String(capturedInit?.body)) as { content: string };
     expect(body.content).toBe("hello");
   });
 

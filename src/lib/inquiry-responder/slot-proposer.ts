@@ -64,7 +64,7 @@ export function proposeSlots(
   const usedKeys = new Set<string>();
   const ranges = availableTimeRanges(config);
 
-  let cursor = new Date(baseDate);
+  const cursor = new Date(baseDate);
   // leadDays 後からスタート
   cursor.setDate(cursor.getDate() + config.leadDays);
 

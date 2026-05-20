@@ -40,7 +40,7 @@ vi.mock("../stores/cost-item-store.js", () => ({
 
 vi.mock("../infra/create-app-repository.js", () => ({
   createAppRepository: () => ({
-    findAll: mockExpenseFindAll,
+    findAll: (...args: Parameters<typeof mockExpenseFindAll>) => mockExpenseFindAll(...args),
   }),
 }));
 

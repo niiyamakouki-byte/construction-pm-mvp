@@ -63,7 +63,7 @@ function extractCodeFromUrl(): string | null {
 async function getAuthHeader(): Promise<Record<string, string>> {
   const viteSupabase =
     typeof import.meta !== "undefined"
-      ? (import.meta as Record<string, unknown>).env as Record<string, string> | undefined
+      ? ((import.meta as unknown as { env?: Record<string, string> }).env)
       : undefined;
   const supabaseUrl = viteSupabase?.["VITE_SUPABASE_URL"];
   if (!supabaseUrl || supabaseUrl.includes("your-project")) return {};
@@ -83,14 +83,9 @@ async function getAuthHeader(): Promise<Record<string, string>> {
 // ── Component ─────────────────────────────────────────
 
 export function FreeeAuthPage({ onConnected, onDisconnected }: FreeeAuthPageProps) {
-  const [status, setStatus] = useState<ConnectionStatus>("loading");
+  const [status, setStatus] = useState<ConnectionStatus>(() => readConnectionStatus());
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  // 初回マウント: localStorage から接続状態を読み取る
-  useEffect(() => {
-    setStatus(readConnectionStatus());
-  }, []);
 
   // OAuth callback: URL に code があれば自動処理
   useEffect(() => {
@@ -98,10 +93,13 @@ export function FreeeAuthPage({ onConnected, onDisconnected }: FreeeAuthPageProp
     if (!code) return;
 
     let cancelled = false;
-    setBusy(true);
-    setError(null);
 
     (async () => {
+      await Promise.resolve();
+      if (cancelled) return;
+      setBusy(true);
+      setError(null);
+
       try {
         const authHeaders = await getAuthHeader();
         const res = await fetch("/api/freee/callback", {
