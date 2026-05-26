@@ -1,14 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const execFileSyncMock = vi.hoisted(() => vi.fn());
-
-vi.mock("node:child_process", () => ({
-  default: {
-    execFileSync: execFileSyncMock,
-  },
-  execFileSync: execFileSyncMock,
-}));
-
 import {
   buildDynamicImportScript,
   isSlugCollisionError,
@@ -25,16 +16,16 @@ const PARAMS = {
 };
 
 beforeEach(() => {
-  execFileSyncMock.mockReset();
   delete process.env["LAPORTA_HP_BLOG_MCP_PATH"];
 });
 
 describe("publishHpPost", () => {
   it("LAPORTA_HP_BLOG_MCP_PATH 配下の dist/tools.js を dynamic import して createPost を呼ぶ", () => {
+    const execFileSyncMock = vi.fn();
     execFileSyncMock.mockReturnValue(JSON.stringify({ slug: "art-001", sha: "abc1234" }));
     process.env["LAPORTA_HP_BLOG_MCP_PATH"] = "/Users/koki/laporta-hp-blog-mcp";
 
-    const result = publishHpPost(PARAMS);
+    const result = publishHpPost(PARAMS, { execFileSync: execFileSyncMock });
 
     expect(result).toEqual({ slug: "art-001", sha: "abc1234" });
     expect(execFileSyncMock).toHaveBeenCalledTimes(1);
@@ -52,6 +43,7 @@ describe("publishHpPost", () => {
   });
 
   it("環境変数が未設定の場合は明示エラーにする", () => {
+    const execFileSyncMock = vi.fn();
     expect(() => publishHpPost(PARAMS)).toThrow(
       "LAPORTA_HP_BLOG_MCP_PATH is required",
     );
@@ -59,12 +51,13 @@ describe("publishHpPost", () => {
   });
 
   it("createPost 呼び出し失敗を明示エラーとして投げる", () => {
+    const execFileSyncMock = vi.fn();
     execFileSyncMock.mockImplementation(() => {
       throw new Error("Cannot find module dist/tools.js");
     });
     process.env["LAPORTA_HP_BLOG_MCP_PATH"] = "/missing/mcp";
 
-    expect(() => publishHpPost(PARAMS)).toThrow(
+    expect(() => publishHpPost(PARAMS, { execFileSync: execFileSyncMock })).toThrow(
       'laporta-hp-blog-mcp createPost failed for slug "art-001"',
     );
   });

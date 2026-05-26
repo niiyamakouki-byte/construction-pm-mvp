@@ -1,5 +1,3 @@
-import { execFileSync } from "node:child_process";
-
 export type HpPostFaq = {
   question: string;
   answer: string;
@@ -24,7 +22,19 @@ export type HpPostResult = {
 type PublishOptions = {
   mcpPath?: string;
   timeoutMs?: number;
+  execFileSync?: ExecFileSync;
 };
+
+type ExecFileSync = (
+  file: string,
+  args: string[],
+  options: {
+    cwd: string;
+    encoding: "utf8";
+    input: string;
+    timeout: number;
+  },
+) => string;
 
 const DEFAULT_TIMEOUT_MS = 30_000;
 const MCP_PATH_ENV = "LAPORTA_HP_BLOG_MCP_PATH";
@@ -36,6 +46,7 @@ export function publishHpPost(
   const mcpPath = resolveMcpPath(options.mcpPath);
   const toolsPath = `${trimTrailingSlash(mcpPath)}/dist/tools.js`;
   const script = buildDynamicImportScript(toolsPath);
+  const execFileSync = options.execFileSync ?? loadExecFileSync();
 
   try {
     const stdout = execFileSync(process.execPath, ["--input-type=module", "-e", script], {
@@ -101,6 +112,33 @@ function parsePublishResult(stdout: string): HpPostResult {
     slug: parsed.slug,
     sha: parsed.sha,
   };
+}
+
+function loadExecFileSync(): ExecFileSync {
+  if (typeof window !== "undefined") {
+    throw new Error("publishHpPost requires a Node.js runtime");
+  }
+
+  const processWithBuiltin = process as typeof process & {
+    getBuiltinModule?: (id: string) => unknown;
+  };
+  const childProcess = processWithBuiltin.getBuiltinModule?.("node:child_process") as
+    | { execFileSync?: ExecFileSync }
+    | undefined;
+
+  if (typeof childProcess?.execFileSync === "function") {
+    return childProcess.execFileSync;
+  }
+
+  const requireFn = Function("return typeof require === 'function' ? require : undefined")() as
+    | ((id: string) => { execFileSync?: ExecFileSync })
+    | undefined;
+  const requiredChildProcess = requireFn?.("node:child_process");
+  if (typeof requiredChildProcess?.execFileSync === "function") {
+    return requiredChildProcess.execFileSync;
+  }
+
+  throw new Error("node:child_process is unavailable");
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
