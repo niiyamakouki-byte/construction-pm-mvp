@@ -145,6 +145,24 @@ describe("ProjectDetailPage", () => {
     });
   });
 
+  it("shows an AI upgrade prompt for completed record-only projects", async () => {
+    const user = userEvent.setup();
+    mockProjectFindById.mockResolvedValueOnce({
+      ...baseProject,
+      status: "completed",
+    });
+    render(<ProjectDetailPage projectId="proj-1" />);
+
+    await screen.findByRole("region", { name: "記録案件のAI提案" });
+    expect(screen.getByText("この記録から工程表を起こしますか？")).toBeDefined();
+
+    await user.click(screen.getByRole("button", { name: "内装工事で起こす" }));
+
+    await waitFor(() => {
+      expect(mockTaskCreate).toHaveBeenCalled();
+    });
+  });
+
   it("refreshes weather when the projectId changes", async () => {
     const fetchMock = vi.fn()
       .mockResolvedValueOnce({
