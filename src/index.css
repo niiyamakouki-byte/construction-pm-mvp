@@ -39,7 +39,7 @@
   --app-input-text: #0f172a;
 
   /* Sidebar & TopBar dimensions */
-  --sidebar-width: 220px;
+  --sidebar-width: 260px;
   --topbar-height: 56px;
 }
 
@@ -368,9 +368,10 @@ textarea::placeholder {
   align-items: center;
   gap: 10px;
   width: 100%;
-  padding: 9px 14px;
+  min-height: 38px;
+  padding: 8px 12px;
   border-radius: 10px;
-  font-size: 0.875rem;
+  font-size: 0.8125rem;
   font-weight: 500;
   color: #3c3c43;
   transition: background-color 0.15s ease, color 0.15s ease;
