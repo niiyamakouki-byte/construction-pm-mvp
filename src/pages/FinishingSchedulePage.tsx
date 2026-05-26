@@ -146,7 +146,7 @@ function exportCsv(rows: RowData[], projectName: string): void {
   const csvRows = [
     orderedHeaders.join(","),
     ...rows.map((row) => {
-      const cols = [row.roomName];
+      const cols = [`"${row.roomName.replace(/"/g, '""')}"`];
       for (const part of PARTS) {
         const c = row.cells[part];
         cols.push(

@@ -47,7 +47,9 @@ export function calculateFromMargin(
   // 見積金額 = 原価 ÷ (1 - 粗利率)
   const estimatePrice = Math.round(totalCost / (1 - targetMarginPercent / 100));
   const grossProfit = estimatePrice - totalCost;
-  const marginPercent = estimatePrice > 0 ? (grossProfit / estimatePrice) * 100 : 0;
+  const marginPercent = estimatePrice > 0
+    ? Math.round((grossProfit / estimatePrice) * 10000) / 100
+    : 0;
   return { totalCost, legalWelfare, estimatePrice, grossProfit, marginPercent };
 }
 
@@ -69,7 +71,7 @@ export function calculateFromPrice(
   const legalWelfare = includeLegalWelfare ? calcLegalWelfare(costItems) : 0;
   const totalCost = calcTotalCost(costItems, includeLegalWelfare);
   const grossProfit = targetPrice - totalCost;
-  const marginPercent = (grossProfit / targetPrice) * 100;
+  const marginPercent = Math.round((grossProfit / targetPrice) * 10000) / 100;
   return { totalCost, legalWelfare, estimatePrice: targetPrice, grossProfit, marginPercent };
 }
 

@@ -2,6 +2,7 @@ import { lazy, Suspense, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts.js";
 import { KeyboardShortcutHelp } from "./components/KeyboardShortcutHelp.js";
+import { InstallPrompt } from "./components/InstallPrompt.js";
 
 const ProjectListPage = lazy(() => import("./pages/ProjectListPage.js").then((m) => ({ default: m.ProjectListPage })));
 const TodayDashboardPage = lazy(() => import("./pages/TodayDashboardPage.js").then((m) => ({ default: m.TodayDashboardPage })));
@@ -28,6 +29,7 @@ const ProcurementPage = lazy(() => import("./pages/ProcurementPage.js").then((m)
 const SiteEntryPage = lazy(() => import("./pages/SiteEntryPage.js").then((m) => ({ default: m.SiteEntryPage })));
 const AttendanceHistoryPage = lazy(() => import("./pages/AttendanceHistoryPage.js").then((m) => ({ default: m.AttendanceHistoryPage })));
 const ContractorPortalPage = lazy(() => import("./pages/ContractorPortalPage.js").then((m) => ({ default: m.ContractorPortalPage })));
+const SharePortalPage = lazy(() => import("./pages/SharePortalPage.js").then((m) => ({ default: m.SharePortalPage })));
 const ClientViewerPage = lazy(() => import("./pages/ClientViewerPage.js").then((m) => ({ default: m.ClientViewerPage })));
 const SelectionBoardPage = lazy(() => import("./pages/SelectionBoardPage.js").then((m) => ({ default: m.SelectionBoardPage })));
 const MoodBoardPage = lazy(() => import("./pages/MoodBoardPage.js").then((m) => ({ default: m.MoodBoardPage })));
@@ -42,6 +44,26 @@ const FreeePage = lazy(() => import("./pages/FreeePage.js").then((m) => ({ defau
 const FinishingSchedulePage = lazy(() => import("./pages/FinishingSchedulePage.js").then((m) => ({ default: m.FinishingSchedulePage })));
 const ScheduleFromEstimatePage = lazy(() => import("./pages/ScheduleFromEstimatePage.js").then((m) => ({ default: m.ScheduleFromEstimatePage })));
 const AccountSettingsPage = lazy(() => import("./pages/AccountSettingsPage.js").then((m) => ({ default: m.AccountSettingsPage })));
+const InvoiceReconcilePage = lazy(() => import("./pages/InvoiceReconcilePage.js").then((m) => ({ default: m.InvoiceReconcilePage })));
+const OwnerAppPageLazy = lazy(() => import("./components/OwnerAppPage.js").then((m) => ({ default: m.OwnerAppPage })));
+const OwnerShareTokenPanelLazy = lazy(() => import("./components/OwnerShareTokenPanel.js").then((m) => ({ default: m.OwnerShareTokenPanel })));
+const MarginWatchPageLazy = lazy(() => import("./components/MarginWatchPage.js").then((m) => ({ default: m.MarginWatchPage })));
+const ProfitRankingPageLazy = lazy(() => import("./components/ProfitRankingPage.js").then((m) => ({ default: m.ProfitRankingPage })));
+const CrewOptimizerPageLazy = lazy(() => import("./components/CrewOptimizerPage.js").then((m) => ({ default: m.CrewOptimizerPage })));
+const RepeatPredictorPageLazy = lazy(() => import("./components/RepeatPredictorPage.js").then((m) => ({ default: m.RepeatPredictorPage })));
+const InquiryResponderPageLazy = lazy(() => import("./components/InquiryResponderPage.js").then((m) => ({ default: m.InquiryResponderPage })));
+const SalesPipelinePageLazy = lazy(() => import("./components/SalesPipelinePage.js").then((m) => ({ default: m.SalesPipelinePage })));
+const ProposalGeneratorPageLazy = lazy(() => import("./components/ProposalGeneratorPage.js").then((m) => ({ default: m.ProposalGeneratorPage })));
+const MeetingRunnerPageLazy = lazy(() => import("./components/MeetingRunnerPage.js").then((m) => ({ default: m.MeetingRunnerPage })));
+const ChangeOrderPageLazy = lazy(() => import("./components/ChangeOrderPage.js").then((m) => ({ default: m.ChangeOrderPage })));
+const HandoverPackagePageLazy = lazy(() => import("./components/HandoverPackagePage.js").then((m) => ({ default: m.HandoverPackagePage })));
+const OwnerSuggestionPageLazy = lazy(() => import("./components/OwnerSuggestionPage.js").then((m) => ({ default: m.OwnerSuggestionPage })));
+const SiteLivestreamPageLazy = lazy(() => import("./components/SiteLivestreamPage.js").then((m) => ({ default: m.SiteLivestreamPage })));
+const OwnerAmbassadorPageLazy = lazy(() => import("./components/OwnerAmbassadorPage.js").then((m) => ({ default: m.OwnerAmbassadorPage })));
+const LongtermFollowupPageLazy = lazy(() => import("./components/LongtermFollowupPage.js").then((m) => ({ default: m.LongtermFollowupPage })));
+const LocalSeoPageLazy = lazy(() => import("./components/LocalSeoPage.js").then((m) => ({ default: m.LocalSeoPage })));
+const InsuranceAssessmentPageLazy = lazy(() => import("./pages/InsuranceAssessmentPage.js").then((m) => ({ default: m.InsuranceAssessmentPage })));
+const PhaseTemplateLibraryPage = lazy(() => import("./pages/PhaseTemplateLibraryPage.js").then((m) => ({ default: m.PhaseTemplateLibraryPage })));
 import { ErrorBoundary } from "./components/ErrorBoundary.js";
 import { AuthGuard } from "./components/AuthGuard.js";
 import { OnboardingWizard, useOnboardingDone } from "./components/OnboardingWizard.js";
@@ -135,7 +157,7 @@ function AppShell() {
       icon: "☰",
       path: "/notifications",
       matchRoute: (currentRoute) =>
-        ["/today", "/invoice", "/estimate", "/contractors", "/notifications", "/help", "/node-schedule", "/cost-management", "/weather", "/safety", "/procurement", "/orders", "/crm", "/reports", "/invoices", "/cross-project-gantt", "/progress-review", "/photos", "/freee", "/finishing", "/schedule"].includes(currentRoute) || currentRoute.startsWith("/reports/") || currentRoute.startsWith("/freee?") || currentRoute.startsWith("/finishing"),
+        ["/today", "/invoice", "/estimate", "/contractors", "/notifications", "/help", "/node-schedule", "/cost-management", "/weather", "/safety", "/procurement", "/orders", "/crm", "/reports", "/invoices", "/invoices/reconcile", "/cross-project-gantt", "/progress-review", "/photos", "/freee", "/finishing", "/schedule", "/phase-templates"].includes(currentRoute) || currentRoute.startsWith("/reports/") || currentRoute.startsWith("/freee?") || currentRoute.startsWith("/finishing"),
     },
   ];
 
@@ -233,6 +255,13 @@ function AppShell() {
       path: "/schedule",
       matchRoute: (currentRoute) => currentRoute === "/schedule",
     },
+    {
+      key: "phase-templates",
+      label: "テンプレライブラリ",
+      icon: "📐",
+      path: "/phase-templates",
+      matchRoute: (currentRoute) => currentRoute === "/phase-templates",
+    },
   ];
 
   useEffect(() => {
@@ -258,10 +287,12 @@ function AppShell() {
   const entryMatch = route.match(/^\/entry\/(.+)$/);
   const historyMatch = route.match(/^\/attendance-history\/(.+)$/);
   const reportsMatch = route.match(/^\/reports(?:\/(.+))?$/);
+  const sharePortalMatch = route.match(/^\/portal\/share\/(.+)$/);
   const portalMatch = route.match(/^\/portal\/([^/]+)(?:\/(.+))?$/);
   const selectionMatch = route.match(/^\/selection\/([^/]+)$/);
   const moodBoardMatch = route.match(/^\/mood-board\/([^/]+)$/);
   const clientMatch = route.match(/^\/client\/([^/]+)$/);
+  const ownerAppMatch = route.match(/^\/owner-app\/([^/?]+)/);
   const finishingMatch = route.match(/^\/finishing(?:\/([^/]+))?$/);
   const projectId = projectDetailMatch?.[1]
     ? decodeURIComponent(projectDetailMatch[1])
@@ -271,11 +302,17 @@ function AppShell() {
   const entryProjectId = entryMatch?.[1] ? decodeURIComponent(entryMatch[1]) : null;
   const historyProjectId = historyMatch?.[1] ? decodeURIComponent(historyMatch[1]) : null;
   const reportsProjectId = reportsMatch?.[1] ? decodeURIComponent(reportsMatch[1]) : undefined;
+  const sharePortalToken = sharePortalMatch?.[1] ? decodeURIComponent(sharePortalMatch[1]) : null;
   const portalProjectId = portalMatch?.[1] ? decodeURIComponent(portalMatch[1]) : null;
   const portalCompany = portalMatch?.[2] ? decodeURIComponent(portalMatch[2]) : undefined;
   const selectionProjectId = selectionMatch?.[1] ? decodeURIComponent(selectionMatch[1]) : null;
   const moodBoardProjectId = moodBoardMatch?.[1] ? decodeURIComponent(moodBoardMatch[1]) : null;
   const clientProjectId = clientMatch?.[1] ? decodeURIComponent(clientMatch[1]) : null;
+  const ownerAppProjectId = ownerAppMatch?.[1] ? decodeURIComponent(ownerAppMatch[1]) : null;
+  // Extract token from hash query string: /#/owner-app/xxx?token=yyy
+  const ownerAppToken = ownerAppProjectId
+    ? (window.location.hash.match(/[?&]token=([^&]+)/)?.[1] ?? "")
+    : null;
 
   const pageFallback = <div className="flex items-center justify-center py-20 text-slate-400 text-sm">{t("common:status.loading")}</div>;
 
@@ -292,8 +329,11 @@ function AppShell() {
       </div>
     );
   }
+  if (ownerAppProjectId && ownerAppToken !== null) return <Suspense fallback={pageFallback}><OwnerAppPageLazy projectId={ownerAppProjectId} token={ownerAppToken} /></Suspense>;
+  if (route === "/share-tokens") return <Suspense fallback={pageFallback}><OwnerShareTokenPanelLazy /></Suspense>;
   if (clientProjectId) return <Suspense fallback={pageFallback}><ClientViewerPage projectId={clientProjectId} /></Suspense>;
   if (entryProjectId) return <Suspense fallback={pageFallback}><SiteEntryPage projectId={entryProjectId} /></Suspense>;
+  if (sharePortalToken) return <Suspense fallback={pageFallback}><SharePortalPage token={sharePortalToken} /></Suspense>;
   if (portalProjectId) return <Suspense fallback={pageFallback}><ContractorPortalPage projectId={portalProjectId} company={portalCompany} /></Suspense>;
   if (selectionProjectId) return <Suspense fallback={pageFallback}><SelectionBoardPage projectId={selectionProjectId} /></Suspense>;
   if (finishingMatch) return <Suspense fallback={pageFallback}><FinishingSchedulePage projectName={finishingMatch[1] ? decodeURIComponent(finishingMatch[1]) : undefined} /></Suspense>;
@@ -381,6 +421,150 @@ function AppShell() {
         </ErrorBoundary>
       );
     }
+    if (route === "/margin-watch") {
+      return (
+        <ErrorBoundary fallbackTitle="粗利ウォッチエラー">
+          <Suspense fallback={pageFallback}>
+            <MarginWatchPageLazy />
+          </Suspense>
+        </ErrorBoundary>
+      );
+    }
+    if (route === "/profit-ranking") {
+      return (
+        <ErrorBoundary fallbackTitle="粗利ランキングエラー">
+          <Suspense fallback={pageFallback}>
+            <ProfitRankingPageLazy />
+          </Suspense>
+        </ErrorBoundary>
+      );
+    }
+    if (route === "/crew-optimizer") {
+      return (
+        <ErrorBoundary fallbackTitle="職人スケジュールエラー">
+          <Suspense fallback={pageFallback}>
+            <CrewOptimizerPageLazy />
+          </Suspense>
+        </ErrorBoundary>
+      );
+    }
+    if (route === "/repeat-predictor") {
+      return (
+        <ErrorBoundary fallbackTitle="リピート予測エラー">
+          <Suspense fallback={pageFallback}>
+            <RepeatPredictorPageLazy />
+          </Suspense>
+        </ErrorBoundary>
+      );
+    }
+    if (route === "/inquiry-responder") {
+      return (
+        <ErrorBoundary fallbackTitle="問合せ返信AIエラー">
+          <Suspense fallback={pageFallback}>
+            <InquiryResponderPageLazy />
+          </Suspense>
+        </ErrorBoundary>
+      );
+    }
+    if (route === "/sales-pipeline") {
+      return (
+        <ErrorBoundary fallbackTitle="営業パイプラインエラー">
+          <Suspense fallback={pageFallback}>
+            <SalesPipelinePageLazy />
+          </Suspense>
+        </ErrorBoundary>
+      );
+    }
+    if (route === "/proposal-generator") {
+      return (
+        <ErrorBoundary fallbackTitle="提案書生成エラー">
+          <Suspense fallback={pageFallback}>
+            <ProposalGeneratorPageLazy />
+          </Suspense>
+        </ErrorBoundary>
+      );
+    }
+    if (route === "/meeting-runner") {
+      return (
+        <ErrorBoundary fallbackTitle="工程会議AIエラー">
+          <Suspense fallback={pageFallback}>
+            <MeetingRunnerPageLazy />
+          </Suspense>
+        </ErrorBoundary>
+      );
+    }
+    if (route === "/change-order") {
+      return (
+        <ErrorBoundary fallbackTitle="変更管理エラー">
+          <Suspense fallback={pageFallback}>
+            <ChangeOrderPageLazy />
+          </Suspense>
+        </ErrorBoundary>
+      );
+    }
+    if (route === "/handover-package") {
+      return (
+        <ErrorBoundary fallbackTitle="引渡しパッケージエラー">
+          <Suspense fallback={pageFallback}>
+            <HandoverPackagePageLazy />
+          </Suspense>
+        </ErrorBoundary>
+      );
+    }
+    if (route === "/owner-suggestion") {
+      return (
+        <ErrorBoundary fallbackTitle="施主提案AIエラー">
+          <Suspense fallback={pageFallback}>
+            <OwnerSuggestionPageLazy />
+          </Suspense>
+        </ErrorBoundary>
+      );
+    }
+    if (route === "/site-livestream") {
+      return (
+        <ErrorBoundary fallbackTitle="現場ライブストリームエラー">
+          <Suspense fallback={pageFallback}>
+            <SiteLivestreamPageLazy />
+          </Suspense>
+        </ErrorBoundary>
+      );
+    }
+    if (route === "/owner-ambassador") {
+      return (
+        <ErrorBoundary fallbackTitle="施主アンバサダーエラー">
+          <Suspense fallback={pageFallback}>
+            <OwnerAmbassadorPageLazy />
+          </Suspense>
+        </ErrorBoundary>
+      );
+    }
+    if (route === "/longterm-followup") {
+      return (
+        <ErrorBoundary fallbackTitle="長期フォローアップエラー">
+          <Suspense fallback={pageFallback}>
+            <LongtermFollowupPageLazy />
+          </Suspense>
+        </ErrorBoundary>
+      );
+    }
+    if (route === "/local-seo") {
+      return (
+        <ErrorBoundary fallbackTitle="地域SEOエラー">
+          <Suspense fallback={pageFallback}>
+            <LocalSeoPageLazy />
+          </Suspense>
+        </ErrorBoundary>
+      );
+    }
+    if (route === "/insurance-assessment") {
+      return (
+        <ErrorBoundary fallbackTitle="工事保険AI査定エラー">
+          <Suspense fallback={pageFallback}>
+            <InsuranceAssessmentPageLazy />
+          </Suspense>
+        </ErrorBoundary>
+      );
+    }
     if (ganttMatch) {
       return <GanttPage initialProjectId={ganttProjectId} />;
     }
@@ -422,6 +606,13 @@ function AppShell() {
       return (
         <ErrorBoundary fallbackTitle={t("errors:page_error.invoice_management")}>
           <InvoiceManagementPage />
+        </ErrorBoundary>
+      );
+    }
+    if (route === "/invoices/reconcile") {
+      return (
+        <ErrorBoundary fallbackTitle="入金照合エラー">
+          <InvoiceReconcilePage />
         </ErrorBoundary>
       );
     }
@@ -495,6 +686,15 @@ function AppShell() {
         </Suspense>
       );
     }
+    if (route === "/phase-templates") {
+      return (
+        <ErrorBoundary fallbackTitle="工程テンプレートライブラリエラー">
+          <Suspense fallback={pageFallback}>
+            <PhaseTemplateLibraryPage />
+          </Suspense>
+        </ErrorBoundary>
+      );
+    }
     return (
       <div className="mx-auto max-w-lg px-4 py-12 text-center" role="alert">
         <div className="rounded-2xl border-2 border-dashed border-slate-200 bg-white p-8">
@@ -527,6 +727,7 @@ function AppShell() {
     { key: "freee", label: t("common:nav.freee"), icon: "📗", path: "/freee", active: route === "/freee" || route.startsWith("/freee?") },
     { key: "finishing", label: "仕上表", icon: "📋", path: "/finishing", active: route === "/finishing" || route.startsWith("/finishing/") },
     { key: "schedule", label: "工程表", icon: "📅", path: "/schedule", active: route === "/schedule" },
+    { key: "phase-templates", label: "テンプレライブラリ", icon: "📐", path: "/phase-templates", active: route === "/phase-templates" },
     { key: "help", label: t("common:nav.help"), icon: "❓", path: "/help", active: route === "/help" },
     { key: "account", label: "アカウント設定", icon: "⚙️", path: "/account", active: route === "/account" },
   ];
@@ -712,6 +913,7 @@ function AppShell() {
         {onboardingDone && !tourDone && showTour ? <TourGuide onComplete={markTourDone} /> : null}
         {showShortcutHelp ? <KeyboardShortcutHelp onClose={() => setShowShortcutHelp(false)} /> : null}
         <AssistantChatPanel userId={user?.email ?? "anonymous"} />
+        <InstallPrompt />
       </div>
     </AuthGuard>
   );

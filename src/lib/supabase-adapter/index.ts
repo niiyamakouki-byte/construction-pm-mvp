@@ -60,3 +60,76 @@ export type {
   PurchaseOrderItemRecord,
   PurchaseOrderStatus,
 } from './OrderRepository.js';
+
+export { LaborRepository } from './LaborRepository.js';
+export type {
+  LaborTimeEntryRecord,
+  CrewAssignmentRecord,
+  LaborEntryStatus,
+} from './LaborRepository.js';
+
+export { SiteEntryRepository } from './SiteEntryRepository.js';
+export type { SiteEntryRecord } from './SiteEntryRepository.js';
+
+export { SafetyRepository } from './SafetyRepository.js';
+export type {
+  KyActivityRecord,
+  NearMissReportRecord,
+  NearMissSeverity,
+} from './SafetyRepository.js';
+
+export { PunchListRepository } from './PunchListRepository.js';
+export type {
+  PunchListItemRecord,
+  PunchListHistoryRecord,
+  PunchListPriority,
+  PunchListStatus,
+  PunchListHistoryAction,
+} from './PunchListRepository.js';
+
+export { EquipmentRepository } from './EquipmentRepository.js';
+export type {
+  EquipmentRentalRecord,
+  EquipmentUsageLogRecord,
+  EquipmentRentalStatus,
+} from './EquipmentRepository.js';
+
+export { ComplianceRepository } from './ComplianceRepository.js';
+export type {
+  ComplianceRequirementRecord,
+  ComplianceAuditEntryRecord,
+  ComplianceStatus,
+} from './ComplianceRepository.js';
+
+export { ClaimRepository } from './ClaimRepository.js';
+export type {
+  InsuranceClaimRecord,
+  ClaimDocumentRecord,
+  ClaimDisputeRecord,
+  ClaimStatus,
+  ClaimDocumentType,
+  DisputeStatus,
+} from './ClaimRepository.js';
+
+export { PermitRepository } from './PermitRepository.js';
+export type {
+  PermitApplicationRecord,
+  PermitInspectionRecord,
+  PermitStatus,
+  PermitInspectionStatus,
+} from './PermitRepository.js';
+
+export { MeetingRepository } from './MeetingRepository.js';
+export type {
+  MeetingMinutesRecord,
+  MeetingActionItemRecord,
+  MeetingAttendee,
+  ActionItemStatus,
+} from './MeetingRepository.js';
+
+export { WarrantyRepository } from './WarrantyRepository.js';
+export type {
+  WarrantyItemRecord,
+  WarrantyClaimRecord,
+  WarrantyClaimStatus,
+} from './WarrantyRepository.js';

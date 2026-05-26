@@ -70,5 +70,9 @@ export function loadScale(drawingId: string): number | null {
 }
 
 export function saveScale(drawingId: string, scale: number): void {
-  localStorage.setItem(STORAGE_KEY_PREFIX + drawingId, String(scale));
+  try {
+    localStorage.setItem(STORAGE_KEY_PREFIX + drawingId, String(scale));
+  } catch {
+    // localStorage quota exceeded or unavailable — ignore to avoid crashing the UI
+  }
 }

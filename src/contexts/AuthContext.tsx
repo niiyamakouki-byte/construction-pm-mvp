@@ -2,6 +2,10 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from "
 import { getSupabaseClient, hasSupabaseEnv } from "../infra/supabase-client.js";
 import { navigate } from "../hooks/useHashRouter.js";
 import { appendAuditLog } from "../lib/audit-log.js";
+import {
+  clearPasswordRecoveryMode,
+  markPasswordRecoveryMode,
+} from "../lib/password-recovery.js";
 
 type User = {
   id: string;
@@ -64,6 +68,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
           setSession(newSession);
           setLoading(false);
+          if (event === "PASSWORD_RECOVERY") {
+            markPasswordRecoveryMode();
+            navigate("/account");
+            return;
+          }
+          if (event === "SIGNED_OUT") {
+            clearPasswordRecoveryMode();
+          }
           // OAuth/メールログイン後、ランディング/ログインページにいたらアプリへ遷移
           // email_confirmed_at が null の場合はメール未確認のため遷移しない
           if (event === "SIGNED_IN" && newSession?.user) {
@@ -100,6 +112,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (session?.user) {
       appendAuditLog({ type: "logout", userId: session.user.id, email: session.user.email, ts: new Date().toISOString() });
     }
+    clearPasswordRecoveryMode();
     const client = await getSupabaseClient();
     await client.auth.signOut();
     setSession(null);

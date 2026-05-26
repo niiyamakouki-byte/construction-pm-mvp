@@ -230,14 +230,16 @@ const REQUIRED_COLUMN_LABELS: Record<(typeof REQUIRED_COLUMN_KEYS)[number], stri
 };
 
 function parseCsvRows(source: string): ParsedRow[] {
+  // Strip UTF-8 BOM (U+FEFF) that Excel and some editors prepend to CSV files.
+  const stripped = source.charCodeAt(0) === 0xfeff ? source.slice(1) : source;
   const rows: ParsedRow[] = [];
   let currentCell = "";
   let currentRow: ParsedRow = [];
   let inQuotes = false;
 
-  for (let index = 0; index < source.length; index += 1) {
-    const char = source[index];
-    const nextChar = source[index + 1];
+  for (let index = 0; index < stripped.length; index += 1) {
+    const char = stripped[index];
+    const nextChar = stripped[index + 1];
 
     if (char === "\"") {
       if (inQuotes && nextChar === "\"") {

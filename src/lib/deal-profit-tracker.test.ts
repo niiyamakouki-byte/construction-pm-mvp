@@ -387,3 +387,36 @@ describe("buildThreeAxisDashboardHtml", () => {
     expect(html.match(/¥0/g)?.length).toBeGreaterThanOrEqual(3);
   });
 });
+
+// ─── Float precision regression ──────────────────────────────────────────────
+
+describe("grossProfitRate float precision", () => {
+  it("getGrossProfitRate: 1/3 (33.333...) が小数第2位で丸められる", () => {
+    // estimatedRevenue=300000, estimatedCost=200000, grossProfit=100000
+    // 100000/300000 = 33.3333...%  →  33.33
+    const deal = makeDeal({ estimatedRevenue: 300000, estimatedCost: 200000 });
+    expect(getGrossProfitRate(deal)).toBe(33.33);
+  });
+
+  it("getGrossProfitRate: 割り切れる粗利率は正確な値を返す", () => {
+    // estimatedRevenue=1000000, estimatedCost=700000, grossProfit=300000
+    // 300000/1000000 = 30.0%
+    const deal = makeDeal({ estimatedRevenue: 1000000, estimatedCost: 700000 });
+    expect(getGrossProfitRate(deal)).toBe(30);
+  });
+
+  it("getMonthlyProfitTrend: grossProfitRateが浮動小数点誤差を含まない", () => {
+    // actualRevenue=300000, actualCost=200000 → grossProfit=100000
+    // 100000/300000 = 33.3333...%  →  33.33 after rounding
+    createDeal(makeDeal({
+      id: "float-1",
+      phase: "入金済",
+      actualRevenue: 300000,
+      actualCost: 200000,
+      updatedAt: "2026-05-01T00:00:00Z",
+    }));
+    const trend = getMonthlyProfitTrend();
+    expect(trend).toHaveLength(1);
+    expect(trend[0].grossProfitRate).toBe(33.33);
+  });
+});

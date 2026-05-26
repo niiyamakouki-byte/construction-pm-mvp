@@ -108,15 +108,15 @@ export function ProgressReviewPage() {
       setLoading(true);
       const allProjects = await projectRepository.findAll();
       setProjects(allProjects);
-      if (allProjects.length > 0 && !selectedProjectId) {
-        setSelectedProjectId(allProjects[0].id);
+      if (allProjects.length > 0) {
+        setSelectedProjectId((current) => current || allProjects[0].id);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "読み込み失敗");
     } finally {
       setLoading(false);
     }
-  }, [projectRepository, selectedProjectId]);
+  }, [projectRepository]);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- プロジェクト一覧の取得トリガー

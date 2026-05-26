@@ -19,6 +19,35 @@ import {
   type Point,
 } from "../lib/drawing-measure.js";
 import { comparePDFs, type DiffResult, type DiffColor } from "../lib/blueprint-diff.js";
+import {
+  createSession,
+  addSegment,
+  removeSegment,
+  updateSegment,
+  summariseSession,
+  summariseWithCost,
+  sessionTotalCost,
+  suggestForRow,
+  exportSessionCSV,
+  exportSessionJSON,
+  saveSession,
+  loadSession,
+  listSessionIds,
+  createTakeoffUndoStack,
+  withUndo,
+  TAKEOFF_SEGMENT_CATEGORIES,
+  TAKEOFF_CATEGORY_COLORS,
+  polylineLengthPx,
+  pxLengthToMetres,
+  type TakeoffSessionState,
+  type TakeoffSegmentCategory,
+} from "../lib/takeoff-session.js";
+import type { CostMasterEntry } from "../lib/measurement-to-estimate-link.js";
+import {
+  processPickupPoint,
+  isNearFirstPoint,
+} from "../lib/drawing-takeoff.js";
+import type { TakeoffPoint } from "../lib/drawing-takeoff.js";
 
 type ViewerMode = "pin" | "calibrate" | "measure" | "area" | "diff" | "pickup";
 
@@ -37,6 +66,10 @@ type Props = {
   projectName?: string;
   /** Drawing name used in the PDF report header */
   drawingName?: string;
+  /** Cost master entries for pickup mode auto-matching */
+  costMaster?: CostMasterEntry[];
+  /** Project ID for session persistence */
+  projectId?: string;
 };
 
 type PopoverState = {
@@ -66,6 +99,8 @@ export function DrawingViewer({
   compareDrawingUrl,
   projectName = "プロジェクト",
   drawingName = "図面",
+  costMaster = [],
+  projectId,
 }: Props) {
   const [pins, setPins] = useState<DrawingPin[]>(initialPins);
   const [popover, setPopover] = useState<PopoverState | null>(null);
@@ -88,11 +123,39 @@ export function DrawingViewer({
   const oldImgRef = useRef<HTMLImageElement | null>(null);
   const diffCanvasRef = useRef<HTMLCanvasElement | null>(null);
 
+  // Pickup / takeoff session state
+  const [pickupSession, setPickupSession] = useState<TakeoffSessionState>(() =>
+    createSession(drawingId, projectId),
+  );
+  const [pickupCategory, setPickupCategory] = useState<TakeoffSegmentCategory>("壁");
+  const [pickupKind, setPickupKind] = useState<"distance" | "area">("area");
+  const [pickupLabel, setPickupLabel] = useState("");
+  // Suggestions panel: which summary row index is expanded
+  const [expandedRowIdx, setExpandedRowIdx] = useState<number | null>(null);
+  const pickupUndoStack = useRef(createTakeoffUndoStack());
+  // Pickup drawing points (for line or area tracing)
+  const [pickupPoints, setPickupPoints] = useState<Point[]>([]);
+  const [pickupDrawing, setPickupDrawing] = useState(false);
+  // AI prediction: ghost point for next likely position
+  const [pickupPrediction, setPickupPrediction] = useState<TakeoffPoint | null>(null);
+
   // Load persisted scale on mount
   useEffect(() => {
     const saved = loadScale(drawingId);
     // eslint-disable-next-line react-hooks/set-state-in-effect -- drawingId変化時にlocalStorageから倍率を復元する初期化パターン
     if (saved !== null) setScale(saved);
+  }, [drawingId]);
+
+  // Load most recent pickup session for this drawing on mount
+  useEffect(() => {
+    const ids = listSessionIds(drawingId);
+    if (ids.length > 0) {
+      const loaded = loadSession(ids[ids.length - 1]!);
+      if (loaded) {
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- drawingId変化時にlocalStorageからセッションを復元する初期化パターン
+        setPickupSession(loaded);
+      }
+    }
   }, [drawingId]);
 
   const notify = (next: DrawingPin[]) => {
@@ -189,6 +252,30 @@ export function DrawingViewer({
         if (areaState.stage === "collecting") {
           setAreaState({ stage: "collecting", points: [...areaState.points, px] });
         }
+        return;
+      }
+
+      if (mode === "pickup") {
+        if (!scale) return;
+        const px = getPixelPos(pos.clientX, pos.clientY);
+        if (!px) return;
+        setPickupPoints((pts) => {
+          const { snapped, prediction } = processPickupPoint(px, pts);
+          // Auto-close: if area mode and near first point (≥3 pts), treat as finalize
+          const first = pts[0];
+          if (pickupKind === "area" && pts.length >= 3 && first && isNearFirstPoint(snapped, first)) {
+            // Trigger finalize on next render via a synthetic flag — we can't call
+            // finalizePickupSegment here (closure over stale pts). Instead just
+            // return pts unchanged and set a flag via an effect workaround.
+            // Simpler: close the polygon by adding the first point so the segment
+            // is computed correctly on finalizePickupSegment.
+            setPickupPrediction(null);
+            return [...pts, first];
+          }
+          setPickupPrediction(prediction);
+          setPickupDrawing(true);
+          return [...pts, snapped];
+        });
         return;
       }
     },
@@ -303,7 +390,58 @@ export function DrawingViewer({
         });
       }
     }
-  }, [mode, calibrateState, measureState, areaState]);
+    if (mode === "pickup" && pickupPoints.length > 0) {
+      ctx.beginPath();
+      // Per-category color for the active trace
+      const catColor = TAKEOFF_CATEGORY_COLORS[pickupCategory] ?? "#f97316";
+      ctx.moveTo(pickupPoints[0]!.x, pickupPoints[0]!.y);
+      for (let i = 1; i < pickupPoints.length; i++) {
+        ctx.lineTo(pickupPoints[i]!.x, pickupPoints[i]!.y);
+      }
+      ctx.strokeStyle = catColor;
+      ctx.lineWidth = 2.5;
+      ctx.stroke();
+      pickupPoints.forEach((p) => {
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 4, 0, Math.PI * 2);
+        ctx.fillStyle = catColor;
+        ctx.fill();
+        ctx.strokeStyle = "#fff";
+        ctx.lineWidth = 1;
+        ctx.stroke();
+      });
+      // Draw prediction ghost point (ベクトル延長補完)
+      if (pickupPrediction) {
+        const last = pickupPoints[pickupPoints.length - 1]!;
+        ctx.beginPath();
+        ctx.moveTo(last.x, last.y);
+        ctx.lineTo(pickupPrediction.x, pickupPrediction.y);
+        ctx.strokeStyle = catColor + "55";
+        ctx.lineWidth = 1.5;
+        ctx.setLineDash([4, 4]);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.beginPath();
+        ctx.arc(pickupPrediction.x, pickupPrediction.y, 5, 0, Math.PI * 2);
+        ctx.fillStyle = catColor + "55";
+        ctx.fill();
+        ctx.strokeStyle = catColor + "99";
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+      }
+      // Draw snap-to-close indicator when near first point
+      if (pickupKind === "area" && pickupPoints.length >= 3) {
+        const first = pickupPoints[0]!;
+        ctx.beginPath();
+        ctx.arc(first.x, first.y, 10, 0, Math.PI * 2);
+        ctx.strokeStyle = "rgba(34,197,94,0.7)";
+        ctx.lineWidth = 2;
+        ctx.setLineDash([3, 3]);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+    }
+  }, [mode, calibrateState, measureState, areaState, pickupPoints, pickupPrediction, pickupKind, pickupCategory]);
 
   const confirmCalibrate = () => {
     if (calibrateState.stage !== "dialog") return;
@@ -327,6 +465,106 @@ export function DrawingViewer({
     setAreaState({ stage: "collecting", points: [] });
   };
 
+  // ── Pickup mode helpers ──────────────────────────────────────────────────────
+
+  const finalizePickupSegment = useCallback(() => {
+    if (!scale || pickupPoints.length < 2) return;
+    let value: number;
+    if (pickupKind === "area") {
+      if (pickupPoints.length < 3) return;
+      // measureArea returns ㎡
+      value = measureArea(pickupPoints, scale);
+    } else {
+      // Sum all polyline segment lengths (not just first→last straight line)
+      const totalPx = polylineLengthPx(pickupPoints);
+      value = pxLengthToMetres(totalPx, scale);
+    }
+    if (value <= 0) return;
+    const next = withUndo(pickupUndoStack.current, pickupSession, (s) =>
+      addSegment(s, {
+        category: pickupCategory,
+        measureKind: pickupKind,
+        value,
+        label: pickupLabel || undefined,
+      }),
+    );
+    setPickupSession(next);
+    saveSession(next);
+    setPickupPoints([]);
+    setPickupDrawing(false);
+    setPickupLabel("");
+    setPickupPrediction(null);
+  }, [scale, pickupPoints, pickupKind, pickupCategory, pickupLabel, pickupSession]);
+
+  const resetPickupPoints = useCallback(() => {
+    setPickupPoints([]);
+    setPickupDrawing(false);
+    setPickupPrediction(null);
+  }, []);
+
+  // Keyboard: Enter or Escape in pickup mode
+  useEffect(() => {
+    if (mode !== "pickup") return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        finalizePickupSegment();
+      } else if (e.key === "Escape") {
+        resetPickupPoints();
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [mode, finalizePickupSegment, resetPickupPoints]);
+
+  const undoPickup = useCallback(() => {
+    const prev = pickupUndoStack.current.undo();
+    if (!prev) return;
+    setPickupSession(prev);
+    saveSession(prev);
+  }, []);
+
+  const removePickupSegment = useCallback((segId: string) => {
+    const next = withUndo(pickupUndoStack.current, pickupSession, (s) =>
+      removeSegment(s, segId),
+    );
+    setPickupSession(next);
+    saveSession(next);
+  }, [pickupSession]);
+
+  const linkPickupSegment = useCallback(
+    (segId: string, code: string, name: string) => {
+      const next = withUndo(pickupUndoStack.current, pickupSession, (s) =>
+        updateSegment(s, segId, { linkedCostCode: code, linkedCostName: name }),
+      );
+      setPickupSession(next);
+      saveSession(next);
+    },
+    [pickupSession],
+  );
+
+  const handlePickupExportCSV = useCallback(() => {
+    const csv = exportSessionCSV(pickupSession);
+    const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `拾い出し_${drawingName}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }, [pickupSession, drawingName]);
+
+  const handlePickupExportJSON = useCallback(() => {
+    const json = exportSessionJSON(pickupSession);
+    const blob = new Blob([json], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `拾い出し_${drawingName}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }, [pickupSession, drawingName]);
+
   const switchMode = (next: ViewerMode) => {
     setMode(next);
     setPopover(null);
@@ -334,6 +572,7 @@ export function DrawingViewer({
     if (next !== "measure") setMeasureState({ stage: "idle" });
     if (next !== "area") setAreaState({ stage: "collecting", points: [] });
     if (next !== "diff") { setDiffResult(null); }
+    if (next !== "pickup") { setPickupPoints([]); setPickupDrawing(false); setPickupPrediction(null); }
   };
 
   // Run diff when switching to diff mode with both images loaded
@@ -462,6 +701,7 @@ export function DrawingViewer({
     { key: "measure", label: "距離計測" },
     { key: "area", label: "面積計測" },
     { key: "diff", label: "差分" },
+    { key: "pickup", label: "拾い出し" },
   ];
 
   const noScaleWarning = (mode === "measure" || mode === "area") && !scale;
@@ -596,6 +836,24 @@ export function DrawingViewer({
             </span>
           </div>
         )}
+        {mode === "pickup" && !scale && (
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <span className="bg-slate-800/90 text-white text-sm px-4 py-2 rounded-2xl shadow">
+              まず縮尺を設定してください
+            </span>
+          </div>
+        )}
+        {mode === "pickup" && scale && (
+          <div className="absolute inset-0 border-2 border-orange-400 rounded-2xl pointer-events-none flex items-start justify-center pt-3">
+            <span className="bg-orange-500 text-white text-xs px-3 py-1 rounded-full shadow">
+              {pickupDrawing && pickupKind === "area" && pickupPoints.length >= 3
+                ? `${pickupPoints.length}点 — 最初の点付近でオートクローズ`
+                : pickupDrawing
+                ? `${pickupPoints.length}点 — 確定 or リセット`
+                : "図面をタップして計測"}
+            </span>
+          </div>
+        )}
       </div>
 
       {/* Sidebar */}
@@ -719,6 +977,32 @@ export function DrawingViewer({
               </>
             )}
           </div>
+        )}
+
+        {/* Pickup sidebar */}
+        {mode === "pickup" && (
+          <PickupSidebar
+            session={pickupSession}
+            category={pickupCategory}
+            measureKind={pickupKind}
+            label={pickupLabel}
+            points={pickupPoints}
+            hasScale={scale !== null}
+            canUndo={pickupUndoStack.current.canUndo()}
+            costMaster={costMaster}
+            expandedRowIdx={expandedRowIdx}
+            onCategoryChange={setPickupCategory}
+            onMeasureKindChange={setPickupKind}
+            onLabelChange={setPickupLabel}
+            onFinalize={finalizePickupSegment}
+            onReset={resetPickupPoints}
+            onUndo={undoPickup}
+            onRemoveSegment={removePickupSegment}
+            onLinkSegment={linkPickupSegment}
+            onExpandRow={setExpandedRowIdx}
+            onExportCSV={handlePickupExportCSV}
+            onExportJSON={handlePickupExportJSON}
+          />
         )}
 
         {/* Pin list (only in pin mode) */}
@@ -961,6 +1245,310 @@ type PinFieldsProps = {
   pin: Partial<DrawingPin>;
   onChange: (updates: Partial<DrawingPin>) => void;
 };
+
+// ── PickupSidebar ─────────────────────────────────────────────────────────────
+
+type PickupSidebarProps = {
+  session: TakeoffSessionState;
+  category: TakeoffSegmentCategory;
+  measureKind: "distance" | "area";
+  label: string;
+  points: Point[];
+  hasScale: boolean;
+  canUndo: boolean;
+  costMaster: CostMasterEntry[];
+  expandedRowIdx: number | null;
+  onCategoryChange: (c: TakeoffSegmentCategory) => void;
+  onMeasureKindChange: (k: "distance" | "area") => void;
+  onLabelChange: (l: string) => void;
+  onFinalize: () => void;
+  onReset: () => void;
+  onUndo: () => void;
+  onRemoveSegment: (id: string) => void;
+  onLinkSegment: (segId: string, code: string, name: string) => void;
+  onExpandRow: (idx: number | null) => void;
+  onExportCSV: () => void;
+  onExportJSON: () => void;
+};
+
+function PickupSidebar({
+  session,
+  category,
+  measureKind,
+  label,
+  points,
+  hasScale,
+  canUndo,
+  costMaster,
+  expandedRowIdx,
+  onCategoryChange,
+  onMeasureKindChange,
+  onLabelChange,
+  onFinalize,
+  onReset,
+  onUndo,
+  onRemoveSegment,
+  onLinkSegment,
+  onExpandRow,
+  onExportCSV,
+  onExportJSON,
+}: PickupSidebarProps) {
+  const costRows = summariseWithCost(session, costMaster);
+  const summaryRows = summariseSession(session);
+  const totalCost = sessionTotalCost(session, costMaster);
+  const minPoints = measureKind === "area" ? 3 : 2;
+  const canFinalize = hasScale && points.length >= minPoints;
+
+  return (
+    <div className="flex flex-col gap-3">
+      {/* Category selector with color dots */}
+      <div className="flex flex-col gap-1">
+        <span className="text-xs font-medium text-slate-600">カテゴリ</span>
+        <div className="grid grid-cols-3 gap-1">
+          {TAKEOFF_SEGMENT_CATEGORIES.map((cat) => (
+            <button
+              key={cat}
+              type="button"
+              onClick={() => onCategoryChange(cat)}
+              style={
+                category === cat
+                  ? { backgroundColor: TAKEOFF_CATEGORY_COLORS[cat], color: "#fff" }
+                  : undefined
+              }
+              className={`rounded-xl py-1.5 text-xs font-bold transition-colors flex items-center justify-center gap-1 ${
+                category === cat
+                  ? ""
+                  : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+              }`}
+            >
+              <span
+                className="inline-block w-2 h-2 rounded-full flex-shrink-0"
+                style={{ backgroundColor: TAKEOFF_CATEGORY_COLORS[cat] }}
+              />
+              {cat}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Measure kind toggle */}
+      <div className="flex gap-2">
+        <button
+          type="button"
+          onClick={() => onMeasureKindChange("area")}
+          className={`flex-1 rounded-xl py-2 text-xs font-bold transition-colors ${
+            measureKind === "area"
+              ? "bg-orange-500 text-white"
+              : "bg-slate-100 text-slate-600"
+          }`}
+        >
+          面積 (㎡)
+        </button>
+        <button
+          type="button"
+          onClick={() => onMeasureKindChange("distance")}
+          className={`flex-1 rounded-xl py-2 text-xs font-bold transition-colors ${
+            measureKind === "distance"
+              ? "bg-orange-500 text-white"
+              : "bg-slate-100 text-slate-600"
+          }`}
+        >
+          距離 (m)
+        </button>
+      </div>
+
+      {/* Optional label */}
+      <input
+        type="text"
+        value={label}
+        onChange={(e) => onLabelChange(e.target.value)}
+        placeholder="ラベル (例: 北面)"
+        className="rounded-lg border border-slate-200 px-3 py-2 text-xs text-slate-800 focus:border-orange-400 focus:outline-none"
+      />
+
+      {/* Points info + actions */}
+      <div className="flex gap-2">
+        <button
+          type="button"
+          onClick={onFinalize}
+          disabled={!canFinalize}
+          className="flex-1 rounded-2xl bg-orange-500 py-2.5 text-xs font-bold text-white disabled:opacity-40"
+        >
+          {points.length > 0
+            ? `確定 (${points.length}点)`
+            : `確定 (${minPoints}点以上)`}
+        </button>
+        <button
+          type="button"
+          onClick={onReset}
+          className="rounded-2xl border border-slate-200 px-3 py-2 text-xs text-slate-600"
+        >
+          リセット
+        </button>
+        <button
+          type="button"
+          onClick={onUndo}
+          disabled={!canUndo}
+          className="rounded-2xl border border-slate-200 px-3 py-2 text-xs text-slate-600 disabled:opacity-40"
+          aria-label="元に戻す"
+        >
+          ↩
+        </button>
+      </div>
+
+      {/* Summary table with cost totals */}
+      {summaryRows.length > 0 && (
+        <div className="flex flex-col gap-1">
+          <div className="flex items-center justify-between">
+            <p className="text-xs font-semibold text-slate-700">数量集計</p>
+            {totalCost > 0 && (
+              <p className="text-xs font-bold text-emerald-700">
+                合計 ¥{totalCost.toLocaleString()}
+              </p>
+            )}
+          </div>
+          {costRows.map((row, idx) => {
+            const isExpanded = expandedRowIdx === idx;
+            const suggestions = isExpanded
+              ? suggestForRow(row, costMaster, 3)
+              : [];
+            const catColor = TAKEOFF_CATEGORY_COLORS[row.category] ?? "#6b7280";
+            return (
+              <div
+                key={`${row.category}-${row.measureKind}`}
+                className="rounded-xl border border-slate-200 bg-white overflow-hidden"
+                style={{ borderLeftColor: catColor, borderLeftWidth: 3 }}
+              >
+                <button
+                  type="button"
+                  onClick={() => onExpandRow(isExpanded ? null : idx)}
+                  className="w-full flex items-center justify-between px-3 py-2 text-left hover:bg-slate-50"
+                >
+                  <span className="text-xs font-bold text-slate-700 flex items-center gap-1">
+                    <span
+                      className="inline-block w-2 h-2 rounded-full"
+                      style={{ backgroundColor: catColor }}
+                    />
+                    {row.category}
+                    <span className="ml-1 font-normal text-slate-500">
+                      ({row.segmentCount}箇所)
+                    </span>
+                  </span>
+                  <div className="flex flex-col items-end">
+                    <span className="text-xs font-bold" style={{ color: catColor }}>
+                      {row.totalValue.toFixed(2)} {row.unit}
+                    </span>
+                    {row.totalCost > 0 && (
+                      <span className="text-[10px] text-emerald-600 font-semibold">
+                        ¥{row.totalCost.toLocaleString()}
+                      </span>
+                    )}
+                  </div>
+                </button>
+
+                {isExpanded && (
+                  <div className="border-t border-slate-100 px-3 py-2 flex flex-col gap-1">
+                    {/* Segment list */}
+                    {session.segments
+                      .filter(
+                        (s) =>
+                          s.category === row.category &&
+                          s.measureKind === row.measureKind,
+                      )
+                      .map((seg) => (
+                        <div
+                          key={seg.id}
+                          className="flex items-center justify-between text-xs text-slate-600"
+                        >
+                          <span>
+                            {seg.label ?? "—"} {seg.value.toFixed(2)} {row.unit}
+                            {seg.linkedCostName && (
+                              <span className="ml-1 text-emerald-600">
+                                [{seg.linkedCostName}]
+                              </span>
+                            )}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => onRemoveSegment(seg.id)}
+                            className="ml-2 text-red-400 hover:text-red-600"
+                            aria-label="削除"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      ))}
+
+                    {/* Cost-master suggestions */}
+                    {suggestions.length > 0 && (
+                      <div className="mt-2 flex flex-col gap-1">
+                        <p className="text-[10px] font-semibold text-slate-500">
+                          単価候補 (タップで反映)
+                        </p>
+                        {suggestions.map((s) => (
+                          <button
+                            key={s.code}
+                            type="button"
+                            onClick={() => {
+                              // Link cost to all segments in this row
+                              session.segments
+                                .filter(
+                                  (seg) =>
+                                    seg.category === row.category &&
+                                    seg.measureKind === row.measureKind,
+                                )
+                                .forEach((seg) =>
+                                  onLinkSegment(seg.id, s.code, s.name),
+                                );
+                              onExpandRow(null);
+                            }}
+                            className="flex items-center justify-between rounded-lg bg-emerald-50 px-2 py-1 text-xs text-emerald-800 hover:bg-emerald-100"
+                          >
+                            <span className="truncate">{s.name}</span>
+                            <span className="ml-2 shrink-0">
+                              ¥{s.unitPrice.toLocaleString()}/{s.unit} →
+                              ¥{s.amount.toLocaleString()}
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {session.segments.length === 0 && (
+        <p className="text-center text-xs text-slate-400 py-2">
+          セグメントなし — 図面をタップして計測
+        </p>
+      )}
+
+      {/* Export buttons */}
+      {session.segments.length > 0 && (
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={onExportCSV}
+            className="flex-1 rounded-2xl border border-slate-200 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50"
+          >
+            CSV
+          </button>
+          <button
+            type="button"
+            onClick={onExportJSON}
+            className="flex-1 rounded-2xl border border-slate-200 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50"
+          >
+            JSON
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
 
 function PinFields({ pin, onChange }: PinFieldsProps) {
   return (

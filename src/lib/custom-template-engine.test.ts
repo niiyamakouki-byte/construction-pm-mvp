@@ -485,6 +485,29 @@ describe("validateRecord", () => {
     expect(result.errors).toHaveLength(2);
   });
 
+  it("does not crash when validation pattern is an invalid regex", () => {
+    const tmpl = createTemplate(
+      "T",
+      "custom",
+      [
+        {
+          id: "field1",
+          label: "フィールド",
+          type: "text",
+          required: true,
+          validation: { pattern: "(unclosed[" },
+        },
+      ],
+      "org-1",
+      "user-1",
+    );
+    const rec = fillRecord(makeRecord(tmpl.id), { field1: "any value" });
+    // Should not throw; invalid pattern is silently skipped
+    expect(() => validateRecord(tmpl, rec)).not.toThrow();
+    const result = validateRecord(tmpl, rec);
+    expect(result.valid).toBe(true);
+  });
+
   it("skips validation for non-required empty fields", () => {
     const tmpl = createTemplate(
       "T",

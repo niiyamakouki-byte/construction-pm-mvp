@@ -64,6 +64,36 @@ describe("estimate-generator", () => {
     ).toThrow("品目コード XX-999 が見つかりません");
   });
 
+  it("throws when quantity is NaN — prevents NaN from corrupting subtotal", () => {
+    expect(() =>
+      generateEstimate({
+        propertyName: "テスト",
+        clientName: "テスト",
+        items: [{ code: "DM-001", quantity: NaN }],
+      }),
+    ).toThrow("数量が不正です");
+  });
+
+  it("throws when quantity is Infinity — prevents Infinity amount", () => {
+    expect(() =>
+      generateEstimate({
+        propertyName: "テスト",
+        clientName: "テスト",
+        items: [{ code: "DM-001", quantity: Infinity }],
+      }),
+    ).toThrow("数量が不正です");
+  });
+
+  it("throws when unitPriceOverride is NaN — prevents NaN from corrupting subtotal", () => {
+    expect(() =>
+      generateEstimate({
+        propertyName: "テスト",
+        clientName: "テスト",
+        items: [{ code: "DM-001", quantity: 1, unitPriceOverride: NaN }],
+      }),
+    ).toThrow("単価が不正です");
+  });
+
   it("has correct number of categories", () => {
     const cats = listCategories();
     expect(cats).toHaveLength(11);

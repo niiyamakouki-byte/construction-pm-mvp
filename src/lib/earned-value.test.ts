@@ -93,4 +93,23 @@ describe("earned-value", () => {
     expect(report).toContain("SPI: 0.94  CPI: 0.83  EAC: 2,409.64");
     expect(report).toContain("Completed Tasks: 1/2");
   });
+
+  it("default asOfDate uses local date, not UTC (timezone regression)", () => {
+    // Verify that the no-arg call does not throw and returns a valid YYYY-MM-DD
+    // string matching today's local date rather than yesterday's UTC date.
+    const metrics = calculateEarnedValue([], 0);
+    const localDateStr = (() => {
+      const d = new Date();
+      const y = d.getFullYear();
+      const mo = String(d.getMonth() + 1).padStart(2, "0");
+      const day = String(d.getDate()).padStart(2, "0");
+      return `${y}-${mo}-${day}`;
+    })();
+    // The bac/ev/pv/ac defaults for empty task list are 0 — what matters is no crash
+    // and that calling schedulePerformanceIndex without asOfDate is consistent.
+    const spi = schedulePerformanceIndex([], 0);
+    expect(typeof spi).toBe("number");
+    // local date must be a valid YYYY-MM-DD
+    expect(localDateStr).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+  });
 });

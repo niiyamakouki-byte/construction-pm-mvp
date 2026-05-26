@@ -76,6 +76,16 @@ describe("createScenario", () => {
     }
   });
 
+  it("小数量 × 整数単価で amount が整数になる（float drift 防止）", () => {
+    // 1.1 * 3000 = 3300.0000000000005 without Math.round
+    const s = createScenario("テスト", "standard", [
+      { name: "塗料", unit: "L", quantity: 1.1, unitPrice: 3000 },
+    ], 0);
+    expect(s.items[0].amount).toBe(3300);
+    expect(Number.isInteger(s.items[0].amount)).toBe(true);
+    expect(s.subtotal).toBe(3300);
+  });
+
   it("諸経費率0でも正常に動作する", () => {
     const s = createScenario("テスト", "standard", stdItems, 0);
     expect(s.overhead).toBe(0);
