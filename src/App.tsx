@@ -101,6 +101,28 @@ type TabDef = {
   dataTour?: string;
 };
 
+type SidebarItem = {
+  key: string;
+  label: string;
+  icon: string;
+  path: string;
+  active: boolean;
+  group: "today" | "field" | "money" | "growth" | "system";
+  aiHint: string;
+};
+
+const sidebarGroupLabels: Record<SidebarItem["group"], string> = {
+  today: "今日見る",
+  field: "現場を進める",
+  money: "お金を守る",
+  growth: "売上を作る",
+  system: "設定・ヘルプ",
+};
+
+function openAssistantPanel() {
+  window.dispatchEvent(new CustomEvent("genbahub:assistant-open"));
+}
+
 function AppShell() {
   const { t } = useTranslation(["common", "pages", "errors"]);
   const route = useHashRoute();
@@ -711,25 +733,37 @@ function AppShell() {
     );
   };
 
-  const allSidebarItems = [
-    { key: "today", label: t("common:nav.dashboard"), icon: "📊", path: "/today", active: route === "/today" },
-    { key: "app", label: t("common:nav.project_list"), icon: "📋", path: "/app", active: route === "/app" || route === "/" || route === "" },
-    { key: "cross-gantt", label: t("common:nav.gantt_chart"), icon: "📅", path: "/cross-project-gantt", active: route === "/cross-project-gantt" },
-    { key: "tasks", label: t("common:nav.tasks"), icon: "✅", path: "/tasks", active: route === "/tasks" },
-    { key: "estimate", label: t("common:nav.estimate"), icon: "💰", path: "/estimate", active: route === "/estimate" },
-    { key: "progress-review", label: t("common:nav.progress_review"), icon: "📸", path: "/progress-review", active: route === "/progress-review" },
-    { key: "safety", label: t("common:nav.safety_management"), icon: "🏗️", path: "/safety", active: route === "/safety" },
-    { key: "crm", label: t("common:nav.crm"), icon: "👥", path: "/crm", active: route === "/crm" },
-    { key: "contractors", label: t("common:nav.partner_companies"), icon: "🤝", path: "/contractors", active: route === "/contractors" },
-    { key: "invoice", label: t("common:nav.invoices_nav"), icon: "🧾", path: "/invoice", active: route === "/invoice" },
-    { key: "reports", label: t("common:nav.reports"), icon: "📈", path: "/reports", active: route === "/reports" || route.startsWith("/reports/") },
-    { key: "cost", label: t("common:nav.cost"), icon: "💹", path: "/cost-management", active: route === "/cost-management" },
-    { key: "freee", label: t("common:nav.freee"), icon: "📗", path: "/freee", active: route === "/freee" || route.startsWith("/freee?") },
-    { key: "finishing", label: "仕上表", icon: "📋", path: "/finishing", active: route === "/finishing" || route.startsWith("/finishing/") },
-    { key: "schedule", label: "工程表", icon: "📅", path: "/schedule", active: route === "/schedule" },
-    { key: "phase-templates", label: "テンプレライブラリ", icon: "📐", path: "/phase-templates", active: route === "/phase-templates" },
-    { key: "help", label: t("common:nav.help"), icon: "❓", path: "/help", active: route === "/help" },
-    { key: "account", label: "アカウント設定", icon: "⚙️", path: "/account", active: route === "/account" },
+  const allSidebarItems: SidebarItem[] = [
+    { key: "today", label: t("common:nav.dashboard"), icon: "📊", path: "/today", active: route === "/today", group: "today", aiHint: "今日の遅延・予算・現場リスクを見る" },
+    { key: "app", label: t("common:nav.project_list"), icon: "📋", path: "/app", active: route === "/app" || route === "/" || route === "", group: "today", aiHint: "案件一覧から次に触る現場を選ぶ" },
+    { key: "tasks", label: t("common:nav.tasks"), icon: "✅", path: "/tasks", active: route === "/tasks", group: "today", aiHint: "未完了タスクと担当の穴を見る" },
+    { key: "cross-gantt", label: t("common:nav.gantt_chart"), icon: "📅", path: "/cross-project-gantt", active: route === "/cross-project-gantt", group: "field", aiHint: "全案件の工程ずれを比較する" },
+    { key: "schedule", label: "工程表", icon: "📅", path: "/schedule", active: route === "/schedule", group: "field", aiHint: "見積から工程を組む" },
+    { key: "finishing", label: "仕上表", icon: "📋", path: "/finishing", active: route === "/finishing" || route.startsWith("/finishing/"), group: "field", aiHint: "部屋別の仕様と未決を整理する" },
+    { key: "progress-review", label: t("common:nav.progress_review"), icon: "📸", path: "/progress-review", active: route === "/progress-review", group: "field", aiHint: "写真から進捗と不足証跡を見る" },
+    { key: "safety", label: t("common:nav.safety_management"), icon: "🏗️", path: "/safety", active: route === "/safety", group: "field", aiHint: "安全確認と是正漏れを見る" },
+    { key: "phase-templates", label: "テンプレライブラリ", icon: "📐", path: "/phase-templates", active: route === "/phase-templates", group: "field", aiHint: "標準工程テンプレートを探す" },
+    { key: "estimate", label: t("common:nav.estimate"), icon: "💰", path: "/estimate", active: route === "/estimate", group: "money", aiHint: "見積作成と粗利の前提を確認する" },
+    { key: "invoice", label: t("common:nav.invoices_nav"), icon: "🧾", path: "/invoice", active: route === "/invoice", group: "money", aiHint: "請求漏れと入金予定を見る" },
+    { key: "cost", label: t("common:nav.cost"), icon: "💹", path: "/cost-management", active: route === "/cost-management", group: "money", aiHint: "予算超過と原価差異を見る" },
+    { key: "reports", label: t("common:nav.reports"), icon: "📈", path: "/reports", active: route === "/reports" || route.startsWith("/reports/"), group: "money", aiHint: "報告書と経営向け集計を出す" },
+    { key: "freee", label: t("common:nav.freee"), icon: "📗", path: "/freee", active: route === "/freee" || route.startsWith("/freee?"), group: "money", aiHint: "会計連携と仕訳候補を見る" },
+    { key: "crm", label: t("common:nav.crm"), icon: "👥", path: "/crm", active: route === "/crm", group: "growth", aiHint: "見込み客と次回接触を整理する" },
+    { key: "contractors", label: t("common:nav.partner_companies"), icon: "🤝", path: "/contractors", active: route === "/contractors", group: "growth", aiHint: "協力会社と発注先候補を見る" },
+    { key: "help", label: t("common:nav.help"), icon: "❓", path: "/help", active: route === "/help", group: "system", aiHint: "使い方とショートカットを見る" },
+    { key: "account", label: "アカウント設定", icon: "⚙️", path: "/account", active: route === "/account", group: "system", aiHint: "ユーザー・組織・表示設定を変える" },
+  ];
+  const sidebarGroups = (Object.keys(sidebarGroupLabels) as SidebarItem["group"][])
+    .map((group) => ({
+      group,
+      label: sidebarGroupLabels[group],
+      items: allSidebarItems.filter((item) => item.group === group),
+    }))
+    .filter((group) => group.items.length > 0);
+  const quickActions = [
+    { key: "ai", label: "AIに相談", hint: "今の画面を見ながら相談", action: openAssistantPanel },
+    { key: "today", label: "今日の優先", hint: "遅延・予算・安全を確認", action: () => navigate("/today") },
+    { key: "estimate", label: "見積作成", hint: "案件から金額へ進める", action: () => navigate("/estimate") },
   ];
 
   return (
@@ -760,6 +794,14 @@ function AppShell() {
             </div>
             <div className="flex items-center gap-2">
               <ThemeToggle theme={theme} onToggle={cycleTheme} />
+              <button
+                type="button"
+                onClick={openAssistantPanel}
+                className="hidden rounded-xl border border-[#007AFF]/20 bg-[#007AFF]/8 px-3 py-1.5 text-xs font-semibold text-[#007AFF] hover:bg-[#007AFF]/12 sm:inline-flex"
+                data-ai-action="open-assistant"
+              >
+                AIに相談
+              </button>
               {/* Mobile hamburger */}
               <MobileNav
                 open={mobileNavOpen}
@@ -799,19 +841,51 @@ function AppShell() {
 
         {/* ── iPadOS Sidebar (desktop only) ── */}
         <nav className="ios-sidebar hidden md:block" aria-label={t("common:nav.home")}>
-          <div className="px-3 py-4 space-y-0.5">
-            {allSidebarItems.map((item) => (
-              <button
-                key={item.key}
-                type="button"
-                onClick={() => navigate(item.path)}
-                aria-current={item.active ? "page" : undefined}
-                className={`ios-nav-item${item.active ? " active" : ""}`}
-              >
-                <span className="text-base leading-none" aria-hidden="true">{item.icon}</span>
-                <span>{item.label}</span>
-              </button>
-            ))}
+          <div className="px-3 py-4">
+            <div className="mb-4 rounded-2xl border border-[rgba(0,122,255,0.14)] bg-[#007AFF]/6 p-3">
+              <p className="text-xs font-bold text-slate-500">次にやること</p>
+              <div className="mt-2 space-y-1">
+                {quickActions.map((action) => (
+                  <button
+                    key={action.key}
+                    type="button"
+                    onClick={action.action}
+                    className="w-full rounded-xl px-2.5 py-2 text-left hover:bg-white/70"
+                    data-ai-action={action.key}
+                  >
+                    <span className="block text-sm font-bold text-slate-900">{action.label}</span>
+                    <span className="block text-[11px] leading-snug text-slate-500">{action.hint}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              {sidebarGroups.map((group) => (
+                <div key={group.group}>
+                  <p className="px-3 pb-1 text-[11px] font-bold tracking-wide text-slate-400">
+                    {group.label}
+                  </p>
+                  <div className="space-y-0.5">
+                    {group.items.map((item) => (
+                      <button
+                        key={item.key}
+                        type="button"
+                        onClick={() => navigate(item.path)}
+                        aria-current={item.active ? "page" : undefined}
+                        aria-label={`${item.label}: ${item.aiHint}`}
+                        className={`ios-nav-item${item.active ? " active" : ""}`}
+                        data-ai-route={item.key}
+                        data-ai-intent={item.aiHint}
+                      >
+                        <span className="text-base leading-none" aria-hidden="true">{item.icon}</span>
+                        <span className="min-w-0 flex-1 truncate">{item.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
           {user ? (
             <div className="border-t border-[rgba(60,60,67,0.12)] px-3 py-3 space-y-1">

@@ -154,6 +154,12 @@ export function AssistantChatPanel({ userId = "demo-user" }: Props) {
 
   // ⌘K / Ctrl+K でトグル
   useEffect(() => {
+    const openFromShell = () => {
+      setUnread(0);
+      setPos((p) => clampPanelPos(p.x, p.y, size.w, size.h));
+      setOpen(true);
+      window.setTimeout(() => inputRef.current?.focus(), 80);
+    };
     const onKeyDown = (e: KeyboardEvent) => {
       const isMac = navigator.platform.startsWith("Mac");
       const trigger = isMac ? e.metaKey && e.key.toLowerCase() === "k" : e.ctrlKey && e.key.toLowerCase() === "k";
@@ -172,8 +178,12 @@ export function AssistantChatPanel({ userId = "demo-user" }: Props) {
         setOpen(false);
       }
     };
+    window.addEventListener("genbahub:assistant-open", openFromShell);
     document.addEventListener("keydown", onKeyDown);
-    return () => document.removeEventListener("keydown", onKeyDown);
+    return () => {
+      window.removeEventListener("genbahub:assistant-open", openFromShell);
+      document.removeEventListener("keydown", onKeyDown);
+    };
   }, [open, size.w, size.h]);
 
   const addMessages = useCallback((newMsgs: ChatMessage[]) => {
