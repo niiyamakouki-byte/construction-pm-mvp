@@ -1,4 +1,5 @@
 export const PROJECT_STATUSES = ["planning", "active", "completed"] as const;
+export const PROJECT_MODES = ["memo", "normal", "full"] as const;
 export const TASK_STATUSES = ["todo", "in_progress", "done"] as const;
 export const MATERIAL_STATUSES = ["ordered", "delivered", "installed"] as const;
 export const CHANGE_ORDER_STATUSES = ["pending", "approved", "rejected"] as const;
@@ -16,6 +17,7 @@ export const DOCUMENT_TYPES = [
 export const DEFAULT_PORT = 3001;
 
 export type ProjectStatus = (typeof PROJECT_STATUSES)[number];
+export type ProjectMode = (typeof PROJECT_MODES)[number];
 export type TaskStatus = (typeof TASK_STATUSES)[number];
 export type MaterialStatus = (typeof MATERIAL_STATUSES)[number];
 export type ChangeOrderStatus = (typeof CHANGE_ORDER_STATUSES)[number];
@@ -37,6 +39,7 @@ export type ApiProjectRecord = {
   contractor: string;
   address: string;
   status: ProjectStatus;
+  mode: ProjectMode;
   description: string;
   startDate: string;
   endDate?: string;
@@ -166,7 +169,9 @@ export type CreateProjectInput = Pick<
   | "inspectionDate"
   | "handoverDate"
   | "warrantyEndDate"
->;
+> & {
+  mode?: ProjectMode;
+};
 
 export type CreateTaskInput = {
   name: string;
@@ -207,6 +212,7 @@ export type UpdateProjectInput = {
   contractor?: string;
   address?: string;
   status?: ProjectStatus;
+  mode?: ProjectMode;
   description?: string;
   startDate?: string;
   endDate?: string | null;

@@ -42,7 +42,11 @@ describe("ProjectListPage", () => {
     // Project name appears in both desktop table and mobile card
     const elements = await screen.findAllByText("テスト工事A");
     expect(elements.length).toBeGreaterThan(0);
+    expect(screen.getByText("メモ")).toBeDefined();
     expect(screen.queryByText("最初のプロジェクトを作成しましょう")).toBeNull();
+
+    const projects = await projectRepository.findAll();
+    expect(projects.find((project) => project.name === "テスト工事A")?.mode).toBe("memo");
   });
 
   it("開始日未入力時はローカル日付がデフォルトで使われる", async () => {
@@ -78,7 +82,27 @@ describe("ProjectListPage", () => {
     expect(screen.getByText("記録を開く")).toBeDefined();
 
     const projects = await projectRepository.findAll();
-    expect(projects.find((project) => project.name === "過去案件A")?.status).toBe("completed");
+    const created = projects.find((project) => project.name === "過去案件A");
+    expect(created?.status).toBe("completed");
+    expect(created?.mode).toBe("memo");
+  });
+
+  it("工程表を作る案件は normal として作成される", async () => {
+    const user = userEvent.setup();
+    render(<ProjectListPage />);
+
+    await screen.findByText("新規プロジェクト");
+    await user.click(screen.getByText("新規プロジェクト"));
+
+    await user.click(screen.getByRole("button", { name: /工程表を作る案件/ }));
+    await user.type(screen.getByPlaceholderText("例: 渋谷オフィスビル内装工事"), "通常案件A");
+    await user.click(screen.getByRole("button", { name: "作成" }));
+
+    expect(await screen.findByText("通常案件A")).toBeDefined();
+    expect(screen.getByText("通常")).toBeDefined();
+
+    const projects = await projectRepository.findAll();
+    expect(projects.find((project) => project.name === "通常案件A")?.mode).toBe("normal");
   });
 
   it("作成失敗時にエラーメッセージが表示される", async () => {

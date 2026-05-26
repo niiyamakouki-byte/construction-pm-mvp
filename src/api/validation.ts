@@ -6,6 +6,7 @@ import {
   MATERIAL_STATUSES,
   NOTIFICATION_PRIORITIES,
   PROJECT_STATUSES,
+  PROJECT_MODES,
   TASK_STATUSES,
   type CreateChangeOrderInput,
   type CreateContractorInput,
@@ -296,6 +297,7 @@ export function validateCreateProjectInput(payload: unknown): CreateProjectInput
     contractor: requireString(payload, "contractor", "元請会社名", 200),
     address: requireString(payload, "address", "住所", 500),
     status: validateEnum(payload.status, PROJECT_STATUSES, "ステータス"),
+    mode: "mode" in payload ? validateEnum(payload.mode, PROJECT_MODES, "案件モード") : "normal",
     clientId: optionalTrimmedString(payload, "clientId", "顧客ID", 200),
     clientName: optionalTrimmedString(payload, "clientName", "顧客名", 200),
     contractAmount:
@@ -327,6 +329,9 @@ export function validateUpdateProjectInput(payload: unknown): UpdateProjectInput
   }
   if ("status" in payload) {
     update.status = validateEnum(payload.status, PROJECT_STATUSES, "ステータス");
+  }
+  if ("mode" in payload) {
+    update.mode = validateEnum(payload.mode, PROJECT_MODES, "案件モード");
   }
   if ("description" in payload) {
     update.description = optionalUpdatedString(payload, "description", "説明", 2000, {

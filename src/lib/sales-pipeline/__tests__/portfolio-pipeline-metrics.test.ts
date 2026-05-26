@@ -44,6 +44,16 @@ function closeDateFromNow(daysOffset: number): string {
   return d.toISOString().split("T")[0];
 }
 
+function closeDateThisMonth(): string {
+  const now = new Date();
+  return new Date(now.getFullYear(), now.getMonth(), 15).toISOString().split("T")[0];
+}
+
+function closeDateNextMonth(): string {
+  const now = new Date();
+  return new Date(now.getFullYear(), now.getMonth() + 1, 15).toISOString().split("T")[0];
+}
+
 beforeEach(() => {
   localStorage.clear();
   _resetDealStore();
@@ -89,7 +99,7 @@ describe("expectedClosesThisMonthJpy", () => {
   });
 
   it("今月クローズ予定の加重金額を合計する", () => {
-    const thisMonthDate = closeDateFromNow(5);
+    const thisMonthDate = closeDateThisMonth();
     dealStore.save(makeDeal("d-this-month", {
       expectedCloseDate: thisMonthDate,
       expectedAmountJpy: 10_000_000,
@@ -99,7 +109,7 @@ describe("expectedClosesThisMonthJpy", () => {
   });
 
   it("来月は含まない", () => {
-    const nextMonthDate = closeDateFromNow(40);
+    const nextMonthDate = closeDateNextMonth();
     dealStore.save(makeDeal("d-next-month", {
       expectedCloseDate: nextMonthDate,
       expectedAmountJpy: 10_000_000,

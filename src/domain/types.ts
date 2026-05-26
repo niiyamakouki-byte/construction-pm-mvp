@@ -4,6 +4,7 @@
 export type {
   Project,
   ProjectStatus,
+  ProjectMode,
   Task,
   TaskStatus,
   DependencyType,

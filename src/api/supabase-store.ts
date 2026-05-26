@@ -63,6 +63,7 @@ type DbProjectRecord = {
   contractor: string;
   address: string;
   status: ApiProjectRecord["status"];
+  mode: ApiProjectRecord["mode"] | null;
   description: string;
   start_date: string;
   end_date: string | null;
@@ -202,6 +203,7 @@ function normalizeDependencyRecord(value: unknown): DependencyRecord | null {
 function normalizeProjectRecord(project: ApiProjectRecord): ApiProjectRecord {
   return {
     ...project,
+    mode: project.mode ?? "normal",
     description: project.description ?? "",
     startDate: project.startDate ?? formatDate(new Date(project.createdAt ?? Date.now())),
     includeWeekends: project.includeWeekends ?? true,
@@ -263,6 +265,7 @@ function createProjectRecord(input: CreateProjectInput): ApiProjectRecord {
     contractor: input.contractor,
     address: input.address,
     status: input.status,
+    mode: input.mode ?? "normal",
     description: "",
     startDate: formatDate(now),
     includeWeekends: true,
@@ -284,6 +287,7 @@ function applyProjectUpdate(existing: ApiProjectRecord, input: UpdateProjectInpu
     ...(input.contractor !== undefined ? { contractor: input.contractor } : {}),
     ...(input.address !== undefined ? { address: input.address } : {}),
     ...(input.status !== undefined ? { status: input.status } : {}),
+    ...(input.mode !== undefined ? { mode: input.mode } : {}),
     ...(input.description !== undefined ? { description: input.description } : {}),
     ...(input.startDate !== undefined ? { startDate: input.startDate } : {}),
     ...(input.endDate !== undefined ? { endDate: input.endDate ?? undefined } : {}),
@@ -477,6 +481,7 @@ function projectToDb(record: ApiProjectRecord): DbProjectRecord {
     contractor: record.contractor,
     address: record.address,
     status: record.status,
+    mode: record.mode,
     description: record.description,
     start_date: record.startDate,
     end_date: toNullable(record.endDate),
@@ -505,6 +510,7 @@ function projectFromDb(record: DbProjectRecord): ApiProjectRecord {
     contractor: record.contractor,
     address: record.address,
     status: record.status,
+    mode: record.mode ?? "normal",
     description: record.description,
     startDate: record.start_date,
     endDate: record.end_date ?? undefined,

@@ -29,6 +29,16 @@ function closeDateFromNow(daysOffset: number): string {
   return d.toISOString().split("T")[0];
 }
 
+function closeDateThisMonth(): string {
+  const now = new Date();
+  return new Date(now.getFullYear(), now.getMonth(), 15).toISOString().split("T")[0];
+}
+
+function closeDateNextMonth(): string {
+  const now = new Date();
+  return new Date(now.getFullYear(), now.getMonth() + 1, 15).toISOString().split("T")[0];
+}
+
 describe("snapshot", () => {
   it("空配列でゼロ値スナップショットを返す", () => {
     const snap = snapshot([]);
@@ -60,8 +70,8 @@ describe("snapshot", () => {
   });
 
   it("今月クローズ予定件数を集計する", () => {
-    const thisMonth = closeDateFromNow(5);
-    const nextMonth = closeDateFromNow(40);
+    const thisMonth = closeDateThisMonth();
+    const nextMonth = closeDateNextMonth();
     const deals = [
       makeDeal("d-001", { expectedCloseDate: thisMonth }),
       makeDeal("d-002", { expectedCloseDate: thisMonth }),

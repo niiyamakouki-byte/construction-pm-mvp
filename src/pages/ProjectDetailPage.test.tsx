@@ -94,6 +94,7 @@ const baseProject = {
   name: "南青山リノベーション",
   description: "内装工事",
   status: "active" as const,
+  mode: "normal" as const,
   startDate: "2025-01-01",
   endDate: "2025-02-01",
   address: "東京都港区南青山1-1-1",
@@ -150,10 +151,12 @@ describe("ProjectDetailPage", () => {
     mockProjectFindById.mockResolvedValueOnce({
       ...baseProject,
       status: "completed",
+      mode: "memo",
     });
     render(<ProjectDetailPage projectId="proj-1" />);
 
     await screen.findByRole("region", { name: "記録案件のAI提案" });
+    expect(screen.getByText("メモ案件")).toBeDefined();
     expect(screen.getByText("この記録から工程表を起こしますか？")).toBeDefined();
 
     await user.click(screen.getByRole("button", { name: "内装工事で起こす" }));
@@ -161,6 +164,20 @@ describe("ProjectDetailPage", () => {
     await waitFor(() => {
       expect(mockTaskCreate).toHaveBeenCalled();
     });
+  });
+
+  it("shows memo empty state without treating missing tasks as an error", async () => {
+    mockProjectFindById.mockResolvedValueOnce({
+      ...baseProject,
+      mode: "memo",
+      status: "planning",
+    });
+
+    render(<ProjectDetailPage projectId="proj-1" />);
+
+    expect(await screen.findByText("メモ案件")).toBeDefined();
+    expect(screen.getByText(/メモ案件なので工程表なしでも保存済みです/)).toBeDefined();
+    expect(screen.queryByRole("alert")).toBeNull();
   });
 
   it("refreshes weather when the projectId changes", async () => {

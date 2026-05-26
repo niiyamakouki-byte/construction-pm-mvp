@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   ProjectSchema,
+  ProjectModeSchema,
   TaskSchema,
   CostItemSchema,
   InvoiceSchema,
@@ -71,6 +72,18 @@ describe("ProjectSchema", () => {
   it("happy path: parses a valid project", () => {
     const result = ProjectSchema.safeParse(validProject);
     expect(result.success).toBe(true);
+  });
+
+  it("defaults legacy projects without mode to normal", () => {
+    const result = ProjectSchema.parse(validProject);
+    expect(result.mode).toBe("normal");
+  });
+
+  it("accepts project modes", () => {
+    for (const mode of ["memo", "normal", "full"] as const) {
+      expect(ProjectModeSchema.safeParse(mode).success).toBe(true);
+      expect(ProjectSchema.safeParse({ ...validProject, mode }).success).toBe(true);
+    }
   });
 
   it("happy path: accepts full ISO datetime for startDate", () => {

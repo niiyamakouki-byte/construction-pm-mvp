@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { Project, Task, TaskStatus, CostItem, Expense } from "../domain/types.js";
+import type { Project, ProjectMode, Task, TaskStatus, CostItem, Expense } from "../domain/types.js";
 import { createProjectRepository } from "../stores/project-store.js";
 import { createTaskRepository } from "../stores/task-store.js";
 import { createCostItemRepository } from "../stores/cost-item-store.js";
@@ -96,6 +96,22 @@ const statusIcon: Record<TaskStatus, string> = {
   in_progress: "◉",
   done: "✓",
 };
+
+const projectModeLabel: Record<ProjectMode, string> = {
+  memo: "メモ案件",
+  normal: "通常案件",
+  full: "完全案件",
+};
+
+const projectModeClass: Record<ProjectMode, string> = {
+  memo: "bg-emerald-100 text-emerald-700",
+  normal: "bg-indigo-100 text-indigo-700",
+  full: "bg-fuchsia-100 text-fuchsia-700",
+};
+
+function projectMode(project: Project): ProjectMode {
+  return project.mode ?? "normal";
+}
 
 type WeatherData = {
   temperature: number;
@@ -432,7 +448,8 @@ export function ProjectDetailPage({
     completed: "完了",
     on_hold: "保留",
   };
-  const shouldShowRecordUpgradePrompt = project.status === "completed" && tasks.length === 0;
+  const mode = projectMode(project);
+  const shouldShowRecordUpgradePrompt = mode === "memo" && project.status === "completed" && tasks.length === 0;
 
   return (
     <div className="mx-auto max-w-2xl space-y-4 px-4 pb-24">
@@ -493,6 +510,11 @@ export function ProjectDetailPage({
             className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold ${statusColorMap[project.status]}`}
           >
             {statusLabelMap[project.status]}
+          </span>
+          <span
+            className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold ${projectModeClass[mode]}`}
+          >
+            {projectModeLabel[mode]}
           </span>
         </div>
 
@@ -892,7 +914,9 @@ export function ProjectDetailPage({
         {tasks.length === 0 ? (
           <div className="rounded-xl border-2 border-dashed border-slate-200 bg-white p-6 text-center">
             <p className="text-sm text-slate-500">
-              タスクがまだありません。上のボタンからタスクを追加してください。
+              {mode === "memo"
+                ? "メモ案件なので工程表なしでも保存済みです。必要になったらタスク追加かテンプレート適用で通常案件として育てられます。"
+                : "タスクがまだありません。上のボタンからタスクを追加してください。"}
             </p>
           </div>
         ) : (
