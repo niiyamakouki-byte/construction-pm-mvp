@@ -58,6 +58,7 @@ describe('ProjectRepository Phase B — Supabase routing', () => {
       name: '南青山内装工事',
       description: 'テスト',
       status: 'planning',
+      mode: 'normal',
       start_date: '2025-04-01',
       end_date: null,
       address: null,
@@ -72,7 +73,30 @@ describe('ProjectRepository Phase B — Supabase routing', () => {
     expect(mockFrom).toHaveBeenCalledWith('projects');
     expect(result?.id).toBe('p-1');
     expect(result?.startDate).toBe('2025-04-01');
+    expect(result?.mode).toBe('normal');
     expect(result?.includeWeekends).toBe(true);
+  });
+
+  it('mode が null の既存行は normal として読む', async () => {
+    const row = {
+      id: 'p-1',
+      name: '南青山内装工事',
+      description: 'テスト',
+      status: 'planning',
+      mode: null,
+      start_date: '2025-04-01',
+      end_date: null,
+      address: null,
+      budget: null,
+      created_at: '2025-04-17T00:00:00.000Z',
+      updated_at: '2025-04-17T00:00:00.000Z',
+    };
+    mockFrom.mockReturnValue(makeBuilder({ data: row, error: null }));
+
+    const repo = new ProjectRepository(true);
+    const result = await repo.getAsync('p-1');
+
+    expect(result?.mode).toBe('normal');
   });
 
   it('useSupabase=true のとき listAsync は Supabase から取得する', async () => {

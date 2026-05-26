@@ -57,6 +57,7 @@ create table if not exists public.projects (
   contractor text not null,
   address text not null,
   status text not null check (status in ('planning', 'active', 'completed')),
+  mode text not null default 'memo' check (mode in ('memo', 'normal', 'full')),
   description text not null default '',
   start_date date not null,
   end_date date,
@@ -141,6 +142,7 @@ create table if not exists public.notifications (
 );
 
 create index if not exists projects_status_idx on public.projects (status);
+create index if not exists projects_mode_idx on public.projects (mode);
 create index if not exists projects_created_at_idx on public.projects (created_at desc);
 
 create index if not exists contractors_trade_idx on public.contractors (trade);

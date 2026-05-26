@@ -6,12 +6,14 @@
 import { createRepository } from './repository/index.js';
 
 export type ProjectStatus = 'planning' | 'active' | 'completed' | 'on_hold';
+export type ProjectMode = 'memo' | 'normal' | 'full';
 
 export type StoreProject = {
   id: string;
   name: string;
   description: string;
   status: ProjectStatus;
+  mode?: ProjectMode;
   startDate: string;
   endDate?: string;
   address?: string;

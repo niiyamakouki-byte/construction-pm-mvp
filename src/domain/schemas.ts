@@ -91,10 +91,13 @@ export const ProjectStatusSchema = z.enum([
   "on_hold",
 ]);
 
+export const ProjectModeSchema = z.enum(["memo", "normal", "full"]);
+
 export const ProjectSchema = BaseEntitySchema.extend({
   name: z.string(),
   description: z.string(),
   status: ProjectStatusSchema,
+  mode: ProjectModeSchema.default("normal"),
   startDate: isoDateString,
   endDate: isoDateString.optional(),
   address: z.string().optional(),
@@ -104,8 +107,11 @@ export const ProjectSchema = BaseEntitySchema.extend({
   includeWeekends: z.boolean(),
 });
 
-export type Project = z.infer<typeof ProjectSchema>;
 export type ProjectStatus = z.infer<typeof ProjectStatusSchema>;
+export type ProjectMode = z.infer<typeof ProjectModeSchema>;
+export type Project = Omit<z.infer<typeof ProjectSchema>, "mode"> & {
+  mode?: ProjectMode;
+};
 
 // ── Task ─────────────────────────────────────────────────────────────────────
 

@@ -16,6 +16,7 @@ type ProjectRow = {
   name: string;
   description: string;
   status: StoreProject['status'];
+  mode?: StoreProject['mode'] | null;
   start_date: string;
   end_date?: string | null;
   address?: string | null;
@@ -31,6 +32,7 @@ function rowToProject(row: ProjectRow): StoreProject {
     name: row.name,
     description: row.description ?? '',
     status: row.status,
+    mode: row.mode ?? 'normal',
     startDate: row.start_date,
     endDate: row.end_date ?? undefined,
     address: row.address ?? undefined,
@@ -47,6 +49,7 @@ function projectToRow(p: StoreProject): ProjectRow {
     name: p.name,
     description: p.description,
     status: p.status,
+    mode: p.mode ?? 'normal',
     start_date: p.startDate,
     end_date: p.endDate ?? null,
     address: p.address ?? null,

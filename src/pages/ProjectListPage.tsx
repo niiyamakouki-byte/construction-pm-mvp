@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import type { Project, ProjectStatus } from "../domain/types.js";
+import type { Project, ProjectMode, ProjectStatus } from "../domain/types.js";
 import { createProjectRepository } from "../stores/project-store.js";
 import { createTaskRepository } from "../stores/task-store.js";
 import { geocodeAddress } from "../infra/geocode.js";
@@ -22,7 +22,17 @@ const statusColor: Record<ProjectStatus, string> = {
   on_hold: "bg-amber-100 text-amber-700 border-amber-200",
 };
 
-type ProjectCaptureMode = "schedule" | "record";
+type ProjectCaptureMode = "memo" | "schedule" | "record";
+
+const modeColor: Record<ProjectMode, string> = {
+  memo: "bg-emerald-50 text-emerald-700 border-emerald-200",
+  normal: "bg-indigo-50 text-indigo-700 border-indigo-200",
+  full: "bg-fuchsia-50 text-fuchsia-700 border-fuchsia-200",
+};
+
+function projectMode(project: Project): ProjectMode {
+  return project.mode ?? "normal";
+}
 
 export function ProjectListPage() {
   const { t } = useTranslation(["pages", "common", "errors"]);
@@ -35,7 +45,7 @@ export function ProjectListPage() {
   const [address, setAddress] = useState("");
   const [status, setStatus] = useState<ProjectStatus>("planning");
   const [startDate, setStartDate] = useState("");
-  const [captureMode, setCaptureMode] = useState<ProjectCaptureMode>("schedule");
+  const [captureMode, setCaptureMode] = useState<ProjectCaptureMode>("memo");
   const [showForm, setShowForm] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [sampleCreating, setSampleCreating] = useState(false);
@@ -91,6 +101,9 @@ export function ProjectListPage() {
         }
       }
 
+      const mode: ProjectMode = captureMode === "schedule" ? "normal" : "memo";
+      const projectStatus = captureMode === "record" ? "completed" : status;
+
       await projectRepository.create({
         id: crypto.randomUUID(),
         name: name.trim(),
@@ -98,7 +111,8 @@ export function ProjectListPage() {
         address: trimmedAddress || undefined,
         latitude,
         longitude,
-        status,
+        status: projectStatus,
+        mode,
         startDate: startDate || toLocalDateString(now),
         includeWeekends: true,
         createdAt: now.toISOString(),
@@ -110,7 +124,7 @@ export function ProjectListPage() {
       setAddress("");
       setStatus("planning");
       setStartDate("");
-      setCaptureMode("schedule");
+      setCaptureMode("memo");
       setShowForm(false);
       await loadProjects();
     } catch (err) {
@@ -122,7 +136,7 @@ export function ProjectListPage() {
 
   const openProjectGantt = (project: Project) => {
     writeLastProjectId(project.id);
-    navigate(project.status === "completed" ? `/project/${project.id}` : `/gantt/${project.id}`);
+    navigate(projectMode(project) === "memo" ? `/project/${project.id}` : `/gantt/${project.id}`);
   };
 
   const handleCreateSample = async () => {
@@ -142,6 +156,7 @@ export function ProjectListPage() {
         description: "デモ用サンプル案件。自由に編集・削除してください。",
         address: "東京都渋谷区渋谷2-21-1",
         status: "active",
+        mode: "normal",
         startDate: toLocalDateString(now),
         includeWeekends: true,
         createdAt: now.toISOString(),
@@ -223,7 +238,24 @@ export function ProjectListPage() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <fieldset className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
               <legend className="px-1 text-sm font-medium text-slate-700">{t("pages:project_list.capture_mode_label")}</legend>
-              <div className="mt-2 grid gap-2 sm:grid-cols-2">
+              <div className="mt-2 grid gap-2 sm:grid-cols-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCaptureMode("memo");
+                    if (status === "completed") setStatus("planning");
+                  }}
+                  className={`rounded-2xl border px-3 py-3 text-left text-sm transition-colors ${
+                    captureMode === "memo"
+                      ? "border-[#007AFF] bg-white text-slate-900 ring-2 ring-[#007AFF]/15"
+                      : "border-slate-200 bg-white text-slate-600"
+                  }`}
+                >
+                  <span className="block font-semibold">{t("pages:project_list.capture_mode_memo")}</span>
+                  <span className="mt-1 block text-xs leading-5 text-slate-500">
+                    {t("pages:project_list.capture_mode_memo_desc")}
+                  </span>
+                </button>
                 <button
                   type="button"
                   onClick={() => {
@@ -407,13 +439,16 @@ export function ProjectListPage() {
                     <span className={`inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold ${statusColor[project.status]}`}>
                       {t(`common:status.${project.status}`)}
                     </span>
+                    <span className={`inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold ${modeColor[projectMode(project)]}`}>
+                      {t(`pages:project_list.mode.${projectMode(project)}`)}
+                    </span>
                   </div>
                   {project.description ? (
                     <p className="mt-2 line-clamp-2 text-sm text-slate-500">{project.description}</p>
                   ) : null}
                 </div>
                 <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
-                  {project.status === "completed" ? t("pages:project_list.open_record") : t("pages:project_list.open_gantt")}
+                  {projectMode(project) === "memo" ? t("pages:project_list.open_record") : t("pages:project_list.open_gantt")}
                 </span>
               </div>
               <div className="mt-4 flex flex-wrap items-center gap-3 text-sm text-slate-500">
