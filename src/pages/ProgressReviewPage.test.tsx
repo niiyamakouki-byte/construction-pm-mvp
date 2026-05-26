@@ -111,6 +111,21 @@ describe("ProgressReviewPage", () => {
     expect(screen.getAllByText("塗装").length).toBeGreaterThan(0);
   });
 
+  it("keeps the input form visible after switching projects", async () => {
+    mockProjectFindAll.mockResolvedValue([
+      baseProject,
+      { ...baseProject, id: "proj-2", name: "渋谷改装" },
+    ]);
+    render(<ProgressReviewPage />);
+    await screen.findByText("photo-progress-tracker");
+
+    const projectSelect = document.querySelectorAll("select")[0] as HTMLSelectElement;
+    fireEvent.change(projectSelect, { target: { value: "proj-2" } });
+
+    expect(screen.getByText("+ 進捗を追加")).toBeDefined();
+    expect(screen.queryByText("読み込み中...")).toBeNull();
+  });
+
   /**
    * 突合結果表示: reconcileWithSchedule が遅延を検出して表示
    */

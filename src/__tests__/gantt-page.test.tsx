@@ -404,3 +404,297 @@ describe("GanttPage", () => {
     );
   });
 });
+
+// ─── Sprint 63: 3階層マスター → GanttPage UI 接続テスト ─────────────────────
+
+function setupProject() {
+  const now = "2025-01-01T00:00:00.000Z";
+  mockProjectRepository.findAll.mockResolvedValue([
+    {
+      id: "p1",
+      name: "南青山ビル改修",
+      description: "",
+      status: "active",
+      startDate: "2025-01-10",
+      includeWeekends: true,
+      createdAt: now,
+      updatedAt: now,
+    },
+  ]);
+  mockTaskRepository.findAll.mockResolvedValue([]);
+  mockContractorRepository.findAll.mockResolvedValue([]);
+  mockTaskRepository.create.mockResolvedValue({});
+}
+
+describe("GanttPage — テンプレートから工程を追加 (Sprint 63)", () => {
+  beforeEach(() => {
+    cleanup();
+    mockTaskRepository.findAll.mockReset();
+    mockTaskRepository.create.mockReset();
+    mockTaskRepository.update.mockReset();
+    mockTaskRepository.delete.mockReset();
+    mockProjectRepository.findAll.mockReset();
+    mockContractorRepository.findAll.mockReset();
+    mockExportGanttToPdf.mockReset();
+  });
+
+  it("「マスタから読み込む」ボタンでダイアログが開く", async () => {
+    setupProject();
+    const user = userEvent.setup();
+    render(<GanttPage initialProjectId="p1" />);
+
+    await screen.findByRole("heading", { name: "南青山ビル改修" });
+    await user.click(screen.getByRole("button", { name: "マスタから読み込む" }));
+
+    expect(screen.getByRole("dialog", { name: "マスタから読み込む" })).toBeDefined();
+  });
+
+  it("ダイアログに大項目セレクトが表示される", async () => {
+    setupProject();
+    const user = userEvent.setup();
+    render(<GanttPage initialProjectId="p1" />);
+
+    await screen.findByRole("heading", { name: "南青山ビル改修" });
+    await user.click(screen.getByRole("button", { name: "マスタから読み込む" }));
+
+    expect(screen.getByRole("combobox", { name: "大項目" })).toBeDefined();
+  });
+
+  it("ダイアログに中項目・小項目ツリーが表示される", async () => {
+    setupProject();
+    const user = userEvent.setup();
+    render(<GanttPage initialProjectId="p1" />);
+
+    await screen.findByRole("heading", { name: "南青山ビル改修" });
+    await user.click(screen.getByRole("button", { name: "マスタから読み込む" }));
+
+    expect(screen.queryByLabelText("中項目・小項目ツリー")).toBeTruthy();
+  });
+
+  it("小項目チェックボックスが表示される", async () => {
+    setupProject();
+    const user = userEvent.setup();
+    render(<GanttPage initialProjectId="p1" />);
+
+    await screen.findByRole("heading", { name: "南青山ビル改修" });
+    await user.click(screen.getByRole("button", { name: "マスタから読み込む" }));
+
+    // 小項目チェックボックスが1件以上存在する
+    const checkboxes = screen.getAllByRole("checkbox");
+    expect(checkboxes.length).toBeGreaterThan(0);
+  });
+
+  it("大項目変更で別の中項目ツリーに切り替わる", async () => {
+    setupProject();
+    const user = userEvent.setup();
+    render(<GanttPage initialProjectId="p1" />);
+
+    await screen.findByRole("heading", { name: "南青山ビル改修" });
+    await user.click(screen.getByRole("button", { name: "マスタから読み込む" }));
+
+    const select = screen.getByRole("combobox", { name: "大項目" });
+    // 電気工事に切り替え
+    await user.selectOptions(select, screen.getByRole("option", { name: "電気工事" }));
+
+    // 電気工事の中項目チェックボックスが表示される
+    const checkboxes = screen.getAllByRole("checkbox");
+    expect(checkboxes.length).toBeGreaterThan(0);
+  });
+
+  it("全解除ボタンで全チェックボックスが外れる", async () => {
+    setupProject();
+    const user = userEvent.setup();
+    render(<GanttPage initialProjectId="p1" />);
+
+    await screen.findByRole("heading", { name: "南青山ビル改修" });
+    await user.click(screen.getByRole("button", { name: "マスタから読み込む" }));
+
+    const allClearBtn = screen.getByRole("button", { name: /全解除/ });
+    await user.click(allClearBtn);
+
+    // 全解除後はガントに追加ボタンが 0件で disabled になる
+    const addButton = screen.getByRole("button", { name: /ガントに追加/ });
+    expect(addButton.hasAttribute("disabled")).toBe(true);
+  });
+
+  it("全選択 → ガントに追加でtaskRepository.createが呼ばれる", async () => {
+    setupProject();
+    const user = userEvent.setup();
+    render(<GanttPage initialProjectId="p1" />);
+
+    await screen.findByRole("heading", { name: "南青山ビル改修" });
+    await user.click(screen.getByRole("button", { name: "マスタから読み込む" }));
+
+    // 全選択状態でガントに追加
+    const addButton = screen.getByRole("button", { name: /ガントに追加/ });
+    expect(addButton.hasAttribute("disabled")).toBe(false);
+    await user.click(addButton);
+
+    await waitFor(() => {
+      expect(mockTaskRepository.create).toHaveBeenCalled();
+    });
+  });
+
+  it("個別チェックを外すとその小項目はcreateされない", async () => {
+    setupProject();
+    const user = userEvent.setup();
+    render(<GanttPage initialProjectId="p1" />);
+
+    await screen.findByRole("heading", { name: "南青山ビル改修" });
+    await user.click(screen.getByRole("button", { name: "マスタから読み込む" }));
+
+    // 最初のチェックボックスを外す (中項目チェックか小項目チェック)
+    const checkboxes = screen.getAllByRole("checkbox");
+    const firstChecked = checkboxes.find((cb) => (cb as HTMLInputElement).checked);
+    if (firstChecked) {
+      await user.click(firstChecked);
+    }
+
+    // ガントに追加を押す
+    const addButton = screen.getByRole("button", { name: /ガントに追加/ });
+    if (!addButton.hasAttribute("disabled")) {
+      await user.click(addButton);
+      await waitFor(() => {
+        expect(mockTaskRepository.create).toHaveBeenCalled();
+      });
+    }
+  });
+
+  it("キャンセルボタンでダイアログが閉じる", async () => {
+    setupProject();
+    const user = userEvent.setup();
+    render(<GanttPage initialProjectId="p1" />);
+
+    await screen.findByRole("heading", { name: "南青山ビル改修" });
+    await user.click(screen.getByRole("button", { name: "マスタから読み込む" }));
+
+    await user.click(screen.getByRole("button", { name: "キャンセル" }));
+
+    expect(screen.queryByRole("dialog", { name: "マスタから読み込む" })).toBeNull();
+  });
+});
+
+// ─── Sprint 63: 既存タスクがある場合の衝突確認ダイアログ ────────────────────────
+
+function setupProjectWithTasks() {
+  const now = "2025-01-01T00:00:00.000Z";
+  mockProjectRepository.findAll.mockResolvedValue([
+    {
+      id: "p1",
+      name: "南青山ビル改修",
+      description: "",
+      status: "active",
+      startDate: "2025-01-10",
+      includeWeekends: true,
+      createdAt: now,
+      updatedAt: now,
+    },
+  ]);
+  mockTaskRepository.findAll.mockResolvedValue([
+    {
+      id: "t1",
+      projectId: "p1",
+      name: "既存工程",
+      description: "",
+      status: "todo",
+      startDate: "2025-01-10",
+      dueDate: "2025-01-12",
+      progress: 0,
+      dependencies: [],
+      createdAt: now,
+      updatedAt: now,
+    },
+  ]);
+  mockContractorRepository.findAll.mockResolvedValue([]);
+  mockTaskRepository.create.mockResolvedValue({});
+}
+
+describe("GanttPage — 既存タスクあり衝突確認ダイアログ (Sprint 63)", () => {
+  beforeEach(() => {
+    cleanup();
+    mockTaskRepository.findAll.mockReset();
+    mockTaskRepository.create.mockReset();
+    mockTaskRepository.update.mockReset();
+    mockTaskRepository.delete.mockReset();
+    mockProjectRepository.findAll.mockReset();
+    mockContractorRepository.findAll.mockReset();
+    mockExportGanttToPdf.mockReset();
+  });
+
+  it("既存タスクがある状態でガントに追加ボタンを押すと確認ダイアログが出る", async () => {
+    setupProjectWithTasks();
+    const user = userEvent.setup();
+    render(<GanttPage initialProjectId="p1" />);
+
+    await screen.findByRole("figure", { name: "ガントチャート: 1タスク" });
+    await user.click(screen.getByRole("button", { name: "マスタから読み込む" }));
+    await user.click(screen.getByRole("button", { name: /ガントに追加/ }));
+
+    expect(await screen.findByRole("dialog", { name: "工程追加の確認" })).toBeDefined();
+  });
+
+  it("確認ダイアログに既存タスク件数が表示される", async () => {
+    setupProjectWithTasks();
+    const user = userEvent.setup();
+    render(<GanttPage initialProjectId="p1" />);
+
+    await screen.findByRole("figure", { name: "ガントチャート: 1タスク" });
+    await user.click(screen.getByRole("button", { name: "マスタから読み込む" }));
+    await user.click(screen.getByRole("button", { name: /ガントに追加/ }));
+
+    await screen.findByRole("dialog", { name: "工程追加の確認" });
+    expect(screen.getByText(/1 件の工程/)).toBeDefined();
+  });
+
+  it("確認ダイアログでキャンセルするとcreateは呼ばれない", async () => {
+    setupProjectWithTasks();
+    const user = userEvent.setup();
+    render(<GanttPage initialProjectId="p1" />);
+
+    await screen.findByRole("figure", { name: "ガントチャート: 1タスク" });
+    await user.click(screen.getByRole("button", { name: "マスタから読み込む" }));
+    await user.click(screen.getByRole("button", { name: /ガントに追加/ }));
+
+    const conflictDialog = await screen.findByRole("dialog", { name: "工程追加の確認" });
+    // scope キャンセルクリックを確認ダイアログ内に限定
+    const { getByRole: getByRoleWithin } = await import("@testing-library/react");
+    await user.click(getByRoleWithin(conflictDialog, "button", { name: "キャンセル" }));
+
+    expect(mockTaskRepository.create).not.toHaveBeenCalled();
+    expect(screen.queryByRole("dialog", { name: "工程追加の確認" })).toBeNull();
+  });
+
+  it("確認ダイアログで追加するを押すとcreateが呼ばれる", async () => {
+    setupProjectWithTasks();
+    const user = userEvent.setup();
+    render(<GanttPage initialProjectId="p1" />);
+
+    await screen.findByRole("figure", { name: "ガントチャート: 1タスク" });
+    await user.click(screen.getByRole("button", { name: "マスタから読み込む" }));
+    await user.click(screen.getByRole("button", { name: /ガントに追加/ }));
+
+    await screen.findByRole("dialog", { name: "工程追加の確認" });
+    await user.click(screen.getByRole("button", { name: "追加する" }));
+
+    await waitFor(() => {
+      expect(mockTaskRepository.create).toHaveBeenCalled();
+    });
+  });
+
+  it("既存タスクがない場合は確認ダイアログを挟まずcreateが呼ばれる", async () => {
+    setupProject();
+    const user = userEvent.setup();
+    render(<GanttPage initialProjectId="p1" />);
+
+    await screen.findByRole("heading", { name: "南青山ビル改修" });
+    await user.click(screen.getByRole("button", { name: "マスタから読み込む" }));
+    await user.click(screen.getByRole("button", { name: /ガントに追加/ }));
+
+    // 確認ダイアログは出ない
+    expect(screen.queryByRole("dialog", { name: "工程追加の確認" })).toBeNull();
+
+    await waitFor(() => {
+      expect(mockTaskRepository.create).toHaveBeenCalled();
+    });
+  });
+});

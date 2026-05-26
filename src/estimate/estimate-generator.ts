@@ -68,10 +68,10 @@ export function generateEstimate(req: EstimateRequest): Estimate {
   const sectionMap = new Map<string, EstimateLine[]>();
 
   for (const input of items) {
-    if (input.quantity < 0) {
+    if (!Number.isFinite(input.quantity) || input.quantity < 0) {
       throw new Error(`数量が不正です: ${input.code} quantity=${input.quantity}`);
     }
-    if (input.unitPriceOverride !== undefined && input.unitPriceOverride < 0) {
+    if (input.unitPriceOverride !== undefined && (!Number.isFinite(input.unitPriceOverride) || input.unitPriceOverride < 0)) {
       throw new Error(`単価が不正です: ${input.code} unitPrice=${input.unitPriceOverride}`);
     }
 

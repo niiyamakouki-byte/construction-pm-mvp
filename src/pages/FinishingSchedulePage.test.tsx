@@ -233,6 +233,28 @@ describe("FinishingSchedulePage — CSVエクスポート", () => {
     expect(capturedContent).toContain("部屋");
     expect(capturedContent).toContain("床材_品名");
   });
+
+  it("部屋名が=で始まるときCSVでダブルクォートで囲まれる (数式インジェクション対策)", () => {
+    let capturedContent = "";
+    const OrigBlob = globalThis.Blob;
+    vi.spyOn(globalThis, "Blob").mockImplementation((parts, options) => {
+      capturedContent = (parts as BlobPart[]).join("");
+      return new OrigBlob(parts, options);
+    });
+
+    renderPage();
+    // 最初の行の部屋名を =FORMULA に変更
+    const nameInputs = document.querySelectorAll("[data-testid^='room-name-']") as NodeListOf<HTMLInputElement>;
+    act(() => {
+      fireEvent.change(nameInputs[0], { target: { value: "=HYPERLINK(\"http://evil.com\",\"x\")" } });
+    });
+    const btn = screen.getByTestId("export-csv-button");
+    act(() => { fireEvent.click(btn); });
+
+    // 部屋名はダブルクォートで囲まれ、先頭 = が裸で現れてはいけない
+    expect(capturedContent).not.toContain("\n=HYPERLINK");
+    expect(capturedContent).toContain("\"=HYPERLINK");
+  });
 });
 
 // ── 印刷 ─────────────────────────────────────────────────────────────────────

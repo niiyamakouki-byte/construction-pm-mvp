@@ -791,3 +791,186 @@ export function classifyPhotoBatch(
 
 // Repository-pattern accessor (for gradual migration to Supabase)
 export const photoAlbumRepository = createRepository<PhotoAlbum>('photo_albums');
+
+// ── Sprint 65: シーン認識 + 部位タグ + 重複検出 ────────────────────────────────
+
+/**
+ * SceneType — 写真から判定される施工シーン
+ */
+export type SceneType =
+  | "wall"
+  | "floor"
+  | "ceiling"
+  | "equipment"
+  | "exterior"
+  | "working"
+  | "other";
+
+/**
+ * BodyPart — 写真が撮影された部位（部屋・場所）
+ */
+export type BodyPart =
+  | "bathroom"
+  | "kitchen"
+  | "entrance"
+  | "hallway"
+  | "staircase"
+  | "living"
+  | "toilet"
+  | "washroom";
+
+/**
+ * PhotoMeta — Sprint 65 入力型
+ */
+export type PhotoMeta = {
+  fileName: string;
+  tags?: string[];
+  caption?: string;
+  exifData?: Record<string, unknown>;
+};
+
+/**
+ * Photo — findDuplicates が受け取る最小インターフェース
+ */
+export type Photo = {
+  id: string;
+  pHash?: string;
+  fileName?: string;
+};
+
+/**
+ * DuplicateGroup — pHash 類似グループ
+ */
+export type DuplicateGroup = {
+  photos: Photo[];
+  minDistance: number;
+};
+
+// シーン認識ルール
+const SCENE_RULES: Array<{ scene: SceneType; keywords: string[] }> = [
+  { scene: "wall", keywords: ["壁", "wall", "クロス", "塗装", "タイル壁", "壁面", "壁仕上", "壁下地", "壁紙", "LGS", "石膏ボード"] },
+  { scene: "floor", keywords: ["床", "floor", "フローリング", "タイル床", "CF", "カーペット", "床仕上", "床下地", "土間"] },
+  { scene: "ceiling", keywords: ["天井クロス", "天井塗装", "天井", "ceiling", "システム天井", "天井下地", "天井仕上", "天井パネル", "軽鉄天井"] },
+  { scene: "equipment", keywords: ["設備", "equipment", "配管", "配線", "電気", "空調", "換気", "給排水", "ダクト", "スイッチ", "コンセント", "器具"] },
+  { scene: "exterior", keywords: ["外観", "外壁", "exterior", "facade", "屋根", "外装", "外構", "玄関外", "正面", "全景"] },
+  { scene: "working", keywords: ["作業", "工事中", "施工中", "作業中", "工事状況", "施工状況", "作業員", "職人", "工程"] },
+];
+
+function normalizeForScene(str: string): string {
+  return str.toLowerCase().replace(/[\s_\-.]/g, "");
+}
+
+/**
+ * detectScene — ファイル名/タグ/キャプションからシーンタイプを判定する
+ */
+export function detectScene(meta: PhotoMeta): SceneType {
+  const searchText = [meta.fileName, ...(meta.tags ?? []), meta.caption ?? ""].join(" ");
+  const normalized = normalizeForScene(searchText);
+  let bestScene: SceneType = "other";
+  let bestScore = 0;
+  for (const rule of SCENE_RULES) {
+    let score = 0;
+    for (const kw of rule.keywords) {
+      if (normalized.includes(normalizeForScene(kw))) score += kw.length;
+    }
+    if (score > bestScore) { bestScore = score; bestScene = rule.scene; }
+  }
+  return bestScene;
+}
+
+// 部位タグルール
+const BODY_PART_RULES: Array<{ part: BodyPart; keywords: string[] }> = [
+  { part: "bathroom", keywords: ["浴室", "バス", "bath", "お風呂", "浴槽", "シャワー", "ユニットバス", "UB"] },
+  { part: "kitchen", keywords: ["キッチン", "台所", "kitchen", "厨房", "調理", "シンク", "IH", "コンロ", "流し"] },
+  { part: "entrance", keywords: ["玄関", "entrance", "エントランス", "ホール", "土間", "下駄箱", "玄関ホール"] },
+  { part: "hallway", keywords: ["廊下", "hallway", "corridor", "通路"] },
+  { part: "staircase", keywords: ["階段", "stairs", "staircase", "stairway", "踊り場"] },
+  { part: "living", keywords: ["居室", "リビング", "living", "洋室", "和室", "ダイニング", "LDK", "DK", "居間", "部屋"] },
+  { part: "toilet", keywords: ["トイレ", "toilet", "WC", "便所", "便器", "洗浄便座"] },
+  { part: "washroom", keywords: ["洗面", "washroom", "洗面台", "洗面所", "洗面室", "脱衣", "脱衣室", "洗面化粧台"] },
+];
+
+/**
+ * assignBodyPart — ファイル名・キャプション・タグから部位タグを抽出する
+ */
+export function assignBodyPart(meta: PhotoMeta): BodyPart[] {
+  const searchText = [meta.fileName, ...(meta.tags ?? []), meta.caption ?? ""].join(" ");
+  const normalized = normalizeForScene(searchText);
+  const found: BodyPart[] = [];
+  for (const rule of BODY_PART_RULES) {
+    for (const kw of rule.keywords) {
+      if (normalized.includes(normalizeForScene(kw))) { found.push(rule.part); break; }
+    }
+  }
+  return found;
+}
+
+/**
+ * computePerceptualHash — 8x8 平均ハッシュ (average hash)
+ * Canvas API 不要。ImageData を直接受け取る。
+ */
+export function computePerceptualHash(imageData: ImageData): string {
+  const HASH_SIZE = 8;
+  const srcW = imageData.width;
+  const srcH = imageData.height;
+  const pixels: number[] = [];
+  for (let ty = 0; ty < HASH_SIZE; ty++) {
+    for (let tx = 0; tx < HASH_SIZE; tx++) {
+      const sx = Math.floor((tx / HASH_SIZE) * srcW);
+      const sy = Math.floor((ty / HASH_SIZE) * srcH);
+      const idx = (sy * srcW + sx) * 4;
+      const r = imageData.data[idx] ?? 0;
+      const g = imageData.data[idx + 1] ?? 0;
+      const b = imageData.data[idx + 2] ?? 0;
+      pixels.push(Math.round(0.299 * r + 0.587 * g + 0.114 * b));
+    }
+  }
+  const avg = pixels.reduce((s, v) => s + v, 0) / pixels.length;
+  let hashBits = BigInt(0);
+  for (let i = 0; i < 64; i++) {
+    if ((pixels[i] ?? 0) >= avg) hashBits |= BigInt(1) << BigInt(63 - i);
+  }
+  return hashBits.toString(16).padStart(16, "0");
+}
+
+// ハミング距離計算
+function hammingDistance(a: string, b: string): number {
+  if (a.length !== b.length) return 64;
+  let dist = 0;
+  for (let i = 0; i < a.length; i += 4) {
+    const chunkA = parseInt(a.slice(i, i + 4), 16);
+    const chunkB = parseInt(b.slice(i, i + 4), 16);
+    let xor = chunkA ^ chunkB;
+    while (xor) { dist += xor & 1; xor >>= 1; }
+  }
+  return dist;
+}
+
+/**
+ * findDuplicates — pHash ハミング距離で類似写真グループを返す
+ */
+export function findDuplicates(photos: Photo[], threshold = 5): DuplicateGroup[] {
+  const groups: DuplicateGroup[] = [];
+  const assigned = new Set<string>();
+  for (let i = 0; i < photos.length; i++) {
+    const a = photos[i];
+    if (!a.pHash || assigned.has(a.id)) continue;
+    const group: Photo[] = [a];
+    let minDist = threshold;
+    for (let j = i + 1; j < photos.length; j++) {
+      const b = photos[j];
+      if (!b.pHash || assigned.has(b.id)) continue;
+      const dist = hammingDistance(a.pHash, b.pHash);
+      if (dist <= threshold) {
+        group.push(b);
+        assigned.add(b.id);
+        if (dist < minDist) minDist = dist;
+      }
+    }
+    if (group.length > 1) {
+      assigned.add(a.id);
+      groups.push({ photos: group, minDistance: minDist });
+    }
+  }
+  return groups;
+}

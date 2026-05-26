@@ -13,8 +13,14 @@ export function SignupPage() {
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
+    const normalizedEmail = email.trim();
+    const normalizedCompanyName = companyName.trim();
     if (!hasSupabaseEnv()) {
       setError("Supabase が設定されていません");
+      return;
+    }
+    if (!normalizedCompanyName) {
+      setError("会社名を入力してください");
       return;
     }
     if (password.length < 8) {
@@ -30,9 +36,9 @@ export function SignupPage() {
     try {
       const client = await getSupabaseClient();
       const { error: authError } = await client.auth.signUp({
-        email,
+        email: normalizedEmail,
         password,
-        options: { data: { company_name: companyName } },
+        options: { data: { company_name: normalizedCompanyName } },
       });
       if (authError) {
         const msg = authError.message.toLowerCase();

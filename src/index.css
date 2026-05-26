@@ -39,7 +39,7 @@
   --app-input-text: #0f172a;
 
   /* Sidebar & TopBar dimensions */
-  --sidebar-width: 220px;
+  --sidebar-width: 260px;
   --topbar-height: 56px;
 }
 
@@ -82,8 +82,12 @@ body {
 }
 
 /* Smooth transitions for interactive elements */
-button, a, input, select, textarea {
-  transition: all 0.15s ease;
+/* AN3/AP3: List properties explicitly instead of `transition: all` */
+button, a {
+  transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
+}
+input, select, textarea {
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 input, select, textarea {
@@ -364,9 +368,10 @@ textarea::placeholder {
   align-items: center;
   gap: 10px;
   width: 100%;
-  padding: 9px 14px;
+  min-height: 38px;
+  padding: 8px 12px;
   border-radius: 10px;
-  font-size: 0.875rem;
+  font-size: 0.8125rem;
   font-weight: 500;
   color: #3c3c43;
   transition: background-color 0.15s ease, color 0.15s ease;
@@ -417,4 +422,16 @@ textarea::placeholder {
 :focus-visible {
   outline: 2px solid #007AFF;
   outline-offset: 2px;
+}
+
+/* AN1: Honor prefers-reduced-motion for all animations */
+@media (prefers-reduced-motion: reduce) {
+  .page-enter,
+  .status-pulse,
+  .voice-recording,
+  .sheet-enter,
+  .modal-scroll {
+    animation: none !important;
+    transition: none !important;
+  }
 }

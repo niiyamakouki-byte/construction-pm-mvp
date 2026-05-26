@@ -17,6 +17,7 @@ import {
   removeMoodBoardItem,
 } from "../lib/mood-board.js";
 import { MoodBoardRepository } from "../lib/supabase-adapter/MoodBoardRepository.js";
+import { escapeHtml } from "../lib/html-utils.js";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -333,11 +334,11 @@ function exportToPdf(board: MoodBoard, total: number) {
     .map(
       (item) => `
         <div style="break-inside:avoid;margin-bottom:16px;border:1px solid #e2e8f0;border-radius:8px;padding:12px;display:flex;gap:12px">
-          <img src="${item.imageUrl}" alt="${item.title}" style="width:120px;height:90px;object-fit:cover;border-radius:6px" />
+          <img src="${escapeHtml(item.imageUrl)}" alt="${escapeHtml(item.title)}" style="width:120px;height:90px;object-fit:cover;border-radius:6px" />
           <div>
-            <p style="margin:0;font-size:14px;font-weight:600;color:#1e293b">${item.title}</p>
-            <p style="margin:2px 0;font-size:12px;color:#64748b">${item.category}${item.supplier ? ` / ${item.supplier}` : ""}</p>
-            <p style="margin:2px 0;font-size:12px;color:#64748b">${item.description}</p>
+            <p style="margin:0;font-size:14px;font-weight:600;color:#1e293b">${escapeHtml(item.title)}</p>
+            <p style="margin:2px 0;font-size:12px;color:#64748b">${escapeHtml(item.category)}${item.supplier ? ` / ${escapeHtml(item.supplier)}` : ""}</p>
+            <p style="margin:2px 0;font-size:12px;color:#64748b">${escapeHtml(item.description)}</p>
             ${item.price !== undefined ? `<p style="margin:4px 0 0;font-size:13px;font-weight:700;color:#2563eb">¥${item.price.toLocaleString()}</p>` : ""}
           </div>
         </div>`,
@@ -348,7 +349,7 @@ function exportToPdf(board: MoodBoard, total: number) {
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <title>ムードボード - ${board.title}</title>
+  <title>ムードボード - ${escapeHtml(board.title)}</title>
   <style>
     body { font-family: sans-serif; margin: 32px; color: #1e293b; }
     h1 { font-size: 22px; margin-bottom: 4px; }
@@ -358,7 +359,7 @@ function exportToPdf(board: MoodBoard, total: number) {
   </style>
 </head>
 <body>
-  <h1>ムードボード：${board.title}</h1>
+  <h1>ムードボード：${escapeHtml(board.title)}</h1>
   <div class="meta">作成日：${new Date(board.createdAt).toLocaleDateString("ja-JP")} アイテム数：${board.items.length}点</div>
   ${items}
   <div class="total">合計概算：¥${total.toLocaleString()}</div>

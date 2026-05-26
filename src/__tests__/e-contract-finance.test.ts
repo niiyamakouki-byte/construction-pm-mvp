@@ -420,6 +420,21 @@ describe("exportContractCSV", () => {
     expect(lines).toHaveLength(1);
     expect(lines[0]).toContain("ID");
   });
+
+  it("quotes clientName starting with = to prevent formula injection", () => {
+    const c = createContract(
+      "p-1",
+      "=HYPERLINK(\"http://evil.com\",\"click\")",
+      "evil@example.com",
+      CONTRACTOR,
+      ITEMS,
+      makePlan(),
+    );
+    const csv = exportContractCSV([c]);
+    // The value must be wrapped in quotes so Excel does not execute it as a formula
+    expect(csv).not.toMatch(/^=HYPERLINK/m);
+    expect(csv).toContain('"=HYPERLINK');
+  });
 });
 
 // ── calculateMonthlyPayment ───────────────────────────────────────────────────

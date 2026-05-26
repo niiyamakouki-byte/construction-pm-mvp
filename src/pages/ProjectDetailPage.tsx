@@ -8,9 +8,11 @@ import { navigate } from "../hooks/useHashRouter.js";
 import { useOrganizationContext } from "../contexts/OrganizationContext.js";
 import { filterScheduleTasks } from "../lib/cost-management.js";
 import { ProjectDetailTabs } from "../components/ProjectDetailTabs.js";
+import { ProjectMapEmbed } from "../components/ProjectMapEmbed.js";
 import { ProjectFlowWidget } from "../components/ProjectFlowWidget.js";
 import { createInitialStageProgresses } from "../lib/project-flow.js";
 import { ProjectChat } from "../components/ProjectChat.js";
+import { ProjectFinancePanel } from "../components/ProjectFinancePanel.js";
 import {
   ConstructionPhase,
   getPhaseChecklist,
@@ -188,7 +190,7 @@ export function ProjectDetailPage({
   const [applyingTemplate, setApplyingTemplate] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [deletingTaskId, setDeletingTaskId] = useState<string | null>(null);
-  const weatherFetched = useRef(false);
+  const weatherFetchKeyRef = useRef<string | null>(null);
   const [selectedPhase, setSelectedPhase] = useState<string>(ConstructionPhase.demolition);
   const [completedChecklistIds, setCompletedChecklistIds] = useState<Set<string>>(new Set());
   const [todayEntryLog, setTodayEntryLog] = useState<SiteEntryRecord[]>([]);
@@ -208,10 +210,16 @@ export function ProjectDetailPage({
       setCostItems(allCosts.filter((c) => c.projectId === projectId));
       setExpenses(allExpenses.filter((e) => e.projectId === projectId));
 
-      if (p?.latitude && p?.longitude && !weatherFetched.current) {
-        weatherFetched.current = true;
-        const w = await fetchWeather(p.latitude, p.longitude);
-        setWeather(w);
+      if (p?.latitude && p?.longitude) {
+        const weatherKey = `${projectId}:${p.latitude}:${p.longitude}`;
+        if (weatherFetchKeyRef.current !== weatherKey) {
+          weatherFetchKeyRef.current = weatherKey;
+          const w = await fetchWeather(p.latitude, p.longitude);
+          setWeather(w);
+        }
+      } else {
+        weatherFetchKeyRef.current = null;
+        setWeather(null);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "データの読み込みに失敗しました");
@@ -300,7 +308,7 @@ export function ProjectDetailPage({
           description: "",
           status: "todo",
           startDate: addDaysToDate(baseDate, t.startOffsetDays),
-          dueDate: addDaysToDate(baseDate, t.startOffsetDays + t.durationDays),
+          dueDate: addDaysToDate(baseDate, t.startOffsetDays + Math.max(0, t.durationDays - 1)),
           progress: 0,
           dependencies: [],
           createdAt: now.toISOString(),
@@ -513,7 +521,11 @@ export function ProjectDetailPage({
 
       <ProjectDetailTabs
         projectId={projectId}
-        activeTab={subPath === "chat" ? "chat" : "overview"}
+        activeTab={
+          subPath === "chat" ? "chat" :
+          subPath === "finance" ? "finance" :
+          "overview"
+        }
       />
 
       {/* Chat tab */}
@@ -523,14 +535,27 @@ export function ProjectDetailPage({
         </div>
       )}
 
+      {/* Finance tab (Task #41) */}
+      {subPath === "finance" && (
+        <ProjectFinancePanel projectId={projectId} />
+      )}
+
       {/* Overview tab content */}
-      {subPath !== "chat" && <>
+      {subPath !== "chat" && subPath !== "finance" && <>
 
       {/* Project Flow */}
       <ProjectFlowWidget
         currentStage="inquiry"
         stageProgresses={createInitialStageProgresses()}
       />
+
+      {/* 現場ロケーション */}
+      {project.address && (
+        <div>
+          <h2 className="mb-2 px-1 text-xs font-semibold text-slate-500 uppercase tracking-wider">現場ロケーション</h2>
+          <ProjectMapEmbed address={project.address} />
+        </div>
+      )}
 
       {/* Settings */}
       <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">

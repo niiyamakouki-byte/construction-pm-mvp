@@ -402,6 +402,24 @@ export const handleProjectsRoutes: ApiRouteHandler = async ({ pathname, request,
     await requireExistingProject(store, projectId);
 
     const uploadedFile = requireMultipartFile(request.body ?? {});
+
+    // Filename sanitization: reject path traversal, NUL bytes, and control characters.
+    if (/\.\.|[\x00-\x1f\x7f]/.test(uploadedFile.filename)) {
+      throw new ApiError(400, "ファイル名に不正な文字が含まれています。");
+    }
+
+    // MIME allowlist for schedule import files.
+    const ALLOWED_IMPORT_CONTENT_TYPES = new Set([
+      "text/csv",
+      "text/plain",
+      "application/vnd.ms-excel",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "application/octet-stream",
+    ]);
+    if (!ALLOWED_IMPORT_CONTENT_TYPES.has(uploadedFile.contentType.split(";")[0].trim())) {
+      throw new ApiError(400, "工程表ファイルはCSVまたはExcel形式でアップロードしてください。");
+    }
+
     let importedTasks: ReturnType<typeof parseScheduleImportFile>;
     try {
       importedTasks = parseScheduleImportFile({

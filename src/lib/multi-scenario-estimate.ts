@@ -102,7 +102,7 @@ export function createScenario(
   const scenarioItems: ScenarioItem[] = items.map((item) => ({
     ...item,
     grade,
-    amount: item.unitPrice * item.quantity,
+    amount: Math.round(item.unitPrice * item.quantity),
   }));
 
   const subtotal = scenarioItems.reduce((s, i) => s + i.amount, 0);

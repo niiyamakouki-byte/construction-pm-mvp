@@ -132,3 +132,38 @@ export function getAlertLevel(task: GanttTask, today: string): "overdue" | "urge
   if (diff <= 3) return "soon";
   return null;
 }
+
+/**
+ * Returns true if adding the edge fromId → toId would introduce a cycle
+ * in the dependency graph built from tasks.
+ * Uses depth-first reachability: if toId can already reach fromId, adding
+ * the reverse edge creates a cycle.
+ */
+export function hasCycle(
+  tasks: Array<{ id: string; dependencies?: string[] }>,
+  fromId: string,
+  toId: string,
+): boolean {
+  // Build adjacency: predecessorId → successors
+  const successors = new Map<string, string[]>();
+  for (const t of tasks) {
+    for (const dep of t.dependencies ?? []) {
+      if (!successors.has(dep)) successors.set(dep, []);
+      successors.get(dep)!.push(t.id);
+    }
+  }
+
+  // DFS from toId to see if we can reach fromId
+  const visited = new Set<string>();
+  const stack = [toId];
+  while (stack.length > 0) {
+    const current = stack.pop()!;
+    if (current === fromId) return true;
+    if (visited.has(current)) continue;
+    visited.add(current);
+    for (const next of successors.get(current) ?? []) {
+      stack.push(next);
+    }
+  }
+  return false;
+}

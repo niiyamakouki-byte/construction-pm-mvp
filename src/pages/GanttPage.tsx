@@ -25,6 +25,7 @@ import {
   addDaysSkipWeekends,
   daysBetween,
   formatScheduleDate,
+  hasCycle,
   toLocalDateString,
 } from "../components/gantt/utils.js";
 import { getHolidayName } from "../lib/japanese-holidays.js";
@@ -42,6 +43,12 @@ import {
 } from "../lib/change-order-tracker.js";
 import type { ConnectState } from "../components/gantt/types.js";
 import { undoStack } from "../lib/undo-stack.js";
+import { getCategories } from "../lib/task-categories.js";
+import { expandWBSToPhases } from "../lib/work-breakdown/expansion.js";
+import { getMasterCategories, getMasterEntries } from "../lib/work-schedule-master.js";
+import { readMasterPresetHistory, writeMasterPresetHistory } from "../lib/gantt-master-preset.js";
+import { savePhaseTemplate } from "../lib/phase-template/storage.js";
+import type { PhaseTemplate, PhaseTemplateTag } from "../lib/phase-template/types.js";
 
 const MAX_CHART_DAYS = 240;
 const MIN_DAY_WIDTH = 8;
@@ -362,6 +369,7 @@ function GanttPageContent({ initialProjectId = null }: GanttPageProps) {
   const [connectMode, setConnectMode] = useState(false);
   const [connectState, setConnectState] = useState<ConnectState | null>(null);
   const [pdfExporting, setPdfExporting] = useState(false);
+  const [pdfError, setPdfError] = useState<string | null>(null);
   const [undoing, setUndoing] = useState(false);
   const [canUndo, setCanUndo] = useState(() => undoStack.canUndo());
   const [showMilestones, setShowMilestones] = useState(true);
@@ -371,6 +379,29 @@ function GanttPageContent({ initialProjectId = null }: GanttPageProps) {
   const [rainAffected, setRainAffected] = useState<Map<string, { startDate: string; endDate: string }> | null>(null);
   const [showRiskPanel, setShowRiskPanel] = useState(false);
   const [showChatPanel, setShowChatPanel] = useState(false);
+  const [wbsModalOpen, setWbsModalOpen] = useState(false);
+  const [wbsSelectedMajors, setWbsSelectedMajors] = useState<Set<string>>(
+    () => new Set(getCategories()),
+  );
+  const [wbsApplying, setWbsApplying] = useState(false);
+
+  // ─── マスタープリセット ───────────────────────────────────────────────────
+  const [masterModalOpen, setMasterModalOpen] = useState(false);
+  const [masterSelectedCategoryId, setMasterSelectedCategoryId] = useState<string>(
+    () => readMasterPresetHistory().lastCategoryId ?? getMasterCategories()[0]?.id ?? "",
+  );
+  const [masterSelectedEntryIds, setMasterSelectedEntryIds] = useState<Set<string>>(
+    () => new Set(getMasterEntries(readMasterPresetHistory().lastCategoryId ?? getMasterCategories()[0]?.id ?? "").map((e) => e.id)),
+  );
+  const [masterApplying, setMasterApplying] = useState(false);
+  const [masterConflictPending, setMasterConflictPending] = useState(false);
+
+  // ─── テンプレ保存モーダル ──────────────────────────────────────────────────
+  const [templateSaveOpen, setTemplateSaveOpen] = useState(false);
+  const [templateSaveName, setTemplateSaveName] = useState("");
+  const [templateSaveDesc, setTemplateSaveDesc] = useState("");
+  const [templateSaveTags, setTemplateSaveTags] = useState<Set<PhaseTemplateTag>>(new Set());
+  const [templateSaving, setTemplateSaving] = useState(false);
 
   // ─── 工種フィルタ ──────────────────────────────────────────────────────────
   const TRADE_CATEGORIES = ["painting", "framing", "electrical", "plumbing", "finishing", "other"] as const;
@@ -649,6 +680,15 @@ function GanttPageContent({ initialProjectId = null }: GanttPageProps) {
     event.preventDefault();
     if (!taskDetail) return;
 
+    if (
+      taskDetail.editStartDate &&
+      taskDetail.editDueDate &&
+      taskDetail.editDueDate < taskDetail.editStartDate
+    ) {
+      setError("終了日は開始日以降に設定してください");
+      return;
+    }
+
     const previousStartDate = taskDetail.task.startDate;
     const nextStartDate = taskDetail.editStartDate || undefined;
     const previousContractorId = taskDetail.task.contractorId;
@@ -726,6 +766,12 @@ function GanttPageContent({ initialProjectId = null }: GanttPageProps) {
 
     // Prevent duplicate dependencies
     if (toTask.dependencies?.includes(fromTaskId)) return;
+
+    // Prevent circular dependencies (A→B→A)
+    if (hasCycle(ganttTasks, fromTaskId, toTaskId)) {
+      setError("循環依存関係が発生するため、この接続はできません。");
+      return;
+    }
 
     try {
       await taskRepository.update(toTaskId, {
@@ -842,7 +888,7 @@ function GanttPageContent({ initialProjectId = null }: GanttPageProps) {
         chartLayout?.totalDays ?? 0,
       );
     } catch (err) {
-      window.alert(err instanceof Error ? err.message : "PDF出力に失敗しました");
+      setPdfError(err instanceof Error ? err.message : "PDF出力に失敗しました");
     } finally {
       setPdfExporting(false);
     }
@@ -951,6 +997,161 @@ function GanttPageContent({ initialProjectId = null }: GanttPageProps) {
       setError(err instanceof Error ? err.message : "工程の更新に失敗しました");
     }
   }, [loadData, rainAffected, taskRepository]);
+
+  const handleMasterApplyConfirmed = useCallback(async () => {
+    if (!selectedProject || !masterSelectedCategoryId) return;
+    setMasterConflictPending(false);
+    setMasterApplying(true);
+    try {
+      const allEntries = getMasterEntries(masterSelectedCategoryId);
+      const entries = allEntries.filter((e) => masterSelectedEntryIds.has(e.id));
+      const categories = getMasterCategories();
+      const category = categories.find((c) => c.id === masterSelectedCategoryId);
+      if (!category || entries.length === 0) return;
+
+      writeMasterPresetHistory({ lastCategoryId: masterSelectedCategoryId });
+
+      const now = new Date().toISOString();
+      let cursor = selectedProject.startDate;
+
+      for (const entry of entries) {
+        const startDate = cursor;
+        const endDateObj = new Date(startDate);
+        endDateObj.setDate(endDateObj.getDate() + entry.defaultDays - 1);
+        const dueDate = endDateObj.toISOString().slice(0, 10);
+
+        // entryのgroupIdからmiddleCategory名を取得
+        const group = category.groups.find((g) => g.tasks.some((t) => t.id === entry.id) || `wbs-entry-${g.id}` === entry.id);
+        const middleCategory = group?.name;
+
+        await taskRepository.create({
+          id: crypto.randomUUID(),
+          createdAt: now,
+          updatedAt: now,
+          projectId: selectedProject.id,
+          name: entry.name,
+          description: category.name,
+          status: "todo",
+          startDate,
+          dueDate,
+          progress: 0,
+          dependencies: [],
+          majorCategory: category.name,
+          middleCategory,
+          includeWeekends: selectedProject.includeWeekends,
+        });
+
+        const nextDate = new Date(dueDate);
+        nextDate.setDate(nextDate.getDate() + 1);
+        cursor = nextDate.toISOString().slice(0, 10);
+      }
+
+      setMasterModalOpen(false);
+      await loadData();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "マスタープリセットの適用に失敗しました");
+    } finally {
+      setMasterApplying(false);
+    }
+  }, [loadData, masterSelectedCategoryId, masterSelectedEntryIds, selectedProject, taskRepository]);
+
+  const handleMasterApply = useCallback(() => {
+    if (!selectedProject || !masterSelectedCategoryId) return;
+    if (selectedProjectTasks.length > 0) {
+      // 既存タスクがある場合は確認ダイアログを表示
+      setMasterConflictPending(true);
+    } else {
+      void handleMasterApplyConfirmed();
+    }
+  }, [handleMasterApplyConfirmed, masterSelectedCategoryId, selectedProject, selectedProjectTasks.length]);
+
+  const handleWbsApply = useCallback(async () => {
+    if (!selectedProject || wbsSelectedMajors.size === 0) return;
+    setWbsApplying(true);
+    try {
+      const phases = expandWBSToPhases({
+        projectId: selectedProject.id,
+        projectStartDate: selectedProject.startDate,
+        selectedMajors: wbsSelectedMajors,
+        includeWeekends: selectedProject.includeWeekends,
+      });
+      const now = new Date().toISOString();
+      for (const phase of phases) {
+        await taskRepository.create({
+          id: crypto.randomUUID(),
+          createdAt: now,
+          updatedAt: now,
+          ...phase,
+        });
+      }
+      setWbsModalOpen(false);
+      await loadData();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "工程テンプレートの適用に失敗しました");
+    } finally {
+      setWbsApplying(false);
+    }
+  }, [loadData, selectedProject, taskRepository, wbsSelectedMajors]);
+
+  // ─── テンプレ保存ハンドラ ──────────────────────────────────────────────────
+  const handleTemplateSave = useCallback(() => {
+    if (!selectedProject || !templateSaveName.trim()) return;
+    setTemplateSaving(true);
+    try {
+      // GanttTask[] → WBSCategory[] (3階層)
+      const byCategory = new Map<string, Map<string, { name: string; defaultDays: number }[]>>();
+      for (const task of selectedProjectTasks) {
+        const major = task.majorCategory ?? "その他";
+        const middle = task.middleCategory ?? "その他";
+        if (!byCategory.has(major)) byCategory.set(major, new Map());
+        const groupMap = byCategory.get(major)!;
+        if (!groupMap.has(middle)) groupMap.set(middle, []);
+        const durDays = task.startDate && task.endDate
+          ? Math.max(1, Math.round((new Date(task.endDate).getTime() - new Date(task.startDate).getTime()) / 86400000) + 1)
+          : 1;
+        groupMap.get(middle)!.push({ name: task.name, defaultDays: durDays });
+      }
+
+      const phases = Array.from(byCategory.entries()).map(([majorName, groupMap]) => {
+        const groups = Array.from(groupMap.entries()).map(([middleName, tasks]) => ({
+          id: `wbs-grp-${majorName}-${middleName}`,
+          categoryId: `wbs-cat-${majorName}`,
+          name: middleName,
+          defaultDays: tasks.reduce((s, t) => s + t.defaultDays, 0),
+          tasks: tasks.map((t, i) => ({
+            id: `wbs-task-${majorName}-${middleName}-${i}`,
+            groupId: `wbs-grp-${majorName}-${middleName}`,
+            categoryId: `wbs-cat-${majorName}`,
+            name: t.name,
+            defaultDays: t.defaultDays,
+          })),
+        }));
+        const totalDays = groups.reduce((s, g) => s + g.defaultDays, 0);
+        return {
+          id: `wbs-cat-${majorName}`,
+          name: majorName,
+          defaultDays: totalDays,
+          groups,
+        };
+      });
+
+      const template: PhaseTemplate = {
+        id: crypto.randomUUID(),
+        name: templateSaveName.trim(),
+        description: templateSaveDesc.trim(),
+        tags: Array.from(templateSaveTags),
+        phases,
+        createdAt: new Date().toISOString(),
+      };
+      savePhaseTemplate(template);
+      setTemplateSaveOpen(false);
+      setTemplateSaveName("");
+      setTemplateSaveDesc("");
+      setTemplateSaveTags(new Set());
+    } finally {
+      setTemplateSaving(false);
+    }
+  }, [selectedProject, selectedProjectTasks, templateSaveDesc, templateSaveName, templateSaveTags]);
 
   if (loading) return <GanttPageSkeleton />;
 
@@ -1102,6 +1303,257 @@ function GanttPageContent({ initialProjectId = null }: GanttPageProps) {
         </div>
       ) : null}
 
+      {masterModalOpen ? (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="マスタから読み込む"
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-4 sm:items-center"
+        >
+          <div className="w-full max-w-md rounded-[28px] bg-white p-6 shadow-2xl">
+            <h2 className="text-lg font-bold text-slate-900">テンプレートから工程を追加</h2>
+            <p className="mt-1 text-sm text-slate-500">
+              大項目を選んで追加する工程をチェックしてください。
+            </p>
+
+            {/* 大項目 (Level 1) */}
+            <div className="mt-4">
+              <label htmlFor="master-category-select" className="block text-xs font-semibold tracking-[0.16em] text-slate-500">
+                大項目
+              </label>
+              <select
+                id="master-category-select"
+                value={masterSelectedCategoryId}
+                onChange={(e) => {
+                  const nextId = e.target.value;
+                  setMasterSelectedCategoryId(nextId);
+                  setMasterSelectedEntryIds(new Set(getMasterEntries(nextId).map((entry) => entry.id)));
+                }}
+                className="mt-2 w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500"
+              >
+                {getMasterCategories().map((cat) => (
+                  <option key={cat.id} value={cat.id}>{cat.name}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* 中項目 → 小項目 3階層ツリー (Level 2 & 3) */}
+            {masterSelectedCategoryId && (() => {
+              const cat = getMasterCategories().find((c) => c.id === masterSelectedCategoryId);
+              if (!cat) return null;
+              const allEntries = getMasterEntries(masterSelectedCategoryId);
+              const selectedCount = allEntries.filter((e) => masterSelectedEntryIds.has(e.id)).length;
+              const allChecked = selectedCount === allEntries.length;
+              return (
+                <div className="mt-4" aria-label="中項目・小項目ツリー">
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-xs font-semibold tracking-[0.14em] text-slate-500">
+                      中項目 / 小項目
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (allChecked) {
+                          setMasterSelectedEntryIds(new Set());
+                        } else {
+                          setMasterSelectedEntryIds(new Set(allEntries.map((e) => e.id)));
+                        }
+                      }}
+                      className="text-xs font-semibold text-brand-600 hover:text-brand-700"
+                    >
+                      {allChecked ? "全解除" : "全選択"} ({selectedCount}/{allEntries.length})
+                    </button>
+                  </div>
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 max-h-56 overflow-y-auto space-y-3">
+                    {cat.groups.map((group) => {
+                      const groupEntries = allEntries.filter((e) =>
+                        group.tasks.some((t) => t.id === e.id) || `wbs-entry-${group.id}` === e.id,
+                      );
+                      const groupCheckedCount = groupEntries.filter((e) => masterSelectedEntryIds.has(e.id)).length;
+                      const groupAllChecked = groupCheckedCount === groupEntries.length && groupEntries.length > 0;
+                      return (
+                        <div key={group.id}>
+                          {/* 中項目 (Level 2) */}
+                          <label className="flex cursor-pointer items-center gap-2 py-1">
+                            <input
+                              type="checkbox"
+                              checked={groupAllChecked}
+                              onChange={() => {
+                                setMasterSelectedEntryIds((prev) => {
+                                  const next = new Set(prev);
+                                  if (groupAllChecked) {
+                                    groupEntries.forEach((e) => next.delete(e.id));
+                                  } else {
+                                    groupEntries.forEach((e) => next.add(e.id));
+                                  }
+                                  return next;
+                                });
+                              }}
+                              className="h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500"
+                              aria-label={`中項目: ${group.name}`}
+                            />
+                            <span className="text-xs font-semibold text-slate-600">{group.name}</span>
+                            <span className="ml-auto text-xs tabular-nums text-slate-400">{groupCheckedCount}/{groupEntries.length}</span>
+                          </label>
+                          {/* 小項目 (Level 3) */}
+                          {groupEntries.length > 0 && (
+                            <ul className="ml-6 space-y-0.5">
+                              {groupEntries.map((entry) => {
+                                const checked = masterSelectedEntryIds.has(entry.id);
+                                return (
+                                  <li key={entry.id}>
+                                    <label className="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1 hover:bg-white">
+                                      <input
+                                        type="checkbox"
+                                        checked={checked}
+                                        onChange={() => {
+                                          setMasterSelectedEntryIds((prev) => {
+                                            const next = new Set(prev);
+                                            if (checked) {
+                                              next.delete(entry.id);
+                                            } else {
+                                              next.add(entry.id);
+                                            }
+                                            return next;
+                                          });
+                                        }}
+                                        className="h-3.5 w-3.5 rounded border-slate-300 text-brand-600 focus:ring-brand-500"
+                                        aria-label={`小項目: ${entry.name}`}
+                                      />
+                                      <span className="flex-1 text-sm text-slate-700 truncate">{entry.name}</span>
+                                      <span className="shrink-0 tabular-nums text-xs text-slate-400">{entry.defaultDays}日</span>
+                                    </label>
+                                  </li>
+                                );
+                              })}
+                            </ul>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })()}
+
+            <div className="mt-5 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setMasterModalOpen(false)}
+                className="min-h-[44px] rounded-2xl border border-slate-200 bg-white px-5 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50"
+              >
+                キャンセル
+              </button>
+              <button
+                type="button"
+                disabled={!masterSelectedCategoryId || masterSelectedEntryIds.size === 0 || masterApplying}
+                onClick={handleMasterApply}
+                className="min-h-[44px] rounded-2xl bg-brand-600 px-5 py-2 text-sm font-semibold text-white shadow-sm disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {masterApplying ? "追加中..." : `ガントに追加 (${masterSelectedEntryIds.size}件)`}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {masterConflictPending ? (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="工程追加の確認"
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-4 sm:items-center"
+        >
+          <div className="w-full max-w-sm rounded-[28px] bg-white p-6 shadow-2xl">
+            <h2 className="text-lg font-bold text-slate-900">工程を追加しますか？</h2>
+            <p className="mt-2 text-sm text-slate-500">
+              この案件にはすでに {selectedProjectTasks.length} 件の工程があります。テンプレートの工程を追加します。
+            </p>
+            <div className="mt-5 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setMasterConflictPending(false)}
+                className="min-h-[44px] rounded-2xl border border-slate-200 bg-white px-5 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50"
+              >
+                キャンセル
+              </button>
+              <button
+                type="button"
+                onClick={() => void handleMasterApplyConfirmed()}
+                className="min-h-[44px] rounded-2xl bg-brand-600 px-5 py-2 text-sm font-semibold text-white shadow-sm"
+              >
+                追加する
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {wbsModalOpen ? (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="工程テンプレート適用"
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-4 sm:items-center"
+        >
+          <div className="w-full max-w-md rounded-[28px] bg-white p-6 shadow-2xl">
+            <h2 className="text-lg font-bold text-slate-900">工程テンプレート適用</h2>
+            <p className="mt-1 text-sm text-slate-500">
+              適用する大項目を選択してください。選択した工種のタスクが一括生成されます。
+            </p>
+            <div className="mt-4 space-y-2 max-h-64 overflow-y-auto">
+              {getCategories().map((major) => {
+                const checked = wbsSelectedMajors.has(major);
+                return (
+                  <label
+                    key={major}
+                    className="flex cursor-pointer items-center gap-3 rounded-xl px-3 py-2 hover:bg-slate-50"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      onChange={() => {
+                        setWbsSelectedMajors((prev) => {
+                          const next = new Set(prev);
+                          if (checked) {
+                            next.delete(major);
+                          } else {
+                            next.add(major);
+                          }
+                          return next;
+                        });
+                      }}
+                      className="h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500"
+                    />
+                    <span className="text-sm font-medium text-slate-700">{major}</span>
+                  </label>
+                );
+              })}
+            </div>
+            <p className="mt-3 text-xs text-slate-400">
+              {wbsSelectedMajors.size} / {getCategories().length} 大項目選択中
+            </p>
+            <div className="mt-5 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setWbsModalOpen(false)}
+                className="min-h-[44px] rounded-2xl border border-slate-200 bg-white px-5 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50"
+              >
+                キャンセル
+              </button>
+              <button
+                type="button"
+                disabled={wbsSelectedMajors.size === 0 || wbsApplying}
+                onClick={() => void handleWbsApply()}
+                className="min-h-[44px] rounded-2xl bg-brand-600 px-5 py-2 text-sm font-semibold text-white shadow-sm disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {wbsApplying ? "適用中..." : "適用"}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
       <section className="rounded-[28px] bg-[linear-gradient(145deg,#fff8ef_0%,#f7fbff_55%,#eef6ff_100%)] px-4 py-5 shadow-sm ring-1 ring-slate-200 sm:px-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
@@ -1177,19 +1629,46 @@ function GanttPageContent({ initialProjectId = null }: GanttPageProps) {
             </button>
             <button
               type="button"
+              onClick={() => setMasterModalOpen(true)}
+              className="rounded-2xl bg-brand-600 px-4 py-3 text-sm font-semibold text-white shadow-sm hover:bg-brand-700 transition-colors"
+            >
+              マスタから読み込む
+            </button>
+            <button
+              type="button"
+              onClick={() => setWbsModalOpen(true)}
+              className="rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50"
+            >
+              工程テンプレート
+            </button>
+            <button
+              type="button"
+              disabled={selectedProjectTasks.length === 0}
+              onClick={() => setTemplateSaveOpen(true)}
+              className="rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50 disabled:opacity-50 transition-colors"
+            >
+              テンプレ保存
+            </button>
+            <button
+              type="button"
               onClick={() => { setRainDate(""); setRainAffected(null); setRainDialogOpen(true); }}
               className="rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50"
             >
               雨天中止
             </button>
-            <button
-              type="button"
-              disabled={pdfExporting}
-              onClick={handlePdfExport}
-              className="rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50"
-            >
-              {pdfExporting ? "出力中..." : "PDF出力"}
-            </button>
+            <div className="flex flex-col items-end gap-1">
+              <button
+                type="button"
+                disabled={pdfExporting}
+                onClick={() => { setPdfError(null); handlePdfExport(); }}
+                className="rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50"
+              >
+                {pdfExporting ? "出力中..." : "PDF出力"}
+              </button>
+              {pdfError && (
+                <p className="text-xs text-red-600" role="alert">{pdfError}</p>
+              )}
+            </div>
             <button
               type="button"
               onClick={() => {
@@ -1434,6 +1913,96 @@ function GanttPageContent({ initialProjectId = null }: GanttPageProps) {
       >
         +
       </button>
+
+      {templateSaveOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50"
+          onClick={() => setTemplateSaveOpen(false)}
+        >
+          <div
+            className="rounded-[26px] bg-white shadow-2xl w-full max-w-md mx-4"
+            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-label="テンプレ保存"
+          >
+            <div className="px-5 py-4 border-b border-slate-100">
+              <h2 className="text-base font-bold text-slate-900">工程をテンプレとして保存</h2>
+              <p className="text-xs text-slate-500 mt-1">
+                「{selectedProject.name}」の工程 ({selectedProjectTasks.length} タスク) をライブラリに保存します。
+              </p>
+            </div>
+            <div className="px-5 py-4 space-y-3">
+              <div>
+                <label htmlFor="template-name" className="block text-xs font-semibold text-slate-700 mb-1">
+                  テンプレ名 <span aria-hidden="true" className="text-red-500">*</span>
+                </label>
+                <input
+                  id="template-name"
+                  type="text"
+                  value={templateSaveName}
+                  onChange={(e) => setTemplateSaveName(e.target.value)}
+                  placeholder="例: 住宅リフォーム標準工程"
+                  className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                />
+              </div>
+              <div>
+                <label htmlFor="template-desc" className="block text-xs font-semibold text-slate-700 mb-1">
+                  説明 (任意)
+                </label>
+                <input
+                  id="template-desc"
+                  type="text"
+                  value={templateSaveDesc}
+                  onChange={(e) => setTemplateSaveDesc(e.target.value)}
+                  placeholder="例: 60m²以下の内装リフォーム向け"
+                  className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                />
+              </div>
+              <fieldset>
+                <legend className="text-xs font-semibold text-slate-700 mb-1">タグ (複数可)</legend>
+                <div className="flex flex-wrap gap-2">
+                  {(["住宅", "店舗", "オフィス"] as const).map((tag) => (
+                    <label key={tag} className="flex items-center gap-1.5 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={templateSaveTags.has(tag)}
+                        onChange={() => {
+                          setTemplateSaveTags((prev) => {
+                            const next = new Set(prev);
+                            if (next.has(tag)) next.delete(tag);
+                            else next.add(tag);
+                            return next;
+                          });
+                        }}
+                        className="h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500"
+                      />
+                      <span className="text-sm text-slate-700">{tag}</span>
+                    </label>
+                  ))}
+                </div>
+              </fieldset>
+            </div>
+            <div className="flex items-center justify-end gap-2 px-5 py-4 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => setTemplateSaveOpen(false)}
+                className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50 focus-visible:ring-2 focus-visible:ring-brand-500"
+              >
+                キャンセル
+              </button>
+              <button
+                type="button"
+                disabled={templateSaving || !templateSaveName.trim()}
+                onClick={handleTemplateSave}
+                className="rounded-xl bg-brand-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-brand-700 disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-brand-500 transition-colors"
+              >
+                {templateSaving ? "保存中..." : "保存する"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

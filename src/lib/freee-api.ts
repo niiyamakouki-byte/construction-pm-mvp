@@ -34,7 +34,10 @@ export type StoredFreeeToken = {
 const REFRESH_LEEWAY_MS = 60_000;
 
 export function isExpired(expiresAt: string, now: Date = new Date()): boolean {
-  return new Date(expiresAt).getTime() - now.getTime() <= REFRESH_LEEWAY_MS;
+  const ts = new Date(expiresAt).getTime();
+  // Invalid Date (NaN) → treat as expired so a fresh token is fetched
+  if (!Number.isFinite(ts)) return true;
+  return ts - now.getTime() <= REFRESH_LEEWAY_MS;
 }
 
 // ── TokenStore (Supabase を隠蔽) ────────────────────────
@@ -136,6 +139,13 @@ export class FreeeApi {
           "X-Api-Version": "2020-06-15",
         },
       });
+    }
+
+    if (response.status === 429) {
+      const retryAfter = response.headers.get?.("Retry-After");
+      const waitSec = retryAfter ? Number(retryAfter) : 60;
+      const wait = Number.isFinite(waitSec) && waitSec > 0 ? waitSec : 60;
+      throw new Error(`freee API rate limited (429). Retry-After: ${wait}s`);
     }
 
     if (!response.ok) {

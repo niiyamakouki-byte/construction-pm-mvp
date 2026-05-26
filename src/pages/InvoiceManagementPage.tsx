@@ -161,6 +161,10 @@ export function InvoiceManagementPage() {
       setSaveError("金額を正しく入力してください");
       return;
     }
+    if (Number.isNaN(taxNum) || taxNum < 0) {
+      setSaveError("消費税を正しく入力してください");
+      return;
+    }
     setSaving(true);
     try {
       addInvoice({
@@ -258,6 +262,7 @@ export function InvoiceManagementPage() {
               <label className="mb-1 block text-xs text-slate-500">金額 (税抜) *</label>
               <input
                 type="number"
+                min="0"
                 value={form.amount}
                 onChange={(e) => handleFormChange("amount", e.target.value)}
                 className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
@@ -268,6 +273,7 @@ export function InvoiceManagementPage() {
               <label className="mb-1 block text-xs text-slate-500">消費税</label>
               <input
                 type="number"
+                min="0"
                 value={form.tax}
                 onChange={(e) => handleFormChange("tax", e.target.value)}
                 className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"

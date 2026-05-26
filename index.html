@@ -5,9 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="description" content="GenbaHub（現場ハブ）— 建設・内装工事の現場管理をスマートに。工程表・タスク管理・見積作成・業者管理を一元化した建設会社向けプロジェクト管理ツール。" />
     <meta name="keywords" content="建設プロジェクト管理,工程表,現場管理,内装工事,見積書,施工管理,GenbaHub,現場ハブ" />
-    <meta name="theme-color" content="#1e3a5f" />
+    <meta name="theme-color" content="#1976d2" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="apple-mobile-web-app-title" content="GenbaHub" />
     <!-- iOS Splash Screens -->
     <link rel="apple-touch-startup-image" media="screen and (device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="splash-430x932.png" />
@@ -20,27 +20,12 @@
     <meta property="og:type" content="website" />
     <meta property="og:locale" content="ja_JP" />
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect x='10' y='60' width='80' height='35' rx='3' fill='%231e3a5f'/><rect x='20' y='30' width='60' height='35' rx='3' fill='%232563eb'/><polygon points='50,5 15,35 85,35' fill='%23f59e0b'/></svg>" />
-    <link rel="apple-touch-icon" href="icon-192.svg" />
-    <link rel="manifest" href="manifest.json" />
+    <link rel="apple-touch-icon" href="/icons/icon-192.png" />
+    <link rel="manifest" href="/manifest.webmanifest" />
     <title>GenbaHub - 建設プロジェクト管理</title>
   </head>
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
-    <script type="module">
-      if ("serviceWorker" in navigator) {
-        if (import.meta.env.PROD && !window.Capacitor) {
-          // Production: register service worker for offline support
-          window.addEventListener("load", () => {
-            navigator.serviceWorker.register("sw.js").catch(() => {});
-          });
-        } else {
-          // Dev mode: unregister any stale service workers to prevent cache interference
-          navigator.serviceWorker.getRegistrations().then((regs) => {
-            regs.forEach((r) => r.unregister());
-          });
-        }
-      }
-    </script>
   </body>
 </html>

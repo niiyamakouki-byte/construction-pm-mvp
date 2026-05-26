@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { buildProcurementAlerts } from "../lib/procurement-alerts.js";
 import type { ProcurementAlert } from "../lib/procurement-alerts.js";
 import type { Task } from "../domain/types.js";
+import { useOrganizationContext } from "../contexts/OrganizationContext.js";
+import { createTaskRepository } from "../stores/task-store.js";
 import {
   ProcurementRepository,
   type ProcurementMaterialRecord,
@@ -72,11 +74,17 @@ const repository = new ProcurementRepository();
 // ── Component ────────────────────────────────────────────────────────────────
 
 export function ProcurementPage({ projectId = "p-1" }: { projectId?: string } = {}) {
+  const { organizationId } = useOrganizationContext();
   const [activeTab, setActiveTab] = useState<Tab>("alerts");
   const [materials, setMaterials] = useState<ProcurementMaterialRecord[]>([]);
+  const [tasks, setTasks] = useState<Task[]>([]);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const today = new Date().toISOString().slice(0, 10);
+  const taskRepository = useMemo(
+    () => createTaskRepository(() => organizationId),
+    [organizationId],
+  );
 
   // Calendar state
   const now = new Date();
@@ -88,8 +96,14 @@ export function ProcurementPage({ projectId = "p-1" }: { projectId?: string } = 
     let cancelled = false;
     (async () => {
       try {
-        const loaded = await repository.listByProjectAsync(projectId);
-        if (!cancelled) setMaterials(loaded);
+        const [loadedMaterials, loadedTasks] = await Promise.all([
+          repository.listByProjectAsync(projectId),
+          taskRepository.findAll(),
+        ]);
+        if (!cancelled) {
+          setMaterials(loadedMaterials);
+          setTasks(loadedTasks.filter((task) => task.projectId === projectId));
+        }
       } catch (err) {
         if (!cancelled) {
           setLoadError(err instanceof Error ? err.message : "資材データの読み込みに失敗しました");
@@ -101,15 +115,11 @@ export function ProcurementPage({ projectId = "p-1" }: { projectId?: string } = 
     return () => {
       cancelled = true;
     };
-  }, [projectId]);
+  }, [projectId, taskRepository]);
 
-  // buildProcurementAlerts needs tasks with lead_time + startDate.
-  // Without a task store wired here we pass an empty list; alerts tab will
-  // simply show 'no alerts'. This is intentional while tasks flow is elsewhere.
-  const emptyTasks = useMemo<Task[]>(() => [], []);
   const alerts = useMemo(
-    () => buildProcurementAlerts(emptyTasks, today),
-    [emptyTasks, today],
+    () => buildProcurementAlerts(tasks, today),
+    [tasks, today],
   );
 
   const calDays = useMemo(() => buildCalendarDays(calYear, calMonth), [calYear, calMonth]);

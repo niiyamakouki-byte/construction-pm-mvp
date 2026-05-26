@@ -1,5 +1,6 @@
 import type { PhotoMetadata } from "../lib/photo-organizer.js";
 import { classifyPhoto } from "../lib/photo-classifier.js";
+import { inferScene, inferPart, type SceneTag, type PartTag } from "../lib/photo-ai-scene.js";
 import { PhotoProgressPanel } from "./PhotoProgressPanel.js";
 
 const CATEGORY_COLORS: Record<string, string> = {
@@ -14,6 +15,30 @@ function getCategoryColor(tag: string): string {
   return CATEGORY_COLORS[tag] ?? "bg-slate-100 text-slate-600";
 }
 
+const SCENE_LABELS: Record<SceneTag, string> = {
+  外観: "外観",
+  内装: "内装",
+  設備: "設備",
+  資材: "資材",
+  職人作業: "作業中",
+  完了写真: "完了",
+  安全: "安全",
+  進捗: "進捗",
+  その他: "その他",
+};
+
+const PART_COLORS: Record<PartTag, string> = {
+  天井: "bg-sky-100 text-sky-700",
+  壁: "bg-indigo-100 text-indigo-700",
+  床: "bg-amber-100 text-amber-800",
+  建具: "bg-orange-100 text-orange-700",
+  設備機器: "bg-purple-100 text-purple-700",
+  基礎構造: "bg-stone-100 text-stone-700",
+  外壁: "bg-emerald-100 text-emerald-700",
+  屋根: "bg-teal-100 text-teal-700",
+  その他: "bg-slate-100 text-slate-600",
+};
+
 type PhotoCardProps = {
   photo: PhotoMetadata;
 };
@@ -23,12 +48,15 @@ function PhotoCard({ photo }: PhotoCardProps) {
   const isAfter = photo.tags.includes("after") || photo.tags.includes("完成後");
   const categoryTag = photo.tags.find((t) => t !== "before" && t !== "after" && t !== "着工前" && t !== "完成後");
 
-  // Auto-classify when no explicit before/after tag is present
   const classified = (!isBefore && !isAfter) ? classifyPhoto(photo.description) : null;
   const autoBeforeAfter = classified?.beforeAfter ?? null;
   const autoCategory = classified?.category ?? null;
   const showBefore = isBefore || autoBeforeAfter === "before";
   const showAfter = isAfter || autoBeforeAfter === "after";
+
+  // Sprint 65: シーン・部位タグ
+  const sceneResult = inferScene(photo.description, photo.tags);
+  const partResult = inferPart(photo.description, photo.tags);
 
   return (
     <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
@@ -56,13 +84,25 @@ function PhotoCard({ photo }: PhotoCardProps) {
             {showBefore ? "Before" : "After"}
           </span>
         )}
-      </div>
-      <div className="px-3 py-2">
-        {(categoryTag ?? autoCategory) && (
-          <span className={`inline-block rounded-full px-2 py-0.5 text-xs font-semibold ${getCategoryColor(categoryTag ?? autoCategory ?? "")}`}>
-            {categoryTag ?? autoCategory}
+        {sceneResult.scene !== "その他" && (
+          <span className="absolute right-2 top-2 rounded-full bg-slate-800/60 px-2 py-0.5 text-xs font-medium text-white backdrop-blur-sm">
+            {SCENE_LABELS[sceneResult.scene]}
           </span>
         )}
+      </div>
+      <div className="px-3 py-2">
+        <div className="flex flex-wrap gap-1">
+          {(categoryTag ?? autoCategory) && (
+            <span className={`inline-block rounded-full px-2 py-0.5 text-xs font-semibold ${getCategoryColor(categoryTag ?? autoCategory ?? "")}`}>
+              {categoryTag ?? autoCategory}
+            </span>
+          )}
+          {partResult.part !== "その他" && (
+            <span className={`inline-block rounded-full px-2 py-0.5 text-xs font-semibold ${PART_COLORS[partResult.part]}`}>
+              {partResult.part}
+            </span>
+          )}
+        </div>
         <p className="mt-1 truncate text-sm font-medium text-slate-800">{photo.description}</p>
         <p className="text-xs text-slate-400">{photo.capturedAt.slice(0, 10)}</p>
       </div>

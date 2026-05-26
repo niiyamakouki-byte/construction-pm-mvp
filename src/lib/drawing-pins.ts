@@ -55,7 +55,11 @@ export function loadPins(drawingId: string): DrawingPin[] {
 }
 
 export function savePins(drawingId: string, pins: DrawingPin[]): void {
-  localStorage.setItem(STORAGE_KEY_PREFIX + drawingId, JSON.stringify(pins));
+  try {
+    localStorage.setItem(STORAGE_KEY_PREFIX + drawingId, JSON.stringify(pins));
+  } catch {
+    // localStorage quota exceeded or unavailable — ignore to avoid crashing the UI
+  }
 }
 
 // ── Report generation ────────────────────────────────────────────────────────

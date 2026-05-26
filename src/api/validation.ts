@@ -456,7 +456,7 @@ export function validateCreateChangeOrderInput(payload: unknown): CreateChangeOr
 
   return {
     description: requireString(payload, "description", "変更内容", 2000),
-    amount: parseNumericValue(payload.amount, "金額"),
+    amount: parseNumericValue(payload.amount, "金額", { max: 1_000_000_000_000 }),
     approvedBy: requireString(payload, "approvedBy", "承認者", 200),
     date: parseDateString(requireString(payload, "date", "日付", 10), "日付"),
     status: validateEnum(payload.status, CHANGE_ORDER_STATUSES, "変更指示ステータス"),
