@@ -6,6 +6,11 @@
     "create_title": "新規プロジェクト作成",
     "create_button": "新規プロジェクト",
     "close_form": "フォームを閉じる",
+    "capture_mode_label": "登録の目的",
+    "capture_mode_schedule": "工程表を作る案件",
+    "capture_mode_schedule_desc": "これから動く現場。作成後は工程表でタスクを追加します。",
+    "capture_mode_record": "完了済み・工程表なしで記録",
+    "capture_mode_record_desc": "案件名だけでも登録できます。写真、請求、メモの箱として後から使えます。",
     "project_name_label": "プロジェクト名",
     "project_name_placeholder": "例: 渋谷オフィスビル内装工事",
     "description_label": "説明",
@@ -19,7 +24,8 @@
     "empty_title": "最初のプロジェクトを作成しましょう",
     "empty_desc": "プロジェクトを作成すると、工程表まで最短で移動できます。まずは1件登録してください。",
     "sample_creating": "作成中...",
-    "open_gantt": "工程表を開く"
+    "open_gantt": "工程表を開く",
+    "open_record": "記録を開く"
   },
   "gantt": {
     "section_label": "工程表",

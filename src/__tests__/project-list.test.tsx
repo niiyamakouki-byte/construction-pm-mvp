@@ -63,6 +63,24 @@ describe("ProjectListPage", () => {
     expect(dateElements.length).toBeGreaterThan(0);
   });
 
+  it("完了済み・工程表なしの案件を記録として作成できる", async () => {
+    const user = userEvent.setup();
+    render(<ProjectListPage />);
+
+    await screen.findByText("新規プロジェクト");
+    await user.click(screen.getByText("新規プロジェクト"));
+
+    await user.click(screen.getByRole("button", { name: /完了済み・工程表なしで記録/ }));
+    await user.type(screen.getByPlaceholderText("例: 渋谷オフィスビル内装工事"), "過去案件A");
+    await user.click(screen.getByRole("button", { name: "作成" }));
+
+    expect(await screen.findByText("過去案件A")).toBeDefined();
+    expect(screen.getByText("記録を開く")).toBeDefined();
+
+    const projects = await projectRepository.findAll();
+    expect(projects.find((project) => project.name === "過去案件A")?.status).toBe("completed");
+  });
+
   it("作成失敗時にエラーメッセージが表示される", async () => {
     vi.spyOn(projectRepository, "create").mockRejectedValueOnce(
       new Error("テストエラー"),
