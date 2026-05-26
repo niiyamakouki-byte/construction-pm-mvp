@@ -1,5 +1,6 @@
 import { parseScheduleImportFile } from "../schedule-importer.js";
 import { requireMultipartFile } from "../http.js";
+import { parseMemoProjectText } from "../memo-project-parser.js";
 import { decodePathParam, requireExistingProject } from "../route-helpers.js";
 import {
   calculateCostSummary,
@@ -15,6 +16,7 @@ import {
   type ApiMaterialRecord,
   type ApiProjectRecord,
   type ApiRouteHandler,
+  type ApiStore,
   type ApiTaskRecord,
 } from "../types.js";
 import {
@@ -24,6 +26,8 @@ import {
   validateUpdateProjectInput,
 } from "../validation.js";
 
+const MEMO_PROJECT_DUPLICATE_WINDOW_DAYS = 3;
+
 function createTaskCountsByProjectId(projectIds: string[], taskProjectIds: string[]): Map<string, number> {
   const counts = new Map(projectIds.map((projectId) => [projectId, 0]));
 
@@ -32,6 +36,31 @@ function createTaskCountsByProjectId(projectIds: string[], taskProjectIds: strin
   }
 
   return counts;
+}
+
+function dateOnly(value: string): string {
+  return value.slice(0, 10);
+}
+
+function absoluteDayDiff(left: string, right: string): number {
+  const leftTime = new Date(`${dateOnly(left)}T00:00:00.000Z`).getTime();
+  const rightTime = new Date(`${dateOnly(right)}T00:00:00.000Z`).getTime();
+  return Math.abs(Math.round((leftTime - rightTime) / 86_400_000));
+}
+
+async function findDuplicateMemoProject(
+  store: ApiStore,
+  projectName: string,
+  createdAt: string,
+): Promise<ApiProjectRecord | null> {
+  const projects = await store.listProjects();
+  return (
+    projects.find(
+      (project) =>
+        project.name === projectName &&
+        absoluteDayDiff(project.createdAt, createdAt) <= MEMO_PROJECT_DUPLICATE_WINDOW_DAYS,
+    ) ?? null
+  );
 }
 
 const projectStatusLabels = {
@@ -300,6 +329,36 @@ export const handleProjectsRoutes: ApiRouteHandler = async ({ pathname, request,
     const project = await store.createProject(input);
     return created({
       project: serializeProject(project),
+    });
+  }
+
+  if (request.method === "POST" && pathname === "/api/projects/memo") {
+    const parsed = parseMemoProjectText(request.body ?? {});
+    const now = new Date().toISOString();
+    const duplicate = await findDuplicateMemoProject(store, parsed.name, now);
+
+    if (duplicate) {
+      return ok({
+        created: false,
+        duplicate: true,
+        project: serializeProject(duplicate),
+        parsed,
+      });
+    }
+
+    const project = await store.createProject({
+      name: parsed.name,
+      contractor: "未設定",
+      address: parsed.addressCandidate ?? "",
+      status: parsed.projectStatus,
+      mode: "memo",
+    });
+
+    return created({
+      created: true,
+      duplicate: false,
+      project: serializeProject(project),
+      parsed,
     });
   }
 
