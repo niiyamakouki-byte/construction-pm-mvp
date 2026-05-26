@@ -432,6 +432,7 @@ export function ProjectDetailPage({
     completed: "完了",
     on_hold: "保留",
   };
+  const shouldShowRecordUpgradePrompt = project.status === "completed" && tasks.length === 0;
 
   return (
     <div className="mx-auto max-w-2xl space-y-4 px-4 pb-24">
@@ -542,6 +543,38 @@ export function ProjectDetailPage({
 
       {/* Overview tab content */}
       {subPath !== "chat" && subPath !== "finance" && <>
+
+      {shouldShowRecordUpgradePrompt && (
+        <section
+          aria-label="記録案件のAI提案"
+          className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 shadow-sm"
+        >
+          <div className="flex items-start gap-3">
+            <span className="mt-0.5 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white text-sm font-bold text-emerald-700 ring-1 ring-emerald-200">
+              AI
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-bold text-emerald-950">この記録から工程表を起こしますか？</p>
+              <p className="mt-1 text-xs leading-5 text-emerald-800">
+                単価・職人・工期の引用元として使えるので、完了済み案件もあとから工程化できます。
+              </p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {CONSTRUCTION_TEMPLATES.map((tpl, i) => (
+                  <button
+                    key={tpl.label}
+                    type="button"
+                    disabled={applyingTemplate}
+                    onClick={() => void handleApplyTemplate(i)}
+                    className="rounded-lg border border-emerald-300 bg-white px-3 py-1.5 text-xs font-semibold text-emerald-800 shadow-sm transition-colors hover:bg-emerald-100 disabled:opacity-50"
+                  >
+                    {applyingTemplate ? "適用中..." : `${tpl.label}で起こす`}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Project Flow */}
       <ProjectFlowWidget
