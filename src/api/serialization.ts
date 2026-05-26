@@ -18,6 +18,7 @@ export function serializeProject(project: ApiProjectRecord, taskCount?: number) 
     contractor: project.contractor,
     address: project.address,
     status: project.status,
+    mode: project.mode,
     description: project.description,
     startDate: project.startDate,
     endDate: project.endDate ?? null,

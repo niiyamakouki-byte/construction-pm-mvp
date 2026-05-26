@@ -1,6 +1,6 @@
 /* @vitest-environment node */
 
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   ApiError,
   InMemoryApiStore,
@@ -175,6 +175,112 @@ describe("GenbaHub API", () => {
         warrantyEndDate: "2027-02-28",
       },
     });
+  });
+
+  it("POST /api/projects/memo は自然文だけでmemo案件を作成する", async () => {
+    const response = await request("POST", "/api/projects/memo", {
+      naturalText: "白金台 中川邸 完工",
+      source: "discord",
+    });
+
+    expect(response.status).toBe(201);
+    expect(response.body).toMatchObject({
+      created: true,
+      duplicate: false,
+      project: {
+        name: "中川邸",
+        address: "白金台",
+        contractor: "未設定",
+        status: "completed",
+        mode: "memo",
+      },
+      parsed: {
+        source: "discord",
+        naturalStatus: "completed",
+        projectStatus: "completed",
+        matchedStatusKeyword: "完工",
+      },
+    });
+  });
+
+  it("POST /api/projects/memo は着工をmemo + activeに変換する", async () => {
+    const response = await request("POST", "/api/projects/memo", {
+      naturalText: "渋谷バー 着工",
+      source: "line",
+    });
+
+    expect(response.status).toBe(201);
+    expect(response.body).toMatchObject({
+      project: {
+        name: "渋谷バー",
+        address: "",
+        status: "active",
+        mode: "memo",
+      },
+      parsed: {
+        source: "line",
+        naturalStatus: "in_progress",
+        projectStatus: "active",
+      },
+    });
+  });
+
+  it("POST /api/projects/memo は同名かつ同日付近の重複作成をスキップする", async () => {
+    const first = await request("POST", "/api/projects/memo", {
+      naturalText: "世田谷 山田様邸 進行中",
+      source: "manual",
+    });
+    const second = await request("POST", "/api/projects/memo", {
+      naturalText: "世田谷 山田様邸 進行中",
+      source: "manual",
+    });
+
+    expect(first.status).toBe(201);
+    expect(second.status).toBe(200);
+    expect(second.body).toMatchObject({
+      created: false,
+      duplicate: true,
+      project: {
+        id: (first.body as { project: { id: string } }).project.id,
+        name: "山田様邸",
+      },
+    });
+    expect((await request("GET", "/api/projects")).body).toMatchObject({
+      projects: [{ name: "山田様邸" }],
+    });
+  });
+
+  it("POST /api/projects/memo は必須欄不足を400にする", async () => {
+    const missingText = await request("POST", "/api/projects/memo", {
+      source: "discord",
+    });
+    const missingSource = await request("POST", "/api/projects/memo", {
+      naturalText: "白金台 中川邸 完工",
+    });
+
+    expect(missingText).toEqual({
+      status: 400,
+      body: { error: "naturalTextは必須です。" },
+    });
+    expect(missingSource).toEqual({
+      status: 400,
+      body: {
+        error: "入力ソースは「discord」、「line」、「manual」のいずれかを指定してください。",
+      },
+    });
+  });
+
+  it("POST /api/projects/memo は外部送信を行わない", async () => {
+    const fetchSpy = vi.spyOn(globalThis, "fetch");
+
+    const response = await request("POST", "/api/projects/memo", {
+      naturalText: "青山 ショールーム 見積中",
+      source: "discord",
+    });
+
+    expect(response.status).toBe(201);
+    expect(fetchSpy).not.toHaveBeenCalled();
+    fetchSpy.mockRestore();
   });
 
   it("POST /api/projects は必須項目不足で日本語エラーを返す", async () => {
