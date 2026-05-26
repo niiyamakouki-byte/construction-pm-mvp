@@ -1,1 +1,10 @@
-{}
+{
+  "project_list": {
+    "capture_mode_label": "Registration purpose",
+    "capture_mode_schedule": "Project with a schedule",
+    "capture_mode_schedule_desc": "For upcoming work. Add tasks in the schedule after creation.",
+    "capture_mode_record": "Completed or no schedule",
+    "capture_mode_record_desc": "A project name is enough. Use it later for photos, invoices, and notes.",
+    "open_record": "Open record"
+  }
+}

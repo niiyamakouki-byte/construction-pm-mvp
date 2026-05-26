@@ -22,6 +22,8 @@ const statusColor: Record<ProjectStatus, string> = {
   on_hold: "bg-amber-100 text-amber-700 border-amber-200",
 };
 
+type ProjectCaptureMode = "schedule" | "record";
+
 export function ProjectListPage() {
   const { t } = useTranslation(["pages", "common", "errors"]);
   const { organizationId } = useOrganizationContext();
@@ -33,6 +35,7 @@ export function ProjectListPage() {
   const [address, setAddress] = useState("");
   const [status, setStatus] = useState<ProjectStatus>("planning");
   const [startDate, setStartDate] = useState("");
+  const [captureMode, setCaptureMode] = useState<ProjectCaptureMode>("schedule");
   const [showForm, setShowForm] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [sampleCreating, setSampleCreating] = useState(false);
@@ -107,6 +110,7 @@ export function ProjectListPage() {
       setAddress("");
       setStatus("planning");
       setStartDate("");
+      setCaptureMode("schedule");
       setShowForm(false);
       await loadProjects();
     } catch (err) {
@@ -118,7 +122,7 @@ export function ProjectListPage() {
 
   const openProjectGantt = (project: Project) => {
     writeLastProjectId(project.id);
-    navigate(`/gantt/${project.id}`);
+    navigate(project.status === "completed" ? `/project/${project.id}` : `/gantt/${project.id}`);
   };
 
   const handleCreateSample = async () => {
@@ -217,6 +221,46 @@ export function ProjectListPage() {
           ) : null}
 
           <form onSubmit={handleSubmit} className="space-y-4">
+            <fieldset className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
+              <legend className="px-1 text-sm font-medium text-slate-700">{t("pages:project_list.capture_mode_label")}</legend>
+              <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCaptureMode("schedule");
+                    if (status === "completed") setStatus("planning");
+                  }}
+                  className={`rounded-2xl border px-3 py-3 text-left text-sm transition-colors ${
+                    captureMode === "schedule"
+                      ? "border-[#007AFF] bg-white text-slate-900 ring-2 ring-[#007AFF]/15"
+                      : "border-slate-200 bg-white text-slate-600"
+                  }`}
+                >
+                  <span className="block font-semibold">{t("pages:project_list.capture_mode_schedule")}</span>
+                  <span className="mt-1 block text-xs leading-5 text-slate-500">
+                    {t("pages:project_list.capture_mode_schedule_desc")}
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCaptureMode("record");
+                    setStatus("completed");
+                  }}
+                  className={`rounded-2xl border px-3 py-3 text-left text-sm transition-colors ${
+                    captureMode === "record"
+                      ? "border-[#007AFF] bg-white text-slate-900 ring-2 ring-[#007AFF]/15"
+                      : "border-slate-200 bg-white text-slate-600"
+                  }`}
+                >
+                  <span className="block font-semibold">{t("pages:project_list.capture_mode_record")}</span>
+                  <span className="mt-1 block text-xs leading-5 text-slate-500">
+                    {t("pages:project_list.capture_mode_record_desc")}
+                  </span>
+                </button>
+              </div>
+            </fieldset>
+
             <div>
               <label htmlFor="project-name" className="block text-sm font-medium text-slate-700">
                 {t("pages:project_list.project_name_label")} <span className="text-red-500">*</span>
@@ -369,7 +413,7 @@ export function ProjectListPage() {
                   ) : null}
                 </div>
                 <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
-                  {t("pages:project_list.open_gantt")}
+                  {project.status === "completed" ? t("pages:project_list.open_record") : t("pages:project_list.open_gantt")}
                 </span>
               </div>
               <div className="mt-4 flex flex-wrap items-center gap-3 text-sm text-slate-500">
