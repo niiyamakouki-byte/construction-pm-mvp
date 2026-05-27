@@ -357,9 +357,13 @@ textarea::placeholder {
   z-index: 20;
 }
 
-/* Main content shifted right when sidebar visible */
-.ios-main-with-sidebar {
-  margin-left: var(--sidebar-width);
+/* Main content shifted right when sidebar visible (desktop only).
+   Mobile (<768px) keeps margin-left:0 — sidebar hides at this breakpoint,
+   so shifting content would compress it into a vertical strip. */
+@media (min-width: 768px) {
+  .ios-main-with-sidebar {
+    margin-left: var(--sidebar-width);
+  }
 }
 
 /* Sidebar nav item */
