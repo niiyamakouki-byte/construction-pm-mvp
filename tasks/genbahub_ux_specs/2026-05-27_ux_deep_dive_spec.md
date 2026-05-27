@@ -125,3 +125,11 @@ Screenshots:
 Checks:
 - `pnpm exec playwright test e2e/mobile-responsive-routes.test.ts --project=chromium`
 - 390x844 screenshot recapture showed `scrollWidth=390` and `clientWidth=390` on both routes.
+
+Recheck after Discord correction:
+- Re-ran `npm run dev -- --host 127.0.0.1`.
+- Re-ran `pnpm exec playwright test e2e/mobile-responsive-routes.test.ts --project=chromium`: 2 passed.
+- Re-captured `/today` and `/estimate` at 390x844.
+- Current `/today`: `tasks/mobile_responsive_verification_2026-05-27/today-390-recheck.png`
+- Current `/estimate`: `tasks/mobile_responsive_verification_2026-05-27/estimate-390-recheck.png`
+- Recheck metrics: both routes reported `scrollWidth=390` and `clientWidth=390`.
