@@ -298,11 +298,7 @@ export function TaskEditModal({
             {onDelete ? (
               <button
                 type="button"
-                onClick={() => {
-                  if (window.confirm(`「${taskDetail.task.name}」を削除しますか？`)) {
-                    onDelete(taskDetail.task.id);
-                  }
-                }}
+                onClick={() => onDelete(taskDetail.task.id)}
                 className="rounded-2xl px-4 py-3 text-sm font-semibold text-red-600"
               >
                 削除

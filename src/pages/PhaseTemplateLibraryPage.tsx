@@ -15,6 +15,7 @@ import { useOrganizationContext } from "../contexts/OrganizationContext.js";
 import { createProjectRepository } from "../stores/project-store.js";
 import { createTaskRepository } from "../stores/task-store.js";
 import type { Project } from "../domain/types.js";
+import { ConfirmDialog } from "../components/ConfirmDialog.js";
 
 // ─── タグカラー ───────────────────────────────────────────────────────────────
 
@@ -30,7 +31,7 @@ type TemplateCardProps = {
   template: PhaseTemplate;
   onPreview: (template: PhaseTemplate) => void;
   onApply: (template: PhaseTemplate) => void;
-  onDelete: (id: string) => void;
+  onDelete: (template: PhaseTemplate) => void;
 };
 
 function TemplateCard({ template, onPreview, onApply, onDelete }: TemplateCardProps) {
@@ -85,7 +86,7 @@ function TemplateCard({ template, onPreview, onApply, onDelete }: TemplateCardPr
         </button>
         <button
           type="button"
-          onClick={() => onDelete(template.id)}
+          onClick={() => onDelete(template)}
           aria-label={`${template.name}を削除`}
           className="ml-auto rounded-xl border border-red-200 px-3 py-1.5 text-xs font-semibold text-red-500 hover:bg-red-50 focus-visible:ring-2 focus-visible:ring-red-400 transition-colors"
         >
@@ -250,6 +251,7 @@ export function PhaseTemplateLibraryPage() {
   const [loadingProjects, setLoadingProjects] = useState(false);
   const [previewTemplate, setPreviewTemplate] = useState<PhaseTemplate | null>(null);
   const [applyTarget, setApplyTarget] = useState<PhaseTemplate | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<PhaseTemplate | null>(null);
   const [applying, setApplying] = useState(false);
   const [applyError, setApplyError] = useState<string | null>(null);
 
@@ -275,11 +277,13 @@ export function PhaseTemplateLibraryPage() {
   }, []);
 
   const handleDelete = useCallback(
-    (id: string) => {
-      deletePhaseTemplate(id);
+    () => {
+      if (!deleteTarget) return;
+      deletePhaseTemplate(deleteTarget.id);
+      setDeleteTarget(null);
       refresh();
     },
-    [refresh],
+    [deleteTarget, refresh],
   );
 
   const handleApply = useCallback(
@@ -338,6 +342,20 @@ export function PhaseTemplateLibraryPage() {
 
   return (
     <div className="mx-auto max-w-5xl space-y-5">
+      <ConfirmDialog
+        open={deleteTarget !== null}
+        title="工程テンプレートを削除"
+        message={
+          <>
+            <span className="font-semibold text-slate-800">{deleteTarget?.name}</span>
+            を削除します。この操作は取り消せません。
+          </>
+        }
+        confirmLabel="削除する"
+        variant="danger"
+        onConfirm={handleDelete}
+        onCancel={() => setDeleteTarget(null)}
+      />
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div>
           <h1 className="text-xl font-bold text-slate-900">工程テンプレートライブラリ</h1>
@@ -382,7 +400,7 @@ export function PhaseTemplateLibraryPage() {
                 setApplyError(null);
                 setApplyTarget(t);
               }}
-              onDelete={handleDelete}
+              onDelete={setDeleteTarget}
             />
           ))}
         </div>

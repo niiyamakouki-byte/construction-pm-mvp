@@ -6,6 +6,7 @@ import {
   type PurchaseOrderItemRecord,
   type PurchaseOrderStatus,
 } from "../lib/supabase-adapter/OrderRepository.js";
+import { ConfirmDialog } from "../components/ConfirmDialog.js";
 import costMaster from "../estimate/cost-master.json";
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -386,7 +387,7 @@ function OrderCard({
 }: {
   order: PurchaseOrderRecord;
   onTransition: (id: string, to: PurchaseOrderStatus) => void;
-  onDelete: (id: string) => void;
+  onDelete: (order: PurchaseOrderRecord) => void;
 }) {
   const nextStatuses = getNextStatuses(order.status) as PurchaseOrderStatus[];
   const [expanded, setExpanded] = useState(false);
@@ -470,7 +471,7 @@ function OrderCard({
         ))}
         {order.status === "下書き" && (
           <button
-            onClick={() => onDelete(order.id)}
+            onClick={() => onDelete(order)}
             className="px-3 py-1 rounded-lg text-xs font-medium text-red-500 border border-red-200 hover:bg-red-50 ml-auto"
           >
             削除
@@ -492,7 +493,7 @@ function StatusColumn({
   status: PurchaseOrderStatus;
   orders: PurchaseOrderRecord[];
   onTransition: (id: string, to: PurchaseOrderStatus) => void;
-  onDelete: (id: string) => void;
+  onDelete: (order: PurchaseOrderRecord) => void;
 }) {
   return (
     <div className="flex-1 min-w-[220px]">
@@ -528,6 +529,7 @@ export function OrderManagementPage({
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<"kanban" | "list">("list");
   const [filterStatus, setFilterStatus] = useState<PurchaseOrderStatus | "すべて">("すべて");
+  const [deleteTarget, setDeleteTarget] = useState<PurchaseOrderRecord | null>(null);
 
   // Load on mount + reload helper.
   useEffect(() => {
@@ -585,8 +587,10 @@ export function OrderManagementPage({
     await reload();
   };
 
-  const handleDelete = async (id: string) => {
-    await repository.deleteAsync(id);
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    await repository.deleteAsync(deleteTarget.id);
+    setDeleteTarget(null);
     await reload();
   };
 
@@ -616,6 +620,20 @@ export function OrderManagementPage({
 
   return (
     <div className="space-y-6">
+      <ConfirmDialog
+        open={deleteTarget !== null}
+        title="発注書を削除"
+        message={
+          <>
+            <span className="font-semibold text-slate-800">{deleteTarget?.contractorName}</span>
+            の下書き発注書を削除します。この操作は取り消せません。
+          </>
+        }
+        confirmLabel="削除する"
+        variant="danger"
+        onConfirm={() => void handleDelete()}
+        onCancel={() => setDeleteTarget(null)}
+      />
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
@@ -694,7 +712,7 @@ export function OrderManagementPage({
                 status={status}
                 orders={allOrders.filter((o) => o.status === status)}
                 onTransition={handleTransition}
-                onDelete={handleDelete}
+                onDelete={setDeleteTarget}
               />
             ))}
           </div>
@@ -717,7 +735,7 @@ export function OrderManagementPage({
                 key={order.id}
                 order={order}
                 onTransition={handleTransition}
-                onDelete={handleDelete}
+                onDelete={setDeleteTarget}
               />
             ))
           )}

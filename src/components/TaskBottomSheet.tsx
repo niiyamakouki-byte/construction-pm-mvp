@@ -1,8 +1,9 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { Contractor } from "../domain/types.js";
 import { navigate } from "../hooks/useHashRouter.js";
 import type { TaskDetailState } from "./gantt/types.js";
 import { statusLabel, addDays } from "./gantt/utils.js";
+import { ConfirmDialog } from "./ConfirmDialog.js";
 
 type Props = {
   taskDetail: TaskDetailState;
@@ -17,6 +18,7 @@ export function TaskBottomSheet({ taskDetail, contractors, onClose, onSubmit, on
   const sheetRef = useRef<HTMLDivElement>(null);
   const startYRef = useRef<number | null>(null);
   const dragOffsetRef = useRef(0);
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
 
   // Block background scroll
   useEffect(() => {
@@ -27,10 +29,12 @@ export function TaskBottomSheet({ taskDetail, contractors, onClose, onSubmit, on
 
   // Escape key to close
   useEffect(() => {
-    const handler = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && !confirmDeleteOpen) onClose();
+    };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [onClose]);
+  }, [confirmDeleteOpen, onClose]);
 
   // Drag-to-dismiss on handle
   function handleDragStart(e: React.TouchEvent | React.MouseEvent) {
@@ -242,11 +246,7 @@ export function TaskBottomSheet({ taskDetail, contractors, onClose, onSubmit, on
             {onDelete && (
               <button
                 type="button"
-                onClick={() => {
-                  if (window.confirm(`「${taskDetail.task.name}」を削除しますか？この操作は取り消せません。`)) {
-                    onDelete(taskDetail.task.id);
-                  }
-                }}
+                onClick={() => setConfirmDeleteOpen(true)}
                 className="rounded-lg px-3 py-3 text-sm font-medium text-red-500 transition-colors hover:bg-red-50"
                 style={{ minHeight: 48 }}
               >
@@ -274,6 +274,23 @@ export function TaskBottomSheet({ taskDetail, contractors, onClose, onSubmit, on
           </div>
         </div>
       </div>
+      <ConfirmDialog
+        open={confirmDeleteOpen}
+        title="タスクを削除"
+        message={
+          <>
+            <span className="font-semibold text-slate-800">{taskDetail.task.name}</span>
+            を削除します。この操作は取り消せません。
+          </>
+        }
+        confirmLabel="削除する"
+        variant="danger"
+        onConfirm={() => {
+          setConfirmDeleteOpen(false);
+          onDelete?.(taskDetail.task.id);
+        }}
+        onCancel={() => setConfirmDeleteOpen(false)}
+      />
     </div>
   );
 }

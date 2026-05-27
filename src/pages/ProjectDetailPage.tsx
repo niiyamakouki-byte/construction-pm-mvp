@@ -13,6 +13,7 @@ import { ProjectFlowWidget } from "../components/ProjectFlowWidget.js";
 import { createInitialStageProgresses } from "../lib/project-flow.js";
 import { ProjectChat } from "../components/ProjectChat.js";
 import { ProjectFinancePanel } from "../components/ProjectFinancePanel.js";
+import { ConfirmDialog } from "../components/ConfirmDialog.js";
 import {
   ConstructionPhase,
   getPhaseChecklist,
@@ -450,6 +451,7 @@ export function ProjectDetailPage({
   };
   const mode = projectMode(project);
   const shouldShowRecordUpgradePrompt = mode === "memo" && project.status === "completed" && tasks.length === 0;
+  const deletingTask = tasks.find((task) => task.id === deletingTaskId);
 
   return (
     <div className="mx-auto max-w-2xl space-y-4 px-4 pb-24">
@@ -471,31 +473,20 @@ export function ProjectDetailPage({
         </div>
       )}
 
-      {/* Delete confirmation dialog */}
-      {deletingTaskId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={() => setDeletingTaskId(null)}>
-          <div className="modal-scroll mx-4 w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
-            <h3 className="text-base font-bold text-slate-900">タスクを削除</h3>
-            <p className="mt-2 text-sm text-slate-600">
-              このタスクを削除してもよろしいですか？この操作は取り消せません。
-            </p>
-            <div className="mt-5 flex justify-end gap-3">
-              <button
-                onClick={() => setDeletingTaskId(null)}
-                className="rounded-lg px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 transition-colors"
-              >
-                キャンセル
-              </button>
-              <button
-                onClick={confirmDeleteTask}
-                className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-700 transition-colors"
-              >
-                削除する
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmDialog
+        open={deletingTaskId !== null}
+        title="タスクを削除"
+        message={
+          <>
+            <span className="font-semibold text-slate-800">{deletingTask?.name ?? "このタスク"}</span>
+            を削除します。この操作は取り消せません。
+          </>
+        }
+        confirmLabel="削除する"
+        variant="danger"
+        onConfirm={() => void confirmDeleteTask()}
+        onCancel={() => setDeletingTaskId(null)}
+      />
 
       {/* Project Header */}
       <div className="rounded-2xl bg-gradient-to-br from-[#004fad] via-[#003d85] to-[#002a5c] p-5 text-white shadow-lg">

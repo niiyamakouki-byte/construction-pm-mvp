@@ -13,6 +13,7 @@ import {
   type InvoiceStatus,
   type PaymentTerm,
 } from "../lib/invoice-store.js";
+import { ConfirmDialog } from "../components/ConfirmDialog.js";
 
 const currencyFormatter = new Intl.NumberFormat("ja-JP", {
   style: "currency",
@@ -64,6 +65,7 @@ export function InvoiceManagementPage() {
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Invoice | null>(null);
 
   const today = new Date().toISOString().slice(0, 7); // YYYY-MM
 
@@ -121,12 +123,13 @@ export function InvoiceManagementPage() {
   );
 
   const handleDelete = useCallback(
-    (id: string) => {
-      if (!confirm("この請求書を削除しますか？")) return;
-      deleteInvoice(id);
+    () => {
+      if (!deleteTarget) return;
+      deleteInvoice(deleteTarget.id);
+      setDeleteTarget(null);
       refreshInvoices();
     },
-    [refreshInvoices],
+    [deleteTarget, refreshInvoices],
   );
 
   const handleCopyToCost = useCallback((invoice: Invoice) => {
@@ -192,6 +195,20 @@ export function InvoiceManagementPage() {
 
   return (
     <div className="space-y-6">
+      <ConfirmDialog
+        open={deleteTarget !== null}
+        title="請求書を削除"
+        message={
+          <>
+            <span className="font-semibold text-slate-800">{deleteTarget?.vendorName}</span>
+            の請求書を削除します。この操作は取り消せません。
+          </>
+        }
+        confirmLabel="削除する"
+        variant="danger"
+        onConfirm={handleDelete}
+        onCancel={() => setDeleteTarget(null)}
+      />
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-bold text-slate-800">請求書管理</h1>
         <button
@@ -434,7 +451,7 @@ export function InvoiceManagementPage() {
                     {copiedId === inv.id ? "コピー済" : "経費コピー"}
                   </button>
                   <button
-                    onClick={() => handleDelete(inv.id)}
+                    onClick={() => setDeleteTarget(inv)}
                     className="rounded-lg border border-red-200 px-2 py-1 text-xs text-red-600 hover:bg-red-50"
                   >
                     削除

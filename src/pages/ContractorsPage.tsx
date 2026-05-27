@@ -3,6 +3,7 @@ import type { Contractor } from "../domain/types.js";
 import { createContractorRepository } from "../stores/contractor-store.js";
 import { useOrganizationContext } from "../contexts/OrganizationContext.js";
 import { getAllRoles, getRoleLabel } from "../lib/user-roles.js";
+import { ConfirmDialog } from "../components/ConfirmDialog.js";
 
 export function ContractorsPage() {
   const { organizationId } = useOrganizationContext();
@@ -17,6 +18,7 @@ export function ContractorsPage() {
   const [showForm, setShowForm] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [deleteTarget, setDeleteTarget] = useState<Contractor | null>(null);
 
   const allRoles = useMemo(() => getAllRoles(), []);
 
@@ -84,13 +86,15 @@ export function ContractorsPage() {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("この業者を削除してもよろしいですか？")) return;
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
     try {
-      await contractorRepository.delete(id);
+      await contractorRepository.delete(deleteTarget.id);
+      setDeleteTarget(null);
       await loadData();
     } catch (err) {
       setError(err instanceof Error ? err.message : "業者の削除に失敗しました");
+      setDeleteTarget(null);
     }
   };
 
@@ -105,6 +109,20 @@ export function ContractorsPage() {
 
   return (
     <div className="mx-auto max-w-2xl space-y-4 px-4 pb-24">
+      <ConfirmDialog
+        open={deleteTarget !== null}
+        title="業者を削除"
+        message={
+          <>
+            <span className="font-semibold text-slate-800">{deleteTarget?.name}</span>
+            を削除します。この操作は取り消せません。
+          </>
+        }
+        confirmLabel="削除する"
+        variant="danger"
+        onConfirm={() => void handleDelete()}
+        onCancel={() => setDeleteTarget(null)}
+      />
       <div className="flex items-center justify-between">
         <h1 className="text-lg font-bold text-slate-900">業者管理</h1>
         <button
@@ -256,7 +274,7 @@ export function ContractorsPage() {
                 </div>
               </div>
               <button
-                onClick={() => void handleDelete(c.id)}
+                onClick={() => setDeleteTarget(c)}
                 className="shrink-0 rounded px-2 py-1 text-xs text-slate-400 hover:bg-red-50 hover:text-red-600 transition-colors"
                 aria-label={`${c.name}を削除`}
               >

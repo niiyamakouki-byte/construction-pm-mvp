@@ -49,6 +49,7 @@ import { getMasterCategories, getMasterEntries } from "../lib/work-schedule-mast
 import { readMasterPresetHistory, writeMasterPresetHistory } from "../lib/gantt-master-preset.js";
 import { savePhaseTemplate } from "../lib/phase-template/storage.js";
 import type { PhaseTemplate, PhaseTemplateTag } from "../lib/phase-template/types.js";
+import { ConfirmDialog } from "../components/ConfirmDialog.js";
 
 const MAX_CHART_DAYS = 240;
 const MIN_DAY_WIDTH = 8;
@@ -365,6 +366,7 @@ function GanttPageContent({ initialProjectId = null }: GanttPageProps) {
   const [quickAdd, setQuickAdd] = useState<QuickAddState | null>(null);
   const [drilldownTask, setDrilldownTask] = useState<GanttTask | null>(null);
   const [taskDetail, setTaskDetail] = useState<TaskDetailState | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<GanttTask | null>(null);
   const [dayWidth, setDayWidth] = useState(DEFAULT_DAY_WIDTH);
   const [connectMode, setConnectMode] = useState(false);
   const [connectState, setConnectState] = useState<ConnectState | null>(null);
@@ -670,9 +672,11 @@ function GanttPageContent({ initialProjectId = null }: GanttPageProps) {
     try {
       await taskRepository.delete(taskId);
       setTaskDetail(null);
+      setDeleteTarget(null);
       await loadData();
     } catch (err) {
       setError(err instanceof Error ? err.message : "タスクの削除に失敗しました");
+      setDeleteTarget(null);
     }
   }, [loadData, taskRepository]);
 
@@ -1225,9 +1229,26 @@ function GanttPageContent({ initialProjectId = null }: GanttPageProps) {
           onClose={() => setTaskDetail(null)}
           onSubmit={(event) => void handleTaskDetailSave(event)}
           onChange={(updater) => setTaskDetail((current) => (current ? updater(current) : current))}
-          onDelete={(taskId) => void handleTaskDelete(taskId)}
+          onDelete={(taskId) => setDeleteTarget(ganttTasks.find((task) => task.id === taskId) ?? taskDetail.task)}
         />
       ) : null}
+
+      <ConfirmDialog
+        open={deleteTarget !== null}
+        title="工程タスクを削除"
+        message={
+          <>
+            <span className="font-semibold text-slate-800">{deleteTarget?.name}</span>
+            を削除します。この操作は取り消せません。
+          </>
+        }
+        confirmLabel="削除する"
+        variant="danger"
+        onConfirm={() => {
+          if (deleteTarget) void handleTaskDelete(deleteTarget.id);
+        }}
+        onCancel={() => setDeleteTarget(null)}
+      />
 
       {rainDialogOpen ? (
         <div

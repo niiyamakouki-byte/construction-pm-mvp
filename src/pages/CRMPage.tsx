@@ -16,6 +16,7 @@ import {
   type DealStage,
 } from "../lib/crm-store.js";
 import { CRMRepository } from "../lib/supabase-adapter/CRMRepository.js";
+import { ConfirmDialog } from "../components/ConfirmDialog.js";
 
 // Shared async repository (Supabase or InMemory depending on VITE_USE_SUPABASE)
 const crmRepo = new CRMRepository();
@@ -130,6 +131,7 @@ function PipelineView({
   onRefresh: () => void;
 }) {
   const [showForm, setShowForm] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<Deal | null>(null);
   const customerMap = useMemo(() => new Map(customers.map((c) => [c.id, c])), [customers]);
   const dealsByStage = useMemo(() => {
     const map = new Map<DealStage, Deal[]>();
@@ -146,14 +148,30 @@ function PipelineView({
     onRefresh();
   };
 
-  const handleDelete = (dealId: string) => {
-    deleteDeal(dealId);
-    void crmRepo.deleteDealAsync(dealId);
+  const handleDelete = () => {
+    if (!deleteTarget) return;
+    deleteDeal(deleteTarget.id);
+    void crmRepo.deleteDealAsync(deleteTarget.id);
+    setDeleteTarget(null);
     onRefresh();
   };
 
   return (
     <div className="space-y-4">
+      <ConfirmDialog
+        open={deleteTarget !== null}
+        title="商談を削除"
+        message={
+          <>
+            <span className="font-semibold text-slate-800">{deleteTarget?.projectName}</span>
+            を削除します。この操作は取り消せません。
+          </>
+        }
+        confirmLabel="削除する"
+        variant="danger"
+        onConfirm={handleDelete}
+        onCancel={() => setDeleteTarget(null)}
+      />
       <div className="flex justify-end">
         <button
           type="button"
@@ -193,7 +211,7 @@ function PipelineView({
                       customerName={customer?.name ?? "不明"}
                       stages={stages}
                       onStageChange={handleStageChange}
-                      onDelete={handleDelete}
+                      onDelete={setDeleteTarget}
                     />
                   );
                 })}
@@ -222,7 +240,7 @@ function DealCard({
   customerName: string;
   stages: DealStage[];
   onStageChange: (id: string, stage: DealStage) => void;
-  onDelete: (id: string) => void;
+  onDelete: (deal: Deal) => void;
 }) {
   const [expanded, setExpanded] = useState(false);
   return (
@@ -247,7 +265,7 @@ function DealCard({
           </select>
           <button
             type="button"
-            onClick={() => onDelete(deal.id)}
+            onClick={() => onDelete(deal)}
             className="w-full rounded bg-red-50 px-2 py-1 text-[11px] font-semibold text-red-600 hover:bg-red-100"
           >
             削除
