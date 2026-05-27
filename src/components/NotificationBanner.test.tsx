@@ -148,7 +148,7 @@ describe("NotificationBanner", () => {
     render(<NotificationBanner refreshKey="/today" />);
 
     expect(await screen.findByText("重要通知 4件")).toBeDefined();
-    expect(screen.getByText("期限超過タスク")).toBeDefined();
+    expect(await screen.findByText("期限超過タスク")).toBeDefined();
     expect(screen.getByText("予算超過")).toBeDefined();
     expect(screen.getByText("3日以内の期限")).toBeDefined();
     expect(screen.getByText("天候注意")).toBeDefined();
@@ -193,10 +193,11 @@ describe("NotificationBanner", () => {
     await user.click(expandBtns[0]);
 
     await screen.findByRole("button", { name: "通知一覧へ" });
-    expect(localStorageMock.removeItem).toHaveBeenCalledWith("gh-banner-collapsed");
+    expect(localStorageMock.setItem).toHaveBeenCalledWith("gh-banner-collapsed", "0");
   });
 
   it("renders procurement alerts as orange workflow notifications", async () => {
+    const user = userEvent.setup();
     const today = new Date();
     const twoDaysOut = new Date(today);
     twoDaysOut.setDate(today.getDate() + 2);
@@ -213,7 +214,33 @@ describe("NotificationBanner", () => {
 
     render(<NotificationBanner refreshKey="/gantt" />);
 
+    const expandBtns = await screen.findAllByRole("button", { name: "通知を展開" });
+    await user.click(expandBtns[0]);
+
     expect(await screen.findByText("調達アラート")).toBeDefined();
     expect(screen.getByText(/リードタイム 2日/)).toBeDefined();
+  });
+
+  it("keeps non-critical notifications collapsed by default", async () => {
+    const today = new Date();
+    const tomorrow = new Date(today);
+    tomorrow.setDate(today.getDate() + 1);
+
+    mockProjects = [makeProject({ id: "p-1", name: "青山オフィス改修" })];
+    mockTasks = [
+      makeTask({
+        id: "t-upcoming",
+        projectId: "p-1",
+        name: "搬入確認",
+        dueDate: toLocalDateString(tomorrow),
+      }),
+    ];
+
+    render(<NotificationBanner refreshKey="/tasks" />);
+
+    expect(await screen.findByText("重要通知 1件")).toBeDefined();
+    expect(screen.queryByRole("button", { name: "通知一覧へ" })).toBeNull();
+    expect(screen.queryByText("3日以内の期限")).toBeNull();
+    expect(screen.getByRole("button", { name: "一覧" })).toBeDefined();
   });
 });

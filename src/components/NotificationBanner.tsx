@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { CostItem, Expense, Project, Task } from "../domain/types.js";
 import { useOrganizationContext } from "../contexts/OrganizationContext.js";
 import { navigate } from "../hooks/useHashRouter.js";
@@ -11,6 +11,7 @@ import { createProjectRepository } from "../stores/project-store.js";
 import { createTaskRepository } from "../stores/task-store.js";
 
 const COLLAPSED_KEY = "gh-banner-collapsed";
+const CRITICAL_TONES = new Set<AppNotification["tone"]>(["red"]);
 
 type NotificationBannerProps = {
   refreshKey?: string;
@@ -61,12 +62,11 @@ export function NotificationBanner({ refreshKey }: NotificationBannerProps) {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [collapsed, setCollapsed] = useState<boolean>(() => {
     try {
-      return localStorage.getItem(COLLAPSED_KEY) === "1";
+      return localStorage.getItem(COLLAPSED_KEY) !== "0";
     } catch {
-      return false;
+      return true;
     }
   });
-  const prevCountRef = useRef<number>(0);
 
   const loadNotifications = useCallback(async () => {
     try {
@@ -114,14 +114,20 @@ export function NotificationBanner({ refreshKey }: NotificationBannerProps) {
     void loadNotifications();
   }, [loadNotifications, refreshKey]);
 
-  // Auto-expand when new notifications arrive so users don't miss them
+  // Keep global notices compact unless a critical item needs immediate attention.
   useEffect(() => {
-    if (notifications.length > prevCountRef.current && prevCountRef.current > 0) {
-      setCollapsed(false);
-      try { localStorage.removeItem(COLLAPSED_KEY); } catch { /* ignore */ }
+    const hasCriticalNotification = notifications.some((notification) => CRITICAL_TONES.has(notification.tone));
+    try {
+      const storedPreference = localStorage.getItem(COLLAPSED_KEY);
+      if (hasCriticalNotification && storedPreference !== "1") {
+        setCollapsed(false);
+      } else if (!hasCriticalNotification && storedPreference !== "0") {
+        setCollapsed(true);
+      }
+    } catch {
+      setCollapsed(!hasCriticalNotification);
     }
-    prevCountRef.current = notifications.length;
-  }, [notifications.length]);
+  }, [notifications]);
 
   function handleCollapse() {
     setCollapsed(true);
@@ -130,7 +136,7 @@ export function NotificationBanner({ refreshKey }: NotificationBannerProps) {
 
   function handleExpand() {
     setCollapsed(false);
-    try { localStorage.removeItem(COLLAPSED_KEY); } catch { /* ignore */ }
+    try { localStorage.setItem(COLLAPSED_KEY, "0"); } catch { /* ignore */ }
   }
 
   if (loadError) {
@@ -163,6 +169,13 @@ export function NotificationBanner({ refreshKey }: NotificationBannerProps) {
                 重要通知 {notifications.length}件
               </span>
               <span className="text-[10px] text-slate-400">（タップで展開）</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => navigate("/notifications")}
+              className="rounded-full border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+            >
+              一覧
             </button>
             <button
               type="button"
