@@ -716,9 +716,9 @@ export function CostManagementPage() {
   if (projects.length === 0) {
     return (
       <div className="rounded-[28px] border border-dashed border-slate-300 bg-white px-6 py-12 text-center shadow-sm">
-        <h1 className="text-2xl font-bold text-slate-900">コスト管理</h1>
+        <h1 className="text-2xl font-bold text-slate-900">コスト管理を開始</h1>
         <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-slate-500">
-          コスト管理は案件を選択してから、見積取込または予算ベースライン作成で開始します。
+          案件を作成または選択してから、見積取込か予算ベースライン作成に進みます。
         </p>
         <div className="mt-5 flex flex-col justify-center gap-2 sm:flex-row">
           <button
@@ -1094,7 +1094,9 @@ export function CostManagementPage() {
       {projectCostRows.length === 0 ? (
         <div className="rounded-[28px] border border-dashed border-slate-300 bg-white px-6 py-12 text-center shadow-sm">
           <h2 className="text-xl font-bold text-slate-900">コスト項目はまだありません</h2>
-          <p className="mt-3 text-sm leading-6 text-slate-500">材料費、外注費、請求書受領分が登録されるとここに表示されます。</p>
+          <p className="mt-3 text-sm leading-6 text-slate-500">
+            見積データを取り込むか、実行予算のベースラインを作成すると、この案件の原価差異を追跡できます。
+          </p>
           <div className="mt-5 flex flex-col justify-center gap-2 sm:flex-row">
             <button
               type="button"

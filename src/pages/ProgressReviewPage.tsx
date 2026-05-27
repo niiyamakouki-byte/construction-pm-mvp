@@ -96,6 +96,7 @@ export function ProgressReviewPage() {
   const [confidence, setConfidence] = useState(0.8);
   const [evidenceNotes, setEvidenceNotes] = useState("");
   const [photoId, setPhotoId] = useState("");
+  const [photoSource, setPhotoSource] = useState("today");
 
   // 結果
   const [progressList, setProgressList] = useState<TradeProgress[]>([]);
@@ -303,6 +304,18 @@ export function ProgressReviewPage() {
               className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500"
             />
           </div>
+          <div>
+            <label className="block text-xs font-semibold text-slate-500 mb-1">写真ソース</label>
+            <select
+              value={photoSource}
+              onChange={(e) => setPhotoSource(e.target.value)}
+              className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500"
+            >
+              <option value="today">今日の現場写真</option>
+              <option value="photos">写真台帳</option>
+              <option value="manual">手入力メモ</option>
+            </select>
+          </div>
           <div className="sm:col-span-2">
             <label className="block text-xs font-semibold text-slate-500 mb-1">メモ（任意）</label>
             <input
@@ -322,6 +335,31 @@ export function ProgressReviewPage() {
           + 進捗を追加
         </button>
       </div>
+
+      {progressList.length === 0 && (
+        <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-5 py-6 text-center shadow-sm">
+          <p className="text-sm font-semibold text-slate-800">案件と写真ソースを指定して進捗レビューを開始します</p>
+          <p className="mx-auto mt-2 max-w-lg text-sm leading-6 text-slate-500">
+            対象案件を確認し、今日の現場写真または写真台帳から根拠写真を選んでください。写真IDが未確定なら、ソースだけ選んで手入力メモから開始できます。
+          </p>
+          <div className="mt-5 flex flex-col justify-center gap-2 sm:flex-row">
+            <button
+              type="button"
+              onClick={() => navigate("/photos")}
+              className="rounded-lg bg-brand-700 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-brand-800"
+            >
+              写真台帳から選ぶ
+            </button>
+            <button
+              type="button"
+              onClick={() => navigate("/today")}
+              className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50"
+            >
+              今日の写真を確認
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* 入力済み進捗リスト */}
       {progressList.length > 0 && (
