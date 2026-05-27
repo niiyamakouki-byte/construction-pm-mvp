@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { CostItem, Expense, Project, Task } from "../domain/types.js";
 import { useOrganizationContext } from "../contexts/OrganizationContext.js";
 import { navigate } from "../hooks/useHashRouter.js";
@@ -9,6 +9,8 @@ import { fetchConstructionSiteForecasts, collectWeatherWarnings } from "../lib/w
 import { createCostItemRepository } from "../stores/cost-item-store.js";
 import { createProjectRepository } from "../stores/project-store.js";
 import { createTaskRepository } from "../stores/task-store.js";
+
+const COLLAPSED_KEY = "gh-banner-collapsed";
 
 type NotificationBannerProps = {
   refreshKey?: string;
@@ -57,6 +59,14 @@ export function NotificationBanner({ refreshKey }: NotificationBannerProps) {
 
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [collapsed, setCollapsed] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem(COLLAPSED_KEY) === "1";
+    } catch {
+      return false;
+    }
+  });
+  const prevCountRef = useRef<number>(0);
 
   const loadNotifications = useCallback(async () => {
     try {
@@ -104,6 +114,25 @@ export function NotificationBanner({ refreshKey }: NotificationBannerProps) {
     void loadNotifications();
   }, [loadNotifications, refreshKey]);
 
+  // Auto-expand when new notifications arrive so users don't miss them
+  useEffect(() => {
+    if (notifications.length > prevCountRef.current && prevCountRef.current > 0) {
+      setCollapsed(false);
+      try { localStorage.removeItem(COLLAPSED_KEY); } catch { /* ignore */ }
+    }
+    prevCountRef.current = notifications.length;
+  }, [notifications.length]);
+
+  function handleCollapse() {
+    setCollapsed(true);
+    try { localStorage.setItem(COLLAPSED_KEY, "1"); } catch { /* ignore */ }
+  }
+
+  function handleExpand() {
+    setCollapsed(false);
+    try { localStorage.removeItem(COLLAPSED_KEY); } catch { /* ignore */ }
+  }
+
   if (loadError) {
     return (
       <section className="border-b border-red-200 bg-red-50">
@@ -116,6 +145,39 @@ export function NotificationBanner({ refreshKey }: NotificationBannerProps) {
 
   if (notifications.length === 0) {
     return null;
+  }
+
+  if (collapsed) {
+    return (
+      <section className="border-b border-slate-200 bg-[linear-gradient(180deg,#fffef8_0%,#ffffff_100%)]">
+        <div className="mx-auto max-w-6xl px-4 py-2">
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={handleExpand}
+              className="flex flex-1 items-center gap-2 text-left"
+              aria-label="通知を展開"
+            >
+              <span className="text-sm" aria-hidden="true">⚠</span>
+              <span className="text-xs font-semibold text-slate-700">
+                重要通知 {notifications.length}件
+              </span>
+              <span className="text-[10px] text-slate-400">（タップで展開）</span>
+            </button>
+            <button
+              type="button"
+              onClick={handleExpand}
+              aria-label="通知を展開"
+              className="p-1 text-slate-400 hover:text-slate-600"
+            >
+              <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden="true">
+                <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      </section>
+    );
   }
 
   const visibleNotifications = notifications.slice(0, 4);
@@ -132,13 +194,25 @@ export function NotificationBanner({ refreshKey }: NotificationBannerProps) {
               重要通知 {notifications.length}件
             </h2>
           </div>
-          <button
-            type="button"
-            onClick={() => navigate("/notifications")}
-            className="rounded-full border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
-          >
-            通知一覧へ
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => navigate("/notifications")}
+              className="rounded-full border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+            >
+              通知一覧へ
+            </button>
+            <button
+              type="button"
+              onClick={handleCollapse}
+              aria-label="通知を折りたたむ"
+              className="rounded-full border border-slate-300 bg-white p-1.5 text-slate-500 hover:bg-slate-50"
+            >
+              <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5" aria-hidden="true">
+                <path d="M18 15l-6-6-6 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </button>
+          </div>
         </div>
 
         <div className="mt-3 grid gap-2 md:grid-cols-2">

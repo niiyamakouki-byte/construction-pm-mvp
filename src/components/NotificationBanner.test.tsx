@@ -4,6 +4,15 @@ import userEvent from "@testing-library/user-event";
 import { NotificationBanner } from "./NotificationBanner.js";
 import type { CostItem, Expense, Project, Task } from "../domain/types.js";
 
+// localStorage stub (jsdom may have --localstorage-file issues)
+const localStorageData: Record<string, string> = {};
+const localStorageMock = {
+  getItem: vi.fn((key: string) => localStorageData[key] ?? null),
+  setItem: vi.fn((key: string, value: string) => { localStorageData[key] = value; }),
+  removeItem: vi.fn((key: string) => { delete localStorageData[key]; }),
+  clear: vi.fn(() => { for (const k of Object.keys(localStorageData)) delete localStorageData[k]; }),
+};
+
 let mockProjects: Project[] = [];
 let mockTasks: Task[] = [];
 let mockCostItems: CostItem[] = [];
@@ -96,6 +105,8 @@ describe("NotificationBanner", () => {
     mockCostItemFindAll.mockClear();
     mockExpenseFindAll.mockClear();
     mockNavigate.mockClear();
+    localStorageMock.clear();
+    vi.stubGlobal("localStorage", localStorageMock);
   });
 
   it("renders workflow and weather alerts from repository data", async () => {
@@ -154,6 +165,35 @@ describe("NotificationBanner", () => {
     await user.click(button);
 
     expect(mockNavigate).toHaveBeenCalledWith("/notifications");
+  });
+
+  it("collapses to summary bar and persists state in localStorage", async () => {
+    const user = userEvent.setup();
+    mockProjects = [makeProject({ id: "p-1", name: "青山オフィス改修" })];
+    mockTasks = [makeTask({ id: "t-overdue", dueDate: "2000-01-01" })];
+
+    render(<NotificationBanner refreshKey="/app" />);
+
+    // Wait for notifications to load
+    await screen.findByRole("button", { name: "通知一覧へ" });
+
+    // Collapse via the chevron-up button
+    const collapseBtn = screen.getByRole("button", { name: "通知を折りたたむ" });
+    await user.click(collapseBtn);
+
+    // Full banner cards should be gone, summary bar shown
+    expect(screen.queryByRole("button", { name: "通知一覧へ" })).toBeNull();
+    expect(screen.getByText(/重要通知 \d+件/)).toBeDefined();
+
+    // localStorage key should be set
+    expect(localStorageMock.setItem).toHaveBeenCalledWith("gh-banner-collapsed", "1");
+
+    // Expand restores full banner and clears key (two expand buttons exist — text row and chevron)
+    const expandBtns = screen.getAllByRole("button", { name: "通知を展開" });
+    await user.click(expandBtns[0]);
+
+    await screen.findByRole("button", { name: "通知一覧へ" });
+    expect(localStorageMock.removeItem).toHaveBeenCalledWith("gh-banner-collapsed");
   });
 
   it("renders procurement alerts as orange workflow notifications", async () => {
