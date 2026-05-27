@@ -48,6 +48,7 @@ import {
   PhotoCategory,
   type PhotoValidationResult,
 } from "../lib/photo-upload.js";
+import { classifyByFilename } from "../lib/photo-classifier.js";
 import {
   getTodayWorkerCount,
   getEntryLog,
@@ -138,9 +139,39 @@ const delayCategoryLabel: Record<DelayCategory, string> = {
 };
 
 type TaskWithProject = Task & { projectName: string };
+type UploadPhotoCategory = (typeof PhotoCategory)[keyof typeof PhotoCategory];
+
+const classifierCategoryMap: Record<string, UploadPhotoCategory> = {
+  foundation: PhotoCategory.foundation,
+  framing: PhotoCategory.framing,
+  mep_rough: PhotoCategory.plumbing,
+  mep_finish: PhotoCategory.electrical,
+  interior_rough: PhotoCategory.interior,
+  interior_finish: PhotoCategory.finishing,
+  exterior: PhotoCategory.exterior,
+  waterproof: PhotoCategory.roofing,
+  safety: PhotoCategory.safety,
+  defect: PhotoCategory.inspection,
+  progress: PhotoCategory.other,
+  material: PhotoCategory.other,
+  equipment: PhotoCategory.other,
+  other: PhotoCategory.other,
+};
 
 function formatCurrency(value: number): string {
   return currencyFormatter.format(value);
+}
+
+function formatFileSize(bytes: number): string {
+  if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))}KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)}MB`;
+}
+
+function suggestUploadCategory(fileName: string): { category: UploadPhotoCategory; confidence: number } | null {
+  const classification = classifyByFilename(fileName);
+  const category = classifierCategoryMap[classification.category];
+  if (!category || category === PhotoCategory.other || classification.confidence <= 0) return null;
+  return { category, confidence: classification.confidence };
 }
 
 function getPriorityProject(projects: Project[]): Project | null {
@@ -216,6 +247,9 @@ function TodayDashboardPageContent() {
   const [dailyReportStatus, setDailyReportStatus] = useState<string | null>(null);
   const [dailyReportExporting, setDailyReportExporting] = useState(false);
   const [photoCategory, setPhotoCategory] = useState<string>(PhotoCategory.other);
+  const [photoCategorySuggestion, setPhotoCategorySuggestion] = useState<{ label: string; confidence: number } | null>(null);
+  const [selectedPhotoFile, setSelectedPhotoFile] = useState<File | null>(null);
+  const [photoInputResetKey, setPhotoInputResetKey] = useState(0);
   const [photoValidation, setPhotoValidation] = useState<PhotoValidationResult | null>(null);
   const [photoPreviewUrl, setPhotoPreviewUrl] = useState<string | null>(null);
   const [photoUploadStatus, setPhotoUploadStatus] = useState<string | null>(null);
@@ -538,11 +572,23 @@ function TodayDashboardPageContent() {
     };
   }, [photoPreviewUrl]);
 
+  const resetPhotoSelection = useCallback(() => {
+    setSelectedPhotoFile(null);
+    setPhotoValidation(null);
+    setPhotoPreviewUrl(null);
+    setPhotoUploadError(null);
+    setPhotoUploadStatus(null);
+    setPhotoCategorySuggestion(null);
+    setPhotoInputResetKey((key) => key + 1);
+  }, []);
+
   const handlePhotoFileChange = useCallback(async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
+    setSelectedPhotoFile(file ?? null);
     setPhotoValidation(null);
     setPhotoUploadStatus(null);
     setPhotoUploadError(null);
+    setPhotoCategorySuggestion(null);
     if (!file) {
       setPhotoPreviewUrl(null);
       return;
@@ -551,25 +597,48 @@ function TodayDashboardPageContent() {
     setPhotoPreviewUrl(localPreviewUrl);
     const result = validatePhoto({ type: file.type, size: file.size, name: file.name });
     setPhotoValidation(result);
-    if (!result.valid) {
-      return;
+    const suggestion = result.valid ? suggestUploadCategory(file.name) : null;
+    if (suggestion) {
+      setPhotoCategory(suggestion.category);
+      setPhotoCategorySuggestion({
+        label: getCategoryLabel(suggestion.category),
+        confidence: suggestion.confidence,
+      });
     }
+    if (result.valid && !dailyReportProject) {
+      setPhotoUploadError("アップロード先の案件がありません");
+    }
+  }, [dailyReportProject]);
+
+  const handlePhotoUpload = useCallback(async () => {
+    if (!selectedPhotoFile) return;
+    const result = validatePhoto({
+      type: selectedPhotoFile.type,
+      size: selectedPhotoFile.size,
+      name: selectedPhotoFile.name,
+    });
+    setPhotoValidation(result);
+    setPhotoUploadStatus(null);
+    setPhotoUploadError(null);
+    if (!result.valid) return;
     if (!dailyReportProject) {
       setPhotoUploadError("アップロード先の案件がありません");
       return;
     }
     setPhotoUploading(true);
     try {
-      const uploaded = await photoStore.uploadPhoto(file, dailyReportProject.id, undefined, {
+      const uploaded = await photoStore.uploadPhoto(selectedPhotoFile, dailyReportProject.id, undefined, {
         category: photoCategory,
         caption: getCategoryLabel(photoCategory as import("../lib/photo-upload.js").PhotoCategory),
       });
       setPhotoPreviewUrl(uploaded.url);
       setPhotoUploadStatus("写真を保存しました");
+      setSelectedPhotoFile(null);
+      setPhotoInputResetKey((key) => key + 1);
       // Sprint 69: ファイル名から AI分類を推定して永続化（失敗してもアップロード成功扱い）
       try {
         const { classifyByFilename } = await import("../lib/photo-classifier.js");
-        const classification = classifyByFilename(file.name);
+        const classification = classifyByFilename(selectedPhotoFile.name);
         if (classification.confidence > 0 && classification.category !== "other") {
           await photoStore.updatePhotoClassification(uploaded.id, {
             category: classification.category,
@@ -585,9 +654,8 @@ function TodayDashboardPageContent() {
       setPhotoUploadError(err instanceof Error ? err.message : "写真の保存に失敗しました");
     } finally {
       setPhotoUploading(false);
-      event.target.value = "";
     }
-  }, [dailyReportProject, photoCategory, photoStore]);
+  }, [dailyReportProject, photoCategory, photoStore, selectedPhotoFile]);
 
   // ── Cockpit data ─────────────────────────────────────
   const cockpitCriticalPath = useMemo<CriticalPathStatus | null>(() => {
@@ -988,7 +1056,10 @@ function TodayDashboardPageContent() {
               <select
                 id="photo-category"
                 value={photoCategory}
-                onChange={(e) => setPhotoCategory(e.target.value)}
+                onChange={(e) => {
+                  setPhotoCategory(e.target.value);
+                  setPhotoCategorySuggestion(null);
+                }}
                 className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
               >
                 {Object.values(PhotoCategory).map((cat) => (
@@ -999,6 +1070,7 @@ function TodayDashboardPageContent() {
             <div className="flex-1">
               <label htmlFor="photo-file" className="block text-xs font-semibold text-slate-500 mb-1">写真ファイル</label>
               <input
+                key={photoInputResetKey}
                 id="photo-file"
                 type="file"
                 accept="image/jpeg,image/png,image/heic,image/heif"
@@ -1008,6 +1080,43 @@ function TodayDashboardPageContent() {
               />
             </div>
           </div>
+          {selectedPhotoFile && (
+            <div className="mt-3 flex flex-col gap-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="text-sm font-semibold text-slate-800">{selectedPhotoFile.name}</p>
+                <p className="mt-1 text-xs text-slate-500">
+                  {formatFileSize(selectedPhotoFile.size)} · {getCategoryLabel(photoCategory as import("../lib/photo-upload.js").PhotoCategory)}
+                </p>
+                {photoCategorySuggestion && (
+                  <p className="mt-1 text-xs font-semibold text-emerald-700">
+                    ファイル名から {photoCategorySuggestion.label} に設定済み ({Math.round(photoCategorySuggestion.confidence * 100)}%)
+                  </p>
+                )}
+              </div>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={resetPhotoSelection}
+                  disabled={photoUploading}
+                  className="rounded-lg border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-600 transition-colors hover:bg-white disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  取消
+                </button>
+                <button
+                  type="button"
+                  onClick={handlePhotoUpload}
+                  disabled={
+                    photoUploading ||
+                    !dailyReportProject ||
+                    !photoValidation?.valid
+                  }
+                  className="rounded-lg bg-brand-700 px-3 py-2 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-brand-800 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {photoUploading ? "保存中..." : "この写真を保存"}
+                </button>
+              </div>
+            </div>
+          )}
           {photoValidation && !photoValidation.valid && (
             <div className="mt-3 rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-xs text-red-700">
               {photoValidation.errors.map((err, i) => <p key={i}>{err}</p>)}

@@ -16,6 +16,20 @@ let mockProjects: Project[] = [];
 const mockTaskFindAll = vi.fn(async () => [...mockTasks]);
 const mockTaskUpdate = vi.fn(async () => {});
 const mockProjectFindAll = vi.fn(async () => [...mockProjects]);
+const mockPhotoUpload = vi.fn(async (_file: File, _projectId: string) => ({
+  id: "photo-1",
+  url: "https://example.com/photo.jpg",
+  path: "photos/photo.jpg",
+  projectId: "p-1",
+  createdAt: new Date().toISOString(),
+}));
+const mockPhotoClassificationUpdate = vi.fn(async () => ({
+  id: "photo-1",
+  url: "https://example.com/photo.jpg",
+  path: "photos/photo.jpg",
+  projectId: "p-1",
+  createdAt: new Date().toISOString(),
+}));
 
 vi.mock("../stores/task-store.js", () => ({
   createTaskRepository: () => ({
@@ -27,6 +41,14 @@ vi.mock("../stores/task-store.js", () => ({
 vi.mock("../stores/project-store.js", () => ({
   createProjectRepository: () => ({
     findAll: mockProjectFindAll,
+  }),
+}));
+
+vi.mock("../stores/photo-store.js", () => ({
+  createPhotoStore: () => ({
+    uploadPhoto: mockPhotoUpload,
+    listPhotosByProject: vi.fn(async () => []),
+    updatePhotoClassification: mockPhotoClassificationUpdate,
   }),
 }));
 
@@ -85,6 +107,8 @@ describe("TodayDashboardPage", () => {
     mockTaskFindAll.mockClear();
     mockTaskUpdate.mockClear();
     mockProjectFindAll.mockClear();
+    mockPhotoUpload.mockClear();
+    mockPhotoClassificationUpdate.mockClear();
     Object.defineProperty(globalThis.URL, "createObjectURL", {
       writable: true,
       configurable: true,
@@ -209,5 +233,48 @@ describe("TodayDashboardPage", () => {
     await waitFor(() =>
       expect(screen.getByRole("button", { name: "7日間の現場天気を見る" })).toBeDefined(),
     );
+  });
+
+  it("写真は選択だけでは保存せず、確認ボタンでアップロードする", async () => {
+    mockProjects = [makeProject()];
+    render(<TodayDashboardPage />);
+
+    await waitFor(() => expect(screen.getByText("現場写真アップロード")).toBeDefined());
+
+    const file = new File(["photo"], "kiso.jpg", { type: "image/jpeg" });
+    const input = screen.getByLabelText("写真ファイル");
+    fireEvent.change(input, { target: { files: [file] } });
+
+    await waitFor(() => expect(screen.getByText("kiso.jpg")).toBeDefined());
+    expect(mockPhotoUpload).not.toHaveBeenCalled();
+
+    fireEvent.change(screen.getByLabelText("カテゴリ"), { target: { value: "foundation" } });
+    fireEvent.click(screen.getByRole("button", { name: "この写真を保存" }));
+
+    await waitFor(() => expect(mockPhotoUpload).toHaveBeenCalledTimes(1));
+    expect(mockPhotoUpload).toHaveBeenCalledWith(
+      file,
+      "p-1",
+      undefined,
+      expect.objectContaining({
+        category: "foundation",
+        caption: "基礎工事",
+      }),
+    );
+    await waitFor(() => expect(screen.getByText("写真を保存しました")).toBeDefined());
+  });
+
+  it("写真ファイル名からカテゴリを自動設定する", async () => {
+    mockProjects = [makeProject()];
+    render(<TodayDashboardPage />);
+
+    await waitFor(() => expect(screen.getByText("現場写真アップロード")).toBeDefined());
+
+    const file = new File(["photo"], "基礎杭_1F.jpg", { type: "image/jpeg" });
+    fireEvent.change(screen.getByLabelText("写真ファイル"), { target: { files: [file] } });
+
+    await waitFor(() => expect(screen.getByText("基礎杭_1F.jpg")).toBeDefined());
+    expect((screen.getByLabelText("カテゴリ") as HTMLSelectElement).value).toBe("foundation");
+    expect(screen.getByText(/ファイル名から 基礎工事 に設定済み/)).toBeDefined();
   });
 });
