@@ -1,0 +1,8 @@
+repos:
+  - repo: local
+    hooks:
+      - id: laporta-security-scan
+        name: Laporta staged security scan
+        entry: python3 /Users/koki/discord-commander/scripts/security_scan.py --mode pre-commit --repo .
+        language: system
+        pass_filenames: false
