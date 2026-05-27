@@ -137,6 +137,23 @@ describe("renderReportHTML — ファイル名と画像", () => {
     const html = renderReportHTML(report, "案件A");
     expect(html).toContain("data:image/png;base64,TEST");
   });
+
+  it("http/https の画像 URL は img src に含まれる", () => {
+    const photo = makePhoto([], "p");
+    photo.imageUrl = "https://example.com/site-photo.jpg";
+    const report = generateReport("p", [photo]);
+    const html = renderReportHTML(report, "案件A");
+    expect(html).toContain("https://example.com/site-photo.jpg");
+  });
+
+  it("危険な画像 URL は img src から除外する", () => {
+    const photo = makePhoto([], "p");
+    photo.imageUrl = "javascript:alert(1)";
+    const report = generateReport("p", [photo]);
+    const html = renderReportHTML(report, "案件A");
+    expect(html).not.toContain("javascript:alert");
+    expect(html).toContain('src=""');
+  });
 });
 
 describe("renderReportHTML — 写真なし", () => {

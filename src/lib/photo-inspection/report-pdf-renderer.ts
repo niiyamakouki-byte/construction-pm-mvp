@@ -15,6 +15,25 @@ const COLOR_DANGER = "#C53030";
 const COLOR_SAFE = "#6B8E5A";
 const COLOR_NEUTRAL = "#64748b";
 
+function sanitizeImageSrc(src: string): string {
+  const trimmed = src.trim();
+
+  if (/^data:image\/(?:png|jpe?g|gif|webp);base64,[a-z0-9+/=\s]+$/i.test(trimmed)) {
+    return trimmed;
+  }
+
+  try {
+    const url = new URL(trimmed);
+    if (url.protocol === "https:" || url.protocol === "http:") {
+      return trimmed;
+    }
+  } catch {
+    // Reject invalid and relative URLs in printable report HTML.
+  }
+
+  return "";
+}
+
 // ── SVG bbox オーバーレイ ─────────────────────────────────────────────────────
 
 /**
@@ -22,15 +41,17 @@ const COLOR_NEUTRAL = "#64748b";
  * 写真は imgSrc (data URI or URL) を img タグに、bbox を SVG で重ねる
  */
 function renderPhotoWithOverlay(photo: InspectionPhoto): string {
+  const imageSrc = sanitizeImageSrc(photo.imageUrl);
+
   if (photo.defects.length === 0) {
-    return `<img src="${escapeHtml(photo.imageUrl)}" alt="${escapeHtml(photo.fileName)}"
+    return `<img src="${escapeHtml(imageSrc)}" alt="${escapeHtml(photo.fileName)}"
       style="width:100%;max-width:320px;display:block;border-radius:6px;border:1px solid #e2e8f0;" />`;
   }
 
   const bboxRects = photo.defects.map((d) => renderBBoxRect(d)).join("\n");
 
   return `<div style="position:relative;display:inline-block;max-width:320px;width:100%;">
-  <img src="${escapeHtml(photo.imageUrl)}" alt="${escapeHtml(photo.fileName)}"
+  <img src="${escapeHtml(imageSrc)}" alt="${escapeHtml(photo.fileName)}"
     style="width:100%;display:block;border-radius:6px;border:1px solid #e2e8f0;" />
   <svg viewBox="0 0 1 1" preserveAspectRatio="none"
     style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;">

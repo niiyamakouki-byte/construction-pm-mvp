@@ -349,11 +349,18 @@ export function PhotoInspectionPage({ projectId, projectName }: Props) {
 
   const handlePrintReport = useCallback(() => {
     if (!reportHtml) return;
-    const win = window.open("", "_blank");
-    if (!win) return;
-    win.document.write(reportHtml);
-    win.document.close();
-    win.print();
+    const reportUrl = URL.createObjectURL(new Blob([reportHtml], { type: "text/html;charset=utf-8" }));
+    const win = window.open(reportUrl, "_blank");
+    if (!win) {
+      URL.revokeObjectURL(reportUrl);
+      return;
+    }
+    win.opener = null;
+
+    win.addEventListener("load", () => {
+      win.print();
+      URL.revokeObjectURL(reportUrl);
+    }, { once: true });
   }, [reportHtml]);
 
   const pendingCount = photos.filter((p) => p.status === "pending").length;

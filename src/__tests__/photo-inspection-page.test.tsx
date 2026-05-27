@@ -263,4 +263,31 @@ describe("PhotoInspectionPage — 報告書", () => {
     await addAndGenerate();
     expect(screen.getByText("印刷 / PDF保存")).toBeDefined();
   });
+
+  it("印刷は Blob URL を別タブで開く", async () => {
+    await addAndGenerate();
+
+    const createObjectURL = vi.fn(() => "blob:report-html");
+    const revokeObjectURL = vi.fn();
+    Object.defineProperty(URL, "createObjectURL", { value: createObjectURL, configurable: true });
+    Object.defineProperty(URL, "revokeObjectURL", { value: revokeObjectURL, configurable: true });
+
+    const print = vi.fn();
+    const openedWindow = {
+      opener: {},
+      addEventListener: vi.fn((_event: string, callback: () => void) => callback()),
+      print,
+    };
+    const open = vi.spyOn(window, "open").mockReturnValue(openedWindow as unknown as Window);
+
+    await act(async () => {
+      fireEvent.click(screen.getByText("印刷 / PDF保存"));
+    });
+
+    expect(createObjectURL).toHaveBeenCalledWith(expect.any(Blob));
+    expect(open).toHaveBeenCalledWith("blob:report-html", "_blank");
+    expect(openedWindow.opener).toBeNull();
+    expect(print).toHaveBeenCalled();
+    expect(revokeObjectURL).toHaveBeenCalledWith("blob:report-html");
+  });
 });

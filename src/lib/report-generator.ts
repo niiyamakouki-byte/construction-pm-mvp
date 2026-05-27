@@ -97,11 +97,17 @@ export async function htmlToBlob(html: string): Promise<Blob> {
   const doc = new jsPDF({ unit: "pt", format: "a4" });
 
   return new Promise<Blob>((resolve, reject) => {
+    const parsed = new DOMParser().parseFromString(html, "text/html");
     const container = document.createElement("div");
     container.style.position = "absolute";
     container.style.left = "-9999px";
     container.style.top = "0";
-    container.innerHTML = html;
+    for (const style of Array.from(parsed.head.querySelectorAll("style"))) {
+      const clonedStyle = document.createElement("style");
+      clonedStyle.textContent = style.textContent ?? "";
+      container.appendChild(clonedStyle);
+    }
+    container.append(...Array.from(parsed.body.childNodes).map((node) => node.cloneNode(true)));
     document.body.appendChild(container);
 
     const cleanup = () => {
