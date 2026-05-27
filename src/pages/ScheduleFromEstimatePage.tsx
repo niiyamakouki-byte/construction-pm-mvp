@@ -3,7 +3,7 @@
  * v2-cozy: 装飾削減・余白とフォント階層・セージグリーン1色・絵文字最小
  */
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AssigneeSelector } from "../components/AssigneeSelector.js";
 import { useOrganizationContext } from "../contexts/OrganizationContext.js";
 import type { Project, TeamMember } from "../domain/types.js";
@@ -346,6 +346,7 @@ export function ScheduleFromEstimatePage({
   const [loadingTasks, setLoadingTasks] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const loadedTasksProjectIdRef = useRef<string | null>(null);
 
   const resolvedProjectId = useMemo(
     () => projectId ?? selectedProjectId ?? (!persistenceEnabled || !hasSupabaseEnv() ? fallbackProjectId : null),
@@ -528,8 +529,12 @@ export function ScheduleFromEstimatePage({
     if (!persistenceEnabled || !resolvedProjectId) {
       return;
     }
+    if (loadedTasksProjectIdRef.current === resolvedProjectId) {
+      return;
+    }
 
     let disposed = false;
+    loadedTasksProjectIdRef.current = resolvedProjectId;
     // eslint-disable-next-line react-hooks/set-state-in-effect -- 非同期ロード開始の状態反映
     setLoadingTasks(true);
 
@@ -554,6 +559,7 @@ export function ScheduleFromEstimatePage({
       })
       .catch((err) => {
         if (!disposed) {
+          loadedTasksProjectIdRef.current = null;
           setError(err instanceof Error ? err.message : "工程タスクの読み込みに失敗しました");
         }
       })
