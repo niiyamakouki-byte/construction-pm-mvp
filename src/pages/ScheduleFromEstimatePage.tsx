@@ -347,9 +347,10 @@ export function ScheduleFromEstimatePage({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const resolvedProjectId = projectId
-    ?? selectedProjectId
-    ?? (!persistenceEnabled || !hasSupabaseEnv() ? fallbackProjectId : null);
+  const resolvedProjectId = useMemo(
+    () => projectId ?? selectedProjectId ?? (!persistenceEnabled || !hasSupabaseEnv() ? fallbackProjectId : null),
+    [projectId, selectedProjectId, persistenceEnabled, fallbackProjectId],
+  );
 
   const taskBlueprints = useMemo(
     () => buildTaskBlueprints(initialLines, initialStart),
