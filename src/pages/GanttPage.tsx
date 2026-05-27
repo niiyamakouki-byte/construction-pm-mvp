@@ -2018,7 +2018,7 @@ function GanttPageContent({ initialProjectId = null }: GanttPageProps) {
                 onClick={handleTemplateSave}
                 className="rounded-xl bg-brand-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-brand-700 disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-brand-500 transition-colors"
               >
-                {templateSaving ? "保存中..." : "保存する"}
+                {templateSaving ? "保存中..." : "保存"}
               </button>
             </div>
           </div>
