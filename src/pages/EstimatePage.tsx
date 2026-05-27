@@ -880,12 +880,12 @@ function EstimatePageContent() {
       <h1 className="text-2xl font-bold text-slate-900">見積</h1>
 
       {/* Tab switcher */}
-      <div className="mobile-scroll-x overflow-x-auto rounded-lg border border-slate-200 bg-slate-50 p-1">
-        <div className="flex min-w-max gap-1 sm:min-w-0">
+      <div className="rounded-lg border border-slate-200 bg-slate-50 p-1">
+        <div className="grid grid-cols-2 gap-1 sm:flex">
         <button
           type="button"
           onClick={() => setActiveTab("estimate")}
-          className={`min-w-[96px] whitespace-nowrap rounded-md px-3 py-2 text-sm font-semibold transition-colors sm:flex-1 ${
+          className={`min-w-0 rounded-md px-2 py-2 text-sm font-semibold transition-colors sm:flex-1 sm:px-3 ${
             activeTab === "estimate"
               ? "bg-white text-slate-900 shadow-sm"
               : "text-slate-500 hover:text-slate-700"
@@ -896,7 +896,7 @@ function EstimatePageContent() {
         <button
           type="button"
           onClick={() => setActiveTab("comparison")}
-          className={`min-w-[96px] whitespace-nowrap rounded-md px-3 py-2 text-sm font-semibold transition-colors sm:flex-1 ${
+          className={`min-w-0 rounded-md px-2 py-2 text-sm font-semibold transition-colors sm:flex-1 sm:px-3 ${
             activeTab === "comparison"
               ? "bg-white text-slate-900 shadow-sm"
               : "text-slate-500 hover:text-slate-700"
@@ -907,7 +907,7 @@ function EstimatePageContent() {
         <button
           type="button"
           onClick={() => setActiveTab("matsubamebushi")}
-          className={`min-w-[96px] whitespace-nowrap rounded-md px-3 py-2 text-sm font-semibold transition-colors sm:flex-1 ${
+          className={`min-w-0 rounded-md px-2 py-2 text-sm font-semibold transition-colors sm:flex-1 sm:px-3 ${
             activeTab === "matsubamebushi"
               ? "bg-white text-slate-900 shadow-sm"
               : "text-slate-500 hover:text-slate-700"
@@ -918,7 +918,7 @@ function EstimatePageContent() {
         <button
           type="button"
           onClick={() => setActiveTab("pdf_draft")}
-          className={`min-w-[136px] whitespace-nowrap rounded-md px-3 py-2 text-sm font-semibold transition-colors sm:flex-1 ${
+          className={`min-w-0 rounded-md px-2 py-2 text-sm font-semibold transition-colors sm:flex-1 sm:px-3 ${
             activeTab === "pdf_draft"
               ? "bg-white text-slate-900 shadow-sm"
               : "text-slate-500 hover:text-slate-700"

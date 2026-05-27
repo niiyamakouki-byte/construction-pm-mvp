@@ -58,13 +58,13 @@ test.describe("390px mobile responsive routes", () => {
     expect(inputBox).not.toBeNull();
     expect(inputBox?.width).toBeGreaterThanOrEqual(280);
 
-    const tabScroller = page.getByRole("button", { name: "見積作成" }).locator("../..");
-    const tabMetrics = await tabScroller.evaluate((el) => ({
+    const tabGrid = page.getByRole("button", { name: "見積作成" }).locator("..");
+    const tabMetrics = await tabGrid.evaluate((el) => ({
       clientWidth: el.clientWidth,
       scrollWidth: el.scrollWidth,
     }));
     expect(tabMetrics.clientWidth).toBeGreaterThanOrEqual(280);
-    expect(tabMetrics.scrollWidth).toBeGreaterThan(tabMetrics.clientWidth);
+    expect(tabMetrics.scrollWidth).toBeLessThanOrEqual(tabMetrics.clientWidth);
 
     const catalogButton = page.getByRole("button", { name: /解体・撤去/ });
     const catalogBox = await catalogButton.boundingBox();
