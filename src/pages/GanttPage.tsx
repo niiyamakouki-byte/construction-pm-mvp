@@ -1656,28 +1656,35 @@ function GanttPageContent({ initialProjectId = null }: GanttPageProps) {
             >
               マスタから読み込む
             </button>
-            <button
-              type="button"
-              onClick={() => setWbsModalOpen(true)}
-              className="rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50"
-            >
-              工程テンプレート
-            </button>
-            <button
-              type="button"
-              disabled={selectedProjectTasks.length === 0}
-              onClick={() => setTemplateSaveOpen(true)}
-              className="rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50 disabled:opacity-50 transition-colors"
-            >
-              テンプレ保存
-            </button>
-            <button
-              type="button"
-              onClick={() => { setRainDate(""); setRainAffected(null); setRainDialogOpen(true); }}
-              className="rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50"
-            >
-              雨天中止
-            </button>
+            <details className="group relative">
+              <summary className="list-none rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50 [&::-webkit-details-marker]:hidden">
+                その他
+              </summary>
+              <div className="absolute right-0 z-30 mt-2 w-48 rounded-2xl border border-slate-200 bg-white p-2 shadow-xl">
+                <button
+                  type="button"
+                  onClick={() => setWbsModalOpen(true)}
+                  className="block w-full rounded-xl px-3 py-2 text-left text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                >
+                  工程テンプレート
+                </button>
+                <button
+                  type="button"
+                  disabled={selectedProjectTasks.length === 0}
+                  onClick={() => setTemplateSaveOpen(true)}
+                  className="block w-full rounded-xl px-3 py-2 text-left text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                >
+                  テンプレ保存
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setRainDate(""); setRainAffected(null); setRainDialogOpen(true); }}
+                  className="block w-full rounded-xl px-3 py-2 text-left text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                >
+                  雨天中止
+                </button>
+              </div>
+            </details>
             <div className="flex flex-col items-end gap-1">
               <button
                 type="button"
