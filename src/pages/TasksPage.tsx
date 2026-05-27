@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from "react";
-import { EmptyState } from "../components/EmptyState.js";
 import type { Contractor, Project } from "../domain/types.js";
 import { createContractorRepository } from "../stores/contractor-store.js";
 import { createProjectRepository } from "../stores/project-store.js";
@@ -125,12 +124,32 @@ export function TasksPage() {
       </div>
 
       {visibleTasks.length === 0 ? (
-        <EmptyState
-          title="タスクがありません"
-          description="この案件に表示できるタスクはありません。工程表からタスクを追加してください。"
-          actionLabel="工程表へ"
-          onAction={() => navigate("/gantt")}
-        />
+        <div className="rounded-xl border border-dashed border-slate-300 bg-white px-5 py-8 text-center shadow-sm">
+          <p className="text-sm font-semibold text-slate-800">タスクがありません</p>
+          <p className="mx-auto mt-2 max-w-md text-sm text-slate-500">
+            {selectedProjectId
+              ? "この案件にタスクはまだありません。工程表からタスクを追加してください。"
+              : "案件を選択するか、工程表からタスクを追加してください。"}
+          </p>
+          <div className="mt-5 flex flex-col justify-center gap-2 sm:flex-row">
+            <button
+              type="button"
+              onClick={() => navigate(selectedProjectId ? `/gantt/${selectedProjectId}` : "/gantt")}
+              className="rounded-lg bg-brand-700 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-brand-800"
+            >
+              {selectedProjectId ? "最初のタスクを作成" : "ガントで管理"}
+            </button>
+            {!selectedProjectId && (
+              <button
+                type="button"
+                onClick={() => navigate("/projects")}
+                className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50"
+              >
+                案件を選ぶ
+              </button>
+            )}
+          </div>
+        </div>
       ) : null}
     </div>
   );
