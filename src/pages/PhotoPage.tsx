@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { PhotoGrid } from "../components/PhotoGrid.js";
 import { useOrganizationContext } from "../contexts/OrganizationContext.js";
 import type { Project } from "../domain/types.js";
+import { navigate } from "../hooks/useHashRouter.js";
 import type { PhotoMetadata } from "../lib/photo-organizer.js";
 import { getCategoryLabel, PhotoCategory } from "../lib/photo-upload.js";
 import { createProjectRepository } from "../stores/project-store.js";
@@ -27,6 +28,33 @@ function toPhotoMetadata(photo: {
     description: photo.caption || photo.fileName,
     tags: category ? [category] : [],
   };
+}
+
+function PhotoEmptyState({ hasProjects }: { hasProjects: boolean }) {
+  return (
+    <div className="rounded-xl border border-dashed border-slate-300 bg-white px-5 py-8 text-center shadow-sm">
+      <p className="text-sm font-semibold text-slate-800">保存済み写真がありません</p>
+      <p className="mx-auto mt-2 max-w-md text-sm text-slate-500">
+        今日の現場写真をアップロードすると、この案件の写真台帳と進捗推定に反映されます。
+      </p>
+      <div className="mt-5 flex flex-col justify-center gap-2 sm:flex-row">
+        <button
+          type="button"
+          onClick={() => navigate("/today")}
+          className="rounded-lg bg-brand-700 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-brand-800"
+        >
+          今日の写真をアップロード
+        </button>
+        <button
+          type="button"
+          onClick={() => navigate(hasProjects ? "/app" : "/cross-project-gantt")}
+          className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50"
+        >
+          {hasProjects ? "案件トップへ戻る" : "案件を作成する"}
+        </button>
+      </div>
+    </div>
+  );
 }
 
 export function PhotoPage() {
@@ -115,8 +143,10 @@ export function PhotoPage() {
           <span className="inline-block h-5 w-5 animate-spin rounded-full border-2 border-[#007AFF]/30 border-t-[#007AFF]" />
           読み込み中...
         </div>
+      ) : photos.length === 0 ? (
+        <PhotoEmptyState hasProjects={projects.length > 0} />
       ) : (
-        <PhotoGrid photos={photos} emptyMessage="保存済み写真がありません" />
+        <PhotoGrid photos={photos} />
       )}
     </div>
   );
