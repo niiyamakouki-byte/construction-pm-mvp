@@ -8,6 +8,7 @@ import {
   listShareTokens,
   revokeShareToken,
   validateShareToken,
+  validateShareTokenDetailed,
 } from "../share-token.js";
 
 const STORAGE_KEY = "genbahub:owner-tokens";
@@ -97,17 +98,29 @@ describe("validateShareToken", () => {
 
   it("returns null for unknown token", () => {
     expect(validateShareToken("unknown-token")).toBeNull();
+    expect(validateShareTokenDetailed("unknown-token")).toEqual({
+      ok: false,
+      reason: "not_found",
+    });
   });
 
   it("returns null for expired token", () => {
     const token = generateShareToken("proj-B", -1); // already expired
     expect(validateShareToken(token)).toBeNull();
+    expect(validateShareTokenDetailed(token)).toEqual({
+      ok: false,
+      reason: "expired",
+    });
   });
 
   it("returns null after revokeShareToken", () => {
     const token = generateShareToken("proj-C");
     revokeShareToken(token);
     expect(validateShareToken(token)).toBeNull();
+    expect(validateShareTokenDetailed(token)).toEqual({
+      ok: false,
+      reason: "revoked",
+    });
   });
 
   it("includes expiresAt in returned session", () => {

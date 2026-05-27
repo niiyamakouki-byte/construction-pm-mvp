@@ -6,7 +6,7 @@
  */
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { validateShareToken } from "../lib/owner-app/share-token.js";
+import { validateShareTokenDetailed } from "../lib/owner-app/share-token.js";
 import { ownerStore } from "../lib/owner-app/owner-store.js";
 import type {
   ChangeRequest,
@@ -16,6 +16,7 @@ import type {
   OwnerPaymentMilestone,
   OwnerSession,
 } from "../lib/owner-app/types.js";
+import type { ShareTokenValidationFailureReason } from "../lib/owner-app/share-token.js";
 import { buildOwnerSnapshot } from "../lib/owner-app/snapshot-builder.js";
 import { createProjectRepository } from "../stores/project-store.js";
 import { createPhotoStore } from "../stores/photo-store.js";
@@ -472,10 +473,33 @@ type Props = {
   token: string;
 };
 
+type AccessFailureReason = ShareTokenValidationFailureReason | "project_mismatch";
+
+const ACCESS_FAILURE_MESSAGES: Record<AccessFailureReason, { title: string; description: string }> = {
+  not_found: {
+    title: "リンクが正しくありません",
+    description: "URLが途中で切れているか、発行済みの共有リンクではありません。担当者から送られたリンクを開き直してください。",
+  },
+  revoked: {
+    title: "このリンクは無効化されています",
+    description: "共有リンクは停止されています。担当者に新しいリンクの発行をご依頼ください。",
+  },
+  expired: {
+    title: "リンクの有効期限が切れています",
+    description: "共有リンクの期限を過ぎています。担当者に新しいリンクの発行をご依頼ください。",
+  },
+  project_mismatch: {
+    title: "リンクと案件が一致しません",
+    description: "この共有リンクは別の案件用です。担当者から送られたURLをそのまま開いてください。",
+  },
+};
+
 export function OwnerAppPage({ projectId, token }: Props) {
   const [session, setSession] = useState<OwnerSession | null | "loading">(
     "loading",
   );
+  const [accessFailureReason, setAccessFailureReason] =
+    useState<AccessFailureReason | null>(null);
   const [snapshot, setSnapshot] = useState<OwnerDashboardSnapshot | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [localMessages, setLocalMessages] = useState<OwnerMessage[]>([]);
@@ -483,12 +507,19 @@ export function OwnerAppPage({ projectId, token }: Props) {
 
   // Validate token
   useEffect(() => {
-    const s = validateShareToken(token);
-    if (!s || s.projectId !== projectId) {
+    const result = validateShareTokenDetailed(token);
+    if (!result.ok) {
+      setAccessFailureReason(result.reason);
       setSession(null);
       return;
     }
-    setSession(s);
+    if (result.session.projectId !== projectId) {
+      setAccessFailureReason("project_mismatch");
+      setSession(null);
+      return;
+    }
+    setAccessFailureReason(null);
+    setSession(result.session);
   }, [token, projectId]);
 
   // Load snapshot
@@ -572,13 +603,16 @@ export function OwnerAppPage({ projectId, token }: Props) {
   }
 
   if (!session) {
+    const message =
+      ACCESS_FAILURE_MESSAGES[accessFailureReason ?? "not_found"] ??
+      ACCESS_FAILURE_MESSAGES.not_found;
     return (
       <div className="flex min-h-screen items-center justify-center p-6">
         <div className="text-center">
           <p className="text-4xl mb-4">🔒</p>
-          <h1 className="text-lg font-bold text-slate-800">アクセスできません</h1>
+          <h1 className="text-lg font-bold text-slate-800">{message.title}</h1>
           <p className="mt-2 text-sm text-slate-500">
-            リンクが無効か期限切れです。担当者にご確認ください。
+            {message.description}
           </p>
         </div>
       </div>

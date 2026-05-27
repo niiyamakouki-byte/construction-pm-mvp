@@ -14,6 +14,12 @@ type StoredToken = {
   revoked?: boolean;
 };
 
+export type ShareTokenValidationFailureReason = "not_found" | "revoked" | "expired";
+
+export type ShareTokenValidationResult =
+  | { ok: true; session: OwnerSession }
+  | { ok: false; reason: ShareTokenValidationFailureReason };
+
 function loadTokens(): StoredToken[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -56,20 +62,31 @@ export function generateShareToken(
 }
 
 /**
+ * トークンを検証し、失敗時は理由を返す。
+ */
+export function validateShareTokenDetailed(token: string): ShareTokenValidationResult {
+  const tokens = loadTokens();
+  const found = tokens.find((t) => t.token === token);
+  if (!found) return { ok: false, reason: "not_found" };
+  if (found.revoked) return { ok: false, reason: "revoked" };
+  if (Date.now() > found.expiresAt) return { ok: false, reason: "expired" };
+  return {
+    ok: true,
+    session: {
+      token: found.token,
+      projectId: found.projectId,
+      expiresAt: found.expiresAt,
+    },
+  };
+}
+
+/**
  * トークンを検証し有効な場合は OwnerSession を返す。
  * 無効・期限切れ・revoke 済みは null。
  */
 export function validateShareToken(token: string): OwnerSession | null {
-  const tokens = loadTokens();
-  const found = tokens.find((t) => t.token === token);
-  if (!found) return null;
-  if (found.revoked) return null;
-  if (Date.now() > found.expiresAt) return null;
-  return {
-    token: found.token,
-    projectId: found.projectId,
-    expiresAt: found.expiresAt,
-  };
+  const result = validateShareTokenDetailed(token);
+  return result.ok ? result.session : null;
 }
 
 /**

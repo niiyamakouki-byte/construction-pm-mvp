@@ -5,7 +5,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { cleanup, render, screen, fireEvent } from "@testing-library/react";
 import { OwnerAppPage } from "../OwnerAppPage.js";
-import { generateShareToken } from "../../lib/owner-app/share-token.js";
+import { generateShareToken, revokeShareToken } from "../../lib/owner-app/share-token.js";
 import { ownerStore } from "../../lib/owner-app/owner-store.js";
 
 // jsdom では localStorage.clear が未実装のためモックする
@@ -69,21 +69,28 @@ afterEach(() => {
 });
 
 describe("OwnerAppPage — token validation", () => {
-  it("shows access denied for invalid token", () => {
+  it("shows invalid-link detail for unknown token", () => {
     render(<OwnerAppPage projectId="proj-test" token="bad-token" />);
-    expect(screen.getByText("アクセスできません")).toBeDefined();
+    expect(screen.getByText("リンクが正しくありません")).toBeDefined();
   });
 
-  it("shows access denied for expired token", () => {
+  it("shows expired detail for expired token", () => {
     const token = generateShareToken("proj-test", -1);
     render(<OwnerAppPage projectId="proj-test" token={token} />);
-    expect(screen.getByText("アクセスできません")).toBeDefined();
+    expect(screen.getByText("リンクの有効期限が切れています")).toBeDefined();
   });
 
-  it("shows access denied for wrong project", () => {
+  it("shows revoked detail for revoked token", () => {
+    const token = generateShareToken("proj-test");
+    revokeShareToken(token);
+    render(<OwnerAppPage projectId="proj-test" token={token} />);
+    expect(screen.getByText("このリンクは無効化されています")).toBeDefined();
+  });
+
+  it("shows project mismatch detail for wrong project", () => {
     const token = generateShareToken("other-proj");
     render(<OwnerAppPage projectId="proj-test" token={token} />);
-    expect(screen.getByText("アクセスできません")).toBeDefined();
+    expect(screen.getByText("リンクと案件が一致しません")).toBeDefined();
   });
 
   it("shows loading then dashboard for valid token", async () => {
