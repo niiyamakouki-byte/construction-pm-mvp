@@ -46,7 +46,7 @@ export function DashboardCard({
       onClick={onClick}
       whileHover={{ scale: 1.02 }}
       transition={{ type: "spring", stiffness: 300, damping: 20 }}
-      className="w-full rounded-[20px] bg-white p-6 text-left shadow-sm transition-shadow hover:shadow-md"
+      className="w-full rounded-[20px] bg-white p-4 text-left shadow-sm transition-shadow hover:shadow-md sm:p-6"
       style={{ border: "1px solid var(--app-border, #E5DDD0)" }}
     >
       <div className="flex items-start gap-3">
@@ -59,10 +59,10 @@ export function DashboardCard({
           </span>
         )}
         <div className="min-w-0 flex-1">
-          <p className="text-xs font-semibold uppercase tracking-widest text-brand-600">
+          <p className="text-xs font-semibold uppercase text-brand-600 sm:tracking-widest">
             {title}
           </p>
-          <p className="mt-1 text-2xl font-bold text-brand-900">{value}</p>
+          <p className="mt-1 text-xl font-bold text-brand-900 sm:text-2xl">{value}</p>
           {subtext && (
             <p className="mt-1 truncate text-xs text-brand-500">{subtext}</p>
           )}

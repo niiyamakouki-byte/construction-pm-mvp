@@ -880,10 +880,10 @@ function EstimatePageContent() {
       <h1 className="text-2xl font-bold text-slate-900">見積</h1>
 
       {/* Tab switcher */}
-      <div className="flex gap-1 rounded-lg border border-slate-200 bg-slate-50 p-1">
+      <div className="grid grid-cols-2 gap-1 rounded-lg border border-slate-200 bg-slate-50 p-1 sm:grid-cols-4">
         <button
           onClick={() => setActiveTab("estimate")}
-          className={`flex-1 rounded-md py-1.5 text-sm font-semibold transition-colors ${
+          className={`rounded-md px-2 py-2 text-sm font-semibold transition-colors ${
             activeTab === "estimate"
               ? "bg-white text-slate-900 shadow-sm"
               : "text-slate-500 hover:text-slate-700"
@@ -893,7 +893,7 @@ function EstimatePageContent() {
         </button>
         <button
           onClick={() => setActiveTab("comparison")}
-          className={`flex-1 rounded-md py-1.5 text-sm font-semibold transition-colors ${
+          className={`rounded-md px-2 py-2 text-sm font-semibold transition-colors ${
             activeTab === "comparison"
               ? "bg-white text-slate-900 shadow-sm"
               : "text-slate-500 hover:text-slate-700"
@@ -903,7 +903,7 @@ function EstimatePageContent() {
         </button>
         <button
           onClick={() => setActiveTab("matsubamebushi")}
-          className={`flex-1 rounded-md py-1.5 text-sm font-semibold transition-colors ${
+          className={`rounded-md px-2 py-2 text-sm font-semibold transition-colors ${
             activeTab === "matsubamebushi"
               ? "bg-white text-slate-900 shadow-sm"
               : "text-slate-500 hover:text-slate-700"
@@ -913,7 +913,7 @@ function EstimatePageContent() {
         </button>
         <button
           onClick={() => setActiveTab("pdf_draft")}
-          className={`flex-1 rounded-md py-1.5 text-sm font-semibold transition-colors ${
+          className={`rounded-md px-2 py-2 text-sm font-semibold transition-colors ${
             activeTab === "pdf_draft"
               ? "bg-white text-slate-900 shadow-sm"
               : "text-slate-500 hover:text-slate-700"
