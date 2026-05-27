@@ -91,7 +91,7 @@ export function HelpPage() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h2 className="text-xl font-bold text-slate-900">ヘルプ</h2>
+        <h1 className="text-xl font-bold text-slate-900">ヘルプ</h1>
         <p className="mt-1 text-sm text-slate-500">
           よくあるご質問・使い方のガイドです
         </p>

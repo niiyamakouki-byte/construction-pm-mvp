@@ -193,6 +193,8 @@ export function SiteEntryPage({ projectId }: { projectId: string }) {
 
   return (
     <div className="flex flex-col sm:flex-row h-screen w-screen overflow-hidden bg-slate-100 select-none">
+      <h1 className="sr-only">入退場管理</h1>
+
       {/* Flash overlay */}
       {flash && (
         <div

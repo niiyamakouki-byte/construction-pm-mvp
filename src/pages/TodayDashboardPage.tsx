@@ -756,10 +756,11 @@ function TodayDashboardPageContent() {
       )}
 
       {/* Greeting Header */}
+      <h1 className="sr-only">今日のダッシュボード</h1>
       <GreetingHeader userName="光輝さん" />
 
       {/* Dashboard Cards — 6-card grid (仮データ: Supabase接続は別タスク) */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
         <DashboardCard
           title="今日の予定"
           value="3件"

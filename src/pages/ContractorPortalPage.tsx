@@ -318,11 +318,11 @@ export function ContractorPortalPage({ projectId, company = undefined }: Props) 
             </div>
             <div className="min-w-0">
               <p className="truncate text-base font-bold text-slate-900">{project.name}</p>
-              <p className="text-xs text-slate-400">
+              <h1 className="text-xs text-slate-400">
                 協力会社ポータル
                 {company && ` — ${company}`}
                 {" "}（閲覧のみ）
-              </p>
+              </h1>
             </div>
           </div>
         </div>

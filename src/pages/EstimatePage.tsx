@@ -876,6 +876,9 @@ function EstimatePageContent() {
         }}
         onCancel={() => setDeleteTarget(null)}
       />
+      {/* Page heading */}
+      <h1 className="text-2xl font-bold text-slate-900">見積</h1>
+
       {/* Tab switcher */}
       <div className="flex gap-1 rounded-lg border border-slate-200 bg-slate-50 p-1">
         <button
