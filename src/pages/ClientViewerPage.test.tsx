@@ -91,6 +91,7 @@ describe("ClientViewerPage", () => {
 
   it("renders loading state initially", () => {
     render(<ClientViewerPage projectId="proj-1" />);
+    expect(screen.getByRole("heading", { name: "施主ポータル" })).toBeDefined();
     expect(screen.getByText("読み込み中...")).toBeDefined();
   });
 
@@ -121,8 +122,9 @@ describe("ClientViewerPage", () => {
   it("renders not found state for unknown project", async () => {
     mockFindById.mockResolvedValueOnce(null);
     render(<ClientViewerPage projectId="unknown" />);
-    const el = await screen.findByText("プロジェクトが見つかりません");
+    const el = await screen.findByRole("heading", { name: "施主ポータル" });
     expect(el).toBeDefined();
+    expect(screen.getByText("プロジェクトが見つかりません")).toBeDefined();
   });
 
   it("calculates 50% progress with 1 done of 2 tasks", async () => {

@@ -328,6 +328,7 @@ export function ClientViewerPage({ projectId }: { projectId: string }) {
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-slate-50">
+        <h1 className="sr-only">施主ポータル</h1>
         <p className="text-sm text-slate-400">読み込み中...</p>
       </div>
     );
@@ -336,6 +337,7 @@ export function ClientViewerPage({ projectId }: { projectId: string }) {
   if (!project) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-slate-50">
+        <h1 className="sr-only">施主ポータル</h1>
         <p className="text-sm text-slate-500">プロジェクトが見つかりません</p>
       </div>
     );

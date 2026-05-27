@@ -291,6 +291,7 @@ export function ContractorPortalPage({ projectId, company = undefined }: Props) 
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-slate-50">
+        <h1 className="sr-only">協力会社ポータル</h1>
         <p className="text-sm text-slate-400">読み込み中...</p>
       </div>
     );
@@ -300,7 +301,7 @@ export function ContractorPortalPage({ projectId, company = undefined }: Props) 
     return (
       <div className="flex min-h-screen items-center justify-center bg-slate-50">
         <div className="rounded-2xl bg-white p-8 text-center shadow-sm">
-          <p className="text-lg font-bold text-slate-800">プロジェクトが見つかりません</p>
+          <h1 className="text-lg font-bold text-slate-800">プロジェクトが見つかりません</h1>
           <p className="mt-2 text-sm text-slate-500">URLを確認してください</p>
         </div>
       </div>
