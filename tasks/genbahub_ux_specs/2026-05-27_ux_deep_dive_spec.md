@@ -133,3 +133,14 @@ Recheck after Discord correction:
 - Current `/today`: `tasks/mobile_responsive_verification_2026-05-27/today-390-recheck.png`
 - Current `/estimate`: `tasks/mobile_responsive_verification_2026-05-27/estimate-390-recheck.png`
 - Recheck metrics: both routes reported `scrollWidth=390` and `clientWidth=390`.
+
+TOP10 #1 shared width guard:
+- Added 390px regression coverage for representative routes `/app`, `/gantt`, `/schedule`, `/weather`, and `/progress-review`.
+- Guard now checks `/today`, `/estimate`, plus the representative 5 routes for `scrollWidth <= clientWidth` and `main` width `>= 280px`.
+- Re-ran `pnpm exec playwright test e2e/mobile-responsive-routes.test.ts --project=chromium`: 7 passed.
+- Re-captured representative after screenshots:
+  - `tasks/mobile_responsive_verification_2026-05-27/top1-today-390-after.png`
+  - `tasks/mobile_responsive_verification_2026-05-27/top1-estimate-390-after.png`
+  - `tasks/mobile_responsive_verification_2026-05-27/top1-app-390-after.png`
+  - `tasks/mobile_responsive_verification_2026-05-27/top1-gantt-390-after.png`
+  - `tasks/mobile_responsive_verification_2026-05-27/top1-schedule-390-after.png`

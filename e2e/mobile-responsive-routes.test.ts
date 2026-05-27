@@ -15,10 +15,12 @@ async function expectNoHorizontalCollapse(page: Page) {
   const metrics = await page.evaluate(() => ({
     scrollWidth: document.documentElement.scrollWidth,
     clientWidth: document.documentElement.clientWidth,
+    mainWidth: Math.round(document.querySelector("main")?.getBoundingClientRect().width ?? 0),
   }));
 
   expect(metrics.clientWidth).toBe(MOBILE_390.width);
   expect(metrics.scrollWidth).toBeLessThanOrEqual(MOBILE_390.width);
+  expect(metrics.mainWidth).toBeGreaterThanOrEqual(280);
 }
 
 test.describe("390px mobile responsive routes", () => {
@@ -69,4 +71,13 @@ test.describe("390px mobile responsive routes", () => {
     expect(catalogBox).not.toBeNull();
     expect(catalogBox?.width).toBeGreaterThanOrEqual(280);
   });
+
+  for (const route of ["/app", "/gantt", "/schedule", "/weather", "/progress-review"]) {
+    test(`${route} does not reintroduce the shared 725px mobile width`, async ({ page }) => {
+      await page.goto(`/#${route}`);
+      await page.waitForLoadState("networkidle");
+
+      await expectNoHorizontalCollapse(page);
+    });
+  }
 });
