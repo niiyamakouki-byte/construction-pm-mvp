@@ -182,4 +182,41 @@ describe("CostManagementPage", () => {
     expect(screen.queryByText("石膏ボード")).toBeNull();
   });
 
+  it("案件ゼロのとき「見積から取込」「予算ベースライン作成」CTAを表示する", async () => {
+    mockProjectRepository.findAll.mockResolvedValue([]);
+    mockTaskRepository.findAll.mockResolvedValue([]);
+    mockCostItemRepository.findAll.mockResolvedValue([]);
+    mockExpenseRepository.findAll.mockResolvedValue([]);
+
+    render(<CostManagementPage />);
+
+    expect(await screen.findByText("見積から取込")).toBeDefined();
+    expect(screen.getByText("予算ベースライン作成")).toBeDefined();
+  });
+
+  it("コスト項目ゼロのとき「見積から取込」「予算ベースライン作成」CTAを表示する", async () => {
+    mockProjectRepository.findAll.mockResolvedValue([
+      {
+        id: "p1",
+        name: "南青山ビル改修",
+        description: "",
+        status: "active",
+        budget: 1000000,
+        startDate: "2025-04-01",
+        includeWeekends: true,
+        createdAt: now,
+        updatedAt: now,
+      },
+    ]);
+    mockTaskRepository.findAll.mockResolvedValue([]);
+    mockCostItemRepository.findAll.mockResolvedValue([]);
+    mockExpenseRepository.findAll.mockResolvedValue([]);
+
+    render(<CostManagementPage />);
+
+    expect(await screen.findByText("コスト項目はまだありません")).toBeDefined();
+    expect(screen.getAllByText("見積から取込").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("予算ベースライン作成").length).toBeGreaterThan(0);
+  });
+
 });

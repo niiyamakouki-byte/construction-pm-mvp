@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { CostItem, Expense, Project, Task } from "../domain/types.js";
+import { navigate } from "../hooks/useHashRouter.js";
 import { useOrganizationContext } from "../contexts/OrganizationContext.js";
 import { BudgetDashboard } from "../components/BudgetDashboard.js";
 import { createAppRepository } from "../infra/create-app-repository.js";
@@ -685,6 +686,22 @@ export function CostManagementPage() {
       <div className="rounded-[28px] border border-dashed border-slate-300 bg-white px-6 py-12 text-center shadow-sm">
         <h1 className="text-2xl font-bold text-slate-900">コスト管理</h1>
         <p className="mt-3 text-sm leading-6 text-slate-500">案件を作成するとコスト管理を始められます。</p>
+        <div className="mt-5 flex flex-col justify-center gap-2 sm:flex-row">
+          <button
+            type="button"
+            onClick={() => navigate("/estimate")}
+            className="rounded-lg bg-brand-700 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-brand-800"
+          >
+            見積から取込
+          </button>
+          <button
+            type="button"
+            onClick={() => navigate("/estimate")}
+            className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50"
+          >
+            予算ベースライン作成
+          </button>
+        </div>
       </div>
     );
   }
@@ -1044,6 +1061,22 @@ export function CostManagementPage() {
         <div className="rounded-[28px] border border-dashed border-slate-300 bg-white px-6 py-12 text-center shadow-sm">
           <h2 className="text-xl font-bold text-slate-900">コスト項目はまだありません</h2>
           <p className="mt-3 text-sm leading-6 text-slate-500">材料費、外注費、請求書受領分が登録されるとここに表示されます。</p>
+          <div className="mt-5 flex flex-col justify-center gap-2 sm:flex-row">
+            <button
+              type="button"
+              onClick={() => navigate("/estimate")}
+              className="rounded-lg bg-brand-700 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-brand-800"
+            >
+              見積から取込
+            </button>
+            <button
+              type="button"
+              onClick={() => navigate("/estimate")}
+              className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50"
+            >
+              予算ベースライン作成
+            </button>
+          </div>
         </div>
       ) : (
         <>
