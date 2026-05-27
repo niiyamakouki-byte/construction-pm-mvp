@@ -78,7 +78,7 @@ export function MobileNav({
         aria-label="メニューを開く"
         aria-expanded={open}
         aria-controls="mobile-navigation-drawer"
-        className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200/70 bg-white/70 text-slate-600 hover:bg-white backdrop-blur-sm"
+        className="flex h-10 items-center justify-center gap-1.5 rounded-xl border border-slate-200/70 bg-white/70 px-3 text-slate-600 hover:bg-white backdrop-blur-sm"
       >
         <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5" aria-hidden="true">
           <path
@@ -88,6 +88,7 @@ export function MobileNav({
             strokeLinecap="round"
           />
         </svg>
+        <span className="text-xs font-semibold leading-none">メニュー</span>
       </button>
 
       {open && (

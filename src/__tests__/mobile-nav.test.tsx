@@ -60,6 +60,8 @@ describe("MobileNav", () => {
 
     render(<MobileNavHarness onNavigate={onNavigate} />);
 
+    expect(screen.getByText("メニュー")).toBeDefined();
+
     await user.click(screen.getByRole("button", { name: "メニューを開く" }));
 
     const dialog = screen.getByRole("dialog", { name: "モバイルナビゲーション" });
