@@ -206,7 +206,7 @@ describe("ProgressReviewPage", () => {
     mockProjectFindAll.mockResolvedValue([]);
     render(<ProgressReviewPage />);
     // 案件ゼロ時は空状態CTAを表示（クラッシュしない）
-    const heading = await screen.findByText("進捗レビューを始めるには、案件と写真が必要です");
+    const heading = await screen.findByText("進捗レビューは、案件選択と写真選択を先に行います");
     expect(heading).toBeDefined();
     expect(screen.getByText("案件を選ぶ")).toBeDefined();
     expect(screen.getByText("写真をアップロード")).toBeDefined();
