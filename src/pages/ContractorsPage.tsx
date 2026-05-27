@@ -4,6 +4,7 @@ import { createContractorRepository } from "../stores/contractor-store.js";
 import { useOrganizationContext } from "../contexts/OrganizationContext.js";
 import { getAllRoles, getRoleLabel } from "../lib/user-roles.js";
 import { ConfirmDialog } from "../components/common/ConfirmDialog.js";
+import { ACTION_LABELS } from "../lib/action-labels.js";
 
 export function ContractorsPage() {
   const { organizationId } = useOrganizationContext();
@@ -80,7 +81,7 @@ export function ContractorsPage() {
       setShowForm(false);
       await loadData();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "業者の追加に失敗しました");
+      setError(err instanceof Error ? err.message : "協力会社の登録に失敗しました");
     } finally {
       setSubmitting(false);
     }
@@ -130,7 +131,7 @@ export function ContractorsPage() {
           className="inline-flex items-center gap-1 rounded-lg bg-brand-500 px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-brand-600 active:bg-brand-700 transition-colors"
         >
           <span className="text-sm leading-none">{showForm ? "−" : "+"}</span>
-          業者を追加
+          {ACTION_LABELS.contractor.register}
         </button>
       </div>
 
@@ -144,7 +145,7 @@ export function ContractorsPage() {
 
       {showForm && (
         <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-          <h2 className="mb-4 text-sm font-bold text-slate-800">新規業者登録</h2>
+          <h2 className="mb-4 text-sm font-bold text-slate-800">{ACTION_LABELS.contractor.register}</h2>
           <form onSubmit={(e) => void handleSubmit(e)} className="flex flex-col gap-3">
             <input
               type="text"
@@ -216,14 +217,14 @@ export function ContractorsPage() {
                 onClick={() => { setShowForm(false); resetForm(); }}
                 className="rounded-lg px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 transition-colors"
               >
-                キャンセル
+                {ACTION_LABELS.form.cancel}
               </button>
               <button
                 type="submit"
                 disabled={submitting}
                 className="rounded-lg bg-brand-500 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-brand-600 disabled:opacity-50"
               >
-                {submitting ? "追加中..." : "追加"}
+                {submitting ? ACTION_LABELS.contractor.registering : ACTION_LABELS.contractor.register}
               </button>
             </div>
           </form>
@@ -244,7 +245,7 @@ export function ContractorsPage() {
       {contractors.length === 0 && !showForm ? (
         <div className="rounded-xl border-2 border-dashed border-slate-200 bg-white p-10 text-center">
           <p className="text-base font-bold text-slate-900">業者が登録されていません</p>
-          <p className="mt-1 text-sm text-slate-500">「業者を追加」ボタンから協力会社を登録してください。</p>
+          <p className="mt-1 text-sm text-slate-500">「{ACTION_LABELS.contractor.register}」ボタンから協力会社を登録してください。</p>
         </div>
       ) : (
         <div className="divide-y divide-slate-100 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">

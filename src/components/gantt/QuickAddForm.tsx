@@ -8,6 +8,7 @@ import {
 import type { QuickAddState } from "./types.js";
 import { addDaysBySchedule, statusLabel } from "./utils.js";
 import { WORK_CATEGORIES } from "./workCategories.js";
+import { ACTION_LABELS } from "../../lib/action-labels.js";
 
 type Props = {
   quickAdd: QuickAddState;
@@ -338,14 +339,14 @@ export function QuickAddForm({ quickAdd, contractors, onClose, onSubmit, onChang
               onClick={onClose}
               className="rounded-2xl bg-slate-100 px-4 py-3 text-sm font-semibold text-slate-600"
             >
-              キャンセル
+              {ACTION_LABELS.form.cancel}
             </button>
             <button
               type="submit"
               disabled={quickAdd.submitting}
               className="rounded-2xl bg-brand-600 px-5 py-3 text-sm font-semibold text-white shadow-sm disabled:opacity-60"
             >
-              {quickAdd.submitting ? "追加中..." : "追加"}
+              {quickAdd.submitting ? ACTION_LABELS.task.adding : ACTION_LABELS.task.add}
             </button>
           </div>
         </form>

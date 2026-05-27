@@ -17,6 +17,7 @@ import {
 } from "../lib/crm-store.js";
 import { CRMRepository } from "../lib/supabase-adapter/CRMRepository.js";
 import { ConfirmDialog } from "../components/common/ConfirmDialog.js";
+import { ACTION_LABELS } from "../lib/action-labels.js";
 
 // Shared async repository (Supabase or InMemory depending on VITE_USE_SUPABASE)
 const crmRepo = new CRMRepository();
@@ -353,7 +354,7 @@ function DealForm({
           <input className="input-base w-full" placeholder="氏名 *" value={newCustomerName} onChange={(e) => setNewCustomerName(e.target.value)} required />
           <input className="input-base w-full" placeholder="会社名" value={newCustomerCompany} onChange={(e) => setNewCustomerCompany(e.target.value)} />
           <div className="flex gap-2">
-            <button type="submit" className="flex-1 rounded-lg bg-brand-600 py-2 text-xs font-semibold text-white">追加</button>
+            <button type="submit" className="flex-1 rounded-lg bg-brand-600 py-2 text-xs font-semibold text-white">{ACTION_LABELS.customer.register}</button>
             <button type="button" onClick={() => setCustomerForm(false)} className="flex-1 rounded-lg bg-slate-100 py-2 text-xs font-semibold text-slate-600">戻る</button>
           </div>
         </form>

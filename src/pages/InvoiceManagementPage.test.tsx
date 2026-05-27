@@ -33,8 +33,8 @@ describe("InvoiceManagementPage", () => {
       expect(screen.getByRole("heading", { name: "請求書がありません" })).toBeDefined();
     });
 
-    fireEvent.click(screen.getByRole("button", { name: "請求書を登録" }));
+    fireEvent.click(screen.getAllByRole("button", { name: "請求書を登録" })[0]);
 
-    expect(screen.getByRole("heading", { name: "請求書登録" })).toBeDefined();
+    expect(screen.getByRole("heading", { name: "請求書を登録" })).toBeDefined();
   });
 });

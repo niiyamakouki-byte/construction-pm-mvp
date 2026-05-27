@@ -14,6 +14,7 @@ import {
   type PaymentTerm,
 } from "../lib/invoice-store.js";
 import { ConfirmDialog } from "../components/common/ConfirmDialog.js";
+import { ACTION_LABELS } from "../lib/action-labels.js";
 
 const currencyFormatter = new Intl.NumberFormat("ja-JP", {
   style: "currency",
@@ -215,7 +216,7 @@ export function InvoiceManagementPage() {
           onClick={() => setShowForm((v) => !v)}
           className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
         >
-          {showForm ? "閉じる" : "+ 請求書登録"}
+          {showForm ? "閉じる" : ACTION_LABELS.invoice.register}
         </button>
       </div>
 
@@ -238,7 +239,7 @@ export function InvoiceManagementPage() {
       {/* Registration Form */}
       {showForm && (
         <div className="rounded-xl border border-slate-200 bg-white p-5">
-          <h2 className="mb-4 font-semibold text-slate-700">請求書登録</h2>
+          <h2 className="mb-4 font-semibold text-slate-700">{ACTION_LABELS.invoice.register}</h2>
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="mb-1 block text-xs text-slate-500">案件</label>
@@ -353,13 +354,13 @@ export function InvoiceManagementPage() {
               disabled={saving}
               className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
             >
-              {saving ? "登録中..." : "登録"}
+              {saving ? ACTION_LABELS.invoice.registering : ACTION_LABELS.invoice.register}
             </button>
             <button
               onClick={() => { setShowForm(false); setSaveError(null); setForm(EMPTY_FORM); }}
               className="rounded-lg border border-slate-200 px-4 py-2 text-sm text-slate-600 hover:bg-slate-50"
             >
-              キャンセル
+              {ACTION_LABELS.form.cancel}
             </button>
           </div>
         </div>
@@ -413,7 +414,7 @@ export function InvoiceManagementPage() {
             onClick={() => setShowForm(true)}
             className="mt-5 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700"
           >
-            請求書を登録
+            {ACTION_LABELS.invoice.register}
           </button>
         </div>
       ) : (

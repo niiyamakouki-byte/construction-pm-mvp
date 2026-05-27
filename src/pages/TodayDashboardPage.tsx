@@ -27,6 +27,7 @@ import {
 } from "../lib/timeline-analyzer.js";
 import { assessProjectHealth } from "../lib/project-health.js";
 import { generateDailyReport } from "../lib/daily-report-generator.js";
+import { ACTION_LABELS } from "../lib/action-labels.js";
 import {
   fetchConstructionSiteForecasts,
   buildMockConstructionSiteForecasts,
@@ -923,7 +924,7 @@ function TodayDashboardPageContent() {
             onClick={() => navigate("/app")}
             className="mt-5 rounded-2xl bg-brand-600 px-6 py-3 text-sm font-semibold text-white shadow-sm hover:bg-brand-700"
           >
-            最初の案件を作成する
+            {ACTION_LABELS.project.createFirst}
           </button>
         </div>
       )}
@@ -938,7 +939,7 @@ function TodayDashboardPageContent() {
           actions.push({ icon: "✓", label: `今日のタスク ${tasks.length}件を処理`, path: "/today" });
         }
         if (allProjects.length === 0) {
-          actions.push({ icon: "🏗️", label: "最初の案件を作成する", path: "/app", highlight: true });
+          actions.push({ icon: "🏗️", label: ACTION_LABELS.project.createFirst, path: "/app", highlight: true });
         }
         if (allTasks.filter((t) => t.status === "todo" && !t.startDate).length > 0) {
           actions.push({ icon: "📊", label: "工程表で未開始タスクを確認", path: insightProject ? `/gantt/${insightProject.id}` : "/gantt" });

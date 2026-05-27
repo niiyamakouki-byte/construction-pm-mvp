@@ -9,6 +9,7 @@ import { readLastProjectId, writeLastProjectId } from "../lib/last-project.js";
 import { formatScheduleDate, statusColor, statusLabel } from "../components/gantt/utils.js";
 import type { GanttTask } from "../components/gantt/types.js";
 import { filterScheduleTasks } from "../lib/cost-management.js";
+import { ACTION_LABELS } from "../lib/action-labels.js";
 
 export function TasksPage() {
   const { organizationId } = useOrganizationContext();
@@ -137,7 +138,7 @@ export function TasksPage() {
               onClick={() => navigate(selectedProjectId ? `/gantt/${selectedProjectId}` : "/gantt")}
               className="rounded-lg bg-brand-700 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-brand-800"
             >
-              {selectedProjectId ? "最初のタスクを作成" : "ガントで管理"}
+              {selectedProjectId ? ACTION_LABELS.task.createFirst : "ガントで管理"}
             </button>
             {selectedProjectId && (
               <button

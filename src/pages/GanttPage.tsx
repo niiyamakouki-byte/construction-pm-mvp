@@ -50,6 +50,7 @@ import { readMasterPresetHistory, writeMasterPresetHistory } from "../lib/gantt-
 import { savePhaseTemplate } from "../lib/phase-template/storage.js";
 import type { PhaseTemplate, PhaseTemplateTag } from "../lib/phase-template/types.js";
 import { ConfirmDialog } from "../components/common/ConfirmDialog.js";
+import { ACTION_LABELS } from "../lib/action-labels.js";
 
 const MAX_CHART_DAYS = 240;
 const MIN_DAY_WIDTH = 8;
@@ -1309,7 +1310,7 @@ function GanttPageContent({ initialProjectId = null }: GanttPageProps) {
                 onClick={() => setRainDialogOpen(false)}
                 className="min-h-[44px] rounded-2xl border border-slate-200 bg-white px-5 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50"
               >
-                キャンセル
+                {ACTION_LABELS.form.cancel}
               </button>
               <button
                 type="button"
@@ -1471,7 +1472,7 @@ function GanttPageContent({ initialProjectId = null }: GanttPageProps) {
                 onClick={handleMasterApply}
                 className="min-h-[44px] rounded-2xl bg-brand-600 px-5 py-2 text-sm font-semibold text-white shadow-sm disabled:cursor-not-allowed disabled:opacity-50"
               >
-                {masterApplying ? "追加中..." : `ガントに追加 (${masterSelectedEntryIds.size}件)`}
+                {masterApplying ? ACTION_LABELS.task.adding : ACTION_LABELS.gantt.addSelected(masterSelectedEntryIds.size)}
               </button>
             </div>
           </div>

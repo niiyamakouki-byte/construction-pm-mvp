@@ -48,6 +48,7 @@ import { ConfirmDialog } from "../components/common/ConfirmDialog.js";
 import { createProjectRepository } from "../stores/project-store.js";
 import { createTaskRepository } from "../stores/task-store.js";
 import { createCostItemRepository } from "../stores/cost-item-store.js";
+import { ACTION_LABELS } from "../lib/action-labels.js";
 
 const currencyFormatter = new Intl.NumberFormat("ja-JP", {
   style: "currency",
@@ -479,10 +480,10 @@ function ChangeRequestTab({ projectId }: { projectId: string | null }) {
             </div>
             <div className="flex justify-end gap-3">
               <button type="button" onClick={() => setShowForm(false)} className="rounded-2xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50">
-                キャンセル
+                {ACTION_LABELS.form.cancel}
               </button>
               <button type="submit" className="ios-btn-primary rounded-2xl px-5 py-2 text-sm">
-                登録
+                {ACTION_LABELS.changeRequest.register}
               </button>
             </div>
           </form>
@@ -718,7 +719,7 @@ export function CostManagementPage() {
       <div className="rounded-[28px] border border-dashed border-slate-300 bg-white px-6 py-12 text-center shadow-sm">
         <h1 className="text-2xl font-bold text-slate-900">コスト管理を開始</h1>
         <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-slate-500">
-          案件を作成または選択してから、見積取込か予算ベースライン作成に進みます。
+          案件を作成または選択してから、見積取り込みか予算ベースライン作成に進みます。
         </p>
         <div className="mt-5 flex flex-col justify-center gap-2 sm:flex-row">
           <button
@@ -726,14 +727,14 @@ export function CostManagementPage() {
             onClick={() => navigate("/app")}
             className="rounded-lg bg-brand-700 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-brand-800"
           >
-            案件を選択する
+            {ACTION_LABELS.project.select}
           </button>
           <button
             type="button"
             onClick={() => navigate("/estimate")}
             className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50"
           >
-            見積から取込
+            {ACTION_LABELS.estimate.import}
           </button>
         </div>
       </div>
@@ -1103,14 +1104,14 @@ export function CostManagementPage() {
               onClick={() => navigate("/estimate")}
               className="rounded-lg bg-brand-700 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-brand-800"
             >
-              見積から取込
+              {ACTION_LABELS.estimate.import}
             </button>
             <button
               type="button"
               onClick={() => navigate("/estimate")}
               className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50"
             >
-              予算ベースライン作成
+              {ACTION_LABELS.budget.createBaseline}
             </button>
           </div>
         </div>

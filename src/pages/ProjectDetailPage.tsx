@@ -14,6 +14,7 @@ import { createInitialStageProgresses } from "../lib/project-flow.js";
 import { ProjectChat } from "../components/ProjectChat.js";
 import { ProjectFinancePanel } from "../components/ProjectFinancePanel.js";
 import { ConfirmDialog } from "../components/common/ConfirmDialog.js";
+import { ACTION_LABELS } from "../lib/action-labels.js";
 import {
   ConstructionPhase,
   getPhaseChecklist,
@@ -888,14 +889,14 @@ export function ProjectDetailPage({
                   onClick={() => { resetTaskForm(); setShowTaskForm(false); }}
                   className="rounded-lg px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 transition-colors"
                 >
-                  キャンセル
+                  {ACTION_LABELS.form.cancel}
                 </button>
                 <button
                   type="submit"
                   disabled={submitting}
                   className="rounded-lg bg-[#007AFF] px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-[#0063d6] disabled:opacity-50"
                 >
-                  {submitting ? "追加中..." : "追加"}
+                  {submitting ? ACTION_LABELS.task.adding : ACTION_LABELS.task.add}
                 </button>
               </div>
             </div>
