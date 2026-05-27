@@ -188,25 +188,25 @@ export function ProgressReviewPage() {
     );
   }
 
-  if (projects.length === 0) {
+  if (projects.length === 0 || !selectedProjectId) {
     return (
       <div className="mx-auto max-w-[1100px] px-4 pb-24">
         <div className="rounded-xl border border-dashed border-slate-300 bg-white px-5 py-8 text-center shadow-sm">
-          <p className="text-sm font-semibold text-slate-800">進捗レビューを始めるには、案件と写真が必要です</p>
+          <p className="text-sm font-semibold text-slate-800">進捗レビューは、案件選択と写真選択を先に行います</p>
           <p className="mx-auto mt-2 max-w-md text-sm text-slate-500">
-            まず案件を作成し、現場写真をアップロードすると、このページで写真由来の進捗を入力できます。
+            対象案件を選んでから現場写真をアップロードすると、写真由来の進捗を入力して工程と突合できます。
           </p>
           <div className="mt-5 flex flex-col justify-center gap-2 sm:flex-row">
             <button
               type="button"
-              onClick={() => navigate("/projects")}
+              onClick={() => navigate("/app")}
               className="rounded-lg bg-brand-700 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-brand-800"
             >
               案件を選ぶ
             </button>
             <button
               type="button"
-              onClick={() => navigate("/photo")}
+              onClick={() => navigate("/today")}
               className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50"
             >
               写真をアップロード

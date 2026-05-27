@@ -717,21 +717,23 @@ export function CostManagementPage() {
     return (
       <div className="rounded-[28px] border border-dashed border-slate-300 bg-white px-6 py-12 text-center shadow-sm">
         <h1 className="text-2xl font-bold text-slate-900">コスト管理</h1>
-        <p className="mt-3 text-sm leading-6 text-slate-500">案件を作成するとコスト管理を始められます。</p>
+        <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-slate-500">
+          コスト管理は案件を選択してから、見積取込または予算ベースライン作成で開始します。
+        </p>
         <div className="mt-5 flex flex-col justify-center gap-2 sm:flex-row">
           <button
             type="button"
-            onClick={() => navigate("/estimate")}
+            onClick={() => navigate("/app")}
             className="rounded-lg bg-brand-700 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-brand-800"
           >
-            見積から取込
+            案件を選択する
           </button>
           <button
             type="button"
             onClick={() => navigate("/estimate")}
             className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50"
           >
-            予算ベースライン作成
+            見積から取込
           </button>
         </div>
       </div>

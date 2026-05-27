@@ -33,20 +33,20 @@ describe("ProgressReviewPage", () => {
     cleanup();
   });
 
-  it("案件ゼロのとき前提説明と「案件を選ぶ」「写真をアップロード」CTAを表示する", async () => {
+  it("案件ゼロのとき案件選択と写真選択の前提説明CTAを表示する", async () => {
     mockProjectRepository.findAll.mockResolvedValue([]);
     mockTaskRepository.findAll.mockResolvedValue([]);
 
     render(<ProgressReviewPage />);
 
     await waitFor(() => {
-      expect(screen.getByText("進捗レビューを始めるには、案件と写真が必要です")).toBeDefined();
+      expect(screen.getByText("進捗レビューは、案件選択と写真選択を先に行います")).toBeDefined();
     });
     expect(screen.getByText("案件を選ぶ")).toBeDefined();
     expect(screen.getByText("写真をアップロード")).toBeDefined();
   });
 
-  it("「案件を選ぶ」ボタンクリックで /projects に遷移する", async () => {
+  it("「案件を選ぶ」ボタンクリックで /app に遷移する", async () => {
     mockProjectRepository.findAll.mockResolvedValue([]);
     mockTaskRepository.findAll.mockResolvedValue([]);
 
@@ -55,10 +55,10 @@ describe("ProgressReviewPage", () => {
     const btn = await screen.findByText("案件を選ぶ");
     btn.click();
 
-    expect(vi.mocked(navigate)).toHaveBeenCalledWith("/projects");
+    expect(vi.mocked(navigate)).toHaveBeenCalledWith("/app");
   });
 
-  it("「写真をアップロード」ボタンクリックで /photo に遷移する", async () => {
+  it("「写真をアップロード」ボタンクリックで /today に遷移する", async () => {
     mockProjectRepository.findAll.mockResolvedValue([]);
     mockTaskRepository.findAll.mockResolvedValue([]);
 
@@ -67,6 +67,6 @@ describe("ProgressReviewPage", () => {
     const btn = await screen.findByText("写真をアップロード");
     btn.click();
 
-    expect(vi.mocked(navigate)).toHaveBeenCalledWith("/photo");
+    expect(vi.mocked(navigate)).toHaveBeenCalledWith("/today");
   });
 });

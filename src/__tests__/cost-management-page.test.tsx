@@ -3,6 +3,7 @@ import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { CostManagementPage } from "../pages/CostManagementPage.js";
 import { clearChangeRequests, createChangeRequest } from "../lib/change-request.js";
+import { navigate } from "../hooks/useHashRouter.js";
 
 const mockProjectRepository = {
   findAll: vi.fn(),
@@ -40,6 +41,10 @@ vi.mock("../contexts/OrganizationContext.js", () => ({
   useOrganizationContext: () => ({ organizationId: "test-org" }),
 }));
 
+vi.mock("../hooks/useHashRouter.js", () => ({
+  navigate: vi.fn(),
+}));
+
 describe("CostManagementPage", () => {
   const now = "2025-04-01T00:00:00.000Z";
 
@@ -49,6 +54,7 @@ describe("CostManagementPage", () => {
     mockTaskRepository.findAll.mockReset();
     mockCostItemRepository.findAll.mockReset();
     mockExpenseRepository.findAll.mockReset();
+    vi.mocked(navigate).mockClear();
     clearChangeRequests();
   });
 
@@ -226,7 +232,7 @@ describe("CostManagementPage", () => {
     expect(screen.queryByText("壁紙変更")).toBeNull();
   });
 
-  it("案件ゼロのとき「見積から取込」「予算ベースライン作成」CTAを表示する", async () => {
+  it("案件ゼロのとき「案件を選択する」「見積から取込」CTAを表示する", async () => {
     mockProjectRepository.findAll.mockResolvedValue([]);
     mockTaskRepository.findAll.mockResolvedValue([]);
     mockCostItemRepository.findAll.mockResolvedValue([]);
@@ -234,8 +240,24 @@ describe("CostManagementPage", () => {
 
     render(<CostManagementPage />);
 
-    expect(await screen.findByText("見積から取込")).toBeDefined();
-    expect(screen.getByText("予算ベースライン作成")).toBeDefined();
+    expect(await screen.findByText("案件を選択する")).toBeDefined();
+    expect(screen.getByText("見積から取込")).toBeDefined();
+  });
+
+  it("案件ゼロのCTAから案件一覧と見積へ遷移する", async () => {
+    const user = userEvent.setup();
+    mockProjectRepository.findAll.mockResolvedValue([]);
+    mockTaskRepository.findAll.mockResolvedValue([]);
+    mockCostItemRepository.findAll.mockResolvedValue([]);
+    mockExpenseRepository.findAll.mockResolvedValue([]);
+
+    render(<CostManagementPage />);
+
+    await user.click(await screen.findByRole("button", { name: "案件を選択する" }));
+    expect(vi.mocked(navigate)).toHaveBeenCalledWith("/app");
+
+    await user.click(screen.getByRole("button", { name: "見積から取込" }));
+    expect(vi.mocked(navigate)).toHaveBeenCalledWith("/estimate");
   });
 
   it("コスト項目ゼロのとき「見積から取込」「予算ベースライン作成」CTAを表示する", async () => {
