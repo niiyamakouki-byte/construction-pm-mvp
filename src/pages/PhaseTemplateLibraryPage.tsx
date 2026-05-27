@@ -15,7 +15,7 @@ import { useOrganizationContext } from "../contexts/OrganizationContext.js";
 import { createProjectRepository } from "../stores/project-store.js";
 import { createTaskRepository } from "../stores/task-store.js";
 import type { Project } from "../domain/types.js";
-import { ConfirmDialog } from "../components/ConfirmDialog.js";
+import { ConfirmDialog } from "../components/common/ConfirmDialog.js";
 
 // ─── タグカラー ───────────────────────────────────────────────────────────────
 

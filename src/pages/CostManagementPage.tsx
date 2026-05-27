@@ -6,6 +6,7 @@ import { BudgetDashboard } from "../components/BudgetDashboard.js";
 import { createAppRepository } from "../infra/create-app-repository.js";
 import {
   createChangeRequest,
+  deleteChangeRequest,
   getChangeRequests,
   transitionStatus,
   getApprovedCostTotal,
@@ -43,6 +44,7 @@ import {
   type PaymentScheduleEntry,
 } from "../lib/payment-tracker.js";
 import { daysBetween } from "../components/gantt/utils.js";
+import { ConfirmDialog } from "../components/common/ConfirmDialog.js";
 import { createProjectRepository } from "../stores/project-store.js";
 import { createTaskRepository } from "../stores/task-store.js";
 import { createCostItemRepository } from "../stores/cost-item-store.js";
@@ -289,6 +291,7 @@ const STATUS_TONE: Record<ChangeRequestStatus, string> = {
 function ChangeRequestTab({ projectId }: { projectId: string | null }) {
   const [requests, setRequests] = useState<ChangeRequest[]>([]);
   const [showForm, setShowForm] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<ChangeRequest | null>(null);
   const [form, setForm] = useState({
     requestedBy: "",
     description: "",
@@ -349,8 +352,29 @@ function ChangeRequestTab({ projectId }: { projectId: string | null }) {
     }
   }
 
+  function handleDelete() {
+    if (!deleteTarget) return;
+    deleteChangeRequest(deleteTarget.id);
+    setDeleteTarget(null);
+    reload();
+  }
+
   return (
     <div className="space-y-4">
+      <ConfirmDialog
+        open={deleteTarget !== null}
+        title="変更指示を削除"
+        message={
+          <>
+            <span className="font-semibold text-slate-800">{deleteTarget?.description}</span>
+            を削除します。この操作は取り消せません。
+          </>
+        }
+        confirmLabel="削除する"
+        variant="danger"
+        onConfirm={handleDelete}
+        onCancel={() => setDeleteTarget(null)}
+      />
       {/* サマリー */}
       <section className="grid gap-3 md:grid-cols-3">
         <StatCard label="変更指示件数" value={`${requests.length}件`} tone="border-slate-200 bg-white text-slate-900" />
@@ -522,6 +546,14 @@ function ChangeRequestTab({ projectId }: { projectId: string | null }) {
                           却下
                         </button>
                       )}
+                      <button
+                        type="button"
+                        onClick={() => setDeleteTarget(req)}
+                        className="rounded-2xl border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:border-red-200 hover:bg-red-50 hover:text-red-700"
+                        aria-label={`${req.description}を削除`}
+                      >
+                        削除
+                      </button>
                     </div>
                   </div>
                 </div>

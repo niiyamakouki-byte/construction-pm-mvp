@@ -4,6 +4,7 @@ import {
   getChangeRequests,
   getChangeRequestById,
   updateChangeRequest,
+  deleteChangeRequest,
   clearChangeRequests,
   transitionStatus,
   getApprovedCostTotal,
@@ -107,6 +108,18 @@ describe("change-request", () => {
 
     it("存在しないIDはエラー", () => {
       expect(() => updateChangeRequest("cr-999", {})).toThrow("cr-999 not found");
+    });
+  });
+
+  describe("deleteChangeRequest", () => {
+    it("存在する変更指示を削除してtrueを返す", () => {
+      createChangeRequest(makeParams({ id: "cr-del" }));
+      expect(deleteChangeRequest("cr-del")).toBe(true);
+      expect(getChangeRequestById("cr-del")).toBeUndefined();
+    });
+
+    it("存在しないIDはfalseを返す", () => {
+      expect(deleteChangeRequest("cr-999")).toBe(false);
     });
   });
 

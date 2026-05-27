@@ -6,7 +6,7 @@ import {
   type PurchaseOrderItemRecord,
   type PurchaseOrderStatus,
 } from "../lib/supabase-adapter/OrderRepository.js";
-import { ConfirmDialog } from "../components/ConfirmDialog.js";
+import { ConfirmDialog } from "../components/common/ConfirmDialog.js";
 import costMaster from "../estimate/cost-master.json";
 
 // ── Types ────────────────────────────────────────────────────────────────────

@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { CostManagementPage } from "../pages/CostManagementPage.js";
+import { clearChangeRequests, createChangeRequest } from "../lib/change-request.js";
 
 const mockProjectRepository = {
   findAll: vi.fn(),
@@ -48,6 +49,7 @@ describe("CostManagementPage", () => {
     mockTaskRepository.findAll.mockReset();
     mockCostItemRepository.findAll.mockReset();
     mockExpenseRepository.findAll.mockReset();
+    clearChangeRequests();
   });
 
   it("案件別のコスト集計とカテゴリ別テーブルを表示する", async () => {
@@ -180,6 +182,48 @@ describe("CostManagementPage", () => {
 
     expect(await screen.findByText("警備費")).toBeDefined();
     expect(screen.queryByText("石膏ボード")).toBeNull();
+  });
+
+  it("変更指示削除は確認ダイアログでキャンセルと承諾を分岐する", async () => {
+    const user = userEvent.setup();
+    mockProjectRepository.findAll.mockResolvedValue([
+      {
+        id: "p1",
+        name: "南青山ビル改修",
+        description: "",
+        status: "active",
+        budget: 1000000,
+        startDate: "2025-04-01",
+        includeWeekends: true,
+        createdAt: now,
+        updatedAt: now,
+      },
+    ]);
+    mockTaskRepository.findAll.mockResolvedValue([]);
+    mockCostItemRepository.findAll.mockResolvedValue([]);
+    mockExpenseRepository.findAll.mockResolvedValue([]);
+    createChangeRequest({
+      id: "cr-delete",
+      projectId: "p1",
+      requestedBy: "施主",
+      description: "壁紙変更",
+      impactDescription: "追加材料",
+      originalEstimate: 100000,
+      revisedEstimate: 130000,
+    });
+
+    render(<CostManagementPage />);
+
+    await user.click(await screen.findByRole("button", { name: "変更指示" }));
+    await user.click(screen.getByRole("button", { name: "壁紙変更を削除" }));
+    expect(screen.getByRole("alertdialog", { name: "変更指示を削除" })).toBeDefined();
+
+    await user.click(screen.getByRole("button", { name: "キャンセル" }));
+    expect(screen.getByText("壁紙変更")).toBeDefined();
+
+    await user.click(screen.getByRole("button", { name: "壁紙変更を削除" }));
+    await user.click(screen.getByRole("button", { name: "削除する" }));
+    expect(screen.queryByText("壁紙変更")).toBeNull();
   });
 
   it("案件ゼロのとき「見積から取込」「予算ベースライン作成」CTAを表示する", async () => {

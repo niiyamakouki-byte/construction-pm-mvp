@@ -103,6 +103,16 @@ export function updateChangeRequest(
 }
 
 /**
+ * 変更指示を削除する。
+ */
+export function deleteChangeRequest(id: string): boolean {
+  const idx = changeRequests.findIndex((r) => r.id === id);
+  if (idx === -1) return false;
+  changeRequests.splice(idx, 1);
+  return true;
+}
+
+/**
  * テスト用: 全データをリセットする。
  */
 export function clearChangeRequests(): void {

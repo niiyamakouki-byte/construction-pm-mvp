@@ -3,7 +3,7 @@ import type { Contractor } from "../domain/types.js";
 import { createContractorRepository } from "../stores/contractor-store.js";
 import { useOrganizationContext } from "../contexts/OrganizationContext.js";
 import { getAllRoles, getRoleLabel } from "../lib/user-roles.js";
-import { ConfirmDialog } from "../components/ConfirmDialog.js";
+import { ConfirmDialog } from "../components/common/ConfirmDialog.js";
 
 export function ContractorsPage() {
   const { organizationId } = useOrganizationContext();

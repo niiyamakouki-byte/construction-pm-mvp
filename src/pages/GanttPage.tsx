@@ -49,7 +49,7 @@ import { getMasterCategories, getMasterEntries } from "../lib/work-schedule-mast
 import { readMasterPresetHistory, writeMasterPresetHistory } from "../lib/gantt-master-preset.js";
 import { savePhaseTemplate } from "../lib/phase-template/storage.js";
 import type { PhaseTemplate, PhaseTemplateTag } from "../lib/phase-template/types.js";
-import { ConfirmDialog } from "../components/ConfirmDialog.js";
+import { ConfirmDialog } from "../components/common/ConfirmDialog.js";
 
 const MAX_CHART_DAYS = 240;
 const MIN_DAY_WIDTH = 8;

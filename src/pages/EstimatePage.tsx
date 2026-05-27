@@ -6,6 +6,7 @@ import {
 } from "../estimate/estimate-generator.js";
 import type { Estimate, EstimateInput } from "../estimate/types.js";
 import { EstimatePageErrorBoundary } from "../components/PageErrorBoundaries.js";
+import { ConfirmDialog } from "../components/common/ConfirmDialog.js";
 import {
   calculateFromMargin,
   simulateMultiple,
@@ -364,6 +365,7 @@ function MatsubamebushiTab() {
     { id: "1", name: "", quantity: 1, unitPrices: [0, 0, 0] },
   ]);
   const [includeLegalWelfare, setIncludeLegalWelfare] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<MatsuItem | null>(null);
 
   const addRow = () => {
     setItems((prev) => [
@@ -374,6 +376,7 @@ function MatsubamebushiTab() {
 
   const removeRow = (id: string) => {
     setItems((prev) => prev.filter((i) => i.id !== id));
+    setDeleteTarget(null);
   };
 
   const updateItem = (id: string, patch: Partial<MatsuItem>) => {
@@ -412,6 +415,22 @@ function MatsubamebushiTab() {
 
   return (
     <div className="space-y-4" data-testid="matsubamebushi-tab">
+      <ConfirmDialog
+        open={deleteTarget !== null}
+        title="見積行を削除"
+        message={
+          <>
+            <span className="font-semibold text-slate-800">{deleteTarget?.name || "未入力の行"}</span>
+            を削除します。この操作は取り消せません。
+          </>
+        }
+        confirmLabel="削除する"
+        variant="danger"
+        onConfirm={() => {
+          if (deleteTarget) removeRow(deleteTarget.id);
+        }}
+        onCancel={() => setDeleteTarget(null)}
+      />
       <h2 className="text-lg font-bold text-slate-900">松竹梅3パターン見積</h2>
       <p className="text-xs text-slate-500">
         同じ品目リストで松(高品質)・竹(標準)・梅(コスト重視)の単価を並列管理し、合計と粗利率を比較できます。
@@ -528,7 +547,7 @@ function MatsubamebushiTab() {
                     {items.length > 1 && (
                       <button
                         type="button"
-                        onClick={() => removeRow(item.id)}
+                        onClick={() => setDeleteTarget(item)}
                         className="flex h-7 w-7 items-center justify-center rounded text-slate-300 hover:text-red-500 hover:bg-red-50"
                         aria-label="行を削除"
                       >
@@ -588,6 +607,7 @@ function EstimatePageContent() {
   const [pdfLoading, setPdfLoading] = useState(false);
   const [targetMargin, setTargetMargin] = useState<string>("25");
   const [includeLegalWelfare, setIncludeLegalWelfare] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<SelectedItem | null>(null);
 
   const costItems: CostItem[] = selectedItems.map((i) => ({
     code: i.code,
@@ -667,6 +687,7 @@ function EstimatePageContent() {
 
   const handleRemoveItem = (code: string) => {
     setSelectedItems((prev) => prev.filter((i) => i.code !== code));
+    setDeleteTarget(null);
   };
 
   const handleGenerate = () => {
@@ -839,6 +860,22 @@ function EstimatePageContent() {
   // Input form view
   return (
     <div className="mx-auto max-w-2xl space-y-4 px-4 pb-24">
+      <ConfirmDialog
+        open={deleteTarget !== null}
+        title="見積品目を削除"
+        message={
+          <>
+            <span className="font-semibold text-slate-800">{deleteTarget?.name}</span>
+            を削除します。この操作は取り消せません。
+          </>
+        }
+        confirmLabel="削除する"
+        variant="danger"
+        onConfirm={() => {
+          if (deleteTarget) handleRemoveItem(deleteTarget.code);
+        }}
+        onCancel={() => setDeleteTarget(null)}
+      />
       {/* Tab switcher */}
       <div className="flex gap-1 rounded-lg border border-slate-200 bg-slate-50 p-1">
         <button
@@ -977,7 +1014,8 @@ function EstimatePageContent() {
                   </button>
                 </div>
                 <button
-                  onClick={() => handleRemoveItem(item.code)}
+                  onClick={() => setDeleteTarget(item)}
+                  aria-label={`${item.name}を削除`}
                   className="ml-1 flex h-11 w-11 items-center justify-center rounded text-slate-300 hover:text-red-500 hover:bg-red-50"
                 >
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

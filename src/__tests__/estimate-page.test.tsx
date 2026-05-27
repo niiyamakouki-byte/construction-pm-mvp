@@ -119,7 +119,7 @@ describe("EstimatePage", () => {
     expect(quantityInput.value).toBe("4");
   });
 
-  it("削除ボタンで選択済み品目を取り除ける", async () => {
+  it("削除確認で選択済み品目の削除キャンセルと承諾を分岐する", async () => {
     const user = userEvent.setup();
     await renderEstimatePage();
 
@@ -127,9 +127,15 @@ describe("EstimatePage", () => {
     await user.click(screen.getByRole("button", { name: /内装解体（木造）/ }));
 
     const row = getSelectedRow("内装解体（木造）");
-    const removeButton = within(row).getAllByRole("button")[2];
+    const removeButton = within(row).getByRole("button", { name: "内装解体（木造）を削除" });
     await user.click(removeButton);
 
+    expect(screen.getByRole("alertdialog", { name: "見積品目を削除" })).toBeDefined();
+    await user.click(screen.getByRole("button", { name: "キャンセル" }));
+    expect(screen.getByText("選択済み品目 (1件)")).toBeDefined();
+
+    await user.click(within(getSelectedRow("内装解体（木造）")).getByRole("button", { name: "内装解体（木造）を削除" }));
+    await user.click(screen.getByRole("button", { name: "削除する" }));
     await waitFor(() => expect(screen.queryByText(/選択済み品目/)).toBeNull());
   });
 

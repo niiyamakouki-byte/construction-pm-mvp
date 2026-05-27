@@ -13,7 +13,7 @@ import {
   type InvoiceStatus,
   type PaymentTerm,
 } from "../lib/invoice-store.js";
-import { ConfirmDialog } from "../components/ConfirmDialog.js";
+import { ConfirmDialog } from "../components/common/ConfirmDialog.js";
 
 const currencyFormatter = new Intl.NumberFormat("ja-JP", {
   style: "currency",

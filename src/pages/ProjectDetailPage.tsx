@@ -13,7 +13,7 @@ import { ProjectFlowWidget } from "../components/ProjectFlowWidget.js";
 import { createInitialStageProgresses } from "../lib/project-flow.js";
 import { ProjectChat } from "../components/ProjectChat.js";
 import { ProjectFinancePanel } from "../components/ProjectFinancePanel.js";
-import { ConfirmDialog } from "../components/ConfirmDialog.js";
+import { ConfirmDialog } from "../components/common/ConfirmDialog.js";
 import {
   ConstructionPhase,
   getPhaseChecklist,

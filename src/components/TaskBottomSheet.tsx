@@ -3,7 +3,7 @@ import type { Contractor } from "../domain/types.js";
 import { navigate } from "../hooks/useHashRouter.js";
 import type { TaskDetailState } from "./gantt/types.js";
 import { statusLabel, addDays } from "./gantt/utils.js";
-import { ConfirmDialog } from "./ConfirmDialog.js";
+import { ConfirmDialog } from "./common/ConfirmDialog.js";
 
 type Props = {
   taskDetail: TaskDetailState;

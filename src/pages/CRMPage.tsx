@@ -16,7 +16,7 @@ import {
   type DealStage,
 } from "../lib/crm-store.js";
 import { CRMRepository } from "../lib/supabase-adapter/CRMRepository.js";
-import { ConfirmDialog } from "../components/ConfirmDialog.js";
+import { ConfirmDialog } from "../components/common/ConfirmDialog.js";
 
 // Shared async repository (Supabase or InMemory depending on VITE_USE_SUPABASE)
 const crmRepo = new CRMRepository();
