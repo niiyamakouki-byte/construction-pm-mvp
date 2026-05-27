@@ -403,8 +403,18 @@ export function InvoiceManagementPage() {
 
       {/* Invoice List */}
       {filteredInvoices.length === 0 ? (
-        <div className="rounded-xl border border-slate-200 bg-white p-8 text-center text-sm text-slate-400">
-          請求書がありません
+        <div className="rounded-xl border border-dashed border-slate-300 bg-white p-8 text-center">
+          <h2 className="text-base font-bold text-slate-900">請求書がありません</h2>
+          <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-slate-500">
+            受領した請求書を登録すると、支払予定と未払い合計をここで確認できます。
+          </p>
+          <button
+            type="button"
+            onClick={() => setShowForm(true)}
+            className="mt-5 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700"
+          >
+            請求書を登録
+          </button>
         </div>
       ) : (
         <div className="space-y-2">
