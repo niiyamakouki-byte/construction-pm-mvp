@@ -37,6 +37,11 @@ test.describe("390px mobile responsive routes", () => {
     const box = await firstDashboardCard.boundingBox();
     expect(box).not.toBeNull();
     expect(box?.width).toBeGreaterThanOrEqual(280);
+
+    const greetingCard = page.getByText(/光輝さん/).locator("..");
+    const greetingBox = await greetingCard.boundingBox();
+    expect(greetingBox).not.toBeNull();
+    expect(greetingBox?.width).toBeGreaterThanOrEqual(280);
   });
 
   test("/estimate keeps form and catalog content readable", async ({ page }) => {
@@ -50,6 +55,14 @@ test.describe("390px mobile responsive routes", () => {
     const inputBox = await propertyInput.boundingBox();
     expect(inputBox).not.toBeNull();
     expect(inputBox?.width).toBeGreaterThanOrEqual(280);
+
+    const tabScroller = page.getByRole("button", { name: "見積作成" }).locator("../..");
+    const tabMetrics = await tabScroller.evaluate((el) => ({
+      clientWidth: el.clientWidth,
+      scrollWidth: el.scrollWidth,
+    }));
+    expect(tabMetrics.clientWidth).toBeGreaterThanOrEqual(280);
+    expect(tabMetrics.scrollWidth).toBeGreaterThan(tabMetrics.clientWidth);
 
     const catalogButton = page.getByRole("button", { name: /解体・撤去/ });
     const catalogBox = await catalogButton.boundingBox();

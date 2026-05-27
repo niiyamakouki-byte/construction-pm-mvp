@@ -45,15 +45,21 @@ export function GreetingHeader({
         background: "linear-gradient(135deg, var(--app-bg, #F8F4ED), var(--app-card-muted, #F0EBE0))",
         border: "1px solid var(--app-border, #E5DDD0)",
       }}
-      className="rounded-2xl px-6 py-5 shadow-sm"
+      className="min-w-[280px] rounded-2xl px-5 py-5 shadow-sm sm:px-6"
     >
       <p
         className="font-bold text-brand-800"
-        style={{ fontSize: "26px", lineHeight: 1.3, fontFamily: "var(--font-sans, sans-serif)" }}
+        style={{
+          fontSize: "clamp(22px, 6vw, 26px)",
+          lineHeight: 1.3,
+          fontFamily: "var(--font-sans, sans-serif)",
+          writingMode: "horizontal-tb",
+          wordBreak: "keep-all",
+        }}
       >
         {greeting}、{userName}
       </p>
-      <p className="mt-1 text-sm text-brand-600">
+      <p className="mt-1 text-sm text-brand-600" style={{ writingMode: "horizontal-tb", wordBreak: "keep-all" }}>
         {dateStr} · {weather}
       </p>
     </motion.div>
