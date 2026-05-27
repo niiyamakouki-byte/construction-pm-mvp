@@ -1,8 +1,8 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useOrganizationContext } from "../contexts/OrganizationContext.js";
+import { navigate } from "../hooks/useHashRouter.js";
 import { createProjectRepository } from "../stores/project-store.js";
 import { createTaskRepository } from "../stores/task-store.js";
-import { useEffect } from "react";
 import type { Project } from "../domain/types.js";
 import type { GeneratedSchedule, GeneratedTask, WorkCategory } from "../lib/ai-schedule-generator.js";
 import {
@@ -184,6 +184,35 @@ export function ProgressReviewPage() {
       <div className="flex items-center justify-center gap-2 py-16">
         <span className="inline-block h-5 w-5 animate-spin rounded-full border-2 border-brand-200 border-t-brand-600" />
         <span className="text-sm text-slate-400">読み込み中...</span>
+      </div>
+    );
+  }
+
+  if (projects.length === 0) {
+    return (
+      <div className="mx-auto max-w-[1100px] px-4 pb-24">
+        <div className="rounded-xl border border-dashed border-slate-300 bg-white px-5 py-8 text-center shadow-sm">
+          <p className="text-sm font-semibold text-slate-800">進捗レビューを始めるには、案件と写真が必要です</p>
+          <p className="mx-auto mt-2 max-w-md text-sm text-slate-500">
+            まず案件を作成し、現場写真をアップロードすると、このページで写真由来の進捗を入力できます。
+          </p>
+          <div className="mt-5 flex flex-col justify-center gap-2 sm:flex-row">
+            <button
+              type="button"
+              onClick={() => navigate("/projects")}
+              className="rounded-lg bg-brand-700 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-brand-800"
+            >
+              案件を選ぶ
+            </button>
+            <button
+              type="button"
+              onClick={() => navigate("/photo")}
+              className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50"
+            >
+              写真をアップロード
+            </button>
+          </div>
+        </div>
       </div>
     );
   }

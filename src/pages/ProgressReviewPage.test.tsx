@@ -28,6 +28,10 @@ vi.mock("../contexts/OrganizationContext.js", () => ({
   useOrganizationContext: () => ({ organizationId: "test-org" }),
 }));
 
+vi.mock("../hooks/useHashRouter.js", () => ({
+  navigate: vi.fn(),
+}));
+
 // ─── Fixtures ─────────────────────────────────────────────────────────────────
 
 const baseProject = {
@@ -196,15 +200,15 @@ describe("ProgressReviewPage", () => {
   });
 
   /**
-   * 空データ: プロジェクトなし → エラーなく空状態を表示
+   * 空データ: プロジェクトなし → 前提条件CTAを表示
    */
   it("renders without crash when no projects are available", async () => {
     mockProjectFindAll.mockResolvedValue([]);
     render(<ProgressReviewPage />);
-    // ページヘッダーが正常に表示されること（空でもクラッシュしない）
-    const badge = await screen.findByText("photo-progress-tracker");
-    expect(badge).toBeDefined();
-    // 入力フォームも表示される
-    expect(screen.getByText("AI判定進捗を入力")).toBeDefined();
+    // 案件ゼロ時は空状態CTAを表示（クラッシュしない）
+    const heading = await screen.findByText("進捗レビューを始めるには、案件と写真が必要です");
+    expect(heading).toBeDefined();
+    expect(screen.getByText("案件を選ぶ")).toBeDefined();
+    expect(screen.getByText("写真をアップロード")).toBeDefined();
   });
 });
