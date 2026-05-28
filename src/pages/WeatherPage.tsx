@@ -127,7 +127,7 @@ function ForecastDayCard({ day, date }: { day: OpenWeatherMapDailyForecast; date
 
       <div className="mt-4 rounded-2xl border border-white/70 bg-white/70 px-3 py-3">
         <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
-          Construction Impact
+          施工影響
         </p>
         <p className={`mt-1 text-sm font-semibold ${riskStyle.text}`}>
           {getConstructionRecommendation(day)}

@@ -79,13 +79,11 @@ describe("ProgressReviewPage", () => {
   /**
    * 正常系: ページが正しくレンダリングされること
    */
-  it("renders page header with Buildots badge", async () => {
+  it("renders page header without exposing implementation labels", async () => {
     render(<ProgressReviewPage />);
-    // ヘッダーバッジ
-    const badge = await screen.findByText("photo-progress-tracker");
-    expect(badge).toBeDefined();
     // ページタイトル
-    expect(screen.getByText("進捗レビュー（Buildots統合）")).toBeDefined();
+    expect(await screen.findByText("進捗レビュー（Buildots統合）")).toBeDefined();
+    expect(screen.queryByText("photo-progress-tracker")).toBeNull();
   });
 
   /**
@@ -93,7 +91,7 @@ describe("ProgressReviewPage", () => {
    */
   it("adds a TradeProgress entry via the input form", async () => {
     render(<ProgressReviewPage />);
-    await screen.findByText("photo-progress-tracker");
+    await screen.findByText("進捗レビュー（Buildots統合）");
 
     // 2番目のselect = トレード（1番目は案件選択）
     const selects = document.querySelectorAll("select");
@@ -121,7 +119,7 @@ describe("ProgressReviewPage", () => {
       { ...baseProject, id: "proj-2", name: "渋谷改装" },
     ]);
     render(<ProgressReviewPage />);
-    await screen.findByText("photo-progress-tracker");
+    await screen.findByText("進捗レビュー（Buildots統合）");
 
     const projectSelect = document.querySelectorAll("select")[0] as HTMLSelectElement;
     fireEvent.change(projectSelect, { target: { value: "proj-2" } });
@@ -136,7 +134,7 @@ describe("ProgressReviewPage", () => {
   it("shows delay deltas after スケジュール突合 with late progress", async () => {
     mockTaskFindAll.mockResolvedValue(activeTasks);
     render(<ProgressReviewPage />);
-    await screen.findByText("photo-progress-tracker");
+    await screen.findByText("進捗レビュー（Buildots統合）");
 
     // プロジェクト選択後、スケジュールがロードされるまで待機
     const projectSelect = document.querySelectorAll("select")[0] as HTMLSelectElement;
@@ -176,7 +174,7 @@ describe("ProgressReviewPage", () => {
     ];
     mockTaskFindAll.mockResolvedValue(pastTask);
     render(<ProgressReviewPage />);
-    await screen.findByText("photo-progress-tracker");
+    await screen.findByText("進捗レビュー（Buildots統合）");
 
     // 進捗追加（完了率0%）
     const addBtn = screen.getByText("+ 進捗を追加");

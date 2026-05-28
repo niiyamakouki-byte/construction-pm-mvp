@@ -48,7 +48,7 @@ describe("WeatherPage", () => {
 
     expect(await screen.findByRole("heading", { name: "現場天気" })).toBeDefined();
     expect(screen.getByText("施工現場を選択")).toBeDefined();
-    expect(screen.getAllByText("Construction Impact")).toHaveLength(7);
+    expect(screen.getAllByText("施工影響")).toHaveLength(7);
     expect(screen.getAllByText("延期推奨").length).toBeGreaterThan(0);
   });
 
