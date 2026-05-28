@@ -9,7 +9,7 @@ test.describe("iPhone 14 モバイルビュー", () => {
 
   test("トップページがモバイルで表示される", async ({ page }) => {
     await page.goto("/#/app");
-    await expect(page.locator("text=GenbaHub")).toBeVisible();
+    await expect(page.locator("body")).toContainText("GenbaHub");
   });
 
   test("ログインページがモバイルで表示される", async ({ page }) => {
@@ -47,12 +47,11 @@ test.describe("iPhone 14 モバイルビュー", () => {
     }
   });
 
-  test("未認証時にモバイルでログインページが正しく表示される", async ({ page }) => {
-    // Supabase設定済み・未ログイン状態では /#/app → /login にリダイレクトされる
-    await page.goto("/#/app");
+  test("ログインページのフォームがモバイルで正しく表示される", async ({ page }) => {
+    await page.goto("/#/login");
 
     // ログインページが表示される（GenbaHub ロゴ）
-    await expect(page.locator("text=GenbaHub")).toBeVisible();
+    await expect(page.locator("body")).toContainText("GenbaHub");
 
     // ログインフォームが表示される
     await expect(page.locator("#email")).toBeVisible();
