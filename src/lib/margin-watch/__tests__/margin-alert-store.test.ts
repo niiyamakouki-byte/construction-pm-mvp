@@ -6,6 +6,8 @@ import { describe, expect, it, beforeEach, vi } from "vitest";
 import { MarginAlertStore, _resetMarginAlertStore } from "../margin-alert-store.js";
 import type { MarginAlert, MarginAlertLevel } from "../types.js";
 
+const STORAGE_KEY = "genbahub:margin-alerts";
+
 // ── Fixtures ───────────────────────────────────────────────────────────────
 
 let _counter = 0;
@@ -75,25 +77,28 @@ describe("MarginAlertStore - 基本操作", () => {
 // ── FIFO 5000件 ────────────────────────────────────────────────────────────
 
 describe("MarginAlertStore - FIFO 5000件", () => {
-  it("5001件追加時に先頭が削除される", { timeout: 30_000 }, () => {
+  it("5001件追加時に先頭が削除される", () => {
     const store = new MarginAlertStore();
-    const first = makeAlert({ id: "first" });
-    store.add(first);
-    for (let i = 0; i < 5000; i++) {
-      store.add(makeAlert({ id: `bulk-${i}` }));
-    }
+    const seed = [
+      makeAlert({ id: "first" }),
+      ...Array.from({ length: 4999 }, (_, i) => makeAlert({ id: `bulk-${i}` })),
+    ];
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(seed));
+    store.add(makeAlert({ id: "newest" }));
     const all = store.all();
     expect(all).toHaveLength(5000);
     // first should be evicted
     expect(all.find((a) => a.id === "first")).toBeUndefined();
+    expect(all.at(-1)?.id).toBe("newest");
   });
 
-  it("5000件ちょうどは全て保持される", { timeout: 30_000 }, () => {
+  it("5000件ちょうどは全て保持される", () => {
     const store = new MarginAlertStore();
-    for (let i = 0; i < 5000; i++) {
-      store.add(makeAlert({ id: `bulk-${i}` }));
-    }
+    const seed = Array.from({ length: 4999 }, (_, i) => makeAlert({ id: `bulk-${i}` }));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(seed));
+    store.add(makeAlert({ id: "last" }));
     expect(store.all()).toHaveLength(5000);
+    expect(store.all()[0].id).toBe("bulk-0");
   });
 });
 

@@ -23,6 +23,14 @@ const mockTaskFindAll = vi.fn(async () => [...mockTasks]);
 const mockCostItemFindAll = vi.fn(async () => [...mockCostItems]);
 const mockExpenseFindAll = vi.fn(async () => [...mockExpenses]);
 const mockNavigate = vi.hoisted(() => vi.fn());
+const mockWeatherWarnings = vi.hoisted(() => [] as Array<{
+  siteId: string;
+  siteName: string;
+  dateLabel: string;
+  projectId: string;
+  day: { dt: number };
+  risk: { reasons: string[] };
+}>);
 
 vi.mock("../stores/project-store.js", () => ({
   createProjectRepository: () => ({
@@ -54,6 +62,11 @@ vi.mock("../contexts/OrganizationContext.js", () => ({
 
 vi.mock("../hooks/useHashRouter.js", () => ({
   navigate: mockNavigate,
+}));
+
+vi.mock("../lib/weather.js", () => ({
+  fetchConstructionSiteForecasts: vi.fn(async () => []),
+  collectWeatherWarnings: vi.fn(() => mockWeatherWarnings),
 }));
 
 function toLocalDateString(date: Date): string {
@@ -105,6 +118,7 @@ describe("NotificationBanner", () => {
     mockCostItemFindAll.mockClear();
     mockExpenseFindAll.mockClear();
     mockNavigate.mockClear();
+    mockWeatherWarnings.length = 0;
     localStorageMock.clear();
     vi.stubGlobal("localStorage", localStorageMock);
   });
@@ -144,6 +158,14 @@ describe("NotificationBanner", () => {
         updatedAt: "2025-01-01T00:00:00.000Z",
       },
     ];
+    mockWeatherWarnings.push({
+      siteId: "site-1",
+      siteName: "青山オフィス改修",
+      dateLabel: "明日",
+      projectId: "p-1",
+      day: { dt: 1 },
+      risk: { reasons: ["強風注意"] },
+    });
 
     render(<NotificationBanner refreshKey="/today" />);
 
