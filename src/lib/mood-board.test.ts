@@ -7,6 +7,7 @@ import {
   deleteMoodBoard,
   getMoodBoard,
   getMoodBoardsByProject,
+  hydrateMoodBoard,
   moveItem,
   removeMoodBoardItem,
   resizeItem,
@@ -46,7 +47,7 @@ describe("mood-board", () => {
   describe("createMoodBoard", () => {
     it("creates board with empty items and timestamp", () => {
       const board = makeBoard();
-      expect(board.id).toMatch(/^mb-/);
+      expect(board.id).toBeTruthy();
       expect(board.items).toHaveLength(0);
       expect(board.createdAt).toBeTruthy();
     });
@@ -95,7 +96,7 @@ describe("mood-board", () => {
     it("adds item to board", () => {
       const board = makeBoard();
       const item = addMoodBoardItem(board.id, makeItemParams());
-      expect(item?.id).toMatch(/^mbi-/);
+      expect(item?.id).toBeTruthy();
       expect(getMoodBoard(board.id)?.items).toHaveLength(1);
     });
 
@@ -171,6 +172,23 @@ describe("mood-board", () => {
     it("returns 0 for empty board", () => {
       const board = getMoodBoard(makeBoard().id)!;
       expect(calcTotalPrice(board)).toBe(0);
+    });
+  });
+
+  describe("hydrateMoodBoard", () => {
+    it("stores a persisted board so sync item operations can update it", () => {
+      const persisted: MoodBoard = {
+        id: "11111111-1111-4111-8111-111111111111",
+        projectId: "proj-1",
+        title: "永続化済み",
+        items: [],
+        createdAt: "2026-05-28T00:00:00.000Z",
+      };
+      hydrateMoodBoard(persisted);
+
+      const item = addMoodBoardItem(persisted.id, makeItemParams());
+      expect(item).toBeTruthy();
+      expect(getMoodBoard(persisted.id)?.items).toHaveLength(1);
     });
   });
 });

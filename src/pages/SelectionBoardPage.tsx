@@ -10,6 +10,7 @@ import {
   type SelectionOption,
   approveSelection,
   getSelectionItemsByProject,
+  hydrateSelectionItems,
   selectOption,
   setStatus,
 } from "../lib/selection-board.js";
@@ -214,7 +215,7 @@ export function SelectionBoardPage({ projectId }: { projectId: string }) {
       try {
         const persisted = await loadItems(projectId);
         const local = getSelectionItemsByProject(projectId);
-        const merged = persisted.length > 0 ? persisted : local;
+        const merged = persisted.length > 0 ? hydrateSelectionItems(persisted) : local;
         const now = new Date().toISOString();
         for (const it of merged) {
           if (!createdAtById.has(it.id)) createdAtById.set(it.id, now);

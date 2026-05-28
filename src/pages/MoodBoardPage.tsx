@@ -13,6 +13,7 @@ import {
   calcTotalPrice,
   createMoodBoard,
   getMoodBoardsByProject,
+  hydrateMoodBoard,
   moveItem,
   removeMoodBoardItem,
 } from "../lib/mood-board.js";
@@ -70,14 +71,7 @@ async function loadOrInitBoard(projectId: string): Promise<MoodBoard> {
       items: first.items as MoodBoardItem[],
       createdAt: first.createdAt,
     };
-    // sync インメモリ側も最新に揃える
-    const inMem = getMoodBoardsByProject(projectId);
-    if (inMem.length === 0) {
-      // 既存 createMoodBoard は新規 ID を振ってしまうため、
-      // ここでは UI 用に永続化レコードをそのまま返す。
-      // sync API 経由の更新は refreshBoard で保存する方針。
-    }
-    return hydrated;
+    return hydrateMoodBoard(hydrated);
   }
 
   // 空のボードを作成（永続化も行う）

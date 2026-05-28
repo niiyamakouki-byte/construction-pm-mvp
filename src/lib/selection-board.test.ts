@@ -4,6 +4,7 @@ import {
   createSelectionItem,
   getSelectionItem,
   getSelectionItemsByProject,
+  hydrateSelectionItems,
   updateSelectionItem,
   deleteSelectionItem,
   setStatus,
@@ -121,5 +122,27 @@ describe("selectionToEstimateItems", () => {
 
   it("returns empty array when project has no items", () => {
     expect(selectionToEstimateItems("nonexistent-project")).toHaveLength(0);
+  });
+});
+
+describe("hydrateSelectionItems", () => {
+  it("stores persisted items so sync status operations can update them", () => {
+    const [item] = hydrateSelectionItems([
+      {
+        id: "11111111-1111-4111-8111-111111111111",
+        projectId: "proj-hydrate",
+        category: "床材",
+        name: "床",
+        options: SAMPLE_OPTIONS,
+        selectedOptionId: null,
+        status: "選定中",
+        clientNote: "",
+      },
+    ]);
+
+    selectOption(item.id, "opt-1");
+    const approved = approveSelection(item.id);
+    expect(approved.status).toBe("承認済");
+    expect(getSelectionItem(item.id)?.selectedOptionId).toBe("opt-1");
   });
 });

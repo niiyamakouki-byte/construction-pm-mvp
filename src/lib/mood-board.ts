@@ -41,6 +41,9 @@ const store = new Map<string, MoodBoard>();
 // ── ID generator ──────────────────────────────────────────────────────────────
 
 function genId(prefix: string): string {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID();
+  }
   return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
@@ -65,6 +68,15 @@ export function getMoodBoard(id: string): MoodBoard | undefined {
 
 export function getMoodBoardsByProject(projectId: string): MoodBoard[] {
   return Array.from(store.values()).filter((b) => b.projectId === projectId);
+}
+
+export function hydrateMoodBoard(board: MoodBoard): MoodBoard {
+  const cloned: MoodBoard = {
+    ...board,
+    items: board.items.map((item) => ({ ...item })),
+  };
+  store.set(cloned.id, cloned);
+  return cloned;
 }
 
 export function updateMoodBoard(

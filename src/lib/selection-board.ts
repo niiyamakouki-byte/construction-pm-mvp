@@ -49,6 +49,9 @@ const store = new Map<string, SelectionItem>();
 // ── ID generator ──────────────────────────────────────────────────────────────
 
 function genId(prefix: string): string {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID();
+  }
   return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
@@ -74,6 +77,16 @@ export function getSelectionItem(id: string): SelectionItem | undefined {
 
 export function getSelectionItemsByProject(projectId: string): SelectionItem[] {
   return Array.from(store.values()).filter((item) => item.projectId === projectId);
+}
+
+export function hydrateSelectionItems(items: SelectionItem[]): SelectionItem[] {
+  for (const item of items) {
+    store.set(item.id, {
+      ...item,
+      options: item.options.map((option) => ({ ...option })),
+    });
+  }
+  return items;
 }
 
 export function updateSelectionItem(
