@@ -225,12 +225,8 @@ export function ReceiptUploadPage() {
         レシートの内容を貼り付けると、freee 用の仕訳を自動で作成します。
       </p>
 
-      <OcrPlaceholderBanner />
-
       {step === "input" && (
         <>
-          <DropZone onTextReady={(t) => setRawText(t)} />
-
           <div className="space-y-1">
             <label
               htmlFor="receipt-text"

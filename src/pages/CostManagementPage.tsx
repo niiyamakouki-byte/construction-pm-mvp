@@ -930,7 +930,7 @@ export function CostManagementPage() {
             </div>
           ) : (
             <p className="mt-4 rounded-2xl border border-dashed border-slate-200 px-4 py-4 text-sm text-slate-500">
-              material-tracker に配送データが入ると、納品状況と補充見込みを表示します。
+              配送データが登録されると、納品状況と補充見込みを表示します。
             </p>
           )}
           {materialWaste.length > 0 ? (
@@ -1026,7 +1026,7 @@ export function CostManagementPage() {
           </div>
         ) : (
           <p className="mt-4 rounded-2xl border border-dashed border-slate-200 px-4 py-4 text-sm text-slate-500">
-            payment-tracker に支払データが入ると、スケジュールと未払残を表示します。
+            支払データが登録されると、スケジュールと未払残を表示します。
           </p>
         )}
       </section>

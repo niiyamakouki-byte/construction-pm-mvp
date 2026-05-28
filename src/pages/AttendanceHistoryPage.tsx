@@ -2,11 +2,12 @@ import { useEffect, useState } from "react";
 import {
   calculateManDays,
   exportToCSV,
-  getEntriesByCompany,
-  getEntryLog,
 } from "../lib/site-entry-log.js";
-import type { SiteEntryRecord } from "../lib/site-entry-log.js";
+import { SiteEntryRepository } from "../lib/supabase-adapter/SiteEntryRepository.js";
+import type { SiteEntryRecord } from "../lib/supabase-adapter/SiteEntryRepository.js";
 import { navigate } from "../hooks/useHashRouter.js";
+
+const siteEntryRepository = new SiteEntryRepository();
 
 function pad2(n: number): string {
   return String(n).padStart(2, "0");
@@ -36,6 +37,20 @@ function downloadCSV(content: string, filename: string): void {
   URL.revokeObjectURL(url);
 }
 
+function groupEntriesByCompany(entries: SiteEntryRecord[]): Map<string, SiteEntryRecord[]> {
+  const map = new Map<string, SiteEntryRecord[]>();
+  for (const entry of entries) {
+    const company = entry.company || "（会社未設定）";
+    const existing = map.get(company);
+    if (existing) {
+      existing.push(entry);
+    } else {
+      map.set(company, [entry]);
+    }
+  }
+  return map;
+}
+
 export function AttendanceHistoryPage({ projectId }: { projectId: string }) {
   const today = new Date().toISOString().slice(0, 10);
   const [selectedDate, setSelectedDate] = useState<string>(today);
@@ -45,10 +60,17 @@ export function AttendanceHistoryPage({ projectId }: { projectId: string }) {
   );
 
   useEffect(() => {
-    const recs = getEntryLog(projectId, selectedDate);
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- プロジェクト/日付変化時に入退場データを同期する意図的なパターン
-    setEntries(recs);
-    setByCompany(getEntriesByCompany(projectId, selectedDate));
+    let cancelled = false;
+    const load = async () => {
+      const recs = await siteEntryRepository.listByProjectAsync(projectId, selectedDate);
+      if (cancelled) return;
+      setEntries(recs);
+      setByCompany(groupEntriesByCompany(recs));
+    };
+    void load();
+    return () => {
+      cancelled = true;
+    };
   }, [projectId, selectedDate]);
 
   const totalWorkers = entries.length;

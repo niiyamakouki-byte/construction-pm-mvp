@@ -1,15 +1,10 @@
 import { useEffect, useRef, useState } from "react";
-import {
-  getEntryLog,
-  getTodayWorkerCount,
-  logEntry,
-  logExit,
-} from "../lib/site-entry-log.js";
-import type { SiteEntryRecord } from "../lib/site-entry-log.js";
+import { SiteEntryRepository } from "../lib/supabase-adapter/SiteEntryRepository.js";
+import type { SiteEntryRecord } from "../lib/supabase-adapter/SiteEntryRepository.js";
 import { navigate } from "../hooks/useHashRouter.js";
 
 const LS_RECENT_WORKERS = "genbahub_kiosk_recent_workers";
-const LS_RECORD_PREFIX = "genbahub_site_entry_record_";
+const siteEntryRepository = new SiteEntryRepository();
 
 const JOB_TYPES = [
   "大工",
@@ -55,30 +50,6 @@ function saveRecentWorker(worker: RecentWorker): void {
   }
 }
 
-function getStoredRecord(projectId: string): SiteEntryRecord | null {
-  try {
-    const raw = localStorage.getItem(`${LS_RECORD_PREFIX}${projectId}`);
-    return raw ? (JSON.parse(raw) as SiteEntryRecord) : null;
-  } catch {
-    return null;
-  }
-}
-
-function storeRecord(projectId: string, record: SiteEntryRecord | null): void {
-  try {
-    if (record) {
-      localStorage.setItem(
-        `${LS_RECORD_PREFIX}${projectId}`,
-        JSON.stringify(record),
-      );
-    } else {
-      localStorage.removeItem(`${LS_RECORD_PREFIX}${projectId}`);
-    }
-  } catch {
-    // ignore
-  }
-}
-
 function useNow(): Date {
   const [now, setNow] = useState(() => new Date());
   useEffect(() => {
@@ -102,7 +73,7 @@ export function SiteEntryPage({ projectId }: { projectId: string }) {
     null,
   );
   const [currentRecord, setCurrentRecord] = useState<SiteEntryRecord | null>(
-    () => getStoredRecord(projectId),
+    null,
   );
   const [todayLog, setTodayLog] = useState<SiteEntryRecord[]>([]);
   const [workerCount, setWorkerCount] = useState(0);
@@ -118,17 +89,34 @@ export function SiteEntryPage({ projectId }: { projectId: string }) {
   const [manualCompany, setManualCompany] = useState("");
   const [manualJob, setManualJob] = useState<JobType>("大工");
 
-  const refreshLog = () => {
+  const refreshLog = async () => {
     const today = new Date().toISOString().slice(0, 10);
-    setTodayLog(getEntryLog(projectId, today));
-    setWorkerCount(getTodayWorkerCount(projectId));
+    const records = await siteEntryRepository.listByProjectAsync(projectId, today);
+    setTodayLog(records);
+    setWorkerCount(records.filter((record) => !record.exitTime).length);
+    setCurrentRecord((current) => {
+      if (current && records.some((record) => record.id === current.id && !record.exitTime)) {
+        return current;
+      }
+      return records.find((record) => !record.exitTime) ?? null;
+    });
   };
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- projectId/currentRecord変化時に入退場ログを同期する意図的なパターン
-    refreshLog();
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- refreshLog は意図的に省略（projectId/currentRecord変化時のみ実行）
-  }, [projectId, currentRecord]);
+    let cancelled = false;
+    const load = async () => {
+      const today = new Date().toISOString().slice(0, 10);
+      const records = await siteEntryRepository.listByProjectAsync(projectId, today);
+      if (cancelled) return;
+      setTodayLog(records);
+      setWorkerCount(records.filter((record) => !record.exitTime).length);
+      setCurrentRecord(records.find((record) => !record.exitTime) ?? null);
+    };
+    void load();
+    return () => {
+      cancelled = true;
+    };
+  }, [projectId]);
 
   const companies = Array.from(
     new Set(recentWorkers.map((w) => w.company).filter(Boolean)),
@@ -145,27 +133,32 @@ export function SiteEntryPage({ projectId }: { projectId: string }) {
     flashTimer.current = setTimeout(() => setFlash(null), 2500);
   };
 
-  const handleQuickIn = (worker: RecentWorker) => {
-    const record = logEntry(projectId, worker.workerName, worker.company);
-    storeRecord(projectId, record);
+  const createEntryRecord = (workerName: string, company: string): SiteEntryRecord => ({
+    id: crypto.randomUUID(),
+    projectId,
+    workerName: workerName.trim(),
+    company: company.trim(),
+    entryTime: new Date().toISOString(),
+  });
+
+  const handleQuickIn = async (worker: RecentWorker) => {
+    const record = createEntryRecord(worker.workerName, worker.company);
+    await siteEntryRepository.saveAsync(record);
     setCurrentRecord(record);
     saveRecentWorker({ ...worker, lastSeen: new Date().toISOString() });
     setRecentWorkers(getRecentWorkers());
     setSelectedWorker(null);
     showFlash("in", worker.workerName);
-    refreshLog();
+    await refreshLog();
   };
 
-  const handleExit = () => {
+  const handleExit = async () => {
     if (!currentRecord) return;
-    const updated = logExit(currentRecord.id);
-    if (updated) {
-      storeRecord(projectId, null);
-      const exitedRecord = currentRecord;
-      setCurrentRecord(null);
-      showFlash("out", exitedRecord.workerName);
-      refreshLog();
-    }
+    const updated = { ...currentRecord, exitTime: new Date().toISOString() };
+    await siteEntryRepository.saveAsync(updated);
+    setCurrentRecord(null);
+    showFlash("out", currentRecord.workerName);
+    await refreshLog();
   };
 
   const handleManualEntry = (e: React.FormEvent) => {
@@ -177,16 +170,18 @@ export function SiteEntryPage({ projectId }: { projectId: string }) {
       jobType: manualJob,
       lastSeen: new Date().toISOString(),
     };
-    const record = logEntry(projectId, worker.workerName, worker.company);
-    storeRecord(projectId, record);
-    setCurrentRecord(record);
-    saveRecentWorker(worker);
-    setRecentWorkers(getRecentWorkers());
-    setShowManual(false);
-    setManualName("");
-    setManualCompany("");
-    showFlash("in", worker.workerName);
-    refreshLog();
+    void (async () => {
+      const record = createEntryRecord(worker.workerName, worker.company);
+      await siteEntryRepository.saveAsync(record);
+      setCurrentRecord(record);
+      saveRecentWorker(worker);
+      setRecentWorkers(getRecentWorkers());
+      setShowManual(false);
+      setManualName("");
+      setManualCompany("");
+      showFlash("in", worker.workerName);
+      await refreshLog();
+    })();
   };
 
   const isEntered = currentRecord !== null && !currentRecord.exitTime;
@@ -438,7 +433,7 @@ export function SiteEntryPage({ projectId }: { projectId: string }) {
           <button
             type="button"
             disabled={!selectedWorker}
-            onClick={() => selectedWorker && handleQuickIn(selectedWorker)}
+            onClick={() => selectedWorker && void handleQuickIn(selectedWorker)}
             className="w-full rounded-2xl bg-emerald-500 disabled:bg-slate-600 disabled:opacity-40 py-6 font-black text-4xl text-white shadow-lg hover:bg-emerald-400 active:bg-emerald-600 transition-colors mb-4"
             style={{ minHeight: 100 }}
           >
@@ -449,7 +444,7 @@ export function SiteEntryPage({ projectId }: { projectId: string }) {
           <button
             type="button"
             disabled={!isEntered}
-            onClick={handleExit}
+            onClick={() => void handleExit()}
             className="w-full rounded-2xl bg-red-500 disabled:bg-slate-600 disabled:opacity-40 py-6 font-black text-4xl text-white shadow-lg hover:bg-red-400 active:bg-red-600 transition-colors"
             style={{ minHeight: 100 }}
           >

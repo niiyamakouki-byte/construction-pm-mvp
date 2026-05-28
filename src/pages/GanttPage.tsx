@@ -155,7 +155,6 @@ function RiskPanel({ schedule, highlightedTaskIds, onHighlight }: RiskPanelProps
     <div className="rounded-2xl bg-white/90 px-4 py-4 ring-1 ring-slate-200">
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div>
-          <p className="text-xs font-semibold tracking-[0.18em] text-slate-500">schedule-risk-forecaster</p>
           <h2 className="mt-1 text-sm font-bold text-slate-900">リスク予測（モンテカルロ）</h2>
         </div>
         <button
@@ -1738,7 +1737,6 @@ function GanttPageContent({ initialProjectId = null }: GanttPageProps) {
             <div className="rounded-2xl bg-white/90 px-4 py-4 ring-1 ring-slate-200">
               <div className="flex items-center justify-between gap-3">
                 <div>
-                  <p className="text-xs font-semibold tracking-[0.18em] text-slate-500">milestone-tracker</p>
                   <h2 className="mt-1 text-sm font-bold text-slate-900">工程上の主要マイルストーン</h2>
                 </div>
                 <div className="flex flex-wrap items-center gap-2 text-xs font-semibold">
@@ -1787,7 +1785,6 @@ function GanttPageContent({ initialProjectId = null }: GanttPageProps) {
             <div className="rounded-2xl bg-white/90 px-4 py-4 ring-1 ring-slate-200">
               <div className="flex items-center justify-between gap-3">
                 <div>
-                  <p className="text-xs font-semibold tracking-[0.18em] text-slate-500">change-order-tracker</p>
                   <h2 className="mt-1 text-sm font-bold text-slate-900">変更指示サマリー</h2>
                 </div>
                 <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
