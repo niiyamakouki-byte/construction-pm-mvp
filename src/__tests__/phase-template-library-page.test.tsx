@@ -190,10 +190,14 @@ describe("PhaseTemplateLibraryPage — 削除", () => {
 
     expect(screen.getByText("削除対象テンプレ")).toBeDefined();
 
+    // 削除ボタンをクリック → ConfirmDialog が開く
     const deleteBtn = screen.getByRole("button", { name: "削除対象テンプレを削除" });
     await user.click(deleteBtn);
 
-    expect(screen.queryByText("削除対象テンプレ")).toBeNull();
+    // ConfirmDialog の「削除する」ボタンで確定
+    await user.click(screen.getByRole("button", { name: "削除する" }));
+
+    expect(screen.queryAllByText("削除対象テンプレ")).toHaveLength(0);
     expect(listPhaseTemplates()).toHaveLength(0);
   });
 });
