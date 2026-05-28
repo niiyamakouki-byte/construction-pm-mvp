@@ -45,22 +45,24 @@ export function TaskEditModal({
   return (
     <div className="sheet-backdrop fixed inset-0 z-[70] bg-slate-950/40" onClick={onClose}>
       <div
-        className="sheet-panel safe-bottom absolute inset-x-0 bottom-0 mx-auto w-full max-w-xl rounded-t-[28px] bg-white px-4 pb-6 pt-3 shadow-[0_-24px_60px_rgba(15,23,42,0.22)]"
+        className="sheet-panel safe-bottom absolute inset-x-0 bottom-0 mx-auto flex max-h-[92dvh] w-full max-w-xl flex-col rounded-t-[28px] bg-white px-4 pb-4 pt-3 shadow-[0_-24px_60px_rgba(15,23,42,0.22)]"
         onClick={(event) => event.stopPropagation()}
         role="dialog"
         aria-modal="true"
         aria-label="タスクを編集"
       >
         <div className="mx-auto mb-4 h-1.5 w-12 rounded-full bg-slate-200" />
-        <div className="mb-4 flex items-start justify-between gap-3">
-          <div>
+        <div className="mb-4 flex shrink-0 items-start justify-between gap-3">
+          <div className="min-w-0">
             <p className="text-xs font-semibold tracking-[0.18em] text-slate-500">タスク編集</p>
-            <h3 className="mt-1 text-xl font-bold text-slate-900">{taskDetail.task.name}</h3>
+            <h3 className="mt-1 break-words text-lg font-bold leading-snug text-slate-900 sm:text-xl">
+              {taskDetail.task.name}
+            </h3>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="flex h-11 w-11 items-center justify-center rounded-full bg-slate-100 text-slate-500"
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-500"
             aria-label="編集シートを閉じる"
           >
             <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5" aria-hidden="true">
@@ -76,37 +78,38 @@ export function TaskEditModal({
 
         <form
           onSubmit={onSubmit}
-          className="sheet-scroll flex max-h-[78dvh] flex-col gap-3 overflow-y-auto pr-1"
+          className="sheet-scroll flex min-h-0 flex-1 flex-col overflow-hidden"
         >
-          <div className="grid gap-3 sm:grid-cols-2">
-            <label className="flex flex-col gap-1.5">
-              <span className="text-sm font-medium text-slate-600">工程名</span>
-              <input
-                type="text"
-                value={taskDetail.editName}
-                onChange={(event) => onChange((detail) => ({ ...detail, editName: event.target.value }))}
-                required
-                maxLength={200}
-                autoFocus
-                className="rounded-2xl border border-slate-300 px-4 py-3 text-base focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
-              />
-            </label>
-            <label className="flex flex-col gap-1.5">
-              <span className="text-sm font-medium text-slate-600">協力会社</span>
-              <select
-                value={taskDetail.editContractorId}
-                onChange={(event) => onChange((detail) => ({ ...detail, editContractorId: event.target.value }))}
-                className="rounded-2xl border border-slate-300 px-4 py-3 text-base focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
-              >
-                <option value="">未設定</option>
-                {contractors.map((contractor) => (
-                  <option key={contractor.id} value={contractor.id}>
-                    {contractor.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-          </div>
+          <div className="flex-1 space-y-3 overflow-y-auto pr-1">
+            <div className="grid gap-3 sm:grid-cols-2">
+              <label className="flex flex-col gap-1.5">
+                <span className="text-sm font-medium text-slate-600">工程名</span>
+                <input
+                  type="text"
+                  value={taskDetail.editName}
+                  onChange={(event) => onChange((detail) => ({ ...detail, editName: event.target.value }))}
+                  required
+                  maxLength={200}
+                  autoFocus
+                  className="rounded-2xl border border-slate-300 px-4 py-3 text-base focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
+                />
+              </label>
+              <label className="flex flex-col gap-1.5">
+                <span className="text-sm font-medium text-slate-600">協力会社</span>
+                <select
+                  value={taskDetail.editContractorId}
+                  onChange={(event) => onChange((detail) => ({ ...detail, editContractorId: event.target.value }))}
+                  className="rounded-2xl border border-slate-300 px-4 py-3 text-base focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
+                >
+                  <option value="">未設定</option>
+                  {contractors.map((contractor) => (
+                    <option key={contractor.id} value={contractor.id}>
+                      {contractor.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
 
           <div className="grid gap-3 sm:grid-cols-2">
             <label className="flex flex-col gap-1.5">
@@ -183,7 +186,7 @@ export function TaskEditModal({
           {taskDetail.task.dependencies && taskDetail.task.dependencies.length > 0 && (
             <div className="flex flex-col gap-1.5">
               <span className="text-sm font-medium text-slate-600">依存関係タイプ</span>
-              <div className="grid grid-cols-5 gap-1.5">
+              <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-5">
                 {DEP_TYPE_OPTIONS.map((opt) => (
                   <button
                     key={opt.value}
@@ -293,31 +296,32 @@ export function TaskEditModal({
               </button>
             ))}
           </div>
+          </div>
 
-          <div className="flex items-center justify-between gap-3 pt-2">
+          <div className="mt-3 flex shrink-0 items-center justify-between gap-3 border-t border-slate-100 bg-white pt-3">
             {onDelete ? (
               <button
                 type="button"
                 onClick={() => onDelete(taskDetail.task.id)}
-                className="rounded-2xl px-4 py-3 text-sm font-semibold text-red-600"
+                className="min-h-11 rounded-2xl px-4 py-3 text-sm font-semibold text-red-600"
               >
                 削除
               </button>
             ) : (
               <span />
             )}
-            <div className="flex items-center gap-2">
+            <div className="grid flex-1 grid-cols-2 gap-2 sm:flex sm:flex-initial sm:items-center">
               <button
                 type="button"
                 onClick={onClose}
-                className="rounded-2xl bg-slate-100 px-4 py-3 text-sm font-semibold text-slate-600"
+                className="min-h-11 rounded-2xl bg-slate-100 px-4 py-3 text-sm font-semibold text-slate-600"
               >
                 キャンセル
               </button>
               <button
                 type="submit"
                 disabled={taskDetail.saving}
-                className="rounded-2xl bg-brand-600 px-5 py-3 text-sm font-semibold text-white shadow-sm disabled:opacity-60"
+                className="min-h-11 rounded-2xl bg-brand-600 px-5 py-3 text-sm font-semibold text-white shadow-sm disabled:opacity-60"
               >
                 {taskDetail.saving ? "保存中..." : "保存"}
               </button>
