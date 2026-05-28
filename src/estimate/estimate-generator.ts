@@ -84,7 +84,8 @@ export function generateEstimate(req: EstimateRequest): Estimate {
     if (!cat) continue;
 
     const unitPrice = input.unitPriceOverride ?? masterItem.unitPrice;
-    const amount = unitPrice * input.quantity;
+    // 端数処理: 四捨五入で整数円に丸める（小数点以下が蓄積して合計がずれるのを防ぐ）
+    const amount = Math.round(unitPrice * input.quantity);
 
     const line: EstimateLine = {
       code: input.code,

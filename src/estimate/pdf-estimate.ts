@@ -85,12 +85,21 @@ export async function generateEstimatePdf(estimate: Estimate): Promise<Blob> {
     amount: contentWidth - 140,
   };
 
+  /** テーブルに縦の区切り線を引く（ヘッダー行の高さ分） */
+  const drawColDividers = (rowY: number, rowH: number) => {
+    doc.setDrawColor(200, 200, 200);
+    for (const x of [colX.qty, colX.unit, colX.unitPrice, colX.amount]) {
+      doc.line(x, rowY, x, rowY + rowH);
+    }
+  };
+
   const drawTableHeader = () => {
     doc.setFontSize(8);
     doc.setFillColor(240, 240, 240);
     doc.rect(marginL, y, contentWidth, 6, "F");
     doc.setDrawColor(180, 180, 180);
     doc.rect(marginL, y, contentWidth, 6);
+    drawColDividers(y, 6);
     const headerY = y + 4.2;
     doc.text("品名", colX.name + 2, headerY);
     doc.text("数量", colX.qty + colW.qty / 2, headerY, { align: "center" });
@@ -128,17 +137,19 @@ export async function generateEstimatePdf(estimate: Estimate): Promise<Blob> {
       // 品名は長い場合に切り詰め
       const nameStr = line.name.length > 28 ? line.name.slice(0, 27) + "…" : line.name;
       doc.text(nameStr, colX.name + 2, y + 3.8);
-      doc.text(String(line.quantity), colX.qty + colW.qty / 2, y + 3.8, { align: "center" });
+      doc.text(line.quantity.toLocaleString("ja-JP"), colX.qty + colW.qty / 2, y + 3.8, { align: "center" });
       doc.text(line.unit, colX.unit + colW.unit / 2, y + 3.8, { align: "center" });
       doc.text(yen(line.unitPrice), colX.unitPrice + colW.unitPrice, y + 3.8, { align: "right" });
       doc.text(yen(line.amount), colX.amount + colW.amount, y + 3.8, { align: "right" });
       y += rowH;
     }
 
-    // セクション小計行
+    // セクション小計行（背景塗り + 上下罫線で明細行と区別）
     doc.setFontSize(8);
     doc.setFillColor(248, 248, 248);
     doc.rect(marginL, y, contentWidth, 5.5, "F");
+    doc.setDrawColor(180, 180, 180);
+    doc.rect(marginL, y, contentWidth, 5.5);
     doc.text("小計", colX.unitPrice + colW.unitPrice, y + 3.8, { align: "right" });
     doc.text(yen(section.subtotal), colX.amount + colW.amount, y + 3.8, { align: "right" });
     y += 7;

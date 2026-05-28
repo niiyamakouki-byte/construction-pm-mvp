@@ -54,6 +54,38 @@ describe("estimate-generator", () => {
     expect(line.amount).toBe(50000);
   });
 
+  it("rounds amount to integer — prevents float noise from accumulating in subtotals", () => {
+    // DM-001 unitPrice=3500, quantity=33.3 → raw=116549.99999999999, rounded=116550
+    const est = generateEstimate({
+      propertyName: "端数テスト",
+      clientName: "テスト",
+      items: [{ code: "DM-001", quantity: 33.3 }],
+    });
+    const line = est.sections[0].lines[0];
+    expect(Number.isInteger(line.amount)).toBe(true);
+    expect(line.amount).toBe(116550);
+    expect(Number.isInteger(est.directCost)).toBe(true);
+    expect(Number.isInteger(est.subtotal)).toBe(true);
+    expect(Number.isInteger(est.tax)).toBe(true);
+    expect(Number.isInteger(est.total)).toBe(true);
+  });
+
+  it("total === subtotal + tax — consistency invariant", () => {
+    const est = generateEstimate({
+      propertyName: "整合性テスト",
+      clientName: "テスト",
+      items: [
+        { code: "DM-001", quantity: 50 },
+        { code: "IN-005", quantity: 120 },
+        { code: "EL-005", quantity: 10 },
+      ],
+      managementFeeRate: 0.1,
+      generalExpenseRate: 0.05,
+    });
+    expect(est.total).toBe(est.subtotal + est.tax);
+    expect(est.subtotal).toBe(est.directCost + est.managementFee + est.generalExpense);
+  });
+
   it("throws on unknown item code", () => {
     expect(() =>
       generateEstimate({
