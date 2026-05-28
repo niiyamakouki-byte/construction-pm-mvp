@@ -34,7 +34,10 @@ function enc(text: string): Uint8Array {
   return new TextEncoder().encode(text);
 }
 
-function toArrayBuffer(bytes: Uint8Array): ArrayBuffer {
+function toCryptoData(bytes: Uint8Array): BufferSource {
+  if (typeof Buffer !== "undefined") {
+    return Buffer.from(bytes) as unknown as BufferSource;
+  }
   const copy = new ArrayBuffer(bytes.byteLength);
   new Uint8Array(copy).set(bytes);
   return copy;
@@ -72,12 +75,12 @@ async function getSecretBytes(): Promise<Uint8Array> {
 async function sign(data: string, secretBytes: Uint8Array): Promise<Uint8Array> {
   const key = await crypto.subtle.importKey(
     "raw",
-    toArrayBuffer(secretBytes),
+    toCryptoData(secretBytes),
     { name: "HMAC", hash: "SHA-256" },
     false,
     ["sign"],
   );
-  const sig = await crypto.subtle.sign("HMAC", key, toArrayBuffer(enc(data)));
+  const sig = await crypto.subtle.sign("HMAC", key, toCryptoData(enc(data)));
   return new Uint8Array(sig);
 }
 
@@ -85,12 +88,12 @@ async function sign(data: string, secretBytes: Uint8Array): Promise<Uint8Array> 
 async function verify(data: string, sig: Uint8Array, secretBytes: Uint8Array): Promise<boolean> {
   const key = await crypto.subtle.importKey(
     "raw",
-    toArrayBuffer(secretBytes),
+    toCryptoData(secretBytes),
     { name: "HMAC", hash: "SHA-256" },
     false,
     ["verify"],
   );
-  return crypto.subtle.verify("HMAC", key, toArrayBuffer(sig), toArrayBuffer(enc(data)));
+  return crypto.subtle.verify("HMAC", key, toCryptoData(sig), toCryptoData(enc(data)));
 }
 
 // ── SHA-256 password hash ─────────────────────────────────────────────────────
@@ -99,7 +102,7 @@ async function verify(data: string, sig: Uint8Array, secretBytes: Uint8Array): P
  * パスワードを SHA-256 でハッシュして hex 文字列を返す。
  */
 export async function hashPassword(password: string): Promise<string> {
-  const digest = await crypto.subtle.digest("SHA-256", toArrayBuffer(enc(password)));
+  const digest = await crypto.subtle.digest("SHA-256", toCryptoData(enc(password)));
   return Array.from(new Uint8Array(digest))
     .map((b) => b.toString(16).padStart(2, "0"))
     .join("");

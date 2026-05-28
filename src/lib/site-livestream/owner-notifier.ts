@@ -28,7 +28,7 @@ function isInQuietHours(quietHours: { start: string; end: string }, now: Date): 
     return h * 60 + m;
   };
 
-  const currentMinutes = now.getHours() * 60 + now.getMinutes();
+  const currentMinutes = ((now.getUTCHours() + 9) % 24) * 60 + now.getUTCMinutes();
   const startMinutes = toMinutes(quietHours.start);
   const endMinutes = toMinutes(quietHours.end);
 
