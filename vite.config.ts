@@ -98,7 +98,11 @@ export default defineConfig({
       output: {
         manualChunks(id) {
           if (id.includes("node_modules/@supabase")) return "supabase";
-          if (id.includes("node_modules/jspdf") || id.includes("node_modules/html2canvas")) return "pdf";
+          if (id.includes("node_modules/html2canvas")) return "html2canvas";
+          if (id.includes("node_modules/canvg")) return "canvg";
+          if (id.includes("node_modules/dompurify")) return "dompurify";
+          if (id.includes("node_modules/jspdf")) return "jspdf";
+          if (id.includes("src/estimate/noto-sans-jp-font")) return "pdf-font";
           if (id.includes("node_modules/xlsx")) return "xlsx";
           if (id.includes("node_modules/@stripe")) return "stripe";
           if (id.includes("node_modules/zod")) return "zod";

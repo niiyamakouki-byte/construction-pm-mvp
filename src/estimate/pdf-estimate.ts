@@ -1,5 +1,4 @@
 import { jsPDF } from "jspdf";
-import { NOTO_SANS_JP_REGULAR_BASE64 } from "./noto-sans-jp-font.js";
 import type { Estimate } from "./types.js";
 
 /** 金額を日本円フォーマット */
@@ -12,7 +11,8 @@ function yen(n: number): string {
  * ビルド時にバンドルされたサブセットフォントを使用するため、CDN不要・オフライン動作可。
  * 収録文字: ASCII + ひらがな + カタカナ + 建設業務頻出漢字（約642文字）
  */
-function setupJapaneseFont(doc: jsPDF): void {
+async function setupJapaneseFont(doc: jsPDF): Promise<void> {
+  const { NOTO_SANS_JP_REGULAR_BASE64 } = await import("./noto-sans-jp-font.js");
   doc.addFileToVFS("NotoSansJP-Regular.ttf", NOTO_SANS_JP_REGULAR_BASE64);
   doc.addFont("NotoSansJP-Regular.ttf", "NotoSansJP", "normal");
   doc.setFont("NotoSansJP");
@@ -26,7 +26,7 @@ function setupJapaneseFont(doc: jsPDF): void {
 export async function generateEstimatePdf(estimate: Estimate): Promise<Blob> {
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
 
-  setupJapaneseFont(doc);
+  await setupJapaneseFont(doc);
 
   const pageWidth = 210;
   const marginL = 18;
