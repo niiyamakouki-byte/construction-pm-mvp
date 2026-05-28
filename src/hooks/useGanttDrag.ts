@@ -136,11 +136,8 @@ export function useGanttDrag({
       const deltaDays = Math.round((event.clientX - drag.startX) / dayWidth);
       const draggedTask = ganttTasks.find((task) => task.id === drag.taskId);
 
-      let previewStartDate = drag.originalStartDate;
-      let previewEndDate = drag.originalEndDate;
-
-      if (drag.type === "move") {
-        previewStartDate = draggedTask
+      const previewStartDate =
+        drag.type === "move" && draggedTask
           ? addDaysBySchedule(
             drag.originalStartDate,
             deltaDays,
@@ -148,7 +145,9 @@ export function useGanttDrag({
             draggedTask.includeWeekends,
           )
           : drag.originalStartDate;
-        previewEndDate = draggedTask
+      const previewEndDate = (() => {
+        if (drag.type === "move") {
+          return draggedTask
           ? addDaysBySchedule(
             drag.originalEndDate,
             deltaDays,
@@ -156,13 +155,13 @@ export function useGanttDrag({
             draggedTask.includeWeekends,
           )
           : drag.originalEndDate;
-      } else {
+        }
         const originalDuration = daysBetween(
           drag.originalStartDate,
           drag.originalEndDate,
         );
         const newDuration = Math.max(1, originalDuration + deltaDays);
-        previewEndDate = draggedTask
+        return draggedTask
           ? addDaysBySchedule(
             drag.originalStartDate,
             newDuration,
@@ -170,7 +169,7 @@ export function useGanttDrag({
             draggedTask.includeWeekends,
           )
           : drag.originalEndDate;
-      }
+      })();
 
       const nextDrag = { ...drag, previewStartDate, previewEndDate };
       dragRef.current = nextDrag;

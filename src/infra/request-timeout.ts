@@ -52,7 +52,6 @@ export async function fetchWithTimeout(
   const { label, timeoutMs } = getTimeoutOptions(options);
   const controller = new AbortController();
   const upstreamSignal = init?.signal;
-  let timeoutId: ReturnType<typeof setTimeout> | null = null;
   let didTimeout = false;
 
   const abortFromUpstream = () => {
@@ -65,7 +64,7 @@ export async function fetchWithTimeout(
     upstreamSignal.addEventListener("abort", abortFromUpstream, { once: true });
   }
 
-  timeoutId = setTimeout(() => {
+  const timeoutId = setTimeout(() => {
     didTimeout = true;
     controller.abort();
   }, timeoutMs);
@@ -81,9 +80,7 @@ export async function fetchWithTimeout(
     }
     throw error;
   } finally {
-    if (timeoutId) {
-      clearTimeout(timeoutId);
-    }
+    clearTimeout(timeoutId);
     upstreamSignal?.removeEventListener("abort", abortFromUpstream);
   }
 }

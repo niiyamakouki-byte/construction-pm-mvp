@@ -60,6 +60,7 @@ export function publishHpPost(
   } catch (error) {
     throw new Error(
       `laporta-hp-blog-mcp createPost failed for slug "${params.slug}" via ${toolsPath}: ${extractErrorMessage(error)}`,
+      error instanceof Error ? { cause: error } : undefined,
     );
   }
 }

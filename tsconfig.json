@@ -10,7 +10,7 @@
     "isolatedModules": true,
     "resolveJsonModule": true,
     "jsx": "react-jsx",
-    "types": ["vite-plugin-pwa/vanillajs"]
+    "types": ["node", "vite-plugin-pwa/vanillajs"]
   },
   "include": ["src"]
 }

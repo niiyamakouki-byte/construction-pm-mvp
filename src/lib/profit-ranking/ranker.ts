@@ -63,8 +63,6 @@ export function rankProjects(
 
   // Assign ranks with tie handling
   const entries: ProfitRankingEntry[] = [];
-  let currentRank = 1;
-
   for (let i = 0; i < sorted.length; i++) {
     const m = sorted[i];
     // Ties: same rank if same sort value as previous
@@ -75,7 +73,7 @@ export function rankProjects(
       const scoreContribution = Math.round((Math.abs(getSortValue(m, sortKey)) / maxVal) * 100);
       entries.push({ rank: prevRank, projectMetrics: m, scoreContribution, badge });
     } else {
-      currentRank = i + 1;
+      const currentRank = i + 1;
       const badge = assignBadge(m, currentRank);
       const scoreContribution = Math.round((Math.abs(getSortValue(m, sortKey)) / maxVal) * 100);
       entries.push({ rank: currentRank, projectMetrics: m, scoreContribution, badge });

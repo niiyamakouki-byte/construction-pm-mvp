@@ -91,25 +91,25 @@ export function assessDamage(input: AssessmentInput): AssessmentResult {
   notes.push(`写真${photoUrls.length}枚から信頼度${Math.round(confidence * 100)}%で査定`);
 
   // 損害額推定
-  let estimatedDamageJpy = 0;
-
-  if (constructionCostJpy !== undefined && constructionCostJpy > 0) {
+  const estimatedDamageJpy = (() => {
+    if (constructionCostJpy !== undefined && constructionCostJpy > 0) {
     // 構造物コストベース
     const damageRate = DEFAULT_DAMAGE_RATE[damageType];
-    estimatedDamageJpy = constructionCostJpy * damageRate;
     notes.push(`構造物原価 ¥${constructionCostJpy.toLocaleString()} × 損害率${(damageRate * 100).toFixed(0)}%`);
-  } else if (estimatedAreaM2 !== undefined && estimatedAreaM2 > 0) {
+      return constructionCostJpy * damageRate;
+    }
+    if (estimatedAreaM2 !== undefined && estimatedAreaM2 > 0) {
     // 面積ベース
     const unitCost = DAMAGE_UNIT_COST_PER_M2[damageType];
-    estimatedDamageJpy = estimatedAreaM2 * unitCost;
     notes.push(`被害面積 ${estimatedAreaM2}m² × 単価 ¥${unitCost.toLocaleString()}/m²`);
-  } else {
+      return estimatedAreaM2 * unitCost;
+    }
     // 写真のみから最低限推定 (50万円固定ベース × 損害率)
     const baseEstimate = 500_000;
-    estimatedDamageJpy = baseEstimate * DEFAULT_DAMAGE_RATE[damageType];
     notes.push(`写真のみ査定: 基準額 ¥${baseEstimate.toLocaleString()} × 損害率 ${(DEFAULT_DAMAGE_RATE[damageType] * 100).toFixed(0)}%`);
     confidence = Math.min(confidence, 0.45);
-  }
+    return baseEstimate * DEFAULT_DAMAGE_RATE[damageType];
+  })();
 
   // 免責判定
   const deductibleRate = getPrimaryDeductibleRate(damageType);

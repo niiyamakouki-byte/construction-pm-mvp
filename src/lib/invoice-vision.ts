@@ -97,6 +97,7 @@ export function parseVisionResponseText(text: string): InvoiceExtraction {
       `Vision レスポンスの JSON パースに失敗しました: ${
         e instanceof Error ? e.message : String(e)
       }`,
+      e instanceof Error ? { cause: e } : undefined,
     );
   }
 
