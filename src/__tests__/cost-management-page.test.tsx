@@ -232,7 +232,7 @@ describe("CostManagementPage", () => {
     expect(screen.queryByText("壁紙変更")).toBeNull();
   });
 
-  it("案件ゼロのとき「案件を選択する」「見積から取込」CTAを表示する", async () => {
+  it("案件ゼロのとき「案件を選択する」「見積を取り込む」CTAを表示する", async () => {
     mockProjectRepository.findAll.mockResolvedValue([]);
     mockTaskRepository.findAll.mockResolvedValue([]);
     mockCostItemRepository.findAll.mockResolvedValue([]);
@@ -241,7 +241,7 @@ describe("CostManagementPage", () => {
     render(<CostManagementPage />);
 
     expect(await screen.findByText("案件を選択する")).toBeDefined();
-    expect(screen.getByText("見積から取込")).toBeDefined();
+    expect(screen.getByText("見積を取り込む")).toBeDefined();
   });
 
   it("案件ゼロのCTAから案件一覧と見積へ遷移する", async () => {
@@ -256,11 +256,11 @@ describe("CostManagementPage", () => {
     await user.click(await screen.findByRole("button", { name: "案件を選択する" }));
     expect(vi.mocked(navigate)).toHaveBeenCalledWith("/app");
 
-    await user.click(screen.getByRole("button", { name: "見積から取込" }));
+    await user.click(screen.getByRole("button", { name: "見積を取り込む" }));
     expect(vi.mocked(navigate)).toHaveBeenCalledWith("/estimate");
   });
 
-  it("コスト項目ゼロのとき「見積から取込」「予算ベースライン作成」CTAを表示する", async () => {
+  it("コスト項目ゼロのとき「見積を取り込む」「予算ベースラインを作成」CTAを表示する", async () => {
     mockProjectRepository.findAll.mockResolvedValue([
       {
         id: "p1",
@@ -281,8 +281,8 @@ describe("CostManagementPage", () => {
     render(<CostManagementPage />);
 
     expect(await screen.findByText("コスト項目はまだありません")).toBeDefined();
-    expect(screen.getAllByText("見積から取込").length).toBeGreaterThan(0);
-    expect(screen.getAllByText("予算ベースライン作成").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("見積を取り込む").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("予算ベースラインを作成").length).toBeGreaterThan(0);
   });
 
 });
