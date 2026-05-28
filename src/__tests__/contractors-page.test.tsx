@@ -61,7 +61,9 @@ describe("ContractorsPage", () => {
 
   it("「業者を追加」ボタンが存在する", async () => {
     render(<ContractorsPage />);
-    await waitFor(() => expect(screen.getByText("業者を追加")).toBeDefined());
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: /協力会社を登録/ })).toBeDefined(),
+    );
   });
 
   it("業者がいない場合は空状態メッセージが表示される", async () => {
@@ -74,26 +76,32 @@ describe("ContractorsPage", () => {
   it("「業者を追加」クリックでフォームが表示される", async () => {
     const user = userEvent.setup();
     render(<ContractorsPage />);
-    await waitFor(() => screen.getByText("業者を追加"));
-    await user.click(screen.getByText("業者を追加"));
-    expect(screen.getByText("新規業者登録")).toBeDefined();
+    const addBtn = await screen.findByRole("button", { name: /協力会社を登録/ });
+    await user.click(addBtn);
+    // フォーム見出しにも同じラベルが使われる
+    expect(screen.getAllByText("協力会社を登録").length).toBeGreaterThan(0);
   });
 
   it("フォームを再度クリックで閉じられる", async () => {
     const user = userEvent.setup();
     render(<ContractorsPage />);
-    await waitFor(() => screen.getByText("業者を追加"));
-    await user.click(screen.getByText("業者を追加"));
-    expect(screen.getByText("新規業者登録")).toBeDefined();
-    await user.click(screen.getByText("業者を追加"));
-    expect(screen.queryByText("新規業者登録")).toBeNull();
+    // フォームを開く（+ 協力会社を登録）
+    const addBtn = await screen.findByRole("button", { name: /協力会社を登録/ });
+    await user.click(addBtn);
+    expect(screen.getByPlaceholderText("会社名・業者名 *")).toBeDefined();
+    // フォームを閉じる（− 協力会社を登録）— type=button のトグルボタン
+    const toggleBtn = screen.getAllByRole("button", { name: /協力会社を登録/ }).find(
+      (btn) => btn.getAttribute("type") !== "submit",
+    );
+    await user.click(toggleBtn!);
+    expect(screen.queryByPlaceholderText("会社名・業者名 *")).toBeNull();
   });
 
   it("業者名なしで送信するとエラーなし（required属性で制御）", async () => {
     const user = userEvent.setup();
     render(<ContractorsPage />);
-    await waitFor(() => screen.getByText("業者を追加"));
-    await user.click(screen.getByText("業者を追加"));
+    const addBtn = await screen.findByRole("button", { name: /協力会社を登録/ });
+    await user.click(addBtn);
     // required フィールドなので空送信はブラウザで阻止されるため create は呼ばれない
     expect(mockCreate).not.toHaveBeenCalled();
   });
@@ -101,14 +109,15 @@ describe("ContractorsPage", () => {
   it("業者名を入力して追加すると一覧に表示される", async () => {
     const user = userEvent.setup();
     render(<ContractorsPage />);
-    await waitFor(() => screen.getByText("業者を追加"));
-    await user.click(screen.getByText("業者を追加"));
+    const addBtn = await screen.findByRole("button", { name: /協力会社を登録/ });
+    await user.click(addBtn);
 
     await user.type(
       screen.getByPlaceholderText("会社名・業者名 *"),
       "山田建設",
     );
-    await user.click(screen.getByRole("button", { name: "追加" }));
+    // submit ボタンは「協力会社を登録」(type=submit)
+    await user.click(screen.getByRole("button", { name: "協力会社を登録" }));
 
     await waitFor(() => expect(screen.getByText("山田建設")).toBeDefined());
   });
@@ -116,24 +125,24 @@ describe("ContractorsPage", () => {
   it("業者追加後にフォームがリセットされる", async () => {
     const user = userEvent.setup();
     render(<ContractorsPage />);
-    await waitFor(() => screen.getByText("業者を追加"));
-    await user.click(screen.getByText("業者を追加"));
+    const addBtn = await screen.findByRole("button", { name: /協力会社を登録/ });
+    await user.click(addBtn);
 
     await user.type(screen.getByPlaceholderText("会社名・業者名 *"), "鈴木電気");
-    await user.click(screen.getByRole("button", { name: "追加" }));
+    await user.click(screen.getByRole("button", { name: "協力会社を登録" }));
 
     await waitFor(() => expect(screen.getByText("鈴木電気")).toBeDefined());
-    // フォームが閉じられる
-    expect(screen.queryByText("新規業者登録")).toBeNull();
+    // フォームが閉じられる（入力欄が消える）
+    expect(screen.queryByPlaceholderText("会社名・業者名 *")).toBeNull();
   });
 
   it("業者を追加すると空状態メッセージが消える", async () => {
     const user = userEvent.setup();
     render(<ContractorsPage />);
     await waitFor(() => screen.getByText("業者が登録されていません"));
-    await user.click(screen.getByText("業者を追加"));
+    await user.click(screen.getByRole("button", { name: /協力会社を登録/ }));
     await user.type(screen.getByPlaceholderText("会社名・業者名 *"), "佐藤塗装");
-    await user.click(screen.getByRole("button", { name: "追加" }));
+    await user.click(screen.getByRole("button", { name: "協力会社を登録" }));
     await waitFor(() =>
       expect(screen.queryByText("業者が登録されていません")).toBeNull(),
     );
@@ -194,28 +203,35 @@ describe("ContractorsPage", () => {
     mockContractors = [makeContractor({ id: "c-del", name: "削除予定業者" })];
     const user = userEvent.setup();
     render(<ContractorsPage />);
-    await waitFor(() => screen.getByText("削除予定業者"));
+    await waitFor(() => screen.getAllByText("削除予定業者"));
 
-    const deleteButton = screen.getByRole("button", { name: /を削除/ });
+    // カード内の削除ボタンをクリック → ConfirmDialog が開く
+    const deleteButton = screen.getByRole("button", { name: /削除予定業者を削除/ });
     await user.click(deleteButton);
 
+    // ConfirmDialog の「削除する」ボタンで確定
+    await user.click(screen.getByRole("button", { name: "削除する" }));
+
     await waitFor(() =>
-      expect(screen.queryByText("削除予定業者")).toBeNull(),
+      expect(screen.queryAllByText("削除予定業者")).toHaveLength(0),
     );
     expect(mockDelete).toHaveBeenCalledWith("c-del");
   });
 
   it("削除キャンセルでは業者が残る", async () => {
-    vi.mocked(confirm).mockReturnValue(false);
     mockContractors = [makeContractor({ id: "c-keep", name: "残す業者" })];
     const user = userEvent.setup();
     render(<ContractorsPage />);
-    await waitFor(() => screen.getByText("残す業者"));
+    await waitFor(() => screen.getAllByText("残す業者"));
 
-    const deleteButton = screen.getByRole("button", { name: /を削除/ });
+    // カード内の削除ボタンをクリック → ConfirmDialog が開く
+    const deleteButton = screen.getByRole("button", { name: /残す業者を削除/ });
     await user.click(deleteButton);
 
-    expect(screen.getByText("残す業者")).toBeDefined();
+    // ConfirmDialog の「キャンセル」ボタンでキャンセル
+    await user.click(screen.getByRole("button", { name: "キャンセル" }));
+
+    expect(screen.getAllByText("残す業者").length).toBeGreaterThan(0);
     expect(mockDelete).not.toHaveBeenCalled();
   });
 
@@ -223,10 +239,10 @@ describe("ContractorsPage", () => {
     mockCreate.mockRejectedValueOnce(new Error("登録に失敗しました"));
     const user = userEvent.setup();
     render(<ContractorsPage />);
-    await waitFor(() => screen.getByText("業者を追加"));
-    await user.click(screen.getByText("業者を追加"));
+    const addBtn = await screen.findByRole("button", { name: /協力会社を登録/ });
+    await user.click(addBtn);
     await user.type(screen.getByPlaceholderText("会社名・業者名 *"), "エラー業者");
-    await user.click(screen.getByRole("button", { name: "追加" }));
+    await user.click(screen.getByRole("button", { name: "協力会社を登録" }));
 
     await waitFor(() => {
       const alert = screen.getByRole("alert");
