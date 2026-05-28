@@ -12,6 +12,8 @@
     "genbahub-cli": "node --experimental-strip-types ./src/api/cli.ts",
     "mcp:server": "node --experimental-strip-types ./src/mcp/genbahub-mcp-server.ts",
     "test": "vitest run",
+    "test:e2e": "playwright test",
+    "test:e2e:headed": "playwright test --headed",
     "ci": "pnpm run lint && pnpm run typecheck && pnpm run test"
   },
   "bin": {

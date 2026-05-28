@@ -16,6 +16,8 @@ supabase/.temp/
 # Test artifacts
 e2e/screenshots/
 test-results/
+playwright-report/
+playwright/.cache/
 
 # Beads / Dolt files (added by bd init)
 .dolt/
