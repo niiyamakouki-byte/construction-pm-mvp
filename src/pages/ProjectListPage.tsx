@@ -7,6 +7,7 @@ import { geocodeAddress } from "../infra/geocode.js";
 import { navigate } from "../hooks/useHashRouter.js";
 import { useOrganizationContext } from "../contexts/OrganizationContext.js";
 import { writeLastProjectId } from "../lib/last-project.js";
+import { createSampleProject } from "../lib/sample-project.js";
 import {
   getTemplateMajorNames,
   getTemplateIdsByMajor,
@@ -173,48 +174,7 @@ export function ProjectListPage() {
     setSampleCreating(true);
     setError(null);
     try {
-      const now = new Date();
-      const toDate = (offsetDays: number) => {
-        const d = new Date(now);
-        d.setDate(d.getDate() + offsetDays);
-        return toLocalDateString(d);
-      };
-      const projectId = crypto.randomUUID();
-      await projectRepository.create({
-        id: projectId,
-        name: "渋谷オフィスビル内装工事（サンプル）",
-        description: "デモ用サンプル案件。自由に編集・削除してください。",
-        address: "東京都渋谷区渋谷2-21-1",
-        status: "active",
-        mode: "normal",
-        startDate: toLocalDateString(now),
-        includeWeekends: true,
-        createdAt: now.toISOString(),
-        updatedAt: now.toISOString(),
-      });
-      const sampleTasks = [
-        { name: "解体・撤去工事", offsetStart: 0, offsetEnd: 4 },
-        { name: "下地工事", offsetStart: 5, offsetEnd: 10 },
-        { name: "電気・設備工事", offsetStart: 8, offsetEnd: 15 },
-        { name: "内装仕上げ", offsetStart: 16, offsetEnd: 22 },
-        { name: "清掃・竣工検査", offsetStart: 23, offsetEnd: 25 },
-      ];
-      for (const task of sampleTasks) {
-        await taskRepository.create({
-          id: crypto.randomUUID(),
-          projectId,
-          name: task.name,
-          description: "",
-          status: task.offsetEnd < 5 ? "done" : task.offsetStart <= 0 ? "in_progress" : "todo",
-          progress: task.offsetEnd < 5 ? 100 : task.offsetStart <= 0 ? 40 : 0,
-          startDate: toDate(task.offsetStart),
-          dueDate: toDate(task.offsetEnd),
-          dependencies: [],
-          createdAt: now.toISOString(),
-          updatedAt: now.toISOString(),
-        });
-      }
-      writeLastProjectId(projectId);
+      const { projectId } = await createSampleProject(projectRepository, taskRepository);
       await loadProjects();
       navigate(`/gantt/${projectId}`);
     } catch (err) {

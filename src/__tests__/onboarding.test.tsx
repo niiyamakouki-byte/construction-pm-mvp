@@ -4,8 +4,9 @@ import userEvent from "@testing-library/user-event";
 import { OnboardingWizard, useOnboardingDone } from "../components/OnboardingWizard.js";
 import { HelpPage } from "../pages/HelpPage.js";
 
-const { mockProjectCreate } = vi.hoisted(() => ({
+const { mockProjectCreate, mockTaskCreate } = vi.hoisted(() => ({
   mockProjectCreate: vi.fn().mockResolvedValue(undefined),
+  mockTaskCreate: vi.fn().mockResolvedValue(undefined),
 }));
 
 // Create a proper localStorage mock since Node's built-in localStorage is incomplete
@@ -45,12 +46,21 @@ vi.mock("../stores/project-store.js", () => ({
   },
 }));
 
+vi.mock("../stores/task-store.js", () => ({
+  createTaskRepository: () => ({
+    create: mockTaskCreate,
+    findAll: vi.fn().mockResolvedValue([]),
+  }),
+}));
+
 describe("OnboardingWizard", () => {
   beforeEach(() => {
     cleanup();
     vi.stubGlobal("localStorage", createMockLocalStorage());
     mockProjectCreate.mockReset();
+    mockTaskCreate.mockReset();
     mockProjectCreate.mockResolvedValue(undefined);
+    mockTaskCreate.mockResolvedValue(undefined);
   });
 
   it("ステップ1: ようこそ画面が表示される", () => {
@@ -103,6 +113,20 @@ describe("OnboardingWizard", () => {
     render(<OnboardingWizard onComplete={onComplete} />);
     await user.click(screen.getByText("スキップ"));
     expect(onComplete).toHaveBeenCalledOnce();
+  });
+
+  it("サンプル工程表を1クリックで作成して工程表へ遷移する", async () => {
+    const onComplete = vi.fn();
+    const user = userEvent.setup();
+    render(<OnboardingWizard onComplete={onComplete} />);
+
+    await user.click(screen.getByText("サンプル工程表を開く"));
+
+    const { navigate } = await import("../hooks/useHashRouter.js");
+    expect(mockProjectCreate).toHaveBeenCalledOnce();
+    expect(mockTaskCreate).toHaveBeenCalledTimes(5);
+    expect(onComplete).toHaveBeenCalledOnce();
+    expect(vi.mocked(navigate).mock.calls[0]?.[0]).toMatch(/^\/gantt\//);
   });
 
   it("ステップ3で「戻る」を押すとステップ2に戻る", async () => {

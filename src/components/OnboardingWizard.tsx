@@ -1,7 +1,10 @@
 import { useState, useCallback } from "react";
 import { navigate } from "../hooks/useHashRouter.js";
 import { createProjectRepository } from "../stores/project-store.js";
+import { createTaskRepository } from "../stores/task-store.js";
 import { useOrganizationContext } from "../contexts/OrganizationContext.js";
+import { writeLastProjectId } from "../lib/last-project.js";
+import { createSampleProject } from "../lib/sample-project.js";
 
 const ONBOARDING_KEY = "genbahub_onboarding_done";
 
@@ -56,6 +59,15 @@ const TEMPLATES: Template[] = [
 
 type Step = 1 | 2 | 3 | 4;
 
+function addDays(startDate: string, offsetDays: number): string {
+  const date = new Date(`${startDate}T00:00:00`);
+  date.setDate(date.getDate() + offsetDays);
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
 type Props = {
   onComplete: () => void;
 };
@@ -71,6 +83,7 @@ export function OnboardingWizard({ onComplete }: Props) {
   const [nameError, setNameError] = useState<string | null>(null);
   const [createError, setCreateError] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
+  const [sampleCreating, setSampleCreating] = useState(false);
   const [createdProjectId, setCreatedProjectId] = useState<string | null>(null);
 
   const handleSkip = () => {
@@ -108,6 +121,7 @@ export function OnboardingWizard({ onComplete }: Props) {
     setCreating(true);
     try {
       const repo = createProjectRepository(() => organizationId);
+      const taskRepo = createTaskRepository(() => organizationId);
       const now = new Date();
       const y = now.getFullYear();
       const m = String(now.getMonth() + 1).padStart(2, "0");
@@ -126,6 +140,26 @@ export function OnboardingWizard({ onComplete }: Props) {
         updatedAt: now.toISOString(),
         ...(projectAddress.trim() ? { address: projectAddress.trim() } : {}),
       });
+      const template = TEMPLATES.find((tpl) => tpl.id === selectedTemplate);
+      if (template) {
+        const nowIso = now.toISOString();
+        for (const [index, taskName] of template.tasks.entries()) {
+          await taskRepo.create({
+            id: crypto.randomUUID(),
+            projectId,
+            name: taskName,
+            description: "",
+            status: index === 0 ? "in_progress" : "todo",
+            progress: index === 0 ? 30 : 0,
+            startDate: addDays(startDate, index * 3),
+            dueDate: addDays(startDate, index * 3 + 2),
+            dependencies: [],
+            createdAt: nowIso,
+            updatedAt: nowIso,
+          });
+        }
+      }
+      writeLastProjectId(projectId);
       setCreatedProjectId(projectId);
       setStep(4);
     } catch (err) {
@@ -136,6 +170,22 @@ export function OnboardingWizard({ onComplete }: Props) {
       );
     } finally {
       setCreating(false);
+    }
+  };
+
+  const handleCreateSample = async () => {
+    setCreateError(null);
+    setSampleCreating(true);
+    try {
+      const projectRepo = createProjectRepository(() => organizationId);
+      const taskRepo = createTaskRepository(() => organizationId);
+      const { projectId } = await createSampleProject(projectRepo, taskRepo);
+      onComplete();
+      navigate(`/gantt/${projectId}`);
+    } catch (err) {
+      setCreateError(err instanceof Error ? err.message : "サンプル案件の作成に失敗しました。");
+    } finally {
+      setSampleCreating(false);
     }
   };
 
@@ -170,7 +220,7 @@ export function OnboardingWizard({ onComplete }: Props) {
             ステップ {step} / 4
           </p>
 
-          {step === 1 && <Step1 />}
+          {step === 1 && <Step1 createError={createError} sampleCreating={sampleCreating} onCreateSample={handleCreateSample} />}
           {step === 2 && (
             <Step2
               companyName={companyName}
@@ -266,7 +316,15 @@ export function OnboardingWizard({ onComplete }: Props) {
 
 /* ── Steps ─────────────────────────────────────────── */
 
-function Step1() {
+function Step1({
+  createError,
+  sampleCreating,
+  onCreateSample,
+}: {
+  createError: string | null;
+  sampleCreating: boolean;
+  onCreateSample: () => void;
+}) {
   return (
     <div className="text-center">
       <div className="mx-auto mb-6 flex h-24 w-24 items-center justify-center rounded-3xl bg-brand-50 text-5xl">
@@ -287,6 +345,19 @@ function Step1() {
         <FeatureBadge icon="🏢" label="業者管理" />
         <FeatureBadge icon="📋" label="今日の作業" />
       </div>
+      <button
+        type="button"
+        onClick={onCreateSample}
+        disabled={sampleCreating}
+        className="mt-6 w-full rounded-xl bg-amber-500 px-5 py-3 text-sm font-bold text-white shadow-sm transition-colors hover:bg-amber-600 disabled:opacity-60"
+      >
+        {sampleCreating ? "サンプル作成中..." : "サンプル工程表を開く"}
+      </button>
+      {createError ? (
+        <p className="mt-3 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700" role="alert">
+          {createError}
+        </p>
+      ) : null}
     </div>
   );
 }

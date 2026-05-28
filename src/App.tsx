@@ -69,7 +69,7 @@ import { AuthGuard } from "./components/AuthGuard.js";
 import { OnboardingWizard, useOnboardingDone } from "./components/OnboardingWizard.js";
 import { TourGuide, useTourDone } from "./components/TourGuide.js";
 import { AuthProvider, useAuth } from "./contexts/AuthContext.js";
-import { OrganizationProvider } from "./contexts/OrganizationContext.js";
+import { OrganizationProvider, useOrganizationContext } from "./contexts/OrganizationContext.js";
 import { SubscriptionProvider } from "./contexts/SubscriptionContext.js";
 import { PersonaProvider, usePersona } from "./contexts/PersonaContext.js";
 import { useHashRoute, navigate } from "./hooks/useHashRouter.js";
@@ -79,6 +79,9 @@ import { MobileNav } from "./components/MobileNav.js";
 // Navigation import removed – sidebar is rendered inline in AppShell
 import { NotificationBanner } from "./components/NotificationBanner.js";
 import { readLastProjectId } from "./lib/last-project.js";
+import { ensureFirstRunProject } from "./lib/sample-project.js";
+import { createProjectRepository } from "./stores/project-store.js";
+import { createTaskRepository } from "./stores/task-store.js";
 // Sprint 3-3: v2-cozy刷新版 AssistantChatPanel (コマンド5本+framer-motion)
 import { AssistantChatPanel } from "./components/AssistantChatPanel.js";
 
@@ -123,10 +126,26 @@ function openAssistantPanel() {
   window.dispatchEvent(new CustomEvent("genbahub:assistant-open"));
 }
 
+function FirstRunBootstrapScreen() {
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-white/90 p-4 backdrop-blur-sm"
+      role="status"
+      aria-label="サンプル案件を準備中"
+    >
+      <div className="rounded-2xl border border-slate-200 bg-white px-6 py-5 text-center shadow-xl">
+        <span className="mx-auto block h-6 w-6 animate-spin rounded-full border-2 border-[#007AFF]/30 border-t-[#007AFF]" />
+        <p className="mt-3 text-sm font-semibold text-slate-700">サンプル案件を準備中...</p>
+      </div>
+    </div>
+  );
+}
+
 function AppShell() {
   const { t } = useTranslation(["common", "pages", "errors"]);
   const route = useHashRoute();
   const { user, signOut } = useAuth();
+  const { organizationId } = useOrganizationContext();
   const { persona, setPersona } = usePersona();
   const { theme, cycleTheme } = useTheme();
   const [onboardingDone, markOnboardingDone] = useOnboardingDone();
@@ -136,7 +155,10 @@ function AppShell() {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [moreDrawerOpen, setMoreDrawerOpen] = useState(false);
   const [keyboardOpen, setKeyboardOpen] = useState(false);
+  const [firstRunBootstrapping, setFirstRunBootstrapping] = useState(false);
+  const [firstRunError, setFirstRunError] = useState<string | null>(null);
   const lastProjectId = readLastProjectId();
+  const shouldBootstrapFirstRun = !onboardingDone && route === "/app" && !lastProjectId;
 
   // iOS keyboard detection via visualViewport
   useEffect(() => {
@@ -149,6 +171,37 @@ function AppShell() {
     vv.addEventListener("resize", onResize);
     return () => vv.removeEventListener("resize", onResize);
   }, []);
+
+  useEffect(() => {
+    if (!shouldBootstrapFirstRun) return;
+
+    let cancelled = false;
+    setFirstRunBootstrapping(true);
+    setFirstRunError(null);
+
+    const bootstrap = async () => {
+      try {
+        const projectRepository = createProjectRepository(() => organizationId);
+        const taskRepository = createTaskRepository(() => organizationId);
+        const { projectId } = await ensureFirstRunProject(projectRepository, taskRepository);
+        if (cancelled) return;
+        markOnboardingDone();
+        navigate(`/gantt/${projectId}`);
+      } catch (err) {
+        if (cancelled) return;
+        setFirstRunError(err instanceof Error ? err.message : "初回サンプル案件の作成に失敗しました。");
+      } finally {
+        if (!cancelled) setFirstRunBootstrapping(false);
+      }
+    };
+
+    void bootstrap();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [markOnboardingDone, organizationId, shouldBootstrapFirstRun]);
+
   const ganttPath = lastProjectId ? `/gantt/${lastProjectId}` : "/gantt";
 
   const primaryTabs: TabDef[] = [
@@ -983,7 +1036,8 @@ function AppShell() {
           </div>
         ) : null}
 
-        {!onboardingDone ? <OnboardingWizard onComplete={handleOnboardingComplete} /> : null}
+        {shouldBootstrapFirstRun && firstRunBootstrapping ? <FirstRunBootstrapScreen /> : null}
+        {shouldBootstrapFirstRun && firstRunError ? <OnboardingWizard onComplete={handleOnboardingComplete} /> : null}
         {onboardingDone && !tourDone && showTour ? <TourGuide onComplete={markTourDone} /> : null}
         {showShortcutHelp ? <KeyboardShortcutHelp onClose={() => setShowShortcutHelp(false)} /> : null}
         <AssistantChatPanel userId={user?.email ?? "anonymous"} />
