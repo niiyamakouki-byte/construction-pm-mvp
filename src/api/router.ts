@@ -6,11 +6,13 @@ import { handleMaterialsRoutes } from "./routes/materials.js";
 import { handleNotificationsRoutes } from "./routes/notifications.js";
 import { handleProjectsRoutes } from "./routes/projects.js";
 import { handleTasksRoutes } from "./routes/tasks.js";
+import { handleV1GatewayRoutes } from "./routes/v1-gateway.js";
 import { requireApiKey } from "./route-helpers.js";
 import { noContent, ok } from "./responses.js";
 import { ApiError, type ApiRequest, type ApiResponse, type ApiStore } from "./types.js";
 
 const routeHandlers = [
+  handleV1GatewayRoutes,
   handleNotificationsRoutes,
   handleContractorsRoutes,
   handleDocumentsRoutes,

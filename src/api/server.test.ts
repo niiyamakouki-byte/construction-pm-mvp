@@ -443,6 +443,49 @@ describe("GenbaHub API", () => {
     });
   });
 
+  it("GET /api/v1/projects は空スタブではなく保存済み案件を返す", async () => {
+    await request("POST", "/api/projects", {
+      name: "v1案件A",
+      contractor: "元請A",
+      address: "東京都",
+      status: "planning",
+    });
+
+    const response = await request("GET", "/api/v1/projects?page=1&per_page=10");
+
+    expect(response.status).toBe(200);
+    expect(response.body).toMatchObject({
+      success: true,
+      data: [{ name: "v1案件A", contractor: "元請A" }],
+      meta: { total: 1, page: 1, perPage: 10 },
+    });
+  });
+
+  it("GET /api/v1/projects/:id/tasks は保存済みタスクを返す", async () => {
+    const created = await request("POST", "/api/projects", {
+      name: "v1案件B",
+      contractor: "元請B",
+      address: "神奈川県",
+      status: "active",
+    });
+    const projectId = (created.body as { project: { id: string } }).project.id;
+    await request("POST", `/api/projects/${projectId}/tasks`, {
+      name: "墨出し",
+      description: "初回墨出し",
+      startDate: "2026-05-01",
+      endDate: "2026-05-02",
+    });
+
+    const response = await request("GET", `/api/v1/projects/${projectId}/tasks`);
+
+    expect(response.status).toBe(200);
+    expect(response.body).toMatchObject({
+      success: true,
+      data: [{ projectId, name: "墨出し" }],
+      meta: { total: 1, page: 1, perPage: 20 },
+    });
+  });
+
   it("PATCH /api/projects/:id でプロジェクトを更新できる", async () => {
     const created = await request("POST", "/api/projects", {
       name: "案件C",
