@@ -48,6 +48,37 @@ function openingLine(overrides: Partial<PdfLine> = {}): PdfLine {
   };
 }
 
+/**
+ * ドア開閉弧（建具スイングアーク）を表す PdfLine を作る。
+ * 中心 center / 半径 radiusMm / 掃引 sweepDeg（1/4回転 ≒ 90°）。
+ * start/end は弦の端点（中心 + 半径方向ベクトル）。座標は pt 単位。
+ */
+function doorArcLine(
+  center: { x: number; y: number },
+  radiusMm: number,
+  scaleMmPerPt = 0.3528,
+  sweepDeg = 90,
+  startDeg = 0,
+): PdfLine {
+  const radiusPt = radiusMm / scaleMmPerPt;
+  const a0 = (startDeg * Math.PI) / 180;
+  const a1 = ((startDeg + sweepDeg) * Math.PI) / 180;
+  const start = { x: center.x + radiusPt * Math.cos(a0), y: center.y + radiusPt * Math.sin(a0) };
+  const end = { x: center.x + radiusPt * Math.cos(a1), y: center.y + radiusPt * Math.sin(a1) };
+  const chordPt = Math.hypot(end.x - start.x, end.y - start.y);
+  return {
+    start,
+    end,
+    thickness: 0.3,
+    color: "#000000",
+    layer: "door",
+    semantic: null,
+    length_pt: chordPt,
+    length_mm: chordPt * scaleMmPerPt,
+    arc: { center, radius: radiusPt, start_angle: a0, end_angle: a1 },
+  };
+}
+
 // ─── Tests ────────────────────────────────────────────────────────
 
 describe("classifyInteriorElements", () => {
@@ -192,5 +223,72 @@ describe("classifyInteriorElements", () => {
     const floors = elements.filter((e) => e.kind === "floor_area");
     expect(rooms.length).toBeGreaterThanOrEqual(1);
     expect(floors.length).toBeGreaterThanOrEqual(1);
+  });
+
+  // ── ドア開閉弧（建具スイングアーク）検出 ──
+
+  it("ドア開閉弧（1/4円・半径800mm）を door 開口として検出する", () => {
+    const drawing = makeDrawing({ lines: [doorArcLine({ x: 5000, y: 5000 }, 800)] });
+    const elements = classifyInteriorElements(drawing);
+    const doors = elements.filter(
+      (e) => e.kind === "opening" && e.geometry.openingType === "door",
+    );
+    expect(doors.length).toBe(1);
+    if (doors[0]?.kind === "opening") {
+      expect(doors[0].geometry.widthMm).toBeCloseTo(800, 0);
+      expect(doors[0].geometry.heightMm).toBe(2000);
+      expect(doors[0].inferredFrom.confidence).toBeCloseTo(0.6, 5);
+    }
+  });
+
+  it("ドア開閉弧は wall 要素として二重計上されない", () => {
+    const drawing = makeDrawing({ lines: [doorArcLine({ x: 5000, y: 5000 }, 800)] });
+    const elements = classifyInteriorElements(drawing);
+    expect(elements.some((e) => e.kind === "wall")).toBe(false);
+  });
+
+  it("半径が範囲外（1500mm）の弧は door として検出しない", () => {
+    const drawing = makeDrawing({ lines: [doorArcLine({ x: 5000, y: 5000 }, 1500)] });
+    const elements = classifyInteriorElements(drawing);
+    const doors = elements.filter(
+      (e) => e.kind === "opening" && e.geometry.openingType === "door",
+    );
+    expect(doors.length).toBe(0);
+  });
+
+  it("掃引角が 1/4回転から外れる弧（半円・180°）は door として検出しない", () => {
+    const drawing = makeDrawing({
+      lines: [doorArcLine({ x: 5000, y: 5000 }, 800, 0.3528, 180)],
+    });
+    const elements = classifyInteriorElements(drawing);
+    const doors = elements.filter(
+      (e) => e.kind === "opening" && e.geometry.openingType === "door",
+    );
+    expect(doors.length).toBe(0);
+  });
+
+  it("同心・同径の重複弧（両引き重複描画）は 1 枚に集約する", () => {
+    // 中心がほぼ同じ（30mm差 ≒ 30/0.3528≈85pt）2 本の弧
+    const a = doorArcLine({ x: 5000, y: 5000 }, 800);
+    const b = doorArcLine({ x: 5000 + 85, y: 5000 }, 800);
+    const drawing = makeDrawing({ lines: [a, b] });
+    const elements = classifyInteriorElements(drawing);
+    const doors = elements.filter(
+      (e) => e.kind === "opening" && e.geometry.openingType === "door",
+    );
+    expect(doors.length).toBe(1);
+  });
+
+  it("scale_mm_per_pt が null の場合は弧から door を検出しない", () => {
+    const drawing = makeDrawing({
+      scale: null,
+      scale_mm_per_pt: null,
+      lines: [doorArcLine({ x: 5000, y: 5000 }, 800)],
+    });
+    const elements = classifyInteriorElements(drawing);
+    const doors = elements.filter(
+      (e) => e.kind === "opening" && e.geometry.openingType === "door",
+    );
+    expect(doors.length).toBe(0);
   });
 });

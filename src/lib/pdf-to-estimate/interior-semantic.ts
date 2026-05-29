@@ -26,6 +26,14 @@ const OPENING_MAX_WIDTH_MM = 1200;
 const OPENING_MIN_WIDTH_MM = 400;
 const DEFAULT_OPENING_HEIGHT_MM = 2100;
 
+// ── ドア開閉アーチ（建具スイング弧）検出パラメータ ──
+// 平面図ではドアは 1/4 円の開閉弧（スイングアーク）で描かれる CAD 慣習を利用する。
+const DOOR_ARC_RADIUS_MIN_MM = 550;  // 単扉 1 枚 600〜900mm、両開き半分・公差込みで下限 550
+const DOOR_ARC_RADIUS_MAX_MM = 1100; // 上限 1100mm
+const DOOR_ARC_SWEEP_MIN_RAD = (70 * Math.PI) / 180;  // 約 1/4 回転（下限 70°）
+const DOOR_ARC_SWEEP_MAX_RAD = (110 * Math.PI) / 180; // 約 1/4 回転（上限 110°）
+const DOOR_DEDUP_CENTER_TOLERANCE_MM = 50; // 同心・同径の弧（両引き重複描画）は 1 枚に集約
+
 // ─── Geometry helpers ──────────────────────────────────────────────
 
 /** Shoelace formula — polygon points in mm */
@@ -62,7 +70,9 @@ function _dist(a: Point, b: Point): number {
 
 // ─── Wall detection ────────────────────────────────────────────────
 
-function isWallLine(line: PdfLine): boolean {
+function isWallLine(line: PdfLine, scaleMmPerPt: number | null): boolean {
+  // ドア開閉弧（建具スイングアーク）は壁ではなく開口として扱う（二重計上防止）
+  if (isDoorSwingArc(line, scaleMmPerPt)) return false;
   if (line.semantic === "wall") return true;
   if (line.semantic === "auxiliary" || line.semantic === "dimension_line") return false;
   const lenMm = lineLengthMm(line);
@@ -102,6 +112,83 @@ function toOpeningGeometry(line: PdfLine, scaleMmPerPt: number): OpeningGeometry
   const openingType: OpeningGeometry["openingType"] =
     widthMm >= 600 && widthMm <= 900 ? "door" : widthMm < 600 ? "window" : "unknown";
   return { centerMm, widthMm, heightMm: DEFAULT_OPENING_HEIGHT_MM, openingType };
+}
+
+/** 角度差を (0, 2π] に正規化する */
+function normalizeSweep(delta: number): number {
+  const twoPi = 2 * Math.PI;
+  let s = Math.abs(delta) % twoPi;
+  if (s === 0) s = twoPi;
+  // [π, 2π) の掃引は反対回りで見れば 1/4 回転にも相当するため折り返す
+  if (s > Math.PI) s = twoPi - s;
+  return s;
+}
+
+/**
+ * 線がドア開閉弧（建具スイングアーク）か判定する。
+ * 半径 550〜1100mm かつ掃引角 70〜110°（≒1/4回転）の弧を 1 ドアとみなす。
+ * scale_mm_per_pt が null（縮尺不明）の場合はサイズ判定不能のため false。
+ */
+function isDoorSwingArc(line: PdfLine, scaleMmPerPt: number | null): boolean {
+  const arc = line.arc;
+  if (!arc || scaleMmPerPt === null) return false;
+  const radiusMm = arc.radius * scaleMmPerPt;
+  if (radiusMm < DOOR_ARC_RADIUS_MIN_MM || radiusMm > DOOR_ARC_RADIUS_MAX_MM) return false;
+  const sweep = normalizeSweep(arc.end_angle - arc.start_angle);
+  return sweep >= DOOR_ARC_SWEEP_MIN_RAD && sweep <= DOOR_ARC_SWEEP_MAX_RAD;
+}
+
+/**
+ * ドア開閉弧（建具スイングアーク）から開口要素を検出する。
+ * scale_mm_per_pt が null（縮尺不明）の場合はサイズ判定不能のため空配列を返す。
+ * 半径 550〜1100mm かつ掃引角 70〜110°（≒1/4回転）の弧を 1 ドアとみなす。
+ * 中心 ~50mm 以内・同径の弧は両引き重複描画として 1 枚に集約する。
+ *
+ * 注意: line.arc は Python 版 pdf-vector-extractor（DrawingModel の一次生成元）が
+ * 出力する。TS 版 pdf-vector-extractor はベジエを直線弦へフラット化し PdfArc を
+ * 復元しない（curve-fitter.ts 参照）ため、TS 抽出経路では本検出は発火しない。
+ * このためテストは classify レベルの単体テストに留め、jsPDF 経由の E2E では検証しない。
+ */
+function detectDoorsFromArcs(
+  drawing: DrawingModel,
+  scaleMmPerPt: number | null,
+): InteriorElement[] {
+  if (scaleMmPerPt === null) return [];
+  const s = scaleMmPerPt;
+  const result: InteriorElement[] = [];
+  // dedup 用: 既採用ドアの中心(mm)と半径(mm)
+  const seen: { centerMm: Point; radiusMm: number }[] = [];
+
+  for (const line of drawing.lines) {
+    if (!isDoorSwingArc(line, s)) continue;
+    const radiusMm = (line.arc as PdfArc).radius * s;
+
+    // 中心 = 弦の中点（line.start→line.end）を mm に変換
+    const centerMm: Point = {
+      x: midpoint(line).x * s,
+      y: midpoint(line).y * s,
+    };
+    // 両引き重複描画の集約: 同心(~50mm)・同径の弧は 1 枚にまとめる
+    const dup = seen.some(
+      (d) =>
+        Math.hypot(d.centerMm.x - centerMm.x, d.centerMm.y - centerMm.y) <=
+          DOOR_DEDUP_CENTER_TOLERANCE_MM && Math.abs(d.radiusMm - radiusMm) <= DOOR_DEDUP_CENTER_TOLERANCE_MM,
+    );
+    if (dup) continue;
+    seen.push({ centerMm, radiusMm });
+
+    result.push({
+      kind: "opening",
+      geometry: {
+        centerMm,
+        widthMm: radiusMm,          // ドア有効幅 ≒ スイング半径
+        heightMm: 2000,             // 標準ドア高さ（建具スイング弧には高さ情報がないため仮定）
+        openingType: "door",
+      },
+      inferredFrom: { pdfPage: drawing.page_index, confidence: 0.6 },
+    });
+  }
+  return result;
 }
 
 // ─── Room / floor area detection ───────────────────────────────────
@@ -376,7 +463,7 @@ export function classifyInteriorElements(drawing: DrawingModel): InteriorElement
 
   const elements: InteriorElement[] = [];
 
-  const wallLines = drawing.lines.filter(isWallLine);
+  const wallLines = drawing.lines.filter((line) => isWallLine(line, drawing.scale_mm_per_pt));
   const openingLines = drawing.lines.filter(isOpeningLine);
 
   // 壁線
@@ -431,6 +518,9 @@ export function classifyInteriorElements(drawing: DrawingModel): InteriorElement
       });
     }
   }
+
+  // ドア開閉弧（建具スイングアーク）からドア開口を検出
+  elements.push(...detectDoorsFromArcs(drawing, drawing.scale_mm_per_pt));
 
   // 部屋領域検出
   const rooms = detectRooms(wallLines, scaleMmPerPt);
