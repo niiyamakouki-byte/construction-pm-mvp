@@ -221,7 +221,7 @@ export function ProgressReviewPage() {
   return (
     <div className="mx-auto max-w-[1100px] space-y-4 pb-24 px-4">
       <div className="rounded-[28px] bg-[linear-gradient(145deg,#fff8ef_0%,#f7fbff_55%,#eef6ff_100%)] px-4 py-5 shadow-sm ring-1 ring-slate-200 sm:px-6">
-        <h1 className="text-2xl font-bold text-slate-900">進捗レビュー（Buildots統合）</h1>
+        <h1 className="text-2xl font-bold text-slate-900">写真進捗レビュー</h1>
         <p className="mt-1 text-sm text-slate-500">写真由来のトレード進捗を手入力し、スケジュールとの乖離を検出します。</p>
       </div>
 
