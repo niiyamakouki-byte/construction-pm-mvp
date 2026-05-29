@@ -75,18 +75,27 @@ export function PDFDraftTab({ costMaster, onSave }: Props) {
     setEditMode(false);
     setOverrides({});
 
+    const isPdf = file.type === "application/pdf" || /\.pdf$/i.test(file.name);
+
     try {
-      const text = await readFileAsText(file);
-      let json: unknown;
-      try {
-        json = JSON.parse(text);
-      } catch {
-        setError("ファイル形式が不正です（JSON パースエラー）");
-        return;
+      let model: DrawingModel;
+      if (isPdf) {
+        // PDF直読み: pdf-vector-extractor で DrawingModel に変換（縮尺は図面内 "1/50" 等から自動検出）
+        const { extractDrawingModel } = await import("../../lib/pdf-vector-extractor/index.js");
+        model = await extractDrawingModel(await file.arrayBuffer());
+      } else {
+        const text = await readFileAsText(file);
+        let json: unknown;
+        try {
+          json = JSON.parse(text);
+        } catch {
+          setError("ファイル形式が不正です（JSON パースエラー）");
+          return;
+        }
+        model = json as DrawingModel;
       }
 
       // Basic shape check
-      const model = json as DrawingModel;
       if (!model || typeof model !== "object" || !Array.isArray(model.lines)) {
         setError("ファイル形式が不正です（DrawingModel 形式ではありません）");
         return;
@@ -186,7 +195,7 @@ export function PDFDraftTab({ costMaster, onSave }: Props) {
       <div className="mx-auto max-w-2xl space-y-4 px-4 pb-24">
         <h2 className="text-lg font-bold text-slate-900">PDF由来ドラフト</h2>
         <p className="text-xs text-slate-500">
-          pdf-vector-extractor が出力した DrawingModel JSON をアップロードすると、
+          図面 PDF（または DrawingModel JSON）をアップロードすると、
           内装要素を自動抽出して見積ドラフトを生成します。
         </p>
 
@@ -239,9 +248,9 @@ export function PDFDraftTab({ costMaster, onSave }: Props) {
           ) : (
             <>
               <p className="text-sm font-semibold text-slate-600">
-                DrawingModel JSON をドロップ または クリックして選択
+                図面 PDF / DrawingModel JSON をドロップ または クリックして選択
               </p>
-              <p className="text-xs text-slate-400">application/json</p>
+              <p className="text-xs text-slate-400">application/pdf, application/json</p>
             </>
           )}
         </div>
@@ -249,7 +258,7 @@ export function PDFDraftTab({ costMaster, onSave }: Props) {
         <input
           ref={fileInputRef}
           type="file"
-          accept="application/json"
+          accept="application/pdf,application/json"
           className="hidden"
           onChange={handleInputChange}
           data-testid="pdf-file-input"
