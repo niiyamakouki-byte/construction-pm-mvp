@@ -1,7 +1,7 @@
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { InvoiceManagementPage } from "./InvoiceManagementPage.js";
-import { clearInvoices } from "../lib/invoice-store.js";
+import { addInvoice, clearInvoices } from "../lib/invoice-store.js";
 
 const mockProjectRepository = {
   findAll: vi.fn(),
@@ -36,5 +36,68 @@ describe("InvoiceManagementPage", () => {
     fireEvent.click(screen.getAllByRole("button", { name: "請求書を登録" })[0]);
 
     expect(screen.getByRole("heading", { name: "請求書を登録" })).toBeDefined();
+  });
+
+  it("フィルター適用時に一致なしでフィルター解除ボタンが表示される", async () => {
+    // 「未確認」の請求書を1件追加
+    addInvoice({
+      projectId: "proj-1",
+      vendorName: "テスト業者",
+      amount: 100000,
+      tax: 10000,
+      total: 110000,
+      items: [],
+      invoiceDate: "2024-04-01",
+      status: "未確認",
+    });
+
+    render(<InvoiceManagementPage />);
+
+    // 「振込済」フィルターをクリック（結果0件になるはず）
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: "振込済" })).toBeDefined();
+    });
+    fireEvent.click(screen.getByRole("button", { name: "振込済" }));
+
+    // フィルター適用時の空状態が表示される
+    await waitFor(() => {
+      expect(screen.getByRole("heading", { name: "「振込済」の請求書がありません" })).toBeDefined();
+    });
+
+    // 「フィルターを解除」ボタンが表示される
+    expect(screen.getByRole("button", { name: "フィルターを解除" })).toBeDefined();
+  });
+
+  it("フィルター解除ボタンを押すと全件表示に戻る", async () => {
+    addInvoice({
+      projectId: "proj-1",
+      vendorName: "テスト業者",
+      amount: 50000,
+      tax: 5000,
+      total: 55000,
+      items: [],
+      invoiceDate: "2024-04-01",
+      status: "未確認",
+    });
+
+    render(<InvoiceManagementPage />);
+
+    // 「振込済」フィルターを適用して0件にする
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: "振込済" })).toBeDefined();
+    });
+    fireEvent.click(screen.getByRole("button", { name: "振込済" }));
+
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: "フィルターを解除" })).toBeDefined();
+    });
+
+    // フィルター解除
+    fireEvent.click(screen.getByRole("button", { name: "フィルターを解除" }));
+
+    // 全件表示に戻り、請求書が表示される
+    await waitFor(() => {
+      expect(screen.getByText("テスト業者")).toBeDefined();
+    });
   });
 });
