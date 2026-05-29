@@ -260,6 +260,55 @@ describe("CostManagementPage", () => {
     expect(vi.mocked(navigate)).toHaveBeenCalledWith("/estimate");
   });
 
+  it("リスクレベルバッジを日本語で表示する（高リスク/中リスク/低リスク）", async () => {
+    const baseProject = {
+      id: "p1",
+      name: "南青山ビル改修",
+      description: "",
+      status: "active" as const,
+      budget: 1000000,
+      startDate: "2025-04-01",
+      includeWeekends: true,
+      createdAt: now,
+      updatedAt: now,
+    };
+    // EAC = spentToDate / totalProgress: 200000 / 0.15 ≈ 1333333 → overUnder ≈ 333333 > budget*0.15 → high
+    mockProjectRepository.findAll.mockResolvedValue([baseProject]);
+    mockTaskRepository.findAll.mockResolvedValue([
+      {
+        id: "t1",
+        projectId: "p1",
+        name: "基礎工事",
+        description: "",
+        status: "in_progress",
+        progress: 15,
+        dependencies: [],
+        createdAt: now,
+        updatedAt: now,
+      },
+    ]);
+    mockCostItemRepository.findAll.mockResolvedValue([]);
+    mockExpenseRepository.findAll.mockResolvedValue([
+      {
+        id: "e1",
+        projectId: "p1",
+        expenseDate: "2025-04-01",
+        description: "材料費",
+        amount: 200000,
+        category: "材料費",
+        approvalStatus: "approved",
+        createdAt: now,
+        updatedAt: now,
+      },
+    ]);
+
+    render(<CostManagementPage />);
+    expect(await screen.findByText("高リスク")).toBeDefined();
+    expect(screen.queryByText("High Risk")).toBeNull();
+    expect(screen.queryByText("Medium Risk")).toBeNull();
+    expect(screen.queryByText("Low Risk")).toBeNull();
+  });
+
   it("コスト項目ゼロのとき「見積を取り込む」「予算ベースラインを作成」CTAを表示する", async () => {
     mockProjectRepository.findAll.mockResolvedValue([
       {

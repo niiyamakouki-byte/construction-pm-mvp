@@ -817,10 +817,10 @@ export function CostManagementPage() {
                   : "bg-emerald-50 text-emerald-700"
             }`}>
               {forecastReport?.riskLevel === "high"
-                ? "High Risk"
+                ? "高リスク"
                 : forecastReport?.riskLevel === "medium"
-                  ? "Medium Risk"
-                  : "Low Risk"}
+                  ? "中リスク"
+                  : "低リスク"}
             </span>
           </div>
           {forecastReport ? (
