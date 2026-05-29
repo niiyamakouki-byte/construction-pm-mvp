@@ -13,6 +13,7 @@ export default defineConfig({
   test: {
     include: ["src/**/*.test.ts", "src/**/*.test.tsx"],
     environment: "jsdom",
+    setupFiles: ["src/lib/pdf-vector-extractor/__tests__/vitest-pdfjs-worker.ts"],
     env: {
       VITE_USE_SUPABASE: "false",
     },
