@@ -144,10 +144,8 @@ function isDoorSwingArc(line: PdfLine, scaleMmPerPt: number | null): boolean {
  * 半径 550〜1100mm かつ掃引角 70〜110°（≒1/4回転）の弧を 1 ドアとみなす。
  * 中心 ~50mm 以内・同径の弧は両引き重複描画として 1 枚に集約する。
  *
- * 注意: line.arc は Python 版 pdf-vector-extractor（DrawingModel の一次生成元）が
- * 出力する。TS 版 pdf-vector-extractor はベジエを直線弦へフラット化し PdfArc を
- * 復元しない（curve-fitter.ts 参照）ため、TS 抽出経路では本検出は発火しない。
- * このためテストは classify レベルの単体テストに留め、jsPDF 経由の E2E では検証しない。
+ * line.arc は Python 版/TS 版のどちらの pdf-vector-extractor でも供給されうる。
+ * TS 版は path-extractor が四分円相当の cubic bezier を PdfArc として復元する。
  */
 function detectDoorsFromArcs(
   drawing: DrawingModel,
@@ -163,10 +161,10 @@ function detectDoorsFromArcs(
     if (!isDoorSwingArc(line, s)) continue;
     const radiusMm = (line.arc as PdfArc).radius * s;
 
-    // 中心 = 弦の中点（line.start→line.end）を mm に変換
+    // 建具スイングの回転中心 = arc.center
     const centerMm: Point = {
-      x: midpoint(line).x * s,
-      y: midpoint(line).y * s,
+      x: (line.arc as PdfArc).center.x * s,
+      y: (line.arc as PdfArc).center.y * s,
     };
     // 両引き重複描画の集約: 同心(~50mm)・同径の弧は 1 枚にまとめる
     const dup = seen.some(
