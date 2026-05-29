@@ -96,24 +96,23 @@ describe("PDF pipeline robustness audit", () => {
     expect(draft.totalExcludingTax).toBeGreaterThan(0);
   });
 
-  // ── Fixture 1: 隣接2部屋（共有壁） — DEFECT, SKIPPED ───────────────
+  // ── Fixture 1: 隣接2部屋（共有壁） — FIXED ────────────────────────
   //
-  // 観測欠陥（revenue-critical）:
-  //   detectRooms() は traceClosedLoop() に依存するが、traceClosedLoop は walls[0]
-  //   から1つの閉ループを辿って即 return する（interior-semantic.ts:157-203, return @198）。
-  //   そのため隣接2部屋の図面では最初の部屋（事務室）の1ループしか検出されず、
-  //   2部屋目（会議室）の床/天井が完全に欠落する。
+  // 旧欠陥（revenue-critical, 修正済）:
+  //   旧 detectRooms() は最初の閉ループ1つだけを返していたため、隣接2部屋の図面で
+  //   2部屋目（会議室）の床/天井が完全に欠落していた（rooms=1, floor=12.445 m²、約-50%、
+  //   床+天井で ~¥126,535 の過小計上）。
+  //
+  // 修正: detectRoomFaces() が壁の端点連結を平面分割の面として全列挙し、連結成分ごとに
+  //   外周面を1枚除外する（interior-semantic.ts）。共有壁(直線同士の完全重複)は dedup され、
+  //   1辺の2半辺がそれぞれ別部屋面に属するため2部屋が正しく分離される。
   //     期待: rooms=2, floor合計≈24.890 m²
-  //     実測: rooms=1, floor=12.445 m²（約-50%、床+天井で ~¥126,535 の過小計上）
-  //   ※壁面積は8本全壁から算出されるため過大気味（共有壁の二重計上も未補正）。
-  //
-  // 修正は「全ての互いに素な閉ループを列挙」+「共有壁の壁面積二重計上補正」が必要で、
-  // detectRooms / traceClosedLoop の構造変更（M/L規模・リスク有）。本監査では実装せず
-  // /tmp/pdf-pipeline-robustness-2026-05-29.md に推奨として記録。
-  it.skip("multi-room: detects BOTH rooms and sums floor area (DEFECT: only 1 room detected)", async () => {
-    const { floorM2, elements } = await runPipeline("floorplan-multiroom-1-50.pdf");
+  it("multi-room: detects BOTH rooms and sums floor area", async () => {
+    const { model, elements, draft, floorM2 } = await runPipeline("floorplan-multiroom-1-50.pdf");
+    logDraft("multi-room 1/50", model, elements, draft, floorM2);
     const EXPECTED_SUM = 24.890432;
     expect(elements.filter((e) => e.kind === "room").length).toBe(2);
     expect(floorM2).toBeGreaterThan(EXPECTED_SUM * 0.95);
+    expect(floorM2).toBeLessThan(EXPECTED_SUM * 1.05);
   });
 });

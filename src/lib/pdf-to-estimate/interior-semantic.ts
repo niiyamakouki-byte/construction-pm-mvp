@@ -145,61 +145,143 @@ function wallToPolyline(wall: PdfLine): Point[] {
   ];
 }
 
-function pointsCoincide(a: Point, b: Point): boolean {
-  return Math.hypot(a.x - b.x, a.y - b.y) <= ENDPOINT_TOLERANCE_PT;
-}
-
 /**
- * 壁セグメントの端点連結をたどり、閉じたループ（最初の壁の始点に戻る）を 1 つ探す。
- * 見つかった場合、そのループを構成する点列（pt 単位、円弧は分割済み）を返す。
- * 見つからなければ null。任意の角度の壁・円弧壁に対応する。
+ * 壁の端点連結が成す「全ての」内部閉領域（部屋）を平面分割の面として列挙する。
+ *
+ * 半辺(directed half-edge)を各頂点まわりの方向角順に辿り、最小閉路（面）を全列挙する
+ * 標準的な planar face traversal。共有壁は 1 辺の 2 つの半辺がそれぞれ別の部屋面に
+ * 属するため、隣接する複数部屋を正しく分離できる（従来は最初の 1 ループしか拾えず
+ * 2 部屋目の床/天井が欠落していた）。
+ *
+ * 各連結成分につき面積最大の面 = 外周面（内部面積の総和に一致）を 1 枚除外する。
+ * 端点一致は ENDPOINT_TOLERANCE_PT（1.0pt）許容。任意角度の壁・円弧壁に対応する。
  */
-function traceClosedLoop(walls: PdfLine[]): Point[] | null {
-  // 円弧壁を含む場合 2 本でも閉領域を成すため、最低 2 本を許容する
-  if (walls.length < 2) return null;
+function detectRoomFaces(walls: PdfLine[], s: number): RoomGeometry[] {
+  const tol = ENDPOINT_TOLERANCE_PT;
 
-  const used = new Array<boolean>(walls.length).fill(false);
-  const startWall = walls[0];
-  const startPoly = wallToPolyline(startWall);
-  used[0] = true;
-
-  const loopStart = startPoly[0];
-  const points: Point[] = [...startPoly];
-  let current = points[points.length - 1];
-
-  // 最大 walls.length-1 回、連結する壁を辿る
-  for (let step = 0; step < walls.length - 1; step++) {
-    let advanced = false;
-    for (let i = 0; i < walls.length; i++) {
-      if (used[i]) continue;
-      const poly = wallToPolyline(walls[i]);
-      const head = poly[0];
-      const tail = poly[poly.length - 1];
-      if (pointsCoincide(current, head)) {
-        points.push(...poly.slice(1));
-        used[i] = true;
-        current = points[points.length - 1];
-        advanced = true;
-        break;
-      }
-      if (pointsCoincide(current, tail)) {
-        // 逆向きに連結
-        const reversed = poly.slice(0, -1).reverse();
-        points.push(...reversed);
-        used[i] = true;
-        current = points[points.length - 1];
-        advanced = true;
-        break;
-      }
+  // ① 頂点クラスタリング（tol 内を同一頂点に）
+  const verts: Point[] = [];
+  const vidOf = (p: Point): number => {
+    for (let i = 0; i < verts.length; i++) {
+      if (Math.hypot(verts[i].x - p.x, verts[i].y - p.y) <= tol) return i;
     }
-    if (!advanced) break;
-    if (pointsCoincide(current, loopStart)) {
-      // 閉ループ完成（末尾の重複点を除く）
-      return points.slice(0, -1);
+    verts.push({ x: p.x, y: p.y });
+    return verts.length - 1;
+  };
+
+  // ② 辺を構築（直線同士の完全重複のみ dedup。円弧は端点を共有しても残す）
+  type Edge = { a: number; b: number; pts: Point[]; isArc: boolean };
+  const edges: Edge[] = [];
+  for (const w of walls) {
+    const poly = wallToPolyline(w);
+    if (poly.length < 2) continue;
+    const a = vidOf(poly[0]);
+    const b = vidOf(poly[poly.length - 1]);
+    if (a === b) continue; // 長さ 0（点）除外
+    const isArc = !!w.arc;
+    const dup = edges.some(
+      (e) =>
+        !e.isArc &&
+        !isArc &&
+        ((e.a === a && e.b === b) || (e.a === b && e.b === a)),
+    );
+    if (dup) continue;
+    // 端点はクラスタ代表点に正規化（中間点は円弧の分割点）
+    edges.push({ a, b, pts: [verts[a], ...poly.slice(1, -1), verts[b]], isArc });
+  }
+  // 円弧壁を含む場合 2 辺でも閉領域（半円など）を成すため最低 2 辺を許容
+  if (edges.length < 2) return [];
+
+  // ③ 連結成分（union-find）
+  const parent = verts.map((_, i) => i);
+  const find = (x: number): number => {
+    let r = x;
+    while (parent[r] !== r) r = parent[r];
+    while (parent[x] !== r) {
+      const nx = parent[x];
+      parent[x] = r;
+      x = nx;
+    }
+    return r;
+  };
+  for (const e of edges) parent[find(e.a)] = find(e.b);
+
+  // ④ 半辺生成（各辺 → 双方向 2 本）
+  type HalfEdge = { u: number; v: number; pts: Point[]; ang: number; twin: number };
+  const he: HalfEdge[] = [];
+  const dir = (from: Point, to: Point) => Math.atan2(to.y - from.y, to.x - from.x);
+  for (const e of edges) {
+    const fwd = e.pts;
+    const rev = [...e.pts].reverse();
+    const i0 = he.length;
+    he.push({ u: e.a, v: e.b, pts: fwd, ang: dir(fwd[0], fwd[1]), twin: i0 + 1 });
+    he.push({ u: e.b, v: e.a, pts: rev, ang: dir(rev[0], rev[1]), twin: i0 });
+  }
+
+  // ⑤ 各頂点の出半辺を方向角昇順ソート
+  const out: number[][] = verts.map(() => []);
+  for (let i = 0; i < he.length; i++) out[he[i].u].push(i);
+  for (const list of out) list.sort((p, q) => he[p].ang - he[q].ang);
+  const posInOut = new Array<number>(he.length).fill(-1);
+  for (const list of out) list.forEach((hi, idx) => (posInOut[hi] = idx));
+
+  // ⑥ next: 半辺 e=(u→v) の次は、v で twin(e)=(v→u) の 1 つ時計回り側の出半辺
+  const nextOf = (i: number): number => {
+    const t = he[i].twin; // (v→u)
+    const list = out[he[i].v];
+    const k = list.length;
+    return list[(posInOut[t] - 1 + k) % k];
+  };
+
+  // ⑦ 面を辿る
+  const visited = new Array<boolean>(he.length).fill(false);
+  type Face = { polyMm: Point[]; areaSqM: number; comp: number };
+  const faces: Face[] = [];
+  for (let i = 0; i < he.length; i++) {
+    if (visited[i]) continue;
+    const comp = find(he[i].u);
+    const polyPt: Point[] = [];
+    let cur = i;
+    let guard = 0;
+    while (!visited[cur]) {
+      visited[cur] = true;
+      const seg = he[cur].pts;
+      if (polyPt.length === 0) polyPt.push(...seg);
+      else polyPt.push(...seg.slice(1));
+      cur = nextOf(cur);
+      if (++guard > he.length + 2) break;
+    }
+    if (polyPt.length >= 2) {
+      const f = polyPt[0];
+      const l = polyPt[polyPt.length - 1];
+      if (Math.hypot(f.x - l.x, f.y - l.y) <= tol) polyPt.pop(); // 閉じ点重複除去
+    }
+    if (polyPt.length >= 3) {
+      const mm = polyPt.map((p) => ({ x: p.x * s, y: p.y * s }));
+      faces.push({ polyMm: mm, areaSqM: shoelaceAreaSqM(mm), comp });
     }
   }
 
-  return null;
+  // ⑧ 連結成分ごとに面積最大の面（外周）を 1 枚除外し、残りを部屋とする
+  const byComp = new Map<number, Face[]>();
+  for (const f of faces) {
+    const arr = byComp.get(f.comp);
+    if (arr) arr.push(f);
+    else byComp.set(f.comp, [f]);
+  }
+  const rooms: RoomGeometry[] = [];
+  for (const list of byComp.values()) {
+    let maxIdx = 0;
+    for (let i = 1; i < list.length; i++) {
+      if (list[i].areaSqM > list[maxIdx].areaSqM) maxIdx = i;
+    }
+    list.forEach((f, idx) => {
+      if (idx !== maxIdx && f.areaSqM > 0.5) {
+        rooms.push({ polygonMm: f.polyMm, areaSqM: f.areaSqM });
+      }
+    });
+  }
+  return rooms;
 }
 
 /**
@@ -212,15 +294,9 @@ function detectRooms(walls: PdfLine[], scaleMmPerPt: number): RoomGeometry[] {
 
   const s = scaleMmPerPt;
 
-  // ① 端点連結による実ポリゴン検出（任意角度・円弧対応）
-  const loopPt = traceClosedLoop(walls);
-  if (loopPt && loopPt.length >= 3) {
-    const polygonMm = loopPt.map((p) => ({ x: p.x * s, y: p.y * s }));
-    const areaSqM = shoelaceAreaSqM(polygonMm);
-    if (areaSqM > 0.5) {
-      return [{ polygonMm, areaSqM }];
-    }
-  }
+  // ① 端点連結による実ポリゴン検出（任意角度・円弧対応・複数部屋対応）
+  const faceRooms = detectRoomFaces(walls, s);
+  if (faceRooms.length > 0) return faceRooms;
 
   // ② フォールバック: 直交壁の AABB グリッド推定（従来挙動）
 
