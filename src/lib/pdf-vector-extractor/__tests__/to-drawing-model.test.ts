@@ -77,6 +77,23 @@ describe("assembleDrawingModel", () => {
     expect(dm.lines[0].length_mm).toBeNull();
   });
 
+  it("円弧セグメントは arc を保持し、length_pt を弧長で計算する", () => {
+    const segs: RawSeg[] = [{
+      start: { x: 10, y: 0 },
+      end: { x: 0, y: 10 },
+      width: 1,
+      arc: {
+        center: { x: 0, y: 0 },
+        radius: 10,
+        start_angle: 0,
+        end_angle: Math.PI / 2,
+      },
+    }];
+    const dm = assembleDrawingModel(segs, [], baseOpts);
+    expect(dm.lines[0].arc).toBeDefined();
+    expect(dm.lines[0].length_pt).toBeCloseTo((10 * Math.PI) / 2, 6);
+  });
+
   it("スナップ後に退化したセグメントを除外する", () => {
     const segs: RawSeg[] = [
       { start: { x: 0.1, y: 0.1 }, end: { x: 0.2, y: 0.2 }, width: 1 }, // → (0,0)-(0,0)

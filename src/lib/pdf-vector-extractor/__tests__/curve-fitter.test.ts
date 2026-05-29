@@ -46,7 +46,7 @@ describe("flattenBezier", () => {
     }
   });
 
-  it("実 PDF の curveTo から弦セグメントが抽出される", async () => {
+  it("実 PDF の 1/4 円 curveTo は 1 本の円弧セグメントに復元される", async () => {
     const doc = new jsPDF({ unit: "pt", format: "a4" });
     // jspdf の lines() でベジエを描く: [c1, c2, end] の相対座標配列
     doc.setLineWidth(1);
@@ -59,7 +59,14 @@ describe("flattenBezier", () => {
     const pdf = doc.output("arraybuffer");
     const page = await loadPage(pdf, 0);
     const segs = await extractRawSegments(page);
-    expect(segs.length).toBeGreaterThanOrEqual(4);
-    expect(segs.length).toBeLessThanOrEqual(12);
+    // ベジエが真円弧（ドア開閉弧と同形）の場合、fitArcFromBezier が 1 本の PdfArc に復元する。
+    expect(segs.length).toBe(1);
+    const arc = segs[0].arc;
+    expect(arc).toBeDefined();
+    expect(arc!.radius).toBeGreaterThan(R * 0.9);
+    expect(arc!.radius).toBeLessThan(R * 1.1);
+    const sweep = Math.abs(arc!.end_angle - arc!.start_angle);
+    expect(sweep).toBeGreaterThan(Math.PI / 2 * 0.85);
+    expect(sweep).toBeLessThan(Math.PI / 2 * 1.15);
   });
 });

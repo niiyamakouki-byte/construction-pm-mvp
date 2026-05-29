@@ -28,6 +28,32 @@ function makeRoomPdf(): ArrayBuffer {
   return doc.output("arraybuffer");
 }
 
+function makeDoorSwingPdf(): ArrayBuffer {
+  const doc = new jsPDF({ unit: "pt", format: "a4" });
+  doc.setLineWidth(1);
+
+  const hingeX = 200;
+  const hingeY = 200;
+  const radius = 45;
+  const k = 0.5522847498;
+
+  doc.line(hingeX, hingeY, hingeX + radius, hingeY);
+  doc.moveTo(hingeX + radius, hingeY);
+  doc.curveTo(
+    hingeX + radius,
+    hingeY + k * radius,
+    hingeX + k * radius,
+    hingeY + radius,
+    hingeX,
+    hingeY + radius,
+  );
+  doc.stroke();
+  doc.setFontSize(10);
+  doc.text("1/50", 400, 500);
+
+  return doc.output("arraybuffer");
+}
+
 describe("extractDrawingModel (E2E)", () => {
   it("4 壁の部屋 PDF から DrawingModel を生成し縮尺を検出する", async () => {
     const pdf = makeRoomPdf();
@@ -57,6 +83,22 @@ describe("extractDrawingModel (E2E)", () => {
     // 面積が妥当（~150pt 角 * 17.64mm/pt ≈ 2.6m 角 → 6〜8 m² 程度）
     if (rooms[0].kind === "room") {
       expect(rooms[0].geometry.areaSqM).toBeGreaterThan(0.5);
+    }
+  });
+
+  it("door swing bezier を PdfArc として保持し、door opening を導出する", async () => {
+    const pdf = makeDoorSwingPdf();
+    const dm = await extractDrawingModel(pdf, { sourceName: "door-swing.pdf" });
+    expect(dm.lines.some((line) => line.arc)).toBe(true);
+
+    const elements = classifyInteriorElements(dm);
+    const doors = elements.filter(
+      (e) => e.kind === "opening" && e.geometry.openingType === "door",
+    );
+    expect(doors.length).toBeGreaterThanOrEqual(1);
+    if (doors[0]?.kind === "opening") {
+      expect(doors[0].geometry.widthMm).toBeGreaterThan(600);
+      expect(doors[0].geometry.widthMm).toBeLessThan(1000);
     }
   });
 });

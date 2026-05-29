@@ -30,6 +30,11 @@ function snapPoint(p: Point): Point {
   return { x: snapCoord(p.x), y: snapCoord(p.y) };
 }
 
+function segmentLengthPt(seg: RawSeg, start: Point, end: Point): number {
+  if (!seg.arc) return Math.hypot(end.x - start.x, end.y - start.y);
+  return Math.abs(seg.arc.end_angle - seg.arc.start_angle) * seg.arc.radius;
+}
+
 export type AssembleOptions = {
   sourceName?: string;
   pageIndex: number;
@@ -59,7 +64,7 @@ export function assembleDrawingModel(
     // 退化セグメント（スナップ後に始終点一致）は除外
     if (start.x === end.x && start.y === end.y) continue;
 
-    const lengthPt = Math.hypot(end.x - start.x, end.y - start.y);
+    const lengthPt = segmentLengthPt(seg, start, end);
     const thickness = seg.width > 0 ? Math.max(seg.width, MIN_THICKNESS_PT) : MIN_THICKNESS_PT;
 
     lines.push({
@@ -71,6 +76,14 @@ export function assembleDrawingModel(
       semantic: null,
       length_pt: lengthPt,
       length_mm: s !== null ? lengthPt * s : null,
+      arc: seg.arc
+        ? {
+            center: snapPoint(seg.arc.center),
+            radius: seg.arc.radius,
+            start_angle: seg.arc.start_angle,
+            end_angle: seg.arc.end_angle,
+          }
+        : undefined,
     });
   }
 
