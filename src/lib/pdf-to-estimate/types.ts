@@ -9,6 +9,18 @@
 
 export type Point = { x: number; y: number };
 
+/**
+ * 円弧セグメント（アーチ壁）。座標・角度は PDF point 単位。
+ * line.start / line.end は円弧の両端点（弦の端点）を保持する。
+ */
+export type PdfArc = {
+  center: Point;
+  radius: number;
+  /** 開始角・終了角（ラジアン、CCW 正） */
+  start_angle: number;
+  end_angle: number;
+};
+
 export type PdfLine = {
   start: Point;
   end: Point;
@@ -18,6 +30,8 @@ export type PdfLine = {
   semantic: "wall" | "opening" | "dimension_line" | "auxiliary" | "unknown" | null;
   length_pt: number;
   length_mm: number | null;
+  /** 円弧壁の場合のみ存在。start/end は弦の端点を保持する。 */
+  arc?: PdfArc;
 };
 
 export type TextItem = {

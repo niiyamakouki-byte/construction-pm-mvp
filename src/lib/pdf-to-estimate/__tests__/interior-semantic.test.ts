@@ -124,6 +124,59 @@ describe("classifyInteriorElements", () => {
     expect(elements.length).toBe(0);
   });
 
+  it("斜め壁のみで構成される閉じた部屋の床面積が正しい", () => {
+    // 一辺 5000mm の正方形を 45° 回転させた菱形（対角線が軸に並行）
+    // 対角線 = 5000√2 ≈ 7071mm → 半対角線 ≈ 3535.5mm
+    // scale=0.3528 → 3535.5mm / 0.3528 ≈ 10021pt
+    // 頂点(pt): (0,-10021), (10021,0), (0,10021), (-10021,0)
+    // 実面積 = 5000mm × 5000mm = 25,000,000mm² = 25㎡
+    const v0 = { x: 0, y: -10021 };
+    const v1 = { x: 10021, y: 0 };
+    const v2 = { x: 0, y: 10021 };
+    const v3 = { x: -10021, y: 0 };
+    const diag = (a: typeof v0, b: typeof v0): PdfLine =>
+      wallLine({ start: a, end: b, length_mm: 5000, length_pt: 14172 });
+    const lines: PdfLine[] = [diag(v0, v1), diag(v1, v2), diag(v2, v3), diag(v3, v0)];
+    const drawing = makeDrawing({ lines });
+    const elements = classifyInteriorElements(drawing);
+    const floors = elements.filter((e) => e.kind === "floor_area");
+    expect(floors.length).toBe(1);
+    if (floors[0]?.kind === "floor_area") {
+      expect(floors[0].geometry.areaSqM).toBeCloseTo(25, 1);
+    }
+  });
+
+  it("円弧壁を含む部屋の床面積が円弧分を含む", () => {
+    // 直線3辺 + 円弧1辺で閉じた領域。
+    // 半径 5000mm の半円（直径=10000mm）を底辺とする半円形の部屋を近似。
+    // scale=0.3528 → 半径 5000mm / 0.3528 ≈ 14172pt
+    const r = 14172;
+    // 半円: 弦は (-r,0)→(r,0)、円弧は上側を通る（center=原点, angle π→0）
+    const arcWall: PdfLine = wallLine({
+      start: { x: r, y: 0 },
+      end: { x: -r, y: 0 },
+      length_mm: Math.PI * 5000,
+      length_pt: Math.PI * r,
+      arc: { center: { x: 0, y: 0 }, radius: r, start_angle: 0, end_angle: Math.PI },
+    });
+    // 直径方向に閉じる直線壁
+    const chordWall: PdfLine = wallLine({
+      start: { x: -r, y: 0 },
+      end: { x: r, y: 0 },
+      length_mm: 10000,
+      length_pt: 2 * r,
+    });
+    const drawing = makeDrawing({ lines: [arcWall, chordWall] });
+    const elements = classifyInteriorElements(drawing);
+    const floors = elements.filter((e) => e.kind === "floor_area");
+    expect(floors.length).toBe(1);
+    if (floors[0]?.kind === "floor_area") {
+      // 半円面積 = π r² / 2 = π × 5²/2 ≈ 39.27㎡（多角形近似のためやや小さめ）
+      expect(floors[0].geometry.areaSqM).toBeGreaterThan(35);
+      expect(floors[0].geometry.areaSqM).toBeLessThanOrEqual(39.3);
+    }
+  });
+
   it("直交壁4本から room と floor_area が生成される", () => {
     // 10m×4m の矩形部屋（1:50 scale、1pt=0.3528mm）
     // 4000mm / 0.3528 = 11338pt, 10000mm / 0.3528 = 28345pt

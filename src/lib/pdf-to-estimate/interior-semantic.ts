@@ -12,6 +12,7 @@
 import type {
   DrawingModel,
   PdfLine,
+  PdfArc,
   InteriorElement,
   WallGeometry,
   OpeningGeometry,
@@ -105,14 +106,123 @@ function toOpeningGeometry(line: PdfLine, scaleMmPerPt: number): OpeningGeometry
 
 // ─── Room / floor area detection ───────────────────────────────────
 
+const ARC_MIN_SEGMENTS = 8;
+const ARC_MAX_SEGMENTS = 32;
+/** 弦の端点一致とみなす許容距離（pt） */
+const ENDPOINT_TOLERANCE_PT = 1.0;
+
 /**
- * 壁線の端点を使い、連結した閉じた多角形を検出する簡易実装。
- * 完全なグラフ探索は重いので、直交壁（水平・垂直のみ）に絞ったバウンディング推定を行う。
+ * 円弧を弧長に応じて 8〜32 本の直線セグメントに分割し、中間点列を返す。
+ * 返す点は始点を含まず終点を含む（ポリライン連結用）。座標は pt 単位。
+ */
+function tessellateArc(arc: PdfArc): Point[] {
+  const sweep = arc.end_angle - arc.start_angle;
+  const arcLen = Math.abs(sweep) * arc.radius;
+  // 弧長 500pt ごとに 1 分割を目安にし、8〜32 にクランプ
+  const segments = Math.max(
+    ARC_MIN_SEGMENTS,
+    Math.min(ARC_MAX_SEGMENTS, Math.ceil(arcLen / 500)),
+  );
+  const points: Point[] = [];
+  for (let k = 1; k <= segments; k++) {
+    const t = arc.start_angle + (sweep * k) / segments;
+    points.push({
+      x: arc.center.x + arc.radius * Math.cos(t),
+      y: arc.center.y + arc.radius * Math.sin(t),
+    });
+  }
+  return points;
+}
+
+/** 壁を pt 単位のポリライン（始点込み）に展開する。円弧は分割する。 */
+function wallToPolyline(wall: PdfLine): Point[] {
+  if (wall.arc) {
+    return [{ x: wall.start.x, y: wall.start.y }, ...tessellateArc(wall.arc)];
+  }
+  return [
+    { x: wall.start.x, y: wall.start.y },
+    { x: wall.end.x, y: wall.end.y },
+  ];
+}
+
+function pointsCoincide(a: Point, b: Point): boolean {
+  return Math.hypot(a.x - b.x, a.y - b.y) <= ENDPOINT_TOLERANCE_PT;
+}
+
+/**
+ * 壁セグメントの端点連結をたどり、閉じたループ（最初の壁の始点に戻る）を 1 つ探す。
+ * 見つかった場合、そのループを構成する点列（pt 単位、円弧は分割済み）を返す。
+ * 見つからなければ null。任意の角度の壁・円弧壁に対応する。
+ */
+function traceClosedLoop(walls: PdfLine[]): Point[] | null {
+  // 円弧壁を含む場合 2 本でも閉領域を成すため、最低 2 本を許容する
+  if (walls.length < 2) return null;
+
+  const used = new Array<boolean>(walls.length).fill(false);
+  const startWall = walls[0];
+  const startPoly = wallToPolyline(startWall);
+  used[0] = true;
+
+  const loopStart = startPoly[0];
+  const points: Point[] = [...startPoly];
+  let current = points[points.length - 1];
+
+  // 最大 walls.length-1 回、連結する壁を辿る
+  for (let step = 0; step < walls.length - 1; step++) {
+    let advanced = false;
+    for (let i = 0; i < walls.length; i++) {
+      if (used[i]) continue;
+      const poly = wallToPolyline(walls[i]);
+      const head = poly[0];
+      const tail = poly[poly.length - 1];
+      if (pointsCoincide(current, head)) {
+        points.push(...poly.slice(1));
+        used[i] = true;
+        current = points[points.length - 1];
+        advanced = true;
+        break;
+      }
+      if (pointsCoincide(current, tail)) {
+        // 逆向きに連結
+        const reversed = poly.slice(0, -1).reverse();
+        points.push(...reversed);
+        used[i] = true;
+        current = points[points.length - 1];
+        advanced = true;
+        break;
+      }
+    }
+    if (!advanced) break;
+    if (pointsCoincide(current, loopStart)) {
+      // 閉ループ完成（末尾の重複点を除く）
+      return points.slice(0, -1);
+    }
+  }
+
+  return null;
+}
+
+/**
+ * 壁線の端点を使い、連結した閉じた多角形を検出する。
+ * まず端点連結ベースで実ポリゴン（斜め壁・円弧壁を含む）を探し、
+ * 見つからない場合は直交壁の AABB グリッド推定にフォールバックする。
  */
 function detectRooms(walls: PdfLine[], scaleMmPerPt: number): RoomGeometry[] {
   if (walls.length === 0) return [];
 
   const s = scaleMmPerPt;
+
+  // ① 端点連結による実ポリゴン検出（任意角度・円弧対応）
+  const loopPt = traceClosedLoop(walls);
+  if (loopPt && loopPt.length >= 3) {
+    const polygonMm = loopPt.map((p) => ({ x: p.x * s, y: p.y * s }));
+    const areaSqM = shoelaceAreaSqM(polygonMm);
+    if (areaSqM > 0.5) {
+      return [{ polygonMm, areaSqM }];
+    }
+  }
+
+  // ② フォールバック: 直交壁の AABB グリッド推定（従来挙動）
 
   // 水平・垂直壁の端点から AABB グループを作る（簡易版）
   const hWalls = walls.filter((w) => {
