@@ -13,6 +13,8 @@ import type {
   DrawingModel,
   PdfLine,
   PdfArc,
+  PdfRect,
+  TextItem,
   InteriorElement,
   WallGeometry,
   OpeningGeometry,
@@ -33,6 +35,17 @@ const DOOR_ARC_RADIUS_MAX_MM = 1100; // 上限 1100mm
 const DOOR_ARC_SWEEP_MIN_RAD = (70 * Math.PI) / 180;  // 約 1/4 回転（下限 70°）
 const DOOR_ARC_SWEEP_MAX_RAD = (110 * Math.PI) / 180; // 約 1/4 回転（上限 110°）
 const DOOR_DEDUP_CENTER_TOLERANCE_MM = 50; // 同心・同径の弧（両引き重複描画）は 1 枚に集約
+
+// ── 窓ラベル検出パラメータ ──
+// 平面図では窓は "W"・"W1"・"W2"・"窓"・"WIN" などのラベルが開口近傍に配置される CAD 慣習を利用する。
+// テキスト近傍 WINDOW_LABEL_SEARCH_RADIUS_MM 以内に建具記号（矩形）がある場合、その矩形を窓として分類する。
+const WINDOW_LABEL_SEARCH_RADIUS_MM = 500; // ラベルと矩形の近傍許容距離（mm）
+const WINDOW_WIDTH_MIN_MM = 600;  // 窓の最小幅（mm）
+const WINDOW_WIDTH_MAX_MM = 2400; // 窓の最大幅（mm）— 引き違い2枚最大
+const WINDOW_DEFAULT_HEIGHT_MM = 1100; // 窓の標準高さ（腰窓想定、mm）
+
+/** 窓ラベルパターン: "W", "W1"〜"W9", "WIN", "窓" に一致する正規表現 */
+const WINDOW_LABEL_RE = /^(W\d*|WIN|窓)$/i;
 
 // ─── Geometry helpers ──────────────────────────────────────────────
 
@@ -186,6 +199,77 @@ function detectDoorsFromArcs(
       inferredFrom: { pdfPage: drawing.page_index, confidence: 0.6 },
     });
   }
+  return result;
+}
+
+// ─── Window detection ─────────────────────────────────────────────
+
+/**
+ * テキストラベル（"W", "W1"〜"W9", "WIN", "窓"）と矩形の近傍関係で窓を検出する。
+ *
+ * 判定ロジック:
+ *   1. drawing.texts から窓ラベルに一致するテキストを列挙する。
+ *   2. 各ラベル位置 (pt) から WINDOW_LABEL_SEARCH_RADIUS_MM 以内にある
+ *      drawing.rects の矩形を窓候補とする。
+ *   3. 候補矩形の幅が WINDOW_WIDTH_MIN_MM〜WINDOW_WIDTH_MAX_MM に収まる場合に窓とする。
+ *   4. 同一矩形への重複登録を防ぐため、採用した矩形インデックスを記録する。
+ *
+ * 誤検出しやすい条件:
+ *   - "W" がラベルでなく寸法値・部屋名略称として使われる場合（例: "W=3000"）
+ *     → WINDOW_LABEL_RE は単独の "W" / "W数字" のみマッチするよう制限しているが、
+ *       2文字以上の "W1234" などは除外できない可能性がある。
+ *   - ラベルと矩形が離れて配置された図面では WINDOW_LABEL_SEARCH_RADIUS_MM を超え
+ *     検出もれになる。
+ *   - 矩形が壁線の外側（建具記号でない）に配置されている場合は誤検出になりうる。
+ */
+function detectWindowsFromLabels(
+  drawing: DrawingModel,
+  scaleMmPerPt: number,
+): InteriorElement[] {
+  if (drawing.texts.length === 0 || drawing.rects.length === 0) return [];
+
+  // 窓ラベルのテキスト位置を収集（pt 座標）
+  const labelPositionsPt: Point[] = drawing.texts
+    .filter((t: TextItem) => WINDOW_LABEL_RE.test(t.text.trim()))
+    .map((t: TextItem) => t.position);
+
+  if (labelPositionsPt.length === 0) return [];
+
+  const searchRadiusPt = WINDOW_LABEL_SEARCH_RADIUS_MM / scaleMmPerPt;
+  const usedRectIndices = new Set<number>();
+  const result: InteriorElement[] = [];
+
+  for (const labelPt of labelPositionsPt) {
+    for (let i = 0; i < drawing.rects.length; i++) {
+      if (usedRectIndices.has(i)) continue;
+      const rect = drawing.rects[i] as PdfRect;
+
+      // 矩形中心 (pt)
+      const centerPt: Point = {
+        x: (rect.top_left.x + rect.bottom_right.x) / 2,
+        y: (rect.top_left.y + rect.bottom_right.y) / 2,
+      };
+
+      const distPt = Math.hypot(centerPt.x - labelPt.x, centerPt.y - labelPt.y);
+      if (distPt > searchRadiusPt) continue;
+
+      const widthMm = Math.abs(rect.bottom_right.x - rect.top_left.x) * scaleMmPerPt;
+      if (widthMm < WINDOW_WIDTH_MIN_MM || widthMm > WINDOW_WIDTH_MAX_MM) continue;
+
+      usedRectIndices.add(i);
+      result.push({
+        kind: "opening",
+        geometry: {
+          centerMm: { x: centerPt.x * scaleMmPerPt, y: centerPt.y * scaleMmPerPt },
+          widthMm,
+          heightMm: WINDOW_DEFAULT_HEIGHT_MM,
+          openingType: "window",
+        },
+        inferredFrom: { pdfPage: drawing.page_index, confidence: 0.7 },
+      });
+    }
+  }
+
   return result;
 }
 
@@ -504,13 +588,17 @@ export function classifyInteriorElements(drawing: DrawingModel): InteriorElement
         x: ((rect.top_left.x + rect.bottom_right.x) / 2) * scaleMmPerPt,
         y: ((rect.top_left.y + rect.bottom_right.y) / 2) * scaleMmPerPt,
       };
+      // 幅 600〜900mm → door、それ以外（400〜600 未満、または 900 超）は unknown。
+      // 窓（幅 900 超）はラベル "W"/"窓" との近傍照合で判定するため、ここでは unknown にとどめる。
+      const rectOpeningType: OpeningGeometry["openingType"] =
+        widthMm >= 600 && widthMm <= 900 ? "door" : "unknown";
       elements.push({
         kind: "opening",
         geometry: {
           centerMm,
           widthMm,
           heightMm: DEFAULT_OPENING_HEIGHT_MM,
-          openingType: widthMm <= 900 ? "door" : "window",
+          openingType: rectOpeningType,
         },
         inferredFrom: { pdfPage: drawing.page_index, confidence: baseConf * 0.75 },
       });
@@ -519,6 +607,9 @@ export function classifyInteriorElements(drawing: DrawingModel): InteriorElement
 
   // ドア開閉弧（建具スイングアーク）からドア開口を検出
   elements.push(...detectDoorsFromArcs(drawing, drawing.scale_mm_per_pt));
+
+  // 窓ラベル（W/W1〜W9/WIN/窓）と矩形の近傍関係で窓を検出
+  elements.push(...detectWindowsFromLabels(drawing, scaleMmPerPt));
 
   // 部屋領域検出
   const rooms = detectRooms(wallLines, scaleMmPerPt);

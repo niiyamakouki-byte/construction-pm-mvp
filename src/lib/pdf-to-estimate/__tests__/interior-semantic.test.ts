@@ -291,4 +291,118 @@ describe("classifyInteriorElements", () => {
     );
     expect(doors.length).toBe(0);
   });
+
+  // ── 窓ラベル検出 ──
+
+  it("窓ラベル「W」と矩形の近傍から window 開口を検出する", () => {
+    // 幅 3000pt × 0.3528 ≈ 1058mm の矩形をラベル "W" から 100pt の位置に配置
+    const rectCenterX = 5000;
+    const rectCenterY = 5000;
+    const halfWidth = 1500; // 3000pt / 2
+    const rect: PdfRect = {
+      top_left: { x: rectCenterX - halfWidth, y: rectCenterY - 20 },
+      bottom_right: { x: rectCenterX + halfWidth, y: rectCenterY + 20 },
+      layer: null,
+    };
+    const texts: import("../types.js").TextItem[] = [
+      {
+        text: "W",
+        position: { x: rectCenterX - 100, y: rectCenterY },
+        font_size: 8,
+        is_dimension_value: false,
+        parsed_mm: null,
+      },
+    ];
+    const drawing = makeDrawing({ rects: [rect], texts });
+    const elements = classifyInteriorElements(drawing);
+    const windows = elements.filter(
+      (e) => e.kind === "opening" && e.geometry.openingType === "window",
+    );
+    expect(windows.length).toBeGreaterThanOrEqual(1);
+    if (windows[0]?.kind === "opening") {
+      // 幅 3000pt × 0.3528 ≈ 1058mm
+      expect(windows[0].geometry.widthMm).toBeCloseTo(3000 * 0.3528, 0);
+      expect(windows[0].geometry.openingType).toBe("window");
+    }
+  });
+
+  it("窓ラベル「W1」と矩形の近傍から window を検出する", () => {
+    const rect: PdfRect = {
+      top_left: { x: 4000, y: 5000 },
+      bottom_right: { x: 7200, y: 5040 }, // 幅 3200pt × 0.3528 ≈ 1129mm
+      layer: null,
+    };
+    const texts: import("../types.js").TextItem[] = [
+      {
+        text: "W1",
+        position: { x: 5500, y: 5000 },
+        font_size: 8,
+        is_dimension_value: false,
+        parsed_mm: null,
+      },
+    ];
+    const drawing = makeDrawing({ rects: [rect], texts });
+    const elements = classifyInteriorElements(drawing);
+    const windows = elements.filter(
+      (e) => e.kind === "opening" && e.geometry.openingType === "window",
+    );
+    expect(windows.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it("窓ラベル「窓」と矩形の近傍から window を検出する", () => {
+    const rect: PdfRect = {
+      top_left: { x: 3000, y: 3000 },
+      bottom_right: { x: 6800, y: 3040 }, // 幅 3800pt × 0.3528 ≈ 1341mm
+      layer: null,
+    };
+    const texts: import("../types.js").TextItem[] = [
+      {
+        text: "窓",
+        position: { x: 4800, y: 3000 },
+        font_size: 8,
+        is_dimension_value: false,
+        parsed_mm: null,
+      },
+    ];
+    const drawing = makeDrawing({ rects: [rect], texts });
+    const elements = classifyInteriorElements(drawing);
+    const windows = elements.filter(
+      (e) => e.kind === "opening" && e.geometry.openingType === "window",
+    );
+    expect(windows.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it("窓ラベルなし・テキストなしの場合は window を検出しない（door のみ）", () => {
+    // ドア弧のみ（窓ラベルなし）
+    const drawing = makeDrawing({ lines: [doorArcLine({ x: 5000, y: 5000 }, 800)] });
+    const elements = classifyInteriorElements(drawing);
+    const windows = elements.filter(
+      (e) => e.kind === "opening" && e.geometry.openingType === "window",
+    );
+    expect(windows.length).toBe(0);
+  });
+
+  it("ラベルが離れすぎた矩形は window として検出しない", () => {
+    // 矩形とラベルが 5000pt 離れている（WINDOW_LABEL_SEARCH_RADIUS_MM=500mm / 0.3528 ≈ 1418pt を超える）
+    const rect: PdfRect = {
+      top_left: { x: 1000, y: 1000 },
+      bottom_right: { x: 4000, y: 1040 },
+      layer: null,
+    };
+    const texts: import("../types.js").TextItem[] = [
+      {
+        text: "W",
+        position: { x: 10000, y: 10000 }, // 大きく離れた位置
+        font_size: 8,
+        is_dimension_value: false,
+        parsed_mm: null,
+      },
+    ];
+    const drawing = makeDrawing({ rects: [rect], texts });
+    const elements = classifyInteriorElements(drawing);
+    const windows = elements.filter(
+      (e) => e.kind === "opening" && e.geometry.openingType === "window",
+    );
+    expect(windows.length).toBe(0);
+  });
 });
