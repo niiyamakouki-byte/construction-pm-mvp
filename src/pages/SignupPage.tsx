@@ -71,15 +71,36 @@ export function SignupPage() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
             </svg>
           </div>
-          <h2 className="text-xl font-bold text-slate-900">登録完了</h2>
+          <h2 className="text-xl font-bold text-slate-900">登録完了！</h2>
           <p className="mt-2 text-sm text-slate-500">
             確認メールを送信しました。メール内のリンクをクリックしてログインしてください。
           </p>
+          <div className="mt-5 rounded-xl bg-brand-50 px-4 py-4 text-left">
+            <p className="text-xs font-semibold text-brand-700 mb-2">ログイン後すぐにできること</p>
+            <ul className="space-y-1.5 text-xs text-slate-600">
+              <li className="flex items-start gap-2">
+                <span className="mt-0.5 text-brand-500">✓</span>
+                内装工程テンプレ（LGS・ボード・仕上など）を即適用
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="mt-0.5 text-brand-500">✓</span>
+                PDF見積をアップロードして自動積算
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="mt-0.5 text-brand-500">✓</span>
+                現場写真をスマホで撮って日報に自動反映
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="mt-0.5 text-brand-500">✓</span>
+                サンプルプロジェクトで機能を体験
+              </li>
+            </ul>
+          </div>
           <button
             onClick={() => navigate("/login")}
-            className="mt-6 w-full rounded-lg bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-700"
+            className="mt-5 w-full rounded-lg bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-700"
           >
-            ログインへ
+            ログインして始める
           </button>
         </div>
       </div>

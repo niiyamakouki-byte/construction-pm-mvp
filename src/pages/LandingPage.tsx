@@ -12,24 +12,24 @@ function LogoIcon() {
 
 const features = [
   {
-    icon: "📊",
-    title: "ガント工程管理",
-    desc: "直感的なガントチャートで工程を可視化。担当者・進捗・依存関係を一目で把握。",
+    icon: "📐",
+    title: "内装特化の工程テンプレ",
+    desc: "LGS・ボード・塗装・OA床など内装工種ごとの工程テンプレを即適用。ゼロからの工程作成が不要に。",
   },
   {
     icon: "💰",
-    title: "AI見積",
-    desc: "過去データを学習したAIが見積を自動生成。作業時間を大幅に削減します。",
-  },
-  {
-    icon: "👷",
-    title: "チーム管理",
-    desc: "職人・協力会社・担当者を一元管理。タスクアサインもスムーズに。",
+    title: "PDF見積→自動積算",
+    desc: "メーカー・業者のPDF見積をアップロードするだけで金額を自動集計。転記ミスと積算時間を削減。",
   },
   {
     icon: "📷",
-    title: "日報・写真",
-    desc: "現場からスマホで日報・写真を投稿。リアルタイムで進捗を共有。",
+    title: "AI写真日報",
+    desc: "現場写真をスマホで撮るだけ。ファイル名からAIがカテゴリ（下地・仕上・検査）を自動分類して日報に反映。",
+  },
+  {
+    icon: "📊",
+    title: "粗利・予実管理",
+    desc: "見積・発注・実費をリアルタイム比較。各案件の粗利率と予算超過アラートをダッシュボードに集約。",
   },
 ];
 
@@ -39,7 +39,7 @@ const plans = [
     price: "¥0",
     period: "14日間",
     desc: "全機能を無料でお試し",
-    features: ["プロジェクト5件まで", "ガント・タスク管理", "日報・写真", "AI見積（10回/月）"],
+    features: ["プロジェクト5件まで", "内装工程テンプレ", "AI写真日報", "PDF見積自動積算（10回）"],
     cta: "無料で始める",
     ctaAction: () => navigate("/signup"),
     highlight: false,
@@ -48,8 +48,8 @@ const plans = [
     name: "Basic",
     price: "¥9,800",
     period: "/月",
-    desc: "小規模チーム向け",
-    features: ["プロジェクト無制限", "チームメンバー10名", "ガント・タスク・日報", "AI見積（100回/月）", "メールサポート"],
+    desc: "小〜中規模の内装施工会社向け",
+    features: ["プロジェクト無制限", "チームメンバー10名", "内装工程テンプレ全種", "PDF見積自動積算（100回/月）", "粗利・予実ダッシュボード", "メールサポート"],
     cta: "Basicを始める",
     ctaAction: () => navigate("/signup"),
     highlight: true,
@@ -58,8 +58,8 @@ const plans = [
     name: "Pro",
     price: "¥29,800",
     period: "/月",
-    desc: "中規模〜大規模向け",
-    features: ["プロジェクト無制限", "チームメンバー無制限", "全機能", "AI見積（無制限）", "優先サポート", "カスタム帳票"],
+    desc: "複数現場を抱える内装会社向け",
+    features: ["プロジェクト無制限", "チームメンバー無制限", "全機能＋カスタム帳票", "PDF積算無制限", "複数現場コックピット", "優先サポート"],
     cta: "Proを始める",
     ctaAction: () => navigate("/signup"),
     highlight: false,
@@ -117,15 +117,15 @@ export function LandingPage() {
       <section className="bg-gradient-to-br from-brand-700 via-brand-800 to-brand-900 px-4 py-20 text-center sm:py-32">
         <div className="mx-auto max-w-3xl">
           <div className="mb-4 inline-block rounded-full bg-brand-600/40 px-4 py-1.5 text-sm font-medium text-brand-200">
-            建設DXプラットフォーム
+            内装工事特化の現場管理SaaS
           </div>
           <h1 className="text-4xl font-extrabold leading-tight tracking-tight text-white sm:text-5xl">
-            建設現場のDXを、
+            内装工事の現場管理を、
             <br />
-            <span className="text-accent-400">シンプルに。</span>
+            <span className="text-accent-400">もっとシンプルに。</span>
           </h1>
           <p className="mx-auto mt-6 max-w-xl text-lg text-brand-200">
-            工程管理からAI見積、日報・写真まで。現場で使えるオールインワンの建設プロジェクト管理ツール。
+            LGS・ボード・塗装・OA床など内装特化の工程テンプレ、PDF見積の自動積算、AI写真日報。内装工事会社のために設計されたプロジェクト管理ツール。
           </p>
           <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
             <button
@@ -149,8 +149,8 @@ export function LandingPage() {
       <section id="features" className="bg-[#f8fafc] px-4 py-20 sm:px-6">
         <div className="mx-auto max-w-6xl">
           <div className="mb-12 text-center">
-            <h2 className="text-3xl font-bold text-slate-900">現場に必要な機能が全部揃う</h2>
-            <p className="mt-3 text-slate-500">煩雑な現場管理をデジタル化。チーム全員がリアルタイムで状況を把握できます。</p>
+            <h2 className="text-3xl font-bold text-slate-900">内装工事に特化した4つの強み</h2>
+            <p className="mt-3 text-slate-500">汎用ツールでは対応できない内装工種・積算・写真管理をカバー。内装工事会社のために作られています。</p>
           </div>
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
             {features.map((f) => (
@@ -168,13 +168,29 @@ export function LandingPage() {
       </section>
 
       {/* Social proof */}
-      <section className="bg-white px-4 py-16 text-center sm:px-6">
-        <div className="mx-auto max-w-3xl">
-          <p className="mb-8 text-sm font-medium uppercase tracking-widest text-slate-400">現場の声</p>
-          <blockquote className="text-xl font-medium text-slate-700">
-            "ガント工程表の作成が半日から30分に。現場の状況がリアルタイムで把握できるので、事務所と現場のコミュニケーションが劇的に改善しました。"
-          </blockquote>
-          <p className="mt-4 text-sm text-slate-400">— 都内リノベーション会社 工事部長</p>
+      <section className="bg-white px-4 py-16 sm:px-6">
+        <div className="mx-auto max-w-4xl">
+          <p className="mb-10 text-center text-sm font-medium uppercase tracking-widest text-slate-400">内装工事会社からの声</p>
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            <figure className="rounded-2xl border border-slate-200 bg-slate-50 p-6">
+              <blockquote className="text-sm leading-7 text-slate-700">
+                "内装工程テンプレのおかげで、LGS〜クロス貼りまでの工程表が10分で完成。以前は Excel で2〜3時間かかっていました。"
+              </blockquote>
+              <figcaption className="mt-4 text-xs text-slate-400">— 都内内装施工会社 現場監督</figcaption>
+            </figure>
+            <figure className="rounded-2xl border border-slate-200 bg-slate-50 p-6">
+              <blockquote className="text-sm leading-7 text-slate-700">
+                "業者からのPDF見積を貼るだけで積算できるのが助かる。転記ミスがなくなり、見積提出のスピードが倍になりました。"
+              </blockquote>
+              <figcaption className="mt-4 text-xs text-slate-400">— リノベーション会社 代表</figcaption>
+            </figure>
+            <figure className="rounded-2xl border border-slate-200 bg-slate-50 p-6 sm:col-span-2 lg:col-span-1">
+              <blockquote className="text-sm leading-7 text-slate-700">
+                "現場写真がカテゴリ自動分類されて日報に入るのが便利。写真整理の時間がほぼゼロになり、若い現場監督にも好評です。"
+              </blockquote>
+              <figcaption className="mt-4 text-xs text-slate-400">— 内装工事会社 工事部長</figcaption>
+            </figure>
+          </div>
         </div>
       </section>
 
@@ -278,7 +294,7 @@ export function LandingPage() {
                 <LogoIcon />
                 <span className="text-lg font-bold text-white">GenbaHub</span>
               </div>
-              <p className="mt-1 text-sm text-brand-400">建設現場のDXを、シンプルに。</p>
+              <p className="mt-1 text-sm text-brand-400">内装工事に特化した現場管理SaaS。</p>
               <p className="mt-2 text-xs text-brand-500">
                 提供: 株式会社ラポルタ<br />
                 〒107-0062 東京都港区南青山3丁目<br />
