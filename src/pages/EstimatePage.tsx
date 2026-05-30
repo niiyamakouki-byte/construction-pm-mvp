@@ -852,6 +852,16 @@ function EstimatePageContent() {
               </span>
             </div>
           </div>
+
+          {/* 概算注記 */}
+          <div
+            className="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-800 space-y-1"
+            data-testid="estimate-disclaimer"
+          >
+            <p className="font-semibold">概算見積についての注記</p>
+            <p>本見積は世田谷区標準価格をもとに算出した概算です。現地調査の結果により実際の金額は±20%程度変動する場合があります。</p>
+            <p>詳細見積・現地調査のご依頼は <span className="font-semibold">03-6876-7749</span> までお問い合わせください。</p>
+          </div>
         </div>
       </div>
     );
@@ -936,7 +946,44 @@ function EstimatePageContent() {
       )}
       {activeTab === "estimate" && (
         <>
-      <h2 className="text-lg font-bold text-slate-900">見積作成</h2>
+      {/* PDF CTA hero ― ファーストビューに大きなドロップ誘導 */}
+      <div
+        className="relative overflow-hidden rounded-2xl border border-brand-200 bg-gradient-to-br from-brand-50 to-slate-50 px-5 py-6 shadow-sm"
+        data-testid="pdf-cta-hero"
+      >
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-6">
+          {/* Icon */}
+          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-brand-100">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-brand-600">
+              <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
+              <polyline points="14 2 14 8 20 8" />
+              <line x1="12" y1="18" x2="12" y2="12" />
+              <line x1="9" y1="15" x2="15" y2="15" />
+            </svg>
+          </div>
+          {/* Copy */}
+          <div className="flex-1 space-y-1">
+            <p className="text-base font-bold text-slate-900">
+              図面 PDF をドロップするだけで概算見積を自動作成
+            </p>
+            <p className="text-sm text-slate-500">
+              内装要素を AI が自動検出 → 数量算出 → 単価マスタ照合まで一気通貫。
+              まず PDF を試してみてください。
+            </p>
+          </div>
+          {/* CTA button */}
+          <button
+            type="button"
+            onClick={() => setActiveTab("pdf_draft")}
+            className="shrink-0 rounded-xl bg-brand-600 px-5 py-3 text-sm font-bold text-white shadow-sm hover:bg-brand-700 active:bg-brand-800 transition-colors"
+            data-testid="pdf-cta-button"
+          >
+            PDF で見積作成 →
+          </button>
+        </div>
+      </div>
+
+      <h2 className="text-lg font-bold text-slate-900">品目から手動で作成</h2>
 
       {error && (
         <div className="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">

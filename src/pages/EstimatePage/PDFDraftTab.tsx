@@ -230,28 +230,42 @@ export function PDFDraftTab({ costMaster, onSave }: Props) {
           onDrop={handleDrop}
           onDragOver={(e) => e.preventDefault()}
           onClick={() => fileInputRef.current?.click()}
-          className="flex cursor-pointer flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 py-16 text-center hover:border-brand-400 hover:bg-brand-50/30 transition-colors"
+          className="flex cursor-pointer flex-col items-center justify-center gap-4 rounded-2xl border-2 border-dashed border-brand-300 bg-brand-50/40 px-6 py-14 text-center hover:border-brand-500 hover:bg-brand-50/70 active:bg-brand-100/60 transition-colors"
           data-testid="pdf-drop-zone"
+          role="button"
+          aria-label="PDF図面をドロップまたはクリックして選択"
+          tabIndex={0}
+          onKeyDown={(e) => e.key === "Enter" && fileInputRef.current?.click()}
         >
-          <svg
-            width="40" height="40" viewBox="0 0 24 24"
-            fill="none" stroke="currentColor" strokeWidth="1.5"
-            className="text-slate-300"
-          >
-            <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
-            <polyline points="14 2 14 8 20 8" />
-            <line x1="12" y1="18" x2="12" y2="12" />
-            <line x1="9" y1="15" x2="15" y2="15" />
-          </svg>
+          {/* Upload icon */}
+          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-brand-100">
+            <svg
+              width="32" height="32" viewBox="0 0 24 24"
+              fill="none" stroke="currentColor" strokeWidth="1.5"
+              className="text-brand-600"
+            >
+              <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
+              <polyline points="14 2 14 8 20 8" />
+              <line x1="12" y1="18" x2="12" y2="12" />
+              <line x1="9" y1="15" x2="15" y2="15" />
+            </svg>
+          </div>
+
           {loading ? (
-            <p className="text-sm text-slate-400">処理中...</p>
+            <div className="space-y-1">
+              <p className="text-sm font-semibold text-brand-700">図面を解析中...</p>
+              <p className="text-xs text-slate-400">内装要素を自動検出しています</p>
+            </div>
           ) : (
-            <>
-              <p className="text-sm font-semibold text-slate-600">
-                図面 PDF / DrawingModel JSON をドロップ または クリックして選択
+            <div className="space-y-2">
+              <p className="text-base font-bold text-slate-800">
+                ここに図面 PDF をドロップ
               </p>
-              <p className="text-xs text-slate-400">application/pdf, application/json</p>
-            </>
+              <p className="text-sm text-slate-500">
+                または<span className="text-brand-600 font-semibold"> クリックしてファイルを選択</span>
+              </p>
+              <p className="text-xs text-slate-400">PDF・JSON 対応　※ファイルは外部送信されません</p>
+            </div>
           )}
         </div>
 

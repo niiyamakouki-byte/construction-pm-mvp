@@ -153,4 +153,15 @@ describe("PDFDraftTab", () => {
     expect(arg).toHaveProperty("lines");
     expect(arg).toHaveProperty("totalExcludingTax");
   });
+
+  it("drop-zone に強化されたコピーとロール属性が設定されている", () => {
+    render(<PDFDraftTab costMaster={TEST_COST_MASTER} />);
+
+    const zone = screen.getByTestId("pdf-drop-zone");
+    expect(zone.getAttribute("role")).toBe("button");
+    // 強化コピー: 「ここに図面 PDF をドロップ」が表示される
+    expect(zone.textContent).toContain("ここに図面 PDF をドロップ");
+    // クリックでファイル選択の案内
+    expect(zone.textContent).toContain("クリックしてファイルを選択");
+  });
 });

@@ -193,6 +193,18 @@ describe("EstimatePage", () => {
     );
   });
 
+  it("見積作成タブのファーストビューにPDF CTAヒーローが表示される", async () => {
+    await renderEstimatePage();
+
+    const hero = screen.getByTestId("pdf-cta-hero");
+    expect(hero).toBeDefined();
+    expect(hero.textContent).toContain("図面 PDF をドロップするだけで概算見積を自動作成");
+
+    const ctaButton = screen.getByTestId("pdf-cta-button");
+    expect(ctaButton).toBeDefined();
+    expect(ctaButton.textContent).toContain("PDF で見積作成");
+  });
+
   it("入力内容から見積を生成して結果画面を表示する", async () => {
     const user = userEvent.setup();
     await renderEstimatePage();
@@ -223,5 +235,12 @@ describe("EstimatePage", () => {
     expect(screen.getByText("¥8,894")).toBeDefined();
     expect(screen.getByRole("button", { name: "PDF出力" })).toBeDefined();
     expect(mocks.generateEstimatePdf).not.toHaveBeenCalled();
+
+    // 概算注記が表示される
+    const disclaimer = screen.getByTestId("estimate-disclaimer");
+    expect(disclaimer).toBeDefined();
+    expect(disclaimer.textContent).toContain("世田谷区標準価格");
+    expect(disclaimer.textContent).toContain("±20%");
+    expect(disclaimer.textContent).toContain("03-6876-7749");
   });
 });
