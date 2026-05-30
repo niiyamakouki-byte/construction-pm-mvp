@@ -49,7 +49,7 @@ test.describe("390px mobile responsive routes", () => {
   test("/estimate keeps form and catalog content readable", async ({ page }) => {
     await page.goto("/#/estimate");
     await page.waitForLoadState("networkidle");
-    await expect(page.getByRole("heading", { name: "見積作成" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "品目から手動で作成" })).toBeVisible();
 
     await expectNoHorizontalCollapse(page);
 
@@ -58,7 +58,7 @@ test.describe("390px mobile responsive routes", () => {
     expect(inputBox).not.toBeNull();
     expect(inputBox?.width).toBeGreaterThanOrEqual(280);
 
-    const tabGrid = page.getByRole("button", { name: "見積作成" }).locator("..");
+    const tabGrid = page.getByRole("button", { name: "見積作成", exact: true }).locator("..");
     const tabMetrics = await tabGrid.evaluate((el) => ({
       clientWidth: el.clientWidth,
       scrollWidth: el.scrollWidth,
