@@ -23,6 +23,15 @@ export default tseslint.config(
   },
   reactHooks.configs.flat["recommended-latest"],
   {
+    files: ["src/pages/EstimatePage/__tests__/fixtures/generate-fixtures.mjs"],
+    languageOptions: {
+      globals: {
+        Buffer: "readonly",
+        console: "readonly",
+      },
+    },
+  },
+  {
     rules: {
       "no-control-regex": "off",
       "no-irregular-whitespace": "off",
