@@ -372,11 +372,10 @@ export function NodeSchedulePage() {
 
   return (
     <div className="flex flex-col h-[calc(100vh-140px)] min-h-[500px]">
-      <h1 className="sr-only">ノードスケジュール</h1>
-
       {/* Toolbar */}
       <div className="flex items-center justify-between px-4 py-2 bg-white border-b border-slate-200 shrink-0">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
+          <h1 className="text-sm font-bold text-slate-800">ノードスケジュール</h1>
           {/* View toggle */}
           <button
             onClick={() => navigate("/gantt")}
