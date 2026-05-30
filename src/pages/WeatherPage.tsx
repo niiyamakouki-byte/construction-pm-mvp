@@ -260,7 +260,7 @@ export function WeatherPage() {
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">
-              Weather Planning
+              天気計画
             </p>
             <h1 className="mt-1 text-3xl font-bold tracking-tight text-slate-900">
               現場天気
@@ -292,7 +292,7 @@ export function WeatherPage() {
             <div className="flex items-center justify-between gap-3">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
-                  Site Selector
+                  現場選択
                 </p>
                 <h2 className="mt-1 text-lg font-bold text-slate-900">施工現場を選択</h2>
               </div>
@@ -327,7 +327,7 @@ export function WeatherPage() {
             <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                  Selected Site
+                  選択中の現場
                 </p>
                 <h2 className="mt-1 text-xl font-bold text-slate-900">{selectedSite.siteName}</h2>
               </div>
