@@ -1,6 +1,7 @@
-import { useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { getSupabaseClient, hasSupabaseEnv } from "../infra/supabase-client.js";
 import { navigate } from "../hooks/useHashRouter.js";
+import { trackEvent } from "../lib/analytics.js";
 
 export function SignupPage() {
   const [email, setEmail] = useState("");
@@ -10,9 +11,53 @@ export function SignupPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
+  const startedRef = useRef(false);
+  const completedRef = useRef(false);
+  const abandonedRef = useRef(false);
+  const draftRef = useRef({
+    companyName: "",
+    email: "",
+    password: "",
+    passwordConfirm: "",
+  });
+
+  const trackSignupStarted = () => {
+    if (startedRef.current) return;
+    startedRef.current = true;
+    trackEvent("signup_started", { source: "signup_page" });
+  };
+
+  const trackSignupAbandoned = () => {
+    if (!startedRef.current || completedRef.current || abandonedRef.current) return;
+    abandonedRef.current = true;
+    trackEvent("signup_abandoned", {
+      source: "signup_page",
+      has_company: draftRef.current.companyName.trim().length > 0,
+      has_email: draftRef.current.email.trim().length > 0,
+      has_password: draftRef.current.password.length > 0,
+      has_password_confirm: draftRef.current.passwordConfirm.length > 0,
+    });
+  };
+
+  useEffect(() => {
+    const onPageHide = () => trackSignupAbandoned();
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "hidden") trackSignupAbandoned();
+    };
+
+    window.addEventListener("pagehide", onPageHide);
+    document.addEventListener("visibilitychange", onVisibilityChange);
+
+    return () => {
+      window.removeEventListener("pagehide", onPageHide);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+      trackSignupAbandoned();
+    };
+  }, []);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
+    trackSignupStarted();
     const normalizedEmail = email.trim();
     const normalizedCompanyName = companyName.trim();
     if (!hasSupabaseEnv()) {
@@ -33,6 +78,7 @@ export function SignupPage() {
     }
     setLoading(true);
     setError(null);
+    trackEvent("signup_submit", { source: "signup_page" });
     try {
       const client = await getSupabaseClient();
       const { error: authError } = await client.auth.signUp({
@@ -52,6 +98,8 @@ export function SignupPage() {
           setError("登録に失敗しました。入力内容を確認してもう一度お試しください。");
         }
       } else {
+        completedRef.current = true;
+        trackEvent("signup_completed", { source: "signup_page" });
         setSuccess(true);
       }
     } catch (err) {
@@ -141,7 +189,12 @@ export function SignupPage() {
                 type="text"
                 required
                 value={companyName}
-                onChange={(e) => setCompanyName(e.target.value)}
+                onChange={(e) => {
+                  trackSignupStarted();
+                  const nextValue = e.target.value;
+                  draftRef.current.companyName = nextValue;
+                  setCompanyName(nextValue);
+                }}
                 className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200"
                 placeholder="株式会社◯◯建設"
               />
@@ -156,7 +209,12 @@ export function SignupPage() {
                 autoComplete="email"
                 required
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => {
+                  trackSignupStarted();
+                  const nextValue = e.target.value;
+                  draftRef.current.email = nextValue;
+                  setEmail(nextValue);
+                }}
                 className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200"
                 placeholder="your@email.com"
               />
@@ -173,7 +231,12 @@ export function SignupPage() {
                 required
                 minLength={8}
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e) => {
+                  trackSignupStarted();
+                  const nextValue = e.target.value;
+                  draftRef.current.password = nextValue;
+                  setPassword(nextValue);
+                }}
                 className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200"
                 placeholder="••••••••"
               />
@@ -189,7 +252,12 @@ export function SignupPage() {
                 required
                 minLength={8}
                 value={passwordConfirm}
-                onChange={(e) => setPasswordConfirm(e.target.value)}
+                onChange={(e) => {
+                  trackSignupStarted();
+                  const nextValue = e.target.value;
+                  draftRef.current.passwordConfirm = nextValue;
+                  setPasswordConfirm(nextValue);
+                }}
                 className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200"
                 placeholder="••••••••"
               />
