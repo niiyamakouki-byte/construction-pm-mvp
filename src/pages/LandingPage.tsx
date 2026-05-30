@@ -1,5 +1,94 @@
 import { navigate } from "../hooks/useHashRouter.js";
 
+// 比較表データ: 内装業者が重視する観点でGenbaHub vs 汎用ツール(ANDPAD/kintoneなど)
+const comparisonRows = [
+  {
+    feature: "内装工程テンプレ（LGS/ボード/クロス/床）",
+    genbahub: true,
+    generic: false,
+    note: "GenbaHub は内装工種ごとのテンプレを標準搭載",
+  },
+  {
+    feature: "PDF見積からの自動積算・拾い出し",
+    genbahub: true,
+    generic: false,
+    note: "業者PDFをアップロードするだけで金額を自動集計",
+  },
+  {
+    feature: "AI写真自動分類・写真日報",
+    genbahub: true,
+    generic: false,
+    note: "撮影写真を下地/仕上/検査に自動分類し日報を生成",
+  },
+  {
+    feature: "粗利逆算・予実コスト管理",
+    genbahub: true,
+    generic: "△",
+    note: "内装案件に特化した粗利ダッシュボードを標準搭載",
+  },
+  {
+    feature: "月額料金（目安）",
+    genbahub: "¥9,800〜",
+    generic: "¥36,000〜",
+    note: "汎用ツールの価格は各社公開情報の概算。詳細は各社へお問い合わせください",
+  },
+  {
+    feature: "内装業務へのすぐ使えるカバー範囲",
+    genbahub: true,
+    generic: false,
+    note: "汎用ツールは多業種向けのため、内装向けに別途カスタマイズが必要な場合があります",
+  },
+];
+
+function CheckIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+    >
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+    </svg>
+  );
+}
+
+function XIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+    >
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
+    </svg>
+  );
+}
+
+function CellValue({ value }: { value: boolean | string }) {
+  if (value === true) {
+    return (
+      <span className="inline-flex items-center justify-center">
+        <CheckIcon className="h-5 w-5 text-brand-500" />
+        <span className="sr-only">あり</span>
+      </span>
+    );
+  }
+  if (value === false) {
+    return (
+      <span className="inline-flex items-center justify-center">
+        <XIcon className="h-5 w-5 text-slate-300" />
+        <span className="sr-only">なし（標準外）</span>
+      </span>
+    );
+  }
+  // string value (e.g. price or "△")
+  return <span className="text-sm font-medium text-slate-700">{value}</span>;
+}
+
 function LogoIcon() {
   return (
     <svg width="32" height="32" viewBox="0 0 100 100" aria-hidden="true">
@@ -81,6 +170,7 @@ export function LandingPage() {
           </button>
           <nav className="hidden items-center gap-6 sm:flex">
             <a href="#features" className="text-sm text-slate-600 hover:text-slate-900">機能</a>
+            <a href="#comparison" className="text-sm text-slate-600 hover:text-slate-900">比較</a>
             <a href="#pricing" className="text-sm text-slate-600 hover:text-slate-900">料金</a>
             <button
               onClick={() => navigate("/login")}
@@ -163,6 +253,81 @@ export function LandingPage() {
                 <p className="text-sm leading-relaxed text-slate-500">{f.desc}</p>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Comparison */}
+      <section id="comparison" className="bg-white px-4 py-20 sm:px-6">
+        <div className="mx-auto max-w-4xl">
+          <div className="mb-10 text-center">
+            <h2 className="text-3xl font-bold text-slate-900">内装工事会社に選ばれる理由</h2>
+            <p className="mt-3 text-slate-500">
+              汎用現場管理ツールは多業種向けのため、内装特有の工種・積算・写真管理に対応するには別途カスタマイズが必要です。
+              GenbaHub は内装工事向けに最初から設計されています。
+            </p>
+          </div>
+
+          {/* Desktop table */}
+          <div className="hidden overflow-hidden rounded-2xl border border-slate-200 shadow-sm sm:block">
+            <table className="w-full text-left text-sm">
+              <thead>
+                <tr className="border-b border-slate-200 bg-slate-50">
+                  <th className="py-4 pl-6 pr-4 font-semibold text-slate-600 w-1/2">比較ポイント</th>
+                  <th className="py-4 px-4 font-semibold text-center text-brand-700 w-1/4">
+                    <span className="inline-flex items-center gap-1.5">
+                      <span className="text-base">⚡</span>GenbaHub
+                    </span>
+                  </th>
+                  <th className="py-4 px-6 font-semibold text-center text-slate-500 w-1/4">
+                    汎用ツール
+                    <span className="block text-xs font-normal text-slate-400">（ANDPAD/kintone等・目安）</span>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {comparisonRows.map((row, i) => (
+                  <tr
+                    key={row.feature}
+                    className={`border-b border-slate-100 ${i % 2 === 0 ? "bg-white" : "bg-slate-50/50"}`}
+                  >
+                    <td className="py-3.5 pl-6 pr-4 text-slate-700">{row.feature}</td>
+                    <td className="py-3.5 px-4 text-center">
+                      <CellValue value={row.genbahub} />
+                    </td>
+                    <td className="py-3.5 px-6 text-center">
+                      <CellValue value={row.generic} />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <p className="px-6 py-3 text-xs text-slate-400 bg-slate-50/80 border-t border-slate-100">
+              ※ 汎用ツールの月額は各社公開情報の概算です。表の内容は2025年時点の公開情報に基づく比較であり、各ツールの詳細は各社サイトでご確認ください。
+            </p>
+          </div>
+
+          {/* Mobile cards */}
+          <div className="space-y-3 sm:hidden">
+            {comparisonRows.map((row) => (
+              <div key={row.feature} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                <p className="mb-3 text-sm font-semibold text-slate-800">{row.feature}</p>
+                <div className="flex items-center justify-around gap-4">
+                  <div className="flex flex-col items-center gap-1 text-center">
+                    <span className="text-xs font-medium text-brand-600">GenbaHub</span>
+                    <CellValue value={row.genbahub} />
+                  </div>
+                  <div className="h-8 w-px bg-slate-200" aria-hidden="true" />
+                  <div className="flex flex-col items-center gap-1 text-center">
+                    <span className="text-xs font-medium text-slate-400">汎用ツール（目安）</span>
+                    <CellValue value={row.generic} />
+                  </div>
+                </div>
+              </div>
+            ))}
+            <p className="text-xs text-slate-400 px-1">
+              ※ 汎用ツールの月額は各社公開情報の概算です。詳細は各社サイトでご確認ください。
+            </p>
           </div>
         </div>
       </section>
