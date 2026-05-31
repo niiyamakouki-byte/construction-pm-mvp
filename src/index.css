@@ -2,24 +2,24 @@
 
 @theme {
   /* Brand colors (kept for backward compat) */
-  --color-brand-50: #e8f0ff;
-  --color-brand-100: #c7d9ff;
-  --color-brand-200: #99baff;
-  --color-brand-300: #6697ff;
-  --color-brand-400: #3d78ff;
-  --color-brand-500: #007AFF;
-  --color-brand-600: #0063d6;
-  --color-brand-700: #004fad;
-  --color-brand-800: #003d85;
-  --color-brand-900: #002a5c;
+  --color-brand-50: #f7faf6;
+  --color-brand-100: #edf3ec;
+  --color-brand-200: #dbe8d8;
+  --color-brand-300: #bfd3ba;
+  --color-brand-400: #93b18f;
+  --color-brand-500: #6f916c;
+  --color-brand-600: #587b56;
+  --color-brand-700: #346538;
+  --color-brand-800: #254b28;
+  --color-brand-900: #18331b;
 
-  --color-accent-400: #fbbf24;
-  --color-accent-500: #f59e0b;
-  --color-accent-600: #d97706;
+  --color-accent-400: #bfd3ba;
+  --color-accent-500: #6f916c;
+  --color-accent-600: #346538;
 
   /* iPadOS / Apple system colors */
-  --color-sys-blue: #007AFF;
-  --color-sys-blue-light: #e8f0ff;
+  --color-sys-blue: #346538;
+  --color-sys-blue-light: #edf3ec;
   --color-sys-gray: #64748B;
   --color-sys-gray-bg: #F2F2F7;
   --color-sys-separator: rgba(60,60,67,0.12);
@@ -153,7 +153,7 @@ textarea::placeholder {
 
 /* Focus ring styling */
 :focus-visible {
-  outline: 2px solid #2563eb;
+  outline: 2px solid #346538;
   outline-offset: 2px;
 }
 
