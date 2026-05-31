@@ -69,6 +69,7 @@ describe("meetingsThisMonth", () => {
   it("先月のセッションはカウントしない", () => {
     const s = new MeetingStore();
     const lastMonth = new Date();
+    lastMonth.setDate(15); // 月末→前月設定時のロールオーバーを避ける
     lastMonth.setMonth(lastMonth.getMonth() - 1);
     s.save(makeSession({ scheduledAt: lastMonth.toISOString() }));
     expect(meetingsThisMonth()).toBe(0);

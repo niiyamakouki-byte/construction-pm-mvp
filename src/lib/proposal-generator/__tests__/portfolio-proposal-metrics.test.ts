@@ -49,6 +49,7 @@ function makeDocThisMonth(id: string, customerNameHint: string = "テスト"): P
 
 function makeDocLastMonth(id: string): ProposalDocument {
   const lastMonth = new Date();
+  lastMonth.setDate(15); // 月末→前月設定時のロールオーバーを避ける
   lastMonth.setMonth(lastMonth.getMonth() - 1);
   return {
     id,
