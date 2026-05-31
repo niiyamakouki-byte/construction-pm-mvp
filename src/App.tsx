@@ -47,6 +47,7 @@ const AccountSettingsPage = lazy(() => import("./pages/AccountSettingsPage.js").
 const InvoiceReconcilePage = lazy(() => import("./pages/InvoiceReconcilePage.js").then((m) => ({ default: m.InvoiceReconcilePage })));
 const OwnerAppPageLazy = lazy(() => import("./components/OwnerAppPage.js").then((m) => ({ default: m.OwnerAppPage })));
 const OwnerShareTokenPanelLazy = lazy(() => import("./components/OwnerShareTokenPanel.js").then((m) => ({ default: m.OwnerShareTokenPanel })));
+const SignupFunnelPanelLazy = lazy(() => import("./components/SignupFunnelPanel.js").then((m) => ({ default: m.SignupFunnelPanel })));
 const MarginWatchPageLazy = lazy(() => import("./components/MarginWatchPage.js").then((m) => ({ default: m.MarginWatchPage })));
 const ProfitRankingPageLazy = lazy(() => import("./components/ProfitRankingPage.js").then((m) => ({ default: m.ProfitRankingPage })));
 const CrewOptimizerPageLazy = lazy(() => import("./components/CrewOptimizerPage.js").then((m) => ({ default: m.CrewOptimizerPage })));
@@ -80,6 +81,7 @@ import { MobileNav } from "./components/MobileNav.js";
 import { NotificationBanner } from "./components/NotificationBanner.js";
 import { readLastProjectId } from "./lib/last-project.js";
 import { ensureFirstRunProject } from "./lib/sample-project.js";
+import { trackFunnelStep } from "./lib/signup-funnel.js";
 import { createProjectRepository } from "./stores/project-store.js";
 import { createTaskRepository } from "./stores/task-store.js";
 // Sprint 3-3: v2-cozy刷新版 AssistantChatPanel (コマンド5本+framer-motion)
@@ -179,12 +181,15 @@ function AppShell() {
     setFirstRunBootstrapping(true);
     setFirstRunError(null);
 
+    trackFunnelStep("onboarding_started");
+
     const bootstrap = async () => {
       try {
         const projectRepository = createProjectRepository(() => organizationId);
         const taskRepository = createTaskRepository(() => organizationId);
-        const { projectId } = await ensureFirstRunProject(projectRepository, taskRepository);
+        const { projectId, created } = await ensureFirstRunProject(projectRepository, taskRepository);
         if (cancelled) return;
+        if (created) trackFunnelStep("sample_project_seeded");
         markOnboardingDone();
         navigate(`/gantt/${projectId}`);
       } catch (err) {
@@ -406,6 +411,7 @@ function AppShell() {
   }
   if (ownerAppProjectId && ownerAppToken !== null) return <Suspense fallback={pageFallback}><OwnerAppPageLazy projectId={ownerAppProjectId} token={ownerAppToken} /></Suspense>;
   if (route === "/share-tokens") return <Suspense fallback={pageFallback}><OwnerShareTokenPanelLazy /></Suspense>;
+  if (route === "/funnel") return <Suspense fallback={pageFallback}><SignupFunnelPanelLazy /></Suspense>;
   if (clientProjectId) return <Suspense fallback={pageFallback}><ClientViewerPage projectId={clientProjectId} /></Suspense>;
   if (entryProjectId) return <Suspense fallback={pageFallback}><SiteEntryPage projectId={entryProjectId} /></Suspense>;
   if (sharePortalToken) return <Suspense fallback={pageFallback}><SharePortalPage token={sharePortalToken} /></Suspense>;
