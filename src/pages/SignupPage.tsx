@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 import { getSupabaseClient, hasSupabaseEnv } from "../infra/supabase-client.js";
 import { navigate } from "../hooks/useHashRouter.js";
 import { trackEvent } from "../lib/analytics.js";
+import { trackFunnelStep } from "../lib/signup-funnel.js";
 
 export function SignupPage() {
   const [email, setEmail] = useState("");
@@ -25,6 +26,7 @@ export function SignupPage() {
     if (startedRef.current) return;
     startedRef.current = true;
     trackEvent("signup_started", { source: "signup_page" });
+    trackFunnelStep("signup_started");
   };
 
   const trackSignupAbandoned = () => {
@@ -100,6 +102,7 @@ export function SignupPage() {
       } else {
         completedRef.current = true;
         trackEvent("signup_completed", { source: "signup_page" });
+        trackFunnelStep("signup_completed");
         setSuccess(true);
       }
     } catch (err) {

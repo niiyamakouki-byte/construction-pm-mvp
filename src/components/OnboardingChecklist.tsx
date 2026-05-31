@@ -1,5 +1,6 @@
 import { useState, useCallback } from "react";
 import { navigate } from "../hooks/useHashRouter.js";
+import { trackFunnelStep } from "../lib/signup-funnel.js";
 
 // localStorage キー（OnboardingWizard の ONBOARDING_KEY と名前空間が異なる）
 const CHECKLIST_KEY = "genbahub_checklist_steps";
@@ -84,6 +85,8 @@ export function OnboardingChecklist({ hasProjects }: Props) {
 
   const markStep = useCallback((stepId: StepId) => {
     setCompletedSteps((prev) => {
+      // 初回のステップ実行をファネルの「最初の実アクション」として記録
+      if (prev.size === 0) trackFunnelStep("first_real_action");
       const next = new Set(prev);
       next.add(stepId);
       writeCompletedSteps(next);
