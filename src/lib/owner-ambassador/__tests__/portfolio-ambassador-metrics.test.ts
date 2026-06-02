@@ -2,7 +2,7 @@
  * portfolio-ambassador-metrics.test.ts
  */
 
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import {
   totalActiveAmbassadors,
   pendingReferralInquiries,
@@ -35,12 +35,18 @@ vi.stubGlobal("localStorage", {
 const NOW = new Date("2026-05-09T10:00:00.000Z");
 
 beforeEach(() => {
+  vi.useFakeTimers();
+  vi.setSystemTime(NOW);
   localStorage.clear();
   _resetAmbassadorStore();
   _resetFacade();
   _resetLinkCounter();
   _resetInquiryCounter();
   _resetRewardCounter();
+});
+
+afterEach(() => {
+  vi.useRealTimers();
 });
 
 describe("totalActiveAmbassadors", () => {
