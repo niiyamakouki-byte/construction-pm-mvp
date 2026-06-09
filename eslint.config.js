@@ -19,6 +19,7 @@ export default tseslint.config(
       ".worktrees/",
       ".omc/",
       "test-results/",
+      "tasks/",
     ],
   },
   reactHooks.configs.flat["recommended-latest"],
