@@ -69,6 +69,7 @@ describe("LoginPage", () => {
 
     render(<LoginPage />);
 
+    fireEvent.click(screen.getByText("メールアドレスとパスワードでログイン"));
     fireEvent.change(screen.getAllByLabelText("メールアドレス")[0], {
       target: { value: " user@example.com " },
     });
@@ -91,6 +92,7 @@ describe("LoginPage", () => {
 
     render(<LoginPage />);
 
+    fireEvent.click(screen.getByText("メールアドレスとパスワードでログイン"));
     fireEvent.change(screen.getAllByLabelText("メールアドレス")[0], {
       target: { value: " user@example.com " },
     });
