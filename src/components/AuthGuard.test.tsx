@@ -103,6 +103,28 @@ describe("AuthGuard", () => {
     expect(screen.queryByRole("dialog")).toBeNull();
   });
 
+  it("shows connection error after 8s loading timeout and offers login link", () => {
+    hasSupabaseEnv.mockReturnValue(true);
+    useAuth.mockReturnValue({ session: null, loading: true, signOut: vi.fn() });
+
+    render(
+      <AuthGuard>
+        <div>protected</div>
+      </AuthGuard>,
+    );
+
+    expect(screen.getByText("読み込み中...")).toBeDefined();
+
+    act(() => {
+      vi.advanceTimersByTime(8 * 1000);
+    });
+
+    expect(screen.getByText("接続できません")).toBeDefined();
+    const button = screen.getByText("ログインページへ");
+    fireEvent.click(button);
+    expect(navigate).toHaveBeenCalledWith("/login");
+  });
+
   it("calls signOut when logout is clicked in timeout warning", async () => {
     hasSupabaseEnv.mockReturnValue(true);
     const signOut = vi.fn().mockResolvedValue(undefined);

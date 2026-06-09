@@ -15,13 +15,24 @@ type Props = {
 };
 
 const TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes
+const LOADING_TIMEOUT_MS = 8 * 1000; // 8 seconds — Supabase 接続失敗時に無限スピナーを避ける
 
 const ACTIVITY_EVENTS = ["mousemove", "keydown", "mousedown", "touchstart", "scroll"] as const;
 
 export function AuthGuard({ children }: Props) {
   const { session, loading, signOut } = useAuth();
   const [showWarning, setShowWarning] = useState(false);
+  const [loadingTimedOut, setLoadingTimedOut] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    if (!loading) {
+      setLoadingTimedOut(false);
+      return;
+    }
+    const id = setTimeout(() => setLoadingTimedOut(true), LOADING_TIMEOUT_MS);
+    return () => clearTimeout(id);
+  }, [loading]);
 
   const resetTimer = useCallback(() => {
     if (timerRef.current) clearTimeout(timerRef.current);
@@ -72,6 +83,25 @@ export function AuthGuard({ children }: Props) {
   }
 
   if (loading) {
+    if (loadingTimedOut) {
+      return (
+        <div className="flex min-h-screen items-center justify-center bg-[#f8fafc] px-4">
+          <div className="w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-6 text-center shadow-sm" role="alert">
+            <p className="text-base font-bold text-slate-900">接続できません</p>
+            <p className="mt-2 text-sm text-slate-600">
+              サーバーへの接続に時間がかかっています。ネットワークを確認するか、ログインページからやり直してください。
+            </p>
+            <button
+              type="button"
+              onClick={() => navigate("/login")}
+              className="mt-4 w-full rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700"
+            >
+              ログインページへ
+            </button>
+          </div>
+        </div>
+      );
+    }
     return (
       <div className="flex min-h-screen items-center justify-center bg-[#f8fafc]">
         <div className="text-center">
