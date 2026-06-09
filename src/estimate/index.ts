@@ -1,4 +1,5 @@
 export { generateEstimate, listAllItems, listCategories, listItemsByCategory } from "./estimate-generator";
+export { formatCategorySheetMarkdown, formatCategorySheetCSV } from "./category-sheet";
 export { formatEstimateText, formatEstimateCSV, formatEstimateJSON } from "./format-estimate";
 export { parseNaturalLanguage, nlToEstimateInputs, formatParseResult } from "./nl-estimate-parser";
 export type {
