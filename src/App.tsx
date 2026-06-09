@@ -124,6 +124,31 @@ const sidebarGroupLabels: Record<SidebarItem["group"], string> = {
   system: "設定・ヘルプ",
 };
 
+// Moreドロワーのタブをサイドバーと同じグループに分類する
+const moreTabGroup: Record<string, SidebarItem["group"]> = {
+  today: "today",
+  notifications: "today",
+  weather: "today",
+  "cross-gantt": "field",
+  "progress-review": "field",
+  photos: "field",
+  safety: "field",
+  procurement: "field",
+  orders: "field",
+  contractors: "field",
+  finishing: "field",
+  schedule: "field",
+  "phase-templates": "field",
+  node: "field",
+  estimate: "money",
+  cost: "money",
+  invoice: "money",
+  freee: "money",
+  reports: "money",
+  crm: "growth",
+  help: "system",
+};
+
 function openAssistantPanel() {
   window.dispatchEvent(new CustomEvent("genbahub:assistant-open"));
 }
@@ -1018,25 +1043,38 @@ function AppShell() {
                   </svg>
                 </button>
               </div>
-              <div className="grid grid-cols-2 gap-2">
-                {secondaryTabs.map((tab) => (
-                  <button
-                    key={tab.key}
-                    type="button"
-                    onClick={() => {
-                      navigate(tab.path);
-                      setMoreDrawerOpen(false);
-                    }}
-                    className={`flex items-center gap-3 rounded-xl border px-4 py-3 text-sm font-semibold ${
-                      tab.matchRoute(route)
-                        ? "border-[#007AFF]/30 bg-[#007AFF]/8 text-[#007AFF]"
-                        : "border-slate-200 bg-white text-slate-700"
-                    }`}
-                  >
-                    <span aria-hidden="true">{tab.icon}</span>
-                    {tab.label}
-                  </button>
-                ))}
+              <div className="max-h-[60vh] space-y-4 overflow-y-auto">
+                {(Object.keys(sidebarGroupLabels) as SidebarItem["group"][]).map((group) => {
+                  const itemsInGroup = secondaryTabs.filter((tab) => moreTabGroup[tab.key] === group);
+                  if (itemsInGroup.length === 0) return null;
+                  return (
+                    <div key={group}>
+                      <p className="mb-2 px-1 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                        {sidebarGroupLabels[group]}
+                      </p>
+                      <div className="grid grid-cols-2 gap-2">
+                        {itemsInGroup.map((tab) => (
+                          <button
+                            key={tab.key}
+                            type="button"
+                            onClick={() => {
+                              navigate(tab.path);
+                              setMoreDrawerOpen(false);
+                            }}
+                            className={`flex items-center gap-3 rounded-xl border px-4 py-3 text-sm font-semibold ${
+                              tab.matchRoute(route)
+                                ? "border-[#007AFF]/30 bg-[#007AFF]/8 text-[#007AFF]"
+                                : "border-slate-200 bg-white text-slate-700"
+                            }`}
+                          >
+                            <span aria-hidden="true">{tab.icon}</span>
+                            {tab.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           </div>
