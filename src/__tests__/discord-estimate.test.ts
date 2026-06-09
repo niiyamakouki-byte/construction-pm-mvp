@@ -68,6 +68,23 @@ describe("discordEstimate", () => {
     const result = discordEstimate("6畳の壁紙張替え", "テスト物件A");
     expect(result.estimate!.propertyName).toBe("テスト物件A");
   });
+
+  it("夜間工事想定を明示し、日中との差額目安を表示", () => {
+    const result = discordEstimate("6畳の壁紙張替えを営業終了後の夜間工事で");
+
+    expect(result.message).toContain("条件: 営業終了後の夜間工事想定");
+    expect(result.message).toContain("日中施工に切替時の目安調整: -140,000 程度");
+    expect(result.message).not.toContain("未対応: 「夜間」");
+    expect(result.estimate!.notes).toContain("営業終了後の夜間工事想定");
+  });
+
+  it("日中工事想定を明示し、夜間との差額目安を表示", () => {
+    const result = discordEstimate("6畳の壁紙張替えを日中作業で");
+
+    expect(result.message).toContain("条件: 日中工事想定");
+    expect(result.message).toContain("夜間施工に切替時の目安調整: +140,000 程度");
+    expect(result.estimate!.notes).toContain("日中工事想定");
+  });
 });
 
 describe("discordEstimate realistic scenarios", () => {

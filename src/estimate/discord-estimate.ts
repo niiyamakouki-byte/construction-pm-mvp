@@ -25,6 +25,45 @@ export type DiscordEstimateResult = {
   parseResult: ParseResult;
 };
 
+type WorkTimingAdjustment = {
+  assumptionLabel: string;
+  comparisonLabel: string;
+  comparisonDeltaYen: number;
+};
+
+const DAY_NIGHT_DELTA_YEN = 140000;
+
+function detectWorkTimingAdjustment(text: string): WorkTimingAdjustment | null {
+  const normalized = text.replace(/\s+/g, "");
+  const isNightWork = /(夜間|深夜|閉店後|営業終了後|営業時間外)/.test(normalized);
+  const isDayWork = /(日中|昼間|営業時間内)/.test(normalized);
+
+  if (isNightWork) {
+    return {
+      assumptionLabel: "営業終了後の夜間工事想定",
+      comparisonLabel: "日中施工に切替時の目安調整",
+      comparisonDeltaYen: -DAY_NIGHT_DELTA_YEN,
+    };
+  }
+
+  if (isDayWork) {
+    return {
+      assumptionLabel: "日中工事想定",
+      comparisonLabel: "夜間施工に切替時の目安調整",
+      comparisonDeltaYen: DAY_NIGHT_DELTA_YEN,
+    };
+  }
+
+  return null;
+}
+
+function sanitizeUnmatched(unmatched: string[]): string[] {
+  return unmatched.filter((phrase) => {
+    const normalized = phrase.replace(/\s+/g, "");
+    return normalized.length > 0 && !/^(夜間|深夜|閉店後|営業終了後|営業時間外|日中|昼間|営業時間内)$/.test(normalized);
+  });
+}
+
 /** 金額を3桁カンマ区切りで表示 */
 function formatYen(n: number): string {
   return `¥${n.toLocaleString("ja-JP")}`;
@@ -49,11 +88,15 @@ function formatDetectionLine(result: ParseResult): string {
  */
 export function formatEstimateForDiscord(estimate: Estimate, parseResult: ParseResult): string {
   const lines: string[] = [];
+  const workTiming = detectWorkTimingAdjustment(parseResult.originalText);
 
   // ヘッダー
   lines.push(`## \uD83D\uDCCB 概算見積`);
   lines.push(`> ${parseResult.originalText}`);
   lines.push(`> 検出: ${formatDetectionLine(parseResult)}`);
+  if (workTiming) {
+    lines.push(`> 条件: ${workTiming.assumptionLabel}`);
+  }
   lines.push("");
 
   // 確信度スコア計算用のオプション
@@ -104,6 +147,12 @@ export function formatEstimateForDiscord(estimate: Estimate, parseResult: ParseR
   lines.push(`━━━━━━━━━━━━━━━━━━━━━━━━━`);
   lines.push(`税込合計           ${formatYen(estimate.total)}`);
   lines.push("```");
+
+  if (workTiming) {
+    const deltaPrefix = workTiming.comparisonDeltaYen > 0 ? "+" : "-";
+    lines.push("");
+    lines.push(`> ${workTiming.comparisonLabel}: ${deltaPrefix}${formatYen(Math.abs(workTiming.comparisonDeltaYen)).slice(1)} 程度`);
+  }
 
   // 未マッチ警告
   if (parseResult.unmatched.length > 0) {
@@ -201,6 +250,8 @@ export function discordEstimate(
     includeProtection: false,
     includeCleaning: false,
   });
+  parseResult.unmatched = sanitizeUnmatched(parseResult.unmatched);
+  const workTiming = detectWorkTimingAdjustment(text);
 
   // パースで品目が0件の場合
   if (parseResult.items.length === 0) {
@@ -222,6 +273,12 @@ export function discordEstimate(
     propertyName: propertyName ?? `概算: ${text.slice(0, 30)}`,
     clientName: "Discord見積",
     items,
+    notes: workTiming
+      ? [
+          `${workTiming.assumptionLabel}`,
+          `${workTiming.comparisonLabel}: ${workTiming.comparisonDeltaYen > 0 ? "+" : "-"}${formatYen(Math.abs(workTiming.comparisonDeltaYen)).slice(1)} 程度`,
+        ]
+      : [],
   });
 
   // 4. Discord Markdown にフォーマット
