@@ -70,12 +70,13 @@ function makeSession(overrides: Record<string, unknown> = {}) {
 }
 
 function AuthConsumer() {
-  const { session, user, loading } = useAuth();
+  const { session, user, loading, error } = useAuth();
   return (
     <div>
       <span data-testid="loading">{loading ? "loading" : "ready"}</span>
       <span data-testid="session">{session ? "authenticated" : "unauthenticated"}</span>
       <span data-testid="user-email">{user?.email ?? "none"}</span>
+      <span data-testid="error">{error ? error.message : "none"}</span>
     </div>
   );
 }
@@ -299,5 +300,22 @@ describe("AuthContext", () => {
     });
 
     expect(screen.getByTestId("session").textContent).toBe("unauthenticated");
+  });
+
+  it("初期化エラーは error として Context に公開される", async () => {
+    hasSupabaseEnv.mockReturnValue(true);
+    getSupabaseClient.mockRejectedValue(new Error("connection failed"));
+
+    render(
+      <AuthProvider>
+        <AuthConsumer />
+      </AuthProvider>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId("loading").textContent).toBe("ready");
+    });
+
+    expect(screen.getByTestId("error").textContent).toBe("connection failed");
   });
 });

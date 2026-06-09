@@ -22,6 +22,8 @@ type AuthContextValue = {
   session: Session | null;
   user: User | null;
   loading: boolean;
+  /** Supabase接続/初期化エラー。表示用にUI側で参照する */
+  error: Error | null;
   signOut: () => Promise<void>;
 };
 
@@ -29,12 +31,14 @@ const AuthContext = createContext<AuthContextValue>({
   session: null,
   user: null,
   loading: true,
+  error: null,
   signOut: async () => {},
 });
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
     if (!hasSupabaseEnv()) {
@@ -94,9 +98,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
         unsubscribe = () => data.subscription.unsubscribe();
       })
-      .catch((error) => {
-        console.error("Failed to initialize auth context:", error);
+      .catch((err) => {
+        console.error("Failed to initialize auth context:", err);
         if (!disposed) {
+          setError(err instanceof Error ? err : new Error(String(err)));
           setLoading(false);
         }
       });
@@ -120,7 +125,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return (
     <AuthContext.Provider
-      value={{ session, user: session?.user ?? null, loading, signOut }}
+      value={{ session, user: session?.user ?? null, loading, error, signOut }}
     >
       {children}
     </AuthContext.Provider>
