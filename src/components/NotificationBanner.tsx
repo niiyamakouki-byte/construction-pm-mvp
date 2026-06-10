@@ -198,6 +198,10 @@ export function NotificationBanner({ refreshKey }: NotificationBannerProps) {
     return null;
   }
 
+  const staleCount = notifications.filter(isStaleOverdue).length;
+  const freshCount = notifications.length - staleCount;
+  const staleHint = staleCount > 0 ? `+${staleCount}件は${STALE_OVERDUE_DAYS}日以上前` : null;
+
   if (collapsed) {
     return (
       <section className="border-b border-slate-200 bg-[linear-gradient(180deg,#fffef8_0%,#ffffff_100%)]">
@@ -211,8 +215,11 @@ export function NotificationBanner({ refreshKey }: NotificationBannerProps) {
             >
               <span className="text-sm" aria-hidden="true">⚠</span>
               <span className="text-xs font-semibold text-slate-700">
-                重要通知 {notifications.length}件
+                重要通知 {freshCount}件
               </span>
+              {staleHint && (
+                <span className="text-[10px] text-slate-400">{staleHint}</span>
+              )}
               <span className="text-[10px] text-slate-400">（タップで展開）</span>
             </button>
             <button
@@ -290,7 +297,10 @@ export function NotificationBanner({ refreshKey }: NotificationBannerProps) {
               Alert Center
             </p>
             <h2 className="mt-1 text-sm font-bold text-slate-900">
-              重要通知 {notifications.length}件
+              <span>重要通知 {freshCount}件</span>
+              {staleHint && (
+                <span className="ml-1.5 text-[11px] font-normal text-slate-400">{staleHint}</span>
+              )}
             </h2>
           </div>
           <div className="flex items-center gap-2">

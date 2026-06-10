@@ -169,7 +169,9 @@ describe("NotificationBanner", () => {
 
     render(<NotificationBanner refreshKey="/today" />);
 
-    expect(await screen.findByText("重要通知 4件")).toBeDefined();
+    // overdue (2000-01-01) はstaleなので件数から除外され、ヒント表示に回る
+    expect(await screen.findByText("重要通知 3件")).toBeDefined();
+    expect(screen.getByText(/\+1件は30日以上前/)).toBeDefined();
     expect(await screen.findByText("期限超過タスク")).toBeDefined();
     expect(screen.getByText("予算超過")).toBeDefined();
     expect(screen.getByText("3日以内の期限")).toBeDefined();
