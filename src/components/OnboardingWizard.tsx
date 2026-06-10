@@ -134,6 +134,7 @@ export function OnboardingWizard({ onComplete }: Props) {
         name: projectName.trim(),
         description: projectAddress.trim() ? `現場: ${projectAddress.trim()}` : "",
         status: "planning",
+        mode: "normal",
         startDate,
         includeWeekends: true,
         createdAt: now.toISOString(),
@@ -192,7 +193,7 @@ export function OnboardingWizard({ onComplete }: Props) {
   const handleFinish = () => {
     onComplete();
     if (createdProjectId) {
-      navigate(`/project/${createdProjectId}`);
+      navigate(`/gantt/${createdProjectId}`);
     } else {
       navigate("/gantt");
     }

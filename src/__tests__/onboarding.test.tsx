@@ -107,6 +107,23 @@ describe("OnboardingWizard", () => {
     expect(screen.getByText("✓")).toBeDefined();
   });
 
+  it("作成完了後はメモ画面ではなく工程表へ遷移する", async () => {
+    const onComplete = vi.fn();
+    const user = userEvent.setup();
+    render(<OnboardingWizard onComplete={onComplete} />);
+
+    await user.click(screen.getByText("はじめる →"));
+    await user.type(screen.getByPlaceholderText("例: 渋谷オフィスビル内装工事"), "工程確認案件");
+    await user.click(screen.getByText("次へ →"));
+    await user.click(screen.getByText("内装工事"));
+    await user.click(screen.getByText("作成する →"));
+    await user.click(await screen.findByText("工程表を開く →"));
+
+    const { navigate } = await import("../hooks/useHashRouter.js");
+    expect(onComplete).toHaveBeenCalledOnce();
+    expect(vi.mocked(navigate).mock.calls.at(-1)?.[0]).toMatch(/^\/gantt\//);
+  });
+
   it("スキップボタンで onComplete が呼ばれる", async () => {
     const onComplete = vi.fn();
     const user = userEvent.setup();
