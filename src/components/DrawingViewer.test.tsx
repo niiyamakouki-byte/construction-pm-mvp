@@ -12,6 +12,29 @@ afterEach(cleanup);
 
 const DRAWING_URL = "https://example.com/drawing.png";
 
+function patchElementSize(width = 800, height = 600) {
+  const proto = HTMLElement.prototype as HTMLElement & {
+    getBoundingClientRect: () => DOMRect;
+  };
+  const orig = proto.getBoundingClientRect;
+  proto.getBoundingClientRect = function (): DOMRect {
+    return {
+      x: 0,
+      y: 0,
+      left: 0,
+      top: 0,
+      right: width,
+      bottom: height,
+      width,
+      height,
+      toJSON: () => ({}),
+    } as DOMRect;
+  };
+  return () => {
+    proto.getBoundingClientRect = orig;
+  };
+}
+
 const makePin = (overrides: Partial<Omit<DrawingPin, "id" | "createdAt">> = {}): DrawingPin =>
   createPin({
     x: 0.3,
@@ -67,6 +90,58 @@ describe("DrawingViewer", () => {
     fireEvent.click(screen.getByText("縮尺設定"));
     fireEvent.click(screen.getByText("ピン"));
     expect(screen.getByText("ピンがありません")).toBeDefined();
+  });
+
+  it("allows adjusting the first measurement point after distance is created", () => {
+    const restore = patchElementSize();
+    try {
+      const { container } = render(
+        <DrawingViewer
+          drawingUrl={DRAWING_URL}
+          drawingId="measure-adjust"
+          detectedScaleMmPerPt={1}
+          renderPxPerPt={1}
+        />,
+      );
+      fireEvent.click(screen.getByText("距離計測"));
+      const canvas = container.querySelector("canvas");
+      expect(canvas).not.toBeNull();
+      fireEvent.click(canvas!, { clientX: 100, clientY: 100 });
+      fireEvent.click(canvas!, { clientX: 200, clientY: 106 });
+      expect(screen.getByText("100 mm")).toBeDefined();
+
+      fireEvent.click(screen.getByText("始点調整"));
+      expect(screen.getByText("始点の新しい位置をタップ")).toBeDefined();
+      fireEvent.click(canvas!, { clientX: 50, clientY: 94 });
+
+      expect(screen.getByText("150 mm")).toBeDefined();
+    } finally {
+      restore();
+    }
+  });
+
+  it("snaps the second measurement point to the first point axis", () => {
+    const restore = patchElementSize();
+    try {
+      const { container } = render(
+        <DrawingViewer
+          drawingUrl={DRAWING_URL}
+          drawingId="measure-snap-axis"
+          detectedScaleMmPerPt={1}
+          renderPxPerPt={1}
+        />,
+      );
+      fireEvent.click(screen.getByText("距離計測"));
+      const canvas = container.querySelector("canvas");
+      expect(canvas).not.toBeNull();
+
+      fireEvent.click(canvas!, { clientX: 100, clientY: 100 });
+      fireEvent.click(canvas!, { clientX: 197, clientY: 108 });
+
+      expect(screen.getByText("97 mm")).toBeDefined();
+    } finally {
+      restore();
+    }
   });
 
   it("opens popover when sidebar pin clicked", () => {
@@ -163,30 +238,6 @@ describe("DrawingViewer", () => {
   });
 
   describe("pickup mode pen input", () => {
-    // jsdom は PointerEvent をサポートするが getBoundingClientRect が 0×0 を返すため
-    // imgRef のサイズをモックしてピクセル座標解決を有効化する
-    function patchImgSize(width = 800, height = 600) {
-      const proto = HTMLElement.prototype as HTMLElement & {
-        getBoundingClientRect: () => DOMRect;
-      };
-      const orig = proto.getBoundingClientRect;
-      proto.getBoundingClientRect = function (): DOMRect {
-        // imgRef だけサイズを返したいが手間なので img/canvas 共通でこのサイズに
-        return {
-          x: 0,
-          y: 0,
-          left: 0,
-          top: 0,
-          right: width,
-          bottom: height,
-          width,
-          height,
-          toJSON: () => ({}),
-        } as DOMRect;
-      };
-      return () => { proto.getBoundingClientRect = orig; };
-    }
-
     function firePenEvent(target: Element, type: string, clientX: number, clientY: number) {
       const ev = new (window as typeof window & { PointerEvent: typeof PointerEvent }).PointerEvent(
         type,
@@ -215,7 +266,7 @@ describe("DrawingViewer", () => {
     });
 
     it("ignores pen events when no scale is set (no crash)", () => {
-      const restore = patchImgSize();
+      const restore = patchElementSize();
       try {
         const { container } = render(
           <DrawingViewer drawingUrl={DRAWING_URL} drawingId="pen-test-2" />,

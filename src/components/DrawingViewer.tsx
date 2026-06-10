@@ -104,7 +104,8 @@ type PopoverState = {
 type MeasureState =
   | { stage: "idle" }
   | { stage: "first"; first: Point }
-  | { stage: "done"; first: Point; second: Point; label: string };
+  | { stage: "done"; first: Point; second: Point; label: string }
+  | { stage: "adjust"; first: Point; second: Point; target: "first" | "second" };
 
 type AreaState =
   | { stage: "collecting"; points: Point[] }
@@ -171,6 +172,19 @@ export function DrawingViewer({
   const penSamplesRef = useRef<PenSample[]>([]);
   const penActiveRef = useRef(false);
   const [penStrokePreview, setPenStrokePreview] = useState<PenSample[]>([]);
+
+  const buildMeasureDoneState = useCallback(
+    (first: Point, second: Point): MeasureState => {
+      const result = measureDistance(first, second, scale ?? 0);
+      return { stage: "done", first, second, label: result.label };
+    },
+    [scale],
+  );
+
+  const snapMeasurePoint = useCallback((candidate: Point, anchor: Point): Point => {
+    const { snapped } = processPickupPoint(candidate, [anchor]);
+    return snapped;
+  }, []);
 
   // Load persisted scale on mount; fall back to PDF auto-detected scale if no manual value saved
   useEffect(() => {
@@ -286,8 +300,17 @@ export function DrawingViewer({
         if (measureState.stage === "idle" || measureState.stage === "done") {
           setMeasureState({ stage: "first", first: px });
         } else if (measureState.stage === "first") {
-          const result = measureDistance(measureState.first, px, scale);
-          setMeasureState({ stage: "done", first: measureState.first, second: px, label: result.label });
+          setMeasureState(buildMeasureDoneState(measureState.first, snapMeasurePoint(px, measureState.first)));
+        } else if (measureState.stage === "adjust") {
+          const first =
+            measureState.target === "first"
+              ? snapMeasurePoint(px, measureState.second)
+              : measureState.first;
+          const second =
+            measureState.target === "second"
+              ? snapMeasurePoint(px, measureState.first)
+              : measureState.second;
+          setMeasureState(buildMeasureDoneState(first, second));
         }
         return;
       }
@@ -326,7 +349,7 @@ export function DrawingViewer({
         return;
       }
     },
-    [mode, pinchActive, calibrateState, measureState, areaState, scale, getPixelPos, getRelativePos]
+    [mode, pinchActive, calibrateState, measureState, areaState, scale, getPixelPos, getRelativePos, buildMeasureDoneState, snapMeasurePoint]
   );
 
   // Draw overlays on canvas
@@ -379,7 +402,7 @@ export function DrawingViewer({
       };
       if (measureState.stage === "first") {
         drawPoint(measureState.first);
-      } else if (measureState.stage === "done") {
+      } else if (measureState.stage === "done" || measureState.stage === "adjust") {
         drawPoint(measureState.first);
         drawPoint(measureState.second);
         ctx.beginPath();
@@ -388,15 +411,16 @@ export function DrawingViewer({
         ctx.strokeStyle = "#3b82f6";
         ctx.lineWidth = 2;
         ctx.stroke();
-        // dimension label
-        const mx = (measureState.first.x + measureState.second.x) / 2;
-        const my = (measureState.first.y + measureState.second.y) / 2;
-        ctx.font = "bold 13px sans-serif";
-        ctx.fillStyle = "#1e3a8a";
-        ctx.strokeStyle = "#fff";
-        ctx.lineWidth = 4;
-        ctx.strokeText(measureState.label, mx + 4, my - 6);
-        ctx.fillText(measureState.label, mx + 4, my - 6);
+        if (measureState.stage === "done") {
+          const mx = (measureState.first.x + measureState.second.x) / 2;
+          const my = (measureState.first.y + measureState.second.y) / 2;
+          ctx.font = "bold 13px sans-serif";
+          ctx.fillStyle = "#1e3a8a";
+          ctx.strokeStyle = "#fff";
+          ctx.lineWidth = 4;
+          ctx.strokeText(measureState.label, mx + 4, my - 6);
+          ctx.fillText(measureState.label, mx + 4, my - 6);
+        }
       }
     }
 
@@ -1000,6 +1024,13 @@ export function DrawingViewer({
             <span className="bg-blue-500 text-white text-xs px-3 py-1 rounded-full shadow">2点目をタップ</span>
           </div>
         )}
+        {mode === "measure" && !noScaleWarning && measureState.stage === "adjust" && (
+          <div className="absolute inset-0 border-2 border-blue-400 rounded-2xl pointer-events-none flex items-start justify-center pt-3">
+            <span className="bg-blue-500 text-white text-xs px-3 py-1 rounded-full shadow">
+              {measureState.target === "first" ? "始点の新しい位置をタップ" : "終点の新しい位置をタップ"}
+            </span>
+          </div>
+        )}
         {mode === "area" && !noScaleWarning && (
           <div className="absolute inset-0 border-2 border-emerald-400 rounded-2xl pointer-events-none flex items-start justify-center pt-3">
             <span className="bg-emerald-500 text-white text-xs px-3 py-1 rounded-full shadow">
@@ -1101,15 +1132,46 @@ export function DrawingViewer({
 
         {/* Measure result */}
         {mode === "measure" && measureState.stage === "done" && (
-          <div className="rounded-xl bg-blue-50 border border-blue-200 px-3 py-2 text-sm text-blue-800 font-bold text-center">
-            {measureState.label}
-            <button
-              type="button"
-              onClick={() => setMeasureState({ stage: "idle" })}
-              className="block w-full mt-1 text-xs font-normal text-blue-500"
-            >
-              クリアして再計測
-            </button>
+          <div className="rounded-xl border border-blue-200 bg-blue-50 px-3 py-2 text-center text-sm text-blue-800">
+            <div className="font-bold">{measureState.label}</div>
+            <div className="mt-1 text-[11px] text-blue-600">2点を後から微調整できます</div>
+            <div className="mt-2 grid grid-cols-3 gap-2">
+              <button
+                type="button"
+                onClick={() =>
+                  setMeasureState({
+                    stage: "adjust",
+                    first: measureState.first,
+                    second: measureState.second,
+                    target: "first",
+                  })
+                }
+                className="rounded-xl border border-blue-200 bg-white px-2 py-1.5 text-xs font-medium text-blue-700"
+              >
+                始点調整
+              </button>
+              <button
+                type="button"
+                onClick={() =>
+                  setMeasureState({
+                    stage: "adjust",
+                    first: measureState.first,
+                    second: measureState.second,
+                    target: "second",
+                  })
+                }
+                className="rounded-xl border border-blue-200 bg-white px-2 py-1.5 text-xs font-medium text-blue-700"
+              >
+                終点調整
+              </button>
+              <button
+                type="button"
+                onClick={() => setMeasureState({ stage: "idle" })}
+                className="rounded-xl border border-blue-200 bg-white px-2 py-1.5 text-xs font-medium text-blue-700"
+              >
+                再計測
+              </button>
+            </div>
           </div>
         )}
 
