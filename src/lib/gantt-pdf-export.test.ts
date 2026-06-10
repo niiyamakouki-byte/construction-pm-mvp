@@ -104,6 +104,45 @@ describe("gantt pdf export", () => {
     expect(html).not.toContain("<table>");
   });
 
+  it("includes the issued date in 発行日: YYYY年M月D日 format", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2025, 0, 15, 10, 30));
+    try {
+      const html = buildGanttPdfHtml(createProject(), [createTask()], "2025-01-04", 12);
+      expect(html).toContain("発行日: 2025年1月15日");
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("shows project period derived from task min/max dates", () => {
+    const html = buildGanttPdfHtml(
+      createProject(),
+      [
+        createTask({ id: "t1", name: "墨出し", startDate: "2025-01-06", dueDate: "2025-01-08" }),
+        createTask({ id: "t2", name: "配線", startDate: "2025-01-10", dueDate: "2025-01-20" }),
+      ],
+      "2025-01-04",
+      30,
+    );
+
+    expect(html).toContain("案件期間");
+    expect(html).toContain("2025/1/6");
+    expect(html).toContain("2025/1/20");
+  });
+
+  it("shows the project status label when present", () => {
+    const html = buildGanttPdfHtml(
+      createProject({ status: "active" }),
+      [createTask()],
+      "2025-01-04",
+      12,
+    );
+
+    expect(html).toContain("ステータス");
+    expect(html).toContain("進行中");
+  });
+
   it("opens a new window and writes the printable HTML", () => {
     const documentOpen = vi.fn();
     const documentWrite = vi.fn();

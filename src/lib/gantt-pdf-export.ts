@@ -1,4 +1,4 @@
-import type { Project, Task, TaskStatus } from "../domain/types.js";
+import type { Project, ProjectStatus, Task, TaskStatus } from "../domain/types.js";
 import { addDays, daysBetween, formatScheduleDate } from "../components/gantt/utils.js";
 import { isHoliday } from "./japanese-holidays.js";
 import { escapeHtml } from "./utils/escape-html";
@@ -10,6 +10,32 @@ const _statusLabels: Record<TaskStatus, string> = {
   in_progress: "進行中",
   done: "完了",
 };
+
+const projectStatusLabels: Record<ProjectStatus, string> = {
+  planning: "計画中",
+  active: "進行中",
+  completed: "完了",
+  on_hold: "保留",
+};
+
+function formatIssuedDate(date: Date): string {
+  return `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日`;
+}
+
+function computeTaskRange(tasks: ExportTask[]): { earliest: string | null; latest: string | null } {
+  let earliest: string | null = null;
+  let latest: string | null = null;
+  for (const task of tasks) {
+    if (task.startDate && (!earliest || task.startDate < earliest)) {
+      earliest = task.startDate;
+    }
+    const end = task.dueDate ?? task.endDate;
+    if (end && (!latest || end > latest)) {
+      latest = end;
+    }
+  }
+  return { earliest, latest };
+}
 
 const barColors: Record<TaskStatus, { bg: string; fill: string }> = {
   todo: { bg: "#cbd5e1", fill: "#94a3b8" },
@@ -60,7 +86,13 @@ export function buildGanttPdfHtml(
   });
   const taskNameMap = new Map(sortedTasks.map((task) => [task.id, task.name]));
   const chartEnd = addDays(chartStart, totalDays);
-  const exportedAt = new Date().toLocaleString("ja-JP", { hour12: false });
+  const now = new Date();
+  const exportedAt = now.toLocaleString("ja-JP", { hour12: false });
+  const issuedDate = formatIssuedDate(now);
+  const taskRange = computeTaskRange(sortedTasks);
+  const projectPeriodStart = taskRange.earliest ?? project.startDate;
+  const projectPeriodEnd = taskRange.latest ?? project.endDate ?? null;
+  const projectStatusLabel = project.status ? projectStatusLabels[project.status] : null;
 
   // Cap visible days at 90
   const visibleDays = Math.min(totalDays, 90);
@@ -147,7 +179,7 @@ export function buildGanttPdfHtml(
       .header-info { color: #64748b; font-size: 12px; margin-bottom: 16px; }
       .meta {
         display: grid;
-        grid-template-columns: repeat(2, 1fr);
+        grid-template-columns: repeat(3, 1fr);
         gap: 10px;
         margin-bottom: 20px;
       }
@@ -341,23 +373,31 @@ export function buildGanttPdfHtml(
     <header>
       <p style="color:#64748b;font-size:12px;letter-spacing:0.18em;margin-bottom:6px;">GANTT EXPORT</p>
       <h1>${escapeHtml(project.name)}</h1>
-      <div class="header-info">出力日時: ${escapeHtml(exportedAt)} ／ 総タスク: ${escapeHtml(String(sortedTasks.length))}件 ／ ${escapeHtml(formatScheduleDate(chartStart))} 〜 ${escapeHtml(formatScheduleDate(chartEnd))}</div>
+      <div class="header-info">発行日: ${escapeHtml(issuedDate)} ／ 総タスク: ${escapeHtml(String(sortedTasks.length))}件 ／ ${escapeHtml(formatScheduleDate(chartStart))} 〜 ${escapeHtml(formatScheduleDate(chartEnd))}</div>
       <div class="meta">
         <div class="meta-item">
-          <div class="meta-label">出力日時</div>
-          <div>${escapeHtml(exportedAt)}</div>
+          <div class="meta-label">発行日</div>
+          <div>${escapeHtml(issuedDate)}</div>
+        </div>
+        ${projectStatusLabel ? `<div class="meta-item">
+          <div class="meta-label">ステータス</div>
+          <div>${escapeHtml(projectStatusLabel)}</div>
+        </div>` : ""}
+        <div class="meta-item">
+          <div class="meta-label">案件期間</div>
+          <div>${escapeHtml(formatScheduleDate(projectPeriodStart))}${projectPeriodEnd ? ` 〜 ${escapeHtml(formatScheduleDate(projectPeriodEnd))}` : " 〜 未設定"}</div>
         </div>
         <div class="meta-item">
           <div class="meta-label">総タスク数</div>
           <div>${escapeHtml(String(sortedTasks.length))}件</div>
         </div>
         <div class="meta-item">
-          <div class="meta-label">表示開始</div>
-          <div>${escapeHtml(formatScheduleDate(chartStart))}</div>
+          <div class="meta-label">出力日時</div>
+          <div>${escapeHtml(exportedAt)}</div>
         </div>
         <div class="meta-item">
-          <div class="meta-label">表示終了</div>
-          <div>${escapeHtml(formatScheduleDate(chartEnd))}</div>
+          <div class="meta-label">表示範囲</div>
+          <div>${escapeHtml(formatScheduleDate(chartStart))} 〜 ${escapeHtml(formatScheduleDate(chartEnd))}</div>
         </div>
       </div>
     </header>
