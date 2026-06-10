@@ -53,6 +53,11 @@ import {
   isNearFirstPoint,
 } from "../lib/drawing-takeoff.js";
 import type { TakeoffPoint } from "../lib/drawing-takeoff.js";
+import {
+  simplifyStroke,
+  classifyStroke,
+  type PenSample,
+} from "../lib/pen-stroke.js";
 
 type ViewerMode = "pin" | "calibrate" | "measure" | "area" | "diff" | "pickup";
 
@@ -162,6 +167,10 @@ export function DrawingViewer({
   const [pickupDrawing, setPickupDrawing] = useState(false);
   // AI prediction: ghost point for next likely position
   const [pickupPrediction, setPickupPrediction] = useState<TakeoffPoint | null>(null);
+  // Pen stroke (Apple Pencil) live samples for pickup mode
+  const penSamplesRef = useRef<PenSample[]>([]);
+  const penActiveRef = useRef(false);
+  const [penStrokePreview, setPenStrokePreview] = useState<PenSample[]>([]);
 
   // Load persisted scale on mount; fall back to PDF auto-detected scale if no manual value saved
   useEffect(() => {
@@ -219,6 +228,8 @@ export function DrawingViewer({
 
   // Pinch detection
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    // パームリジェクション: ペン入力進行中はタッチ系を完全無視
+    if (penActiveRef.current) return;
     if (e.touches.length >= 2) {
       setPinchActive(true);
       return;
@@ -243,6 +254,8 @@ export function DrawingViewer({
   const handleCanvasClick = useCallback(
     (e: React.MouseEvent | React.TouchEvent) => {
       if (pinchActive) return;
+      // パームリジェクション: ペン入力進行中はタッチ系の頂点置きを無視
+      if (penActiveRef.current && "touches" in e) return;
       const pos = getEventPos(e);
       if (!pos) return;
 
@@ -475,7 +488,26 @@ export function DrawingViewer({
         ctx.setLineDash([]);
       }
     }
-  }, [mode, calibrateState, measureState, areaState, pickupPoints, pickupPrediction, pickupKind, pickupCategory]);
+
+    // ペンストロークのライブプレビュー (pickupモードのみ)
+    if (mode === "pickup" && penStrokePreview.length > 1) {
+      const catColor = TAKEOFF_CATEGORY_COLORS[pickupCategory] ?? "#f97316";
+      ctx.strokeStyle = catColor;
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+      // 区間ごとに筆圧で太さを変える (1.5〜4px)
+      for (let i = 1; i < penStrokePreview.length; i++) {
+        const a = penStrokePreview[i - 1]!;
+        const b = penStrokePreview[i]!;
+        const p = (a.pressure + b.pressure) / 2;
+        ctx.lineWidth = 1.5 + Math.min(Math.max(p, 0), 1) * 2.5;
+        ctx.beginPath();
+        ctx.moveTo(a.x, a.y);
+        ctx.lineTo(b.x, b.y);
+        ctx.stroke();
+      }
+    }
+  }, [mode, calibrateState, measureState, areaState, pickupPoints, pickupPrediction, pickupKind, pickupCategory, penStrokePreview]);
 
   const confirmCalibrate = () => {
     if (calibrateState.stage !== "dialog") return;
@@ -537,6 +569,126 @@ export function DrawingViewer({
     setPickupDrawing(false);
     setPickupPrediction(null);
   }, []);
+
+  // ペンストロークで生成された確定点列を、タップ式 state を経由せず直接 session に追加する。
+  // タップ式と異なり snap/予測は適用しない（連続サンプルなので不要）。
+  const finalizePickupFromStroke = useCallback(
+    (points: Point[], kind: "distance" | "area") => {
+      if (!scale) return;
+      let value: number;
+      if (kind === "area") {
+        if (points.length < 3) return;
+        value = measureArea(points, scale);
+      } else {
+        if (points.length < 2) return;
+        const totalPx = polylineLengthPx(points);
+        value = pxLengthToMetres(totalPx, scale);
+      }
+      if (value <= 0) return;
+      const next = withUndo(pickupUndoStack.current, pickupSession, (s) =>
+        addSegment(s, {
+          category: pickupCategory,
+          measureKind: kind,
+          value,
+          label: pickupLabel || undefined,
+        }),
+      );
+      setPickupSession(next);
+      saveSession(next);
+      setPickupLabel("");
+    },
+    [scale, pickupCategory, pickupLabel, pickupSession],
+  );
+
+  // ── Pen (Apple Pencil) pointer event handlers ─────────────────────────────
+  // タッチ/マウスのタップ頂点置きは触らない。pointerType === "pen" のみストローク扱い。
+
+  const handlePickupPointerDown = useCallback(
+    (e: React.PointerEvent<HTMLCanvasElement>) => {
+      if (mode !== "pickup") return;
+      if (e.pointerType !== "pen") return;
+      if (!scale) return;
+      const px = getPixelPos(e.clientX, e.clientY);
+      if (!px) return;
+      (e.currentTarget as HTMLCanvasElement).setPointerCapture?.(e.pointerId);
+      penActiveRef.current = true;
+      const sample: PenSample = {
+        x: px.x,
+        y: px.y,
+        pressure: e.pressure || 0.5,
+        t: e.timeStamp,
+      };
+      penSamplesRef.current = [sample];
+      setPenStrokePreview([sample]);
+    },
+    [mode, scale, getPixelPos],
+  );
+
+  const handlePickupPointerMove = useCallback(
+    (e: React.PointerEvent<HTMLCanvasElement>) => {
+      if (!penActiveRef.current) return;
+      if (e.pointerType !== "pen") return;
+      // 高頻度サンプルがある環境では coalesced events を全部使う
+      const native = e.nativeEvent;
+      const events: PointerEvent[] = native.getCoalescedEvents
+        ? native.getCoalescedEvents()
+        : [native];
+      const fallback = events.length > 0 ? events : [native];
+      const newSamples: PenSample[] = [];
+      for (const ev of fallback) {
+        const px = getPixelPos(ev.clientX, ev.clientY);
+        if (!px) continue;
+        newSamples.push({
+          x: px.x,
+          y: px.y,
+          pressure: (ev as PointerEvent).pressure || 0.5,
+          t: ev.timeStamp,
+        });
+      }
+      if (newSamples.length === 0) return;
+      penSamplesRef.current = penSamplesRef.current.concat(newSamples);
+      setPenStrokePreview(penSamplesRef.current.slice());
+    },
+    [getPixelPos],
+  );
+
+  const finishPenStroke = useCallback(
+    (commit: boolean) => {
+      if (!penActiveRef.current) return;
+      penActiveRef.current = false;
+      const samples = penSamplesRef.current;
+      penSamplesRef.current = [];
+      setPenStrokePreview([]);
+      if (!commit || samples.length < 2) return;
+      const simplified = simplifyStroke(samples, 2);
+      const result = classifyStroke(simplified);
+      if (result.kind === "polygon") {
+        finalizePickupFromStroke(result.points, "area");
+      } else {
+        // line / polyline はどちらも距離扱い (折れ線長)
+        finalizePickupFromStroke(result.points, "distance");
+      }
+    },
+    [finalizePickupFromStroke],
+  );
+
+  const handlePickupPointerUp = useCallback(
+    (e: React.PointerEvent<HTMLCanvasElement>) => {
+      if (e.pointerType !== "pen") return;
+      (e.currentTarget as HTMLCanvasElement).releasePointerCapture?.(e.pointerId);
+      finishPenStroke(true);
+    },
+    [finishPenStroke],
+  );
+
+  const handlePickupPointerCancel = useCallback(
+    (e: React.PointerEvent<HTMLCanvasElement>) => {
+      if (e.pointerType !== "pen") return;
+      (e.currentTarget as HTMLCanvasElement).releasePointerCapture?.(e.pointerId);
+      finishPenStroke(false);
+    },
+    [finishPenStroke],
+  );
 
   // Keyboard: Enter or Escape in pickup mode
   useEffect(() => {
@@ -769,9 +921,15 @@ export function DrawingViewer({
           <canvas
             ref={canvasRef}
             className="absolute inset-0 w-full h-full pointer-events-auto cursor-crosshair"
+            // pickupモード時のみピンチ等を抑止してペンストロークを優先
+            style={mode === "pickup" ? { touchAction: "none" } : undefined}
             onClick={handleCanvasClick}
             onTouchStart={(e) => { handleTouchStart(e); if (e.touches.length === 1) handleCanvasClick(e); }}
             onTouchEnd={handleTouchEnd}
+            onPointerDown={mode === "pickup" ? handlePickupPointerDown : undefined}
+            onPointerMove={mode === "pickup" ? handlePickupPointerMove : undefined}
+            onPointerUp={mode === "pickup" ? handlePickupPointerUp : undefined}
+            onPointerCancel={mode === "pickup" ? handlePickupPointerCancel : undefined}
           />
         )}
 

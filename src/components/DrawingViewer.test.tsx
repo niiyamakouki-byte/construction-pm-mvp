@@ -161,4 +161,87 @@ describe("DrawingViewer", () => {
     // Badge should not render
     expect(screen.queryByText("2")).toBeNull();
   });
+
+  describe("pickup mode pen input", () => {
+    // jsdom は PointerEvent をサポートするが getBoundingClientRect が 0×0 を返すため
+    // imgRef のサイズをモックしてピクセル座標解決を有効化する
+    function patchImgSize(width = 800, height = 600) {
+      const proto = HTMLElement.prototype as HTMLElement & {
+        getBoundingClientRect: () => DOMRect;
+      };
+      const orig = proto.getBoundingClientRect;
+      proto.getBoundingClientRect = function (): DOMRect {
+        // imgRef だけサイズを返したいが手間なので img/canvas 共通でこのサイズに
+        return {
+          x: 0,
+          y: 0,
+          left: 0,
+          top: 0,
+          right: width,
+          bottom: height,
+          width,
+          height,
+          toJSON: () => ({}),
+        } as DOMRect;
+      };
+      return () => { proto.getBoundingClientRect = orig; };
+    }
+
+    function firePenEvent(target: Element, type: string, clientX: number, clientY: number) {
+      const ev = new (window as typeof window & { PointerEvent: typeof PointerEvent }).PointerEvent(
+        type,
+        {
+          bubbles: true,
+          cancelable: true,
+          clientX,
+          clientY,
+          pointerType: "pen",
+          pressure: 0.5,
+        },
+      );
+      target.dispatchEvent(ev);
+    }
+
+    function switchToPickup() {
+      // 「拾い出し」ボタンクリックでモード切替
+      fireEvent.click(screen.getByText("拾い出し"));
+    }
+
+    it("renders pickup mode without crashing", () => {
+      render(<DrawingViewer drawingUrl={DRAWING_URL} drawingId="pen-test-1" />);
+      switchToPickup();
+      // スケール未設定時は警告が出る
+      expect(screen.getByText(/まず縮尺を設定してください/)).toBeDefined();
+    });
+
+    it("ignores pen events when no scale is set (no crash)", () => {
+      const restore = patchImgSize();
+      try {
+        const { container } = render(
+          <DrawingViewer drawingUrl={DRAWING_URL} drawingId="pen-test-2" />,
+        );
+        switchToPickup();
+        const canvas = container.querySelector("canvas");
+        expect(canvas).not.toBeNull();
+        // ペン入力してもスケール未設定なら何も起きない
+        firePenEvent(canvas!, "pointerdown", 100, 100);
+        firePenEvent(canvas!, "pointermove", 200, 100);
+        firePenEvent(canvas!, "pointerup", 200, 100);
+        // クラッシュしないことを確認
+        expect(canvas).not.toBeNull();
+      } finally {
+        restore();
+      }
+    });
+
+    it("applies touchAction:none to overlay canvas in pickup mode", () => {
+      const { container } = render(
+        <DrawingViewer drawingUrl={DRAWING_URL} drawingId="pen-test-3" />,
+      );
+      switchToPickup();
+      const canvas = container.querySelector("canvas") as HTMLCanvasElement | null;
+      expect(canvas).not.toBeNull();
+      expect(canvas!.style.touchAction).toBe("none");
+    });
+  });
 });
