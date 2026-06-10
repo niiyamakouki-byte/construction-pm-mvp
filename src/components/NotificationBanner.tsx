@@ -5,6 +5,14 @@ import { navigate } from "../hooks/useHashRouter.js";
 import { createAppRepository } from "../infra/create-app-repository.js";
 import type { AppNotification, AppNotificationType } from "../lib/notifications.js";
 import { buildNotifications, isStaleOverdue, sortNotifications, STALE_OVERDUE_DAYS } from "../lib/notifications.js";
+import {
+  getNextSnoozeUntil,
+  isDismissed,
+  loadDismissals,
+  pruneDismissals,
+  saveDismissals,
+  type NotificationDismissalMap,
+} from "../lib/notification-dismissals.js";
 import { fetchConstructionSiteForecasts, collectWeatherWarnings } from "../lib/weather.js";
 import { createCostItemRepository } from "../stores/cost-item-store.js";
 import { createProjectRepository } from "../stores/project-store.js";
@@ -105,6 +113,7 @@ export function NotificationBanner({ refreshKey }: NotificationBannerProps) {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [expandedGroups, setExpandedGroups] = useState<Set<AppNotificationType>>(() => new Set());
   const [expandedStaleGroups, setExpandedStaleGroups] = useState<Set<AppNotificationType>>(() => new Set());
+  const [dismissals, setDismissals] = useState<NotificationDismissalMap>(() => loadDismissals());
   const [collapsed, setCollapsed] = useState<boolean>(() => {
     try {
       return localStorage.getItem(COLLAPSED_KEY) !== "0";
@@ -144,7 +153,19 @@ export function NotificationBanner({ refreshKey }: NotificationBannerProps) {
         sortDate: String(warning.day.dt),
       }));
 
-      setNotifications(sortNotifications([...workflowNotifications, ...weatherWarnings]));
+      const merged = sortNotifications([...workflowNotifications, ...weatherWarnings]);
+      setNotifications(merged);
+      // 現存しない id を localStorage から掃除
+      setDismissals((prev) => {
+        const liveIds = new Set(merged.map((n) => n.id));
+        const pruned = pruneDismissals(prev, liveIds);
+        // 中身が変わったときだけ書き戻す
+        if (Object.keys(pruned).length !== Object.keys(prev).length) {
+          saveDismissals(pruned);
+          return pruned;
+        }
+        return prev;
+      });
     } catch (error) {
       const msg = error instanceof Error ? error.message : "";
       // Suppress Supabase/network errors from UI - not actionable for the user
@@ -159,9 +180,14 @@ export function NotificationBanner({ refreshKey }: NotificationBannerProps) {
     void loadNotifications();
   }, [loadNotifications, refreshKey]);
 
+  const visibleNotifications = useMemo(
+    () => notifications.filter((n) => !isDismissed(dismissals[n.id])),
+    [notifications, dismissals],
+  );
+
   // Keep global notices compact unless a critical item needs immediate attention.
   useEffect(() => {
-    const hasCriticalNotification = notifications.some((notification) => CRITICAL_TONES.has(notification.tone));
+    const hasCriticalNotification = visibleNotifications.some((notification) => CRITICAL_TONES.has(notification.tone));
     try {
       const storedPreference = localStorage.getItem(COLLAPSED_KEY);
       if (hasCriticalNotification && storedPreference !== "1") {
@@ -172,7 +198,7 @@ export function NotificationBanner({ refreshKey }: NotificationBannerProps) {
     } catch {
       setCollapsed(!hasCriticalNotification);
     }
-  }, [notifications]);
+  }, [visibleNotifications]);
 
   function handleCollapse() {
     setCollapsed(true);
@@ -194,12 +220,12 @@ export function NotificationBanner({ refreshKey }: NotificationBannerProps) {
     );
   }
 
-  if (notifications.length === 0) {
+  if (visibleNotifications.length === 0) {
     return null;
   }
 
-  const staleCount = notifications.filter(isStaleOverdue).length;
-  const freshCount = notifications.length - staleCount;
+  const staleCount = visibleNotifications.filter(isStaleOverdue).length;
+  const freshCount = visibleNotifications.length - staleCount;
   const staleHint = staleCount > 0 ? `+${staleCount}件は${STALE_OVERDUE_DAYS}日以上前` : null;
 
   if (collapsed) {
@@ -245,7 +271,7 @@ export function NotificationBanner({ refreshKey }: NotificationBannerProps) {
     );
   }
 
-  const groups = groupNotifications(notifications);
+  const groups = groupNotifications(visibleNotifications);
 
   function toggleGroup(type: AppNotificationType) {
     setExpandedGroups((prev) => {
@@ -263,28 +289,69 @@ export function NotificationBanner({ refreshKey }: NotificationBannerProps) {
     });
   }
 
+  function dismissNotification(id: string) {
+    setDismissals((prev) => {
+      const next: NotificationDismissalMap = { ...prev, [id]: { type: "read" } };
+      saveDismissals(next);
+      return next;
+    });
+  }
+
+  function snoozeNotification(id: string) {
+    setDismissals((prev) => {
+      const next: NotificationDismissalMap = {
+        ...prev,
+        [id]: { type: "snooze", until: getNextSnoozeUntil() },
+      };
+      saveDismissals(next);
+      return next;
+    });
+  }
+
   function renderNotificationButton(notification: AppNotification) {
     return (
-      <button
+      <div
         key={notification.id}
-        type="button"
-        onClick={() => navigate(notification.path)}
-        className={`flex items-start gap-3 rounded-2xl border px-4 py-3 text-left transition-transform hover:-translate-y-0.5 ${toneClassMap[notification.tone]}`}
+        className={`flex items-start gap-2 rounded-2xl border px-3 py-2 ${toneClassMap[notification.tone]}`}
       >
-        <span className="mt-0.5 text-lg" aria-hidden="true">
-          {iconMap[notification.type]}
-        </span>
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
-            <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${badgeClassMap[notification.tone]}`}>
-              {notification.title}
-            </span>
+        <button
+          type="button"
+          onClick={() => navigate(notification.path)}
+          className="flex flex-1 items-start gap-3 text-left transition-transform hover:-translate-y-0.5"
+        >
+          <span className="mt-0.5 text-lg" aria-hidden="true">
+            {iconMap[notification.type]}
+          </span>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2">
+              <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${badgeClassMap[notification.tone]}`}>
+                {notification.title}
+              </span>
+            </div>
+            <p className="mt-1 text-sm font-medium leading-5">
+              {notification.message}
+            </p>
           </div>
-          <p className="mt-1 text-sm font-medium leading-5">
-            {notification.message}
-          </p>
+        </button>
+        <div className="flex shrink-0 flex-col items-stretch gap-1">
+          <button
+            type="button"
+            onClick={() => snoozeNotification(notification.id)}
+            aria-label="後で（明日の朝まで非表示）"
+            className="inline-flex h-11 min-w-[44px] items-center justify-center rounded-lg bg-white/70 px-2 text-[11px] font-semibold text-slate-600 hover:bg-white"
+          >
+            後で
+          </button>
+          <button
+            type="button"
+            onClick={() => dismissNotification(notification.id)}
+            aria-label="既読にして非表示"
+            className="inline-flex h-11 min-w-[44px] items-center justify-center rounded-lg bg-white/70 text-base font-semibold text-slate-500 hover:bg-white hover:text-slate-700"
+          >
+            ×
+          </button>
         </div>
-      </button>
+      </div>
     );
   }
 

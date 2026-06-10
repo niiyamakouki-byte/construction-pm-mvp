@@ -312,6 +312,102 @@ describe("NotificationBanner", () => {
     expect(screen.getByText(/古い超過B/)).toBeDefined();
   });
 
+  it("hides a notification after pressing × (既読) and keeps it hidden across remount", async () => {
+    const user = userEvent.setup();
+    mockProjects = [makeProject({ id: "p-1", name: "青山オフィス改修", budget: 0 })];
+    const today = new Date();
+    const recentOverdue = new Date(today);
+    recentOverdue.setDate(today.getDate() - 3);
+    mockTasks = [
+      makeTask({ id: "t-fresh", name: "新しい超過A", dueDate: toLocalDateString(recentOverdue) }),
+    ];
+
+    const { unmount } = render(<NotificationBanner refreshKey="/dismiss" />);
+
+    expect(await screen.findByText("重要通知 1件")).toBeDefined();
+    // 単独通知なのでヘッダーなく直接表示。×ボタンが見える。
+    expect(await screen.findByText(/新しい超過A/)).toBeDefined();
+    const dismissBtn = screen.getByRole("button", { name: "既読にして非表示" });
+    await user.click(dismissBtn);
+
+    // バナーは消える
+    expect(screen.queryByText(/新しい超過A/)).toBeNull();
+
+    // リロード相当 = unmount → 再 mount。localStorage は維持される。
+    unmount();
+    render(<NotificationBanner refreshKey="/dismiss" />);
+
+    // 非表示が永続化されているのでバナーは出ない
+    await mockTaskFindAll.mock.results[mockTaskFindAll.mock.results.length - 1]?.value;
+    expect(screen.queryByText(/新しい超過A/)).toBeNull();
+    expect(screen.queryByText("重要通知 1件")).toBeNull();
+  });
+
+  it("hides a snoozed notification until its until-time has passed", async () => {
+    const user = userEvent.setup();
+    mockProjects = [makeProject({ id: "p-1", name: "青山オフィス改修", budget: 0 })];
+    const today = new Date();
+    const recentOverdue = new Date(today);
+    recentOverdue.setDate(today.getDate() - 3);
+    mockTasks = [
+      makeTask({ id: "t-fresh", name: "新しい超過A", dueDate: toLocalDateString(recentOverdue) }),
+    ];
+
+    const { unmount } = render(<NotificationBanner refreshKey="/snooze" />);
+
+    expect(await screen.findByText(/新しい超過A/)).toBeDefined();
+    const snoozeBtn = screen.getByRole("button", { name: "後で（明日の朝まで非表示）" });
+    await user.click(snoozeBtn);
+
+    expect(screen.queryByText(/新しい超過A/)).toBeNull();
+
+    // localStorageに snooze が書かれている
+    const raw = localStorageData["genbahub.notification.dismissals"];
+    expect(raw).toBeDefined();
+    const parsed = JSON.parse(raw as string) as Record<string, { type: string; until: string }>;
+    expect(parsed["overdue:t-fresh"]?.type).toBe("snooze");
+    expect(parsed["overdue:t-fresh"]?.until).toBeDefined();
+
+    // until を過去日時に書き換え → 期限切れ → 再表示されるはず
+    parsed["overdue:t-fresh"] = { type: "snooze", until: "2000-01-01T00:00:00.000Z" };
+    localStorageData["genbahub.notification.dismissals"] = JSON.stringify(parsed);
+
+    unmount();
+    render(<NotificationBanner refreshKey="/snooze" />);
+    expect(await screen.findByText(/新しい超過A/)).toBeDefined();
+  });
+
+  it("subtracts dismissed items from the header count", async () => {
+    const user = userEvent.setup();
+    mockProjects = [makeProject({ id: "p-1", name: "青山オフィス改修", budget: 0 })];
+    const today = new Date();
+    const d = (offset: number) => {
+      const dt = new Date(today);
+      dt.setDate(today.getDate() - offset);
+      return toLocalDateString(dt);
+    };
+    mockTasks = [
+      makeTask({ id: "t-1", name: "外壁洗浄", dueDate: d(3) }),
+      makeTask({ id: "t-2", name: "床養生", dueDate: d(5) }),
+      makeTask({ id: "t-3", name: "搬入確認", dueDate: d(7) }),
+    ];
+
+    render(<NotificationBanner refreshKey="/count" />);
+
+    expect(await screen.findByText("重要通知 3件")).toBeDefined();
+    const header = await screen.findByRole("button", { name: /期限超過タスク 3件/ });
+    await user.click(header);
+
+    // 1件×、もう1件を 後で
+    const dismissBtns = await screen.findAllByRole("button", { name: "既読にして非表示" });
+    await user.click(dismissBtns[0]);
+    const snoozeBtns = screen.getAllByRole("button", { name: "後で（明日の朝まで非表示）" });
+    await user.click(snoozeBtns[0]);
+
+    // 残り1件なのでヘッダー件数が 1 になる
+    expect(await screen.findByText("重要通知 1件")).toBeDefined();
+  });
+
   it("keeps non-critical notifications collapsed by default", async () => {
     const today = new Date();
     const tomorrow = new Date(today);
