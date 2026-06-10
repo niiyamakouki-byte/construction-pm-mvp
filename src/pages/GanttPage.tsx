@@ -33,6 +33,7 @@ import { readLastProjectId, writeLastProjectId } from "../lib/last-project.js";
 import { cascadeSchedule } from "../lib/cascade-scheduler.js";
 import { filterScheduleTasks } from "../lib/cost-management.js";
 import { exportGanttToPdf } from "../lib/gantt-pdf-export.js";
+import { downloadProjectICS } from "../lib/gantt-ics-export.js";
 import {
   checkMilestoneStatus,
   createMilestones,
@@ -898,6 +899,16 @@ function GanttPageContent({ initialProjectId = null }: GanttPageProps) {
     }
   }, [chartLayout, selectedProject, selectedProjectTasks]);
 
+  const icsExportableCount = useMemo(
+    () => selectedProjectTasks.filter((t) => !!t.startDate).length,
+    [selectedProjectTasks],
+  );
+
+  const handleICSExport = useCallback(() => {
+    if (!selectedProject) return;
+    downloadProjectICS(selectedProject, selectedProjectTasks);
+  }, [selectedProject, selectedProjectTasks]);
+
   const handleTimelineTouchStart = useCallback((event: React.TouchEvent<HTMLDivElement>) => {
     if (event.touches.length !== 2 || !scrollRef.current) return;
     const firstTouch = event.touches.item(0);
@@ -1697,6 +1708,14 @@ function GanttPageContent({ initialProjectId = null }: GanttPageProps) {
                 <p className="text-xs text-red-600" role="alert">{pdfError}</p>
               )}
             </div>
+            <button
+              type="button"
+              disabled={icsExportableCount === 0}
+              onClick={handleICSExport}
+              className="rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              カレンダーに出力 (.ics)
+            </button>
             <button
               type="button"
               onClick={() => {
