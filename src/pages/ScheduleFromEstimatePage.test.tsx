@@ -88,32 +88,37 @@ describe("ScheduleFromEstimatePage — タスク行", () => {
   it("工事名が行内に表示される", () => {
     renderPage();
     expect(screen.getAllByText("解体撤去工事")[0]).toBeDefined();
-    expect(screen.getByText("クロス張り工事")).toBeDefined();
+    // モバイルカード+デスクトップ行の両方に描画されるため getAllByText を使用
+    expect(screen.getAllByText("クロス張り工事")[0]).toBeDefined();
   });
 
   it("開始日が行内に表示される（skipWeekends=true でも土日回避）", () => {
     renderPage();
     // 2026-05-01 = Friday — skipWeekends default true
-    expect(screen.getByText("2026-05-01")).toBeDefined();
+    // モバイルカード+デスクトップ行の両方に描画されるため getAllByText を使用
+    expect(screen.getAllByText("2026-05-01")[0]).toBeDefined();
   });
 
   it("工期日数が表示される", () => {
     renderPage();
-    expect(screen.getByText("3日間")).toBeDefined(); // 解体工事 = 3日
-    expect(screen.getByText("2日間")).toBeDefined(); // クロス = 2日
+    // モバイルカード+デスクトップ行の両方に描画されるため getAllByText を使用
+    expect(screen.getAllByText("3日間")[0]).toBeDefined(); // 解体工事 = 3日
+    expect(screen.getAllByText("2日間")[0]).toBeDefined(); // クロス = 2日
   });
 
   it("初期ステータスは「未着手」", () => {
     renderPage();
     const badges = screen.getAllByText("未着手");
-    expect(badges).toHaveLength(2);
+    // モバイルカード+デスクトップ行の両方に描画されるため 2タスク×2=4件
+    expect(badges).toHaveLength(4);
   });
 
   it("noteがある行はnoteが表示される", () => {
     renderPage({
       initialLines: [line({ name: "電気工事", note: "100V配線" })],
     });
-    expect(screen.getByText("100V配線")).toBeDefined();
+    // モバイルカード+デスクトップ行の両方に描画されるため getAllByText を使用
+    expect(screen.getAllByText("100V配線")[0]).toBeDefined();
   });
 });
 
@@ -164,7 +169,8 @@ describe("ScheduleFromEstimatePage — 開始日変更", () => {
     renderPage({ initialLines: [line({ name: "解体工事" })] });
     const input = screen.getByTestId("start-date-input");
     fireEvent.change(input, { target: { value: "2026-06-01" } });
-    expect(screen.getByText("2026-06-01")).toBeDefined();
+    // モバイルカード+デスクトップ行の両方に描画されるため getAllByText を使用
+    expect(screen.getAllByText("2026-06-01")[0]).toBeDefined();
   });
 });
 
@@ -176,7 +182,8 @@ describe("ScheduleFromEstimatePage — 土日スキップ", () => {
     renderPage({ initialLines: [line({ name: "解体工事", code: "DIS" })] });
     const cb = screen.getByTestId("skip-weekends-checkbox");
     fireEvent.click(cb); // uncheck
-    expect(screen.getByText("2026-05-03")).toBeDefined(); // 終了日 = Sun
+    // モバイルカード+デスクトップ行の両方に描画されるため getAllByText を使用
+    expect(screen.getAllByText("2026-05-03")[0]).toBeDefined(); // 終了日 = Sun
   });
 });
 
@@ -201,5 +208,22 @@ describe("ScheduleFromEstimatePage — カテゴリグルーピング", () => {
     renderPage();
     expect(screen.getByText("解体工事")).toBeDefined();
     expect(screen.getByText("内装仕上")).toBeDefined();
+  });
+});
+
+// ── モバイルカード表示 ────────────────────────────────────────────────────────
+
+describe("ScheduleFromEstimatePage — モバイルカード", () => {
+  it("task-rowごとにモバイルカード内にも工事名が描画される", () => {
+    renderPage({ initialLines: [line({ name: "LGS工事", code: "LGS-001" })] });
+    // モバイルカード+デスクトップ行の両方で同一テキストが2件あること
+    expect(screen.getAllByText("LGS工事")).toHaveLength(2);
+  });
+
+  it("task-rowごとにモバイルカード内にもステータスボタンが描画される", () => {
+    renderPage({ initialLines: [line({ name: "LGS工事", code: "LGS-001" })] });
+    // モバイル+デスクトップ両方に status-btn があること (1タスク×2=2件)
+    const btns = screen.queryAllByTestId(/^status-btn-/);
+    expect(btns).toHaveLength(2);
   });
 });

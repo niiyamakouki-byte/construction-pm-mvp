@@ -231,23 +231,83 @@ function TaskRow({
       data-testid="task-row"
       className="border-b border-slate-100 hover:bg-slate-50/50 transition-colors duration-[150ms]"
     >
-      <td className="px-4 py-3 align-top">
+      {/* モバイルカード表示 (< md) */}
+      <td colSpan={6} className="md:hidden px-4 py-3">
+        <div className="space-y-2">
+          <div className="flex items-start justify-between gap-2">
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-slate-800 leading-snug">{task.title}</p>
+              {task.note && (
+                <p className="mt-0.5 text-xs text-slate-400 leading-tight">{task.note}</p>
+              )}
+            </div>
+            <button
+              type="button"
+              data-testid={`status-btn-${task.id}`}
+              disabled={disabled}
+              onClick={cycleStatus}
+              className={`shrink-0 inline-block rounded-full px-3 py-1 text-xs font-medium transition-colors duration-[150ms] disabled:opacity-60 ${STATUS_CLASS[task.status]}`}
+            >
+              {STATUS_LABEL[task.status]}
+            </button>
+          </div>
+          <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-500">
+            <span><span className="font-medium text-slate-600">開始</span> {task.startDate}</span>
+            <span><span className="font-medium text-slate-600">終了</span> {task.endDate}</span>
+            <span><span className="font-medium text-slate-600">工期</span> {task.durationDays}日間</span>
+          </div>
+          <div>
+            <AssigneeSelector
+              members={members}
+              value={task.assigneeId}
+              disabled={disabled}
+              onChange={(assigneeId) => onAssigneeChange(task.id, assigneeId)}
+            />
+          </div>
+          {dependencyOptions.length > 0 && (
+            <div>
+              <p className="mb-0.5 text-xs font-medium text-slate-500">依存タスク</p>
+              <select
+                multiple
+                data-testid={`dependency-select-${task.id}`}
+                disabled={disabled}
+                value={task.dependsOn}
+                onChange={(event) =>
+                  onDependsOnChange(
+                    task.id,
+                    Array.from(event.target.selectedOptions).map((option) => option.value),
+                  )}
+                className="min-h-16 w-full rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-xs text-slate-700 focus:border-[#7BA88A] focus:outline-none disabled:bg-slate-50"
+              >
+                {dependencyOptions.map((candidate) => (
+                  <option key={candidate.id} value={candidate.id}>
+                    {candidate.title}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+        </div>
+      </td>
+
+      {/* デスクトップテーブル行 (>= md) */}
+      <td className="hidden md:table-cell px-4 py-3 align-top">
         <p className="text-sm font-medium text-slate-800 leading-snug">{task.title}</p>
         {task.note && (
           <p className="mt-0.5 text-xs text-slate-400 leading-tight">{task.note}</p>
         )}
       </td>
 
-      <td className="px-4 py-3 whitespace-nowrap align-top">
+      <td className="hidden md:table-cell px-4 py-3 whitespace-nowrap align-top">
         <p className="text-sm text-slate-700">{task.startDate}</p>
         <p className="text-xs text-slate-400">{task.durationDays}日間</p>
       </td>
 
-      <td className="px-4 py-3 whitespace-nowrap align-top text-sm text-slate-600">
+      <td className="hidden md:table-cell px-4 py-3 whitespace-nowrap align-top text-sm text-slate-600">
         {task.endDate}
       </td>
 
-      <td className="px-4 py-3 align-top">
+      <td className="hidden md:table-cell px-4 py-3 align-top">
         {dependencyOptions.length === 0 ? (
           <p className="text-xs text-slate-400">依存なし</p>
         ) : (
@@ -272,7 +332,7 @@ function TaskRow({
         )}
       </td>
 
-      <td className="px-4 py-3 align-top">
+      <td className="hidden md:table-cell px-4 py-3 align-top">
         <AssigneeSelector
           members={members}
           value={task.assigneeId}
@@ -281,7 +341,7 @@ function TaskRow({
         />
       </td>
 
-      <td className="px-4 py-3 align-top">
+      <td className="hidden md:table-cell px-4 py-3 align-top">
         <button
           type="button"
           data-testid={`status-btn-${task.id}`}
@@ -741,8 +801,8 @@ export function ScheduleFromEstimatePage({
             </h2>
 
             <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white">
-              <table className="w-full min-w-[560px] border-collapse" data-testid="schedule-table">
-                <thead>
+              <table className="w-full md:min-w-[560px] border-collapse" data-testid="schedule-table">
+                <thead className="hidden md:table-header-group">
                   <tr className="border-b border-slate-100 bg-slate-50">
                     <th className="px-4 py-2.5 text-left text-xs font-semibold text-slate-500 whitespace-nowrap">工事名</th>
                     <th className="px-4 py-2.5 text-left text-xs font-semibold text-slate-500 whitespace-nowrap">開始日</th>
