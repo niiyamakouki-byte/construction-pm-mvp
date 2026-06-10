@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   generateEstimate,
   listCategories,
@@ -7,6 +7,8 @@ import {
 import type { Estimate, EstimateInput } from "../estimate/types.js";
 import { EstimatePageErrorBoundary } from "../components/PageErrorBoundaries.js";
 import { ConfirmDialog } from "../components/common/ConfirmDialog.js";
+import { createProjectRepository } from "../stores/project-store.js";
+import { useOrganizationContext } from "../contexts/OrganizationContext.js";
 import {
   calculateFromMargin,
   simulateMultiple,
@@ -608,6 +610,32 @@ function EstimatePageContent() {
   const [targetMargin, setTargetMargin] = useState<string>("25");
   const [includeLegalWelfare, setIncludeLegalWelfare] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<SelectedItem | null>(null);
+  const { organizationId } = useOrganizationContext();
+  const projectRepository = useMemo(
+    () => createProjectRepository(() => organizationId),
+    [organizationId],
+  );
+  const [projectOptions, setProjectOptions] = useState<{ id: string; name: string }[]>([]);
+  const [selectedProjectId, setSelectedProjectId] = useState<string>("");
+  const [linkedProjectName, setLinkedProjectName] = useState<string>("");
+
+  useEffect(() => {
+    let disposed = false;
+    void projectRepository.findAll()
+      .then((projects) => {
+        if (disposed) return;
+        const options = projects
+          .map((p) => ({ id: p.id, name: p.name }))
+          .sort((a, b) => a.name.localeCompare(b.name, "ja"));
+        setProjectOptions(options);
+      })
+      .catch(() => {
+        // 案件読み込み失敗時はセレクトを非表示のまま無視（必須機能ではない）
+      });
+    return () => {
+      disposed = true;
+    };
+  }, [projectRepository]);
 
   const costItems: CostItem[] = selectedItems.map((i) => ({
     code: i.code,
@@ -755,6 +783,11 @@ function EstimatePageContent() {
         <div className="responsive-card rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
           <div className="border-b border-slate-200 pb-4 mb-4">
             <h2 className="text-lg font-bold text-slate-900">御見積書</h2>
+            {linkedProjectName && (
+              <p className="mt-1 text-xs text-slate-500" data-testid="estimate-linked-project">
+                案件: {linkedProjectName}
+              </p>
+            )}
             <div className="responsive-form-grid mt-2 gap-2 text-sm text-slate-600">
               <p>
                 <span className="text-slate-400">物件名: </span>
@@ -993,6 +1026,38 @@ function EstimatePageContent() {
 
       {/* Project info */}
       <div className="responsive-card rounded-xl border border-slate-200 bg-white p-4 shadow-sm space-y-3">
+        {projectOptions.length > 0 && (
+          <div>
+            <label htmlFor="estimate-project" className="block text-sm font-medium text-slate-700">
+              案件を選ぶ（任意）
+            </label>
+            <select
+              id="estimate-project"
+              value={selectedProjectId}
+              onChange={(e) => {
+                const id = e.target.value;
+                setSelectedProjectId(id);
+                if (id === "") {
+                  setLinkedProjectName("");
+                  return;
+                }
+                const found = projectOptions.find((p) => p.id === id);
+                if (found) {
+                  setPropertyName(found.name);
+                  setLinkedProjectName(found.name);
+                }
+              }}
+              className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 focus:outline-none"
+            >
+              <option value="">選択しない（未紐づけ）</option>
+              {projectOptions.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
         <div>
           <label htmlFor="estimate-property" className="block text-sm font-medium text-slate-700">
             物件名 <span className="text-red-500">*</span>

@@ -5,6 +5,7 @@ import userEvent from "@testing-library/user-event";
 const mocks = vi.hoisted(() => ({
   generateEstimate: vi.fn(),
   generateEstimatePdf: vi.fn(),
+  projectFindAll: vi.fn(),
 }));
 
 vi.mock("../estimate/estimate-generator.js", async () => {
@@ -22,6 +23,14 @@ vi.mock("../estimate/estimate-generator.js", async () => {
 
 vi.mock("../estimate/pdf-estimate.js", () => ({
   generateEstimatePdf: mocks.generateEstimatePdf,
+}));
+
+vi.mock("../stores/project-store.js", () => ({
+  createProjectRepository: () => ({ findAll: mocks.projectFindAll }),
+}));
+
+vi.mock("../contexts/OrganizationContext.js", () => ({
+  useOrganizationContext: () => ({ organizationId: "test-org" }),
 }));
 
 async function renderEstimatePage() {
@@ -53,6 +62,8 @@ describe("EstimatePage", () => {
     vi.resetModules();
     mocks.generateEstimate.mockClear();
     mocks.generateEstimatePdf.mockReset();
+    mocks.projectFindAll.mockReset();
+    mocks.projectFindAll.mockResolvedValue([]);
     vi.doUnmock("react");
   });
 
@@ -242,5 +253,65 @@ describe("EstimatePage", () => {
     expect(disclaimer.textContent).toContain("世田谷区標準価格");
     expect(disclaimer.textContent).toContain("±20%");
     expect(disclaimer.textContent).toContain("03-6876-7749");
+  });
+
+  it("案件を選ぶセレクトで案件を選択すると物件名が自動入力される", async () => {
+    mocks.projectFindAll.mockResolvedValue([
+      {
+        id: "proj-1",
+        name: "渋谷ワインバー",
+        description: "",
+        status: "active",
+        startDate: "2026-01-01",
+        includeWeekends: false,
+        createdAt: "2026-01-01T00:00:00.000Z",
+        updatedAt: "2026-01-01T00:00:00.000Z",
+      },
+    ]);
+
+    const user = userEvent.setup();
+    await renderEstimatePage();
+
+    const select = await screen.findByLabelText(/案件を選ぶ/);
+    await user.selectOptions(select, "proj-1");
+
+    const propertyInput = screen.getByLabelText(/物件名/) as HTMLInputElement;
+    await waitFor(() => expect(propertyInput.value).toBe("渋谷ワインバー"));
+  });
+
+  it("案件を選んで見積生成すると結果画面ヘッダーに案件名が表示される", async () => {
+    mocks.projectFindAll.mockResolvedValue([
+      {
+        id: "proj-2",
+        name: "南青山リノベ案件",
+        description: "",
+        status: "active",
+        startDate: "2026-01-01",
+        includeWeekends: false,
+        createdAt: "2026-01-01T00:00:00.000Z",
+        updatedAt: "2026-01-01T00:00:00.000Z",
+      },
+    ]);
+
+    const user = userEvent.setup();
+    await renderEstimatePage();
+
+    const select = await screen.findByLabelText(/案件を選ぶ/);
+    await user.selectOptions(select, "proj-2");
+
+    await user.click(screen.getByRole("button", { name: /解体・撤去/ }));
+    await user.click(screen.getByRole("button", { name: /内装解体（木造）/ }));
+
+    await user.click(screen.getByRole("button", { name: "見積書を生成" }));
+
+    await waitFor(() => expect(screen.getByText("御見積書")).toBeDefined());
+    const linked = screen.getByTestId("estimate-linked-project");
+    expect(linked.textContent).toContain("案件: 南青山リノベ案件");
+  });
+
+  it("案件が0件のときは案件選択セレクトを表示しない", async () => {
+    mocks.projectFindAll.mockResolvedValue([]);
+    await renderEstimatePage();
+    expect(screen.queryByLabelText(/案件を選ぶ/)).toBeNull();
   });
 });
