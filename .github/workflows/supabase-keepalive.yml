@@ -1,0 +1,28 @@
+name: supabase-keepalive
+
+# Supabase無料枠は約7日間APIリクエストが無いと自動pauseされ、本番が
+# 無限「読み込み中」になる（2026-06-10発生）。日次pingで活動を維持する。
+on:
+  schedule:
+    - cron: "0 21 * * *" # 06:00 JST
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Ping Supabase REST (counts as project activity)
+        run: |
+          # publishable (anon) key — フロントのバンドルに含まれる公開前提のキー
+          STATUS=$(curl -s -o /tmp/body -w "%{http_code}" \
+            "https://iumymkvhrqwfexlthplm.supabase.co/rest/v1/projects?select=id&limit=1" \
+            -H "apikey: sb_publishable_cVT_r07rT2V0DKrWPvDNyA_e1AJaIPI")
+          echo "HTTP $STATUS"
+          cat /tmp/body
+          if [ "$STATUS" != "200" ]; then
+            echo "Supabase ping failed (project paused or key revoked?)" >&2
+            exit 1
+          fi
