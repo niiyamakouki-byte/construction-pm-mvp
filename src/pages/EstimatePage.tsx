@@ -1,5 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import {
+  readAndClearEstimateInject,
+} from "../lib/takeoff-to-estimate.js";
+import {
   generateEstimate,
   listCategories,
   listItemsByCategory,
@@ -637,6 +640,28 @@ function EstimatePageContent() {
     };
   }, [projectRepository]);
 
+  // 拾い出し → 見積流し込み: DrawingViewer が localStorage に書いたアイテムを読み取る
+  const [takeoffInjectBanner, setTakeoffInjectBanner] = useState(false);
+  useEffect(() => {
+    const injected = readAndClearEstimateInject();
+    if (injected.length === 0) return;
+    setSelectedItems((prev) => {
+      const next = [...prev];
+      for (const item of injected) {
+        const exists = next.findIndex((i) => i.code === item.code);
+        if (exists >= 0) {
+          // 既存コードなら数量を加算
+          next[exists] = { ...next[exists]!, quantity: next[exists]!.quantity + item.quantity };
+        } else {
+          next.push(item);
+        }
+      }
+      return next;
+    });
+    setTakeoffInjectBanner(true);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- mount once
+  }, []);
+
   const costItems: CostItem[] = selectedItems.map((i) => ({
     code: i.code,
     name: i.name,
@@ -1021,6 +1046,23 @@ function EstimatePageContent() {
       {error && (
         <div className="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
           {error}
+        </div>
+      )}
+
+      {takeoffInjectBanner && (
+        <div
+          className="flex items-center justify-between rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800"
+          data-testid="takeoff-inject-banner"
+        >
+          <span>図面の拾い出し数量を品目に追加しました。単価を入力して見積を作成してください。</span>
+          <button
+            type="button"
+            onClick={() => setTakeoffInjectBanner(false)}
+            className="ml-3 shrink-0 text-emerald-600 hover:text-emerald-800"
+            aria-label="閉じる"
+          >
+            ✕
+          </button>
         </div>
       )}
 

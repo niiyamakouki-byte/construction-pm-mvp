@@ -1,5 +1,9 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import {
+  sessionToEstimateItems,
+  writeEstimateInject,
+} from "../lib/takeoff-to-estimate.js";
+import {
   createPin,
   updatePin,
   deletePin,
@@ -565,6 +569,13 @@ export function DrawingViewer({
     URL.revokeObjectURL(url);
   }, [pickupSession, drawingName]);
 
+  const handleSendToEstimate = useCallback(() => {
+    const items = sessionToEstimateItems(pickupSession);
+    if (items.length === 0) return;
+    writeEstimateInject(items);
+    window.location.hash = "/estimate";
+  }, [pickupSession]);
+
   const switchMode = (next: ViewerMode) => {
     setMode(next);
     setPopover(null);
@@ -1002,6 +1013,7 @@ export function DrawingViewer({
             onExpandRow={setExpandedRowIdx}
             onExportCSV={handlePickupExportCSV}
             onExportJSON={handlePickupExportJSON}
+            onSendToEstimate={handleSendToEstimate}
           />
         )}
 
@@ -1269,6 +1281,7 @@ type PickupSidebarProps = {
   onExpandRow: (idx: number | null) => void;
   onExportCSV: () => void;
   onExportJSON: () => void;
+  onSendToEstimate: () => void;
 };
 
 function PickupSidebar({
@@ -1292,6 +1305,7 @@ function PickupSidebar({
   onExpandRow,
   onExportCSV,
   onExportJSON,
+  onSendToEstimate,
 }: PickupSidebarProps) {
   const costRows = summariseWithCost(session, costMaster);
   const summaryRows = summariseSession(session);
@@ -1529,22 +1543,32 @@ function PickupSidebar({
 
       {/* Export buttons */}
       {session.segments.length > 0 && (
-        <div className="flex gap-2">
+        <>
           <button
             type="button"
-            onClick={onExportCSV}
-            className="flex-1 rounded-2xl border border-slate-200 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50"
+            onClick={onSendToEstimate}
+            className="min-h-[44px] w-full rounded-2xl bg-brand-600 py-2.5 text-sm font-bold text-white hover:bg-brand-700 active:bg-brand-800 transition-colors"
+            data-testid="send-to-estimate-btn"
           >
-            CSV
+            見積に流し込む →
           </button>
-          <button
-            type="button"
-            onClick={onExportJSON}
-            className="flex-1 rounded-2xl border border-slate-200 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50"
-          >
-            JSON
-          </button>
-        </div>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={onExportCSV}
+              className="flex-1 rounded-2xl border border-slate-200 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50"
+            >
+              CSV
+            </button>
+            <button
+              type="button"
+              onClick={onExportJSON}
+              className="flex-1 rounded-2xl border border-slate-200 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50"
+            >
+              JSON
+            </button>
+          </div>
+        </>
       )}
     </div>
   );
