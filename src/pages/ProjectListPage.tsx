@@ -53,6 +53,7 @@ export function ProjectListPage() {
   const [startDate, setStartDate] = useState("");
   const [captureMode, setCaptureMode] = useState<ProjectCaptureMode>("memo");
   const [showForm, setShowForm] = useState(false);
+  const [showDetails, setShowDetails] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [sampleCreating, setSampleCreating] = useState(false);
   const [nameError, setNameError] = useState<string | null>(null);
@@ -159,6 +160,7 @@ export function ProjectListPage() {
       setSelectedTemplateMajors(new Set());
       setCaptureMode("memo");
       setShowForm(false);
+      setShowDetails(false);
       setCreatedProjectName(createdName);
       await loadProjects();
     } catch (err) {
@@ -340,110 +342,129 @@ export function ProjectListPage() {
               {nameError ? <p className="mt-1.5 text-xs text-red-600">{nameError}</p> : null}
             </div>
 
-            <div>
-              <label htmlFor="project-description" className="block text-sm font-medium text-slate-700">
-                {t("pages:project_list.description_label")}
-              </label>
-              <input
-                id="project-description"
-                type="text"
-                value={description}
-                onChange={(event) => setDescription(event.target.value)}
-                placeholder={t("pages:project_list.description_placeholder")}
-                className="mt-1.5 w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm focus:border-[#007AFF] focus:outline-none focus:ring-2 focus:ring-[#007AFF]/20"
-              />
-            </div>
+            {/* 詳細設定トグル */}
+            <button
+              type="button"
+              onClick={() => setShowDetails((v) => !v)}
+              className="flex items-center gap-1.5 text-sm font-medium text-[#007AFF]"
+            >
+              <span
+                className={`inline-block transition-transform duration-150 ${showDetails ? "rotate-90" : ""}`}
+                aria-hidden="true"
+              >
+                ›
+              </span>
+              {showDetails ? "詳細を閉じる" : "詳細を設定する（住所・開始日・工程テンプレ）"}
+            </button>
 
-            <div>
-              <label htmlFor="project-address" className="block text-sm font-medium text-slate-700">
-                {t("pages:project_list.address_label")}
-              </label>
-              <input
-                id="project-address"
-                type="text"
-                value={address}
-                onChange={(event) => setAddress(event.target.value)}
-                placeholder={t("pages:project_list.address_placeholder")}
-                className="mt-1.5 w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm focus:border-[#007AFF] focus:outline-none focus:ring-2 focus:ring-[#007AFF]/20"
-              />
-            </div>
+            {showDetails ? (
+              <div className="space-y-4">
+                <div>
+                  <label htmlFor="project-description" className="block text-sm font-medium text-slate-700">
+                    {t("pages:project_list.description_label")}
+                  </label>
+                  <input
+                    id="project-description"
+                    type="text"
+                    value={description}
+                    onChange={(event) => setDescription(event.target.value)}
+                    placeholder={t("pages:project_list.description_placeholder")}
+                    className="mt-1.5 w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm focus:border-[#007AFF] focus:outline-none focus:ring-2 focus:ring-[#007AFF]/20"
+                  />
+                </div>
 
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div>
-                <label htmlFor="project-status" className="block text-sm font-medium text-slate-700">
-                  {t("pages:project_list.status_label")}
-                </label>
-                <select
-                  id="project-status"
-                  value={status}
-                  onChange={(event) => setStatus(event.target.value as ProjectStatus)}
-                  className="mt-1.5 w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm focus:border-[#007AFF] focus:outline-none focus:ring-2 focus:ring-[#007AFF]/20"
-                >
-                  <option value="planning">{t("common:status.planning")}</option>
-                  <option value="active">{t("common:status.active")}</option>
-                  <option value="completed">{t("common:status.completed")}</option>
-                  <option value="on_hold">{t("common:status.on_hold")}</option>
-                </select>
-              </div>
-              <div>
-                <label htmlFor="project-start-date" className="block text-sm font-medium text-slate-700">
-                  {t("pages:project_list.start_date_label")}
-                </label>
-                <input
-                  id="project-start-date"
-                  type="date"
-                  value={startDate}
-                  onChange={(event) => setStartDate(event.target.value)}
-                  className="mt-1.5 w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm focus:border-[#007AFF] focus:outline-none focus:ring-2 focus:ring-[#007AFF]/20"
-                />
-              </div>
-            </div>
+                <div>
+                  <label htmlFor="project-address" className="block text-sm font-medium text-slate-700">
+                    {t("pages:project_list.address_label")}
+                  </label>
+                  <input
+                    id="project-address"
+                    type="text"
+                    value={address}
+                    onChange={(event) => setAddress(event.target.value)}
+                    placeholder={t("pages:project_list.address_placeholder")}
+                    className="mt-1.5 w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm focus:border-[#007AFF] focus:outline-none focus:ring-2 focus:ring-[#007AFF]/20"
+                  />
+                </div>
 
-            {/* Sprint 70: 工程テンプレライブラリ選択 */}
-            <div>
-              <p className="block text-sm font-medium text-slate-700">
-                工程テンプレ（任意）
-              </p>
-              <p className="mt-0.5 text-xs text-slate-400">選択した大項目の工程を作成後に一括投入します</p>
-              <div className="mt-2 grid grid-cols-2 gap-x-4 gap-y-2 sm:grid-cols-3">
-                {templateMajorNames.map((majorName) => {
-                  const checked = selectedTemplateMajors.has(majorName);
-                  return (
-                    <label
-                      key={majorName}
-                      className="flex cursor-pointer items-center gap-2 text-sm text-slate-700"
-                    >
-                      <input
-                        type="checkbox"
-                        checked={checked}
-                        onChange={() => {
-                          setSelectedTemplateMajors((prev) => {
-                            const next = new Set(prev);
-                            if (next.has(majorName)) {
-                              next.delete(majorName);
-                            } else {
-                              next.add(majorName);
-                            }
-                            return next;
-                          });
-                        }}
-                        className="h-4 w-4 rounded border-slate-300 text-[#007AFF] focus:ring-[#007AFF]/30"
-                      />
-                      {majorName}
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div>
+                    <label htmlFor="project-status" className="block text-sm font-medium text-slate-700">
+                      {t("pages:project_list.status_label")}
                     </label>
-                  );
-                })}
+                    <select
+                      id="project-status"
+                      value={status}
+                      onChange={(event) => setStatus(event.target.value as ProjectStatus)}
+                      className="mt-1.5 w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm focus:border-[#007AFF] focus:outline-none focus:ring-2 focus:ring-[#007AFF]/20"
+                    >
+                      <option value="planning">{t("common:status.planning")}</option>
+                      <option value="active">{t("common:status.active")}</option>
+                      <option value="completed">{t("common:status.completed")}</option>
+                      <option value="on_hold">{t("common:status.on_hold")}</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label htmlFor="project-start-date" className="block text-sm font-medium text-slate-700">
+                      {t("pages:project_list.start_date_label")}
+                    </label>
+                    <input
+                      id="project-start-date"
+                      type="date"
+                      value={startDate}
+                      onChange={(event) => setStartDate(event.target.value)}
+                      className="mt-1.5 w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm focus:border-[#007AFF] focus:outline-none focus:ring-2 focus:ring-[#007AFF]/20"
+                    />
+                  </div>
+                </div>
+
+                {/* Sprint 70: 工程テンプレライブラリ選択 */}
+                <div>
+                  <p className="block text-sm font-medium text-slate-700">
+                    工程テンプレ（任意）
+                  </p>
+                  <p className="mt-0.5 text-xs text-slate-400">選択した大項目の工程を作成後に一括投入します</p>
+                  <div className="mt-2 grid grid-cols-2 gap-x-4 gap-y-2 sm:grid-cols-3">
+                    {templateMajorNames.map((majorName) => {
+                      const checked = selectedTemplateMajors.has(majorName);
+                      return (
+                        <label
+                          key={majorName}
+                          className="flex cursor-pointer items-center gap-2 text-sm text-slate-700"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={() => {
+                              setSelectedTemplateMajors((prev) => {
+                                const next = new Set(prev);
+                                if (next.has(majorName)) {
+                                  next.delete(majorName);
+                                } else {
+                                  next.add(majorName);
+                                }
+                                return next;
+                              });
+                            }}
+                            className="h-4 w-4 rounded border-slate-300 text-[#007AFF] focus:ring-[#007AFF]/30"
+                          />
+                          {majorName}
+                        </label>
+                      );
+                    })}
+                  </div>
+                  {selectedTemplateMajors.size > 0 && (
+                    <p className="mt-2 text-xs text-[#007AFF]">
+                      {selectedTemplateMajors.size}大項目 /{" "}
+                      {[...selectedTemplateMajors]
+                        .flatMap((m) => getTemplateIdsByMajor(m))
+                        .length}
+                      工程エントリを投入予定
+                    </p>
+                  )}
+                </div>
               </div>
-              {selectedTemplateMajors.size > 0 && (
-                <p className="mt-2 text-xs text-[#007AFF]">
-                  {selectedTemplateMajors.size}大項目 /{" "}
-                  {[...selectedTemplateMajors]
-                    .flatMap((m) => getTemplateIdsByMajor(m))
-                    .length}
-                  工程エントリを投入予定
-                </p>
-              )}
-            </div>
+            ) : null}
 
             <div className="flex items-center gap-3 pt-2">
               <button
@@ -455,7 +476,7 @@ export function ProjectListPage() {
               </button>
               <button
                 type="button"
-                onClick={() => setShowForm(false)}
+                onClick={() => { setShowForm(false); setShowDetails(false); }}
                 className="rounded-2xl bg-slate-100 px-4 py-3 text-sm font-semibold text-slate-600"
               >
                 {t("common:actions.cancel")}

@@ -41,6 +41,8 @@ describe("ProjectListPage", () => {
     await user.click(screen.getByText("新規プロジェクト"));
 
     await user.type(screen.getByPlaceholderText("例: 渋谷オフィスビル内装工事"), "テスト工事A");
+    // 詳細フィールドは折り畳み済みなので展開してから入力
+    await user.click(screen.getByRole("button", { name: /詳細を設定する/ }));
     await user.type(screen.getByPlaceholderText("工事概要やメモを入力"), "説明文");
     await user.type(screen.getByLabelText("開始日"), "2025-04-01");
     await user.click(screen.getByRole("button", { name: "作成" }));
