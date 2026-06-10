@@ -12,6 +12,7 @@ import { ProjectMapEmbed } from "../components/ProjectMapEmbed.js";
 import { ProjectFlowWidget } from "../components/ProjectFlowWidget.js";
 import { createInitialStageProgresses } from "../lib/project-flow.js";
 import { ProjectFinancePanel } from "../components/ProjectFinancePanel.js";
+import { ContractChecklistPanel } from "../components/ContractChecklistPanel.js";
 import { ConfirmDialog } from "../components/common/ConfirmDialog.js";
 import { ACTION_LABELS } from "../lib/action-labels.js";
 import {
@@ -538,6 +539,7 @@ export function ProjectDetailPage({
         activeTab={
           subPath === "chat" ? "chat" :
           subPath === "finance" ? "finance" :
+          subPath === "contract" ? "contract" :
           "overview"
         }
       />
@@ -564,8 +566,16 @@ export function ProjectDetailPage({
         <ProjectFinancePanel projectId={projectId} />
       )}
 
+      {/* Contract checklist tab */}
+      {subPath === "contract" && (
+        <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+          <h2 className="mb-4 text-base font-bold text-slate-800">契約チェックリスト</h2>
+          <ContractChecklistPanel projectId={projectId} />
+        </div>
+      )}
+
       {/* Overview tab content */}
-      {subPath !== "chat" && subPath !== "finance" && <>
+      {subPath !== "chat" && subPath !== "finance" && subPath !== "contract" && <>
 
       {shouldShowRecordUpgradePrompt && (
         <section

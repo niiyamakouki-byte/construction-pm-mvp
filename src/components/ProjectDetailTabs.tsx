@@ -2,7 +2,7 @@ import { navigate } from "../hooks/useHashRouter.js";
 
 type ProjectDetailTabsProps = {
   projectId: string;
-  activeTab: "overview" | "documents" | "chat" | "finance";
+  activeTab: "overview" | "documents" | "chat" | "finance" | "contract";
 };
 
 export function ProjectDetailTabs({ projectId, activeTab }: ProjectDetailTabsProps) {
@@ -60,6 +60,18 @@ export function ProjectDetailTabs({ projectId, activeTab }: ProjectDetailTabsPro
         }`}
       >
         収支
+      </button>
+      <button
+        type="button"
+        aria-current={activeTab === "contract" ? "page" : undefined}
+        onClick={() => navigate(`/project/${encodedProjectId}/contract`)}
+        className={`flex-1 rounded-xl px-4 py-2 text-sm font-semibold ${
+          activeTab === "contract"
+            ? "bg-brand-600 text-white shadow-sm"
+            : "text-slate-600 hover:bg-slate-50"
+        }`}
+      >
+        契約
       </button>
     </nav>
   );

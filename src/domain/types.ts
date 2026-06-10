@@ -146,3 +146,12 @@ export type Notification = BaseEntity & {
 };
 
 // ProjectPaymentPlan / ExecutionBudget は schemas.ts 側で zod 定義済 (Task #41)
+
+// ── ContractChecklistItem ─────────────────────────────
+
+/** 案件ごとの契約チェックリスト1行 */
+export type ContractChecklistItem = BaseEntity & {
+  projectId: string;
+  itemKey: string;   // DEFAULT_CONTRACT_ITEMS のキー
+  checked: boolean;
+};
