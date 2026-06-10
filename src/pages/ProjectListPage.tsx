@@ -22,9 +22,9 @@ function toLocalDateString(date: Date): string {
 }
 
 const statusColor: Record<ProjectStatus, string> = {
-  planning: "bg-blue-100 text-blue-700 border-blue-200",
+  planning: "bg-gray-100 text-gray-500 border-gray-200",
   active: "bg-emerald-100 text-emerald-700 border-emerald-200",
-  completed: "bg-slate-100 text-slate-600 border-slate-200",
+  completed: "bg-gray-200 text-gray-600 border-gray-300",
   on_hold: "bg-amber-100 text-amber-700 border-amber-200",
 };
 
@@ -487,40 +487,94 @@ export function ProjectListPage() {
       ) : null}
 
       {projects.length === 0 ? (
-        <div className="rounded-[28px] border border-dashed border-slate-300 bg-white px-6 py-12 text-center shadow-sm">
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-[#007AFF]/10 text-4xl">
-            🏗️
+        <section className="overflow-hidden rounded-[32px] border border-slate-200 bg-[linear-gradient(135deg,#0f172a_0%,#173b78_55%,#2563eb_100%)] text-white shadow-[0_28px_80px_-40px_rgba(15,23,42,0.7)]">
+          <div className="grid gap-6 px-6 py-7 sm:px-8 sm:py-8 lg:grid-cols-[minmax(0,1.45fr)_minmax(320px,0.95fr)] lg:items-stretch">
+            <div className="space-y-5">
+              <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-semibold tracking-[0.18em] text-slate-100">
+                <span className="inline-flex h-2 w-2 rounded-full bg-emerald-300" aria-hidden="true" />
+                FIRST PROJECT
+              </div>
+              <div className="max-w-2xl">
+                <h2 className="text-2xl font-bold tracking-tight text-white sm:text-[2rem]">
+                  {t("pages:project_list.empty_title")}
+                </h2>
+                <p className="mt-3 max-w-xl text-sm leading-7 text-slate-200 sm:text-[15px]">
+                  {t("pages:project_list.empty_desc")}
+                </p>
+              </div>
+
+              <div className="grid gap-3 sm:grid-cols-3">
+                {[
+                  { title: "5分で開始", body: "まずは案件名だけでも登録。詳細は後から足せます。" },
+                  { title: "工程表まで直行", body: "工程を組みたい案件は、そのままガントへ進めます。" },
+                  { title: "見積だけ先行OK", body: "まだ現場化前でも、見積だけ作って受注準備できます。" },
+                ].map((item) => (
+                  <div key={item.title} className="rounded-2xl border border-white/12 bg-white/8 px-4 py-4 backdrop-blur-sm">
+                    <p className="text-sm font-semibold text-white">{item.title}</p>
+                    <p className="mt-2 text-xs leading-6 text-slate-200">{item.body}</p>
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex flex-col gap-3 sm:flex-row">
+                <button
+                  type="button"
+                  onClick={() => void handleCreateSample()}
+                  disabled={sampleCreating}
+                  className="inline-flex min-h-14 items-center justify-center rounded-2xl bg-amber-400 px-5 text-sm font-semibold text-slate-950 shadow-[0_18px_40px_-20px_rgba(251,191,36,0.95)] transition hover:bg-amber-300 disabled:opacity-60"
+                >
+                  {sampleCreating ? t("pages:project_list.sample_creating") : t("common:actions.create_sample")}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowForm(true)}
+                  className="inline-flex min-h-14 items-center justify-center rounded-2xl border border-white/18 bg-white/12 px-5 text-sm font-semibold text-white transition hover:bg-white/16"
+                >
+                  {t("common:actions.create_self")}
+                </button>
+              </div>
+              <p className="text-xs text-slate-300">{t("common:messages.sample_deletable")}</p>
+            </div>
+
+            <div className="rounded-[28px] border border-white/10 bg-white/96 p-5 text-slate-900 shadow-2xl shadow-slate-950/15">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-xs font-semibold tracking-[0.18em] text-slate-400">START GUIDE</p>
+                  <h3 className="mt-2 text-xl font-bold text-slate-900">最初の1件を迷わず作る</h3>
+                </div>
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#007AFF]/10 text-2xl" aria-hidden="true">
+                  🏗️
+                </div>
+              </div>
+
+              <div className="mt-5 space-y-3">
+                {[
+                  { step: "1", title: "まず試す", body: "サンプル案件を入れると、工程表と画面構成をすぐ確認できます。" },
+                  { step: "2", title: "現場名で登録", body: "実案件なら自分で作成から開始。住所や開始日は後追いで十分です。" },
+                  { step: "3", title: "受注前なら見積へ", body: "まだ案件登録したくない時は、見積だけ先に作る導線を使います。" },
+                ].map((item) => (
+                  <div key={item.step} className="flex gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-900 text-sm font-semibold text-white">
+                      {item.step}
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-slate-900">{item.title}</p>
+                      <p className="mt-1 text-xs leading-6 text-slate-500">{item.body}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <button
+                type="button"
+                onClick={() => navigate("/estimate")}
+                className="mt-5 inline-flex min-h-12 w-full items-center justify-center rounded-2xl bg-slate-900 px-5 text-sm font-semibold text-white transition hover:bg-slate-800"
+              >
+                {t("pages:project_list.empty_estimate_only")}
+              </button>
+            </div>
           </div>
-          <h2 className="text-xl font-bold text-slate-900">{t("pages:project_list.empty_title")}</h2>
-          <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-slate-500">
-            {t("pages:project_list.empty_desc")}
-          </p>
-          <div className="mt-6 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
-            <button
-              type="button"
-              onClick={() => void handleCreateSample()}
-              disabled={sampleCreating}
-              className="rounded-2xl bg-amber-500 px-5 py-3 text-sm font-semibold text-white shadow-sm hover:bg-amber-600 disabled:opacity-60"
-            >
-              {sampleCreating ? t("pages:project_list.sample_creating") : t("common:actions.create_sample")}
-            </button>
-            <button
-              type="button"
-              onClick={() => setShowForm(true)}
-              className="ios-btn-primary px-5 py-3 text-sm"
-            >
-              {t("common:actions.create_self")}
-            </button>
-            <button
-              type="button"
-              onClick={() => navigate("/estimate")}
-              className="rounded-2xl bg-slate-100 px-5 py-3 text-sm font-semibold text-slate-600"
-            >
-              {t("pages:project_list.empty_estimate_only")}
-            </button>
-          </div>
-          <p className="mt-3 text-xs text-slate-400">{t("common:messages.sample_deletable")}</p>
-        </div>
+        </section>
       ) : (
         <div className="grid gap-3">
           {projects.map((project) => (

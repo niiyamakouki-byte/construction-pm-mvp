@@ -70,7 +70,7 @@ function GanttReadOnly({ tasks }: { tasks: Task[] }) {
 
   const statusColors: Record<string, string> = {
     done: "bg-emerald-400",
-    in_progress: "bg-blue-400",
+    in_progress: "bg-emerald-400",
     todo: "bg-slate-300",
     blocked: "bg-red-400",
   };

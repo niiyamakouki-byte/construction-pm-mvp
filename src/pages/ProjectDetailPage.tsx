@@ -88,9 +88,9 @@ const statusLabel: Record<TaskStatus, string> = {
 };
 
 const statusBg: Record<TaskStatus, string> = {
-  todo: "bg-slate-100 text-slate-700",
-  in_progress: "bg-blue-100 text-blue-700",
-  done: "bg-emerald-100 text-emerald-700",
+  todo: "bg-gray-100 text-gray-500",
+  in_progress: "bg-emerald-100 text-emerald-800",
+  done: "bg-gray-200 text-gray-600",
 };
 
 const statusIcon: Record<TaskStatus, string> = {
@@ -438,9 +438,9 @@ export function ProjectDetailPage({
   })();
 
   const statusColorMap: Record<string, string> = {
-    planning: "bg-blue-100 text-blue-700",
-    active: "bg-emerald-100 text-emerald-700",
-    completed: "bg-slate-100 text-slate-600",
+    planning: "bg-gray-100 text-gray-500",
+    active: "bg-emerald-100 text-emerald-800",
+    completed: "bg-gray-200 text-gray-600",
     on_hold: "bg-amber-100 text-amber-700",
   };
 

@@ -68,9 +68,9 @@ const projectStatusLabel: Record<ProjectStatus, string> = {
 };
 
 const projectStatusTone: Record<ProjectStatus, string> = {
-  planning: "bg-blue-50 text-blue-700 ring-blue-200",
+  planning: "bg-gray-100 text-gray-500 ring-gray-200",
   active: "bg-emerald-50 text-emerald-700 ring-emerald-200",
-  completed: "bg-slate-100 text-slate-700 ring-slate-200",
+  completed: "bg-gray-200 text-gray-600 ring-gray-300",
   on_hold: "bg-amber-50 text-amber-700 ring-amber-200",
 };
 
