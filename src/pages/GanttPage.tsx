@@ -32,7 +32,7 @@ import { getHolidayName } from "../lib/japanese-holidays.js";
 import { readLastProjectId, writeLastProjectId } from "../lib/last-project.js";
 import { cascadeSchedule } from "../lib/cascade-scheduler.js";
 import { filterScheduleTasks } from "../lib/cost-management.js";
-import { exportGanttToPdf } from "../lib/gantt-pdf-export.js";
+import { buildGanttPdfHtml, exportGanttToPdf } from "../lib/gantt-pdf-export.js";
 import { downloadProjectICS } from "../lib/gantt-ics-export.js";
 import { useGoogleCalendar } from "../hooks/useGoogleCalendar.js";
 import { detectScheduleConflicts } from "../lib/schedule-conflict.js";
@@ -375,6 +375,8 @@ function GanttPageContent({ initialProjectId = null }: GanttPageProps) {
   const [connectState, setConnectState] = useState<ConnectState | null>(null);
   const [pdfExporting, setPdfExporting] = useState(false);
   const [pdfError, setPdfError] = useState<string | null>(null);
+  const [pdfPreviewOpen, setPdfPreviewOpen] = useState(false);
+  const [pdfPreviewHtml, setPdfPreviewHtml] = useState<string>("");
   const [undoing, setUndoing] = useState(false);
   const [canUndo, setCanUndo] = useState(() => undoStack.canUndo());
   const [showMilestones, setShowMilestones] = useState(true);
@@ -904,6 +906,23 @@ function GanttPageContent({ initialProjectId = null }: GanttPageProps) {
     navigate(`/gantt/${projectId}`);
   }, []);
 
+  const handlePdfPreview = useCallback(() => {
+    if (!selectedProject) return;
+    try {
+      const html = buildGanttPdfHtml(
+        selectedProject,
+        selectedProjectTasks,
+        chartLayout?.chartStart ?? selectedProject.startDate,
+        chartLayout?.totalDays ?? 0,
+        { autoPrint: false },
+      );
+      setPdfPreviewHtml(html);
+      setPdfPreviewOpen(true);
+    } catch (err) {
+      setPdfError(err instanceof Error ? err.message : "PDFプレビューに失敗しました");
+    }
+  }, [chartLayout, selectedProject, selectedProjectTasks]);
+
   const handlePdfExport = useCallback(() => {
     if (!selectedProject) return;
 
@@ -915,6 +934,7 @@ function GanttPageContent({ initialProjectId = null }: GanttPageProps) {
         chartLayout?.chartStart ?? selectedProject.startDate,
         chartLayout?.totalDays ?? 0,
       );
+      setPdfPreviewOpen(false);
     } catch (err) {
       setPdfError(err instanceof Error ? err.message : "PDF出力に失敗しました");
     } finally {
@@ -1722,7 +1742,7 @@ function GanttPageContent({ initialProjectId = null }: GanttPageProps) {
               <button
                 type="button"
                 disabled={pdfExporting}
-                onClick={() => { setPdfError(null); handlePdfExport(); }}
+                onClick={() => { setPdfError(null); handlePdfPreview(); }}
                 className="rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50"
               >
                 {pdfExporting ? "出力中..." : "PDF出力"}
@@ -2085,6 +2105,44 @@ function GanttPageContent({ initialProjectId = null }: GanttPageProps) {
           </div>
         </div>
       )}
+
+      {pdfPreviewOpen ? (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="工程表PDFプレビュー"
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-4 sm:items-center"
+        >
+          <div className="flex h-[90vh] w-full max-w-4xl flex-col rounded-[28px] bg-white p-6 shadow-2xl">
+            <div className="mb-3 flex items-center justify-between">
+              <h2 className="text-lg font-bold text-slate-900">工程表プレビュー</h2>
+              <p className="text-xs text-slate-500">内容を確認してから出力してください</p>
+            </div>
+            <iframe
+              title="工程表PDFプレビュー"
+              srcDoc={pdfPreviewHtml}
+              className="flex-1 w-full rounded-2xl border border-slate-200 bg-white"
+            />
+            <div className="mt-4 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setPdfPreviewOpen(false)}
+                className="min-h-[44px] rounded-2xl border border-slate-200 bg-white px-5 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50"
+              >
+                閉じる
+              </button>
+              <button
+                type="button"
+                disabled={pdfExporting}
+                onClick={() => { setPdfError(null); handlePdfExport(); }}
+                className="min-h-[44px] rounded-2xl bg-brand-600 px-5 py-2 text-sm font-semibold text-white shadow-sm disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {pdfExporting ? "出力中..." : "印刷 / PDF保存"}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

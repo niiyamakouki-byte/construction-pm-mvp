@@ -78,7 +78,9 @@ export function buildGanttPdfHtml(
   tasks: ExportTask[],
   chartStart: string,
   totalDays: number,
+  options: { autoPrint?: boolean } = {},
 ): string {
+  const { autoPrint = true } = options;
   const sortedTasks = [...tasks].sort((left, right) => {
     const leftDate = left.startDate ?? getTaskEndDate(left) ?? "";
     const rightDate = right.startDate ?? getTaskEndDate(right) ?? "";
@@ -463,11 +465,11 @@ export function buildGanttPdfHtml(
       ${depSection}`
       : '<div class="empty">出力対象のタスクはありません。</div>'}
 
-    <script>
+    ${autoPrint ? `<script>
       window.addEventListener("load", function () {
         window.print();
       });
-    </script>
+    </script>` : ""}
   </body>
 </html>`;
 }

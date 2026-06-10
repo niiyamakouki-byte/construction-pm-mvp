@@ -131,6 +131,24 @@ describe("gantt pdf export", () => {
     expect(html).toContain("2025/1/20");
   });
 
+  it("omits the auto-print script when autoPrint=false (preview mode)", () => {
+    const html = buildGanttPdfHtml(
+      createProject(),
+      [createTask()],
+      "2025-01-04",
+      12,
+      { autoPrint: false },
+    );
+
+    expect(html).not.toContain("window.print()");
+  });
+
+  it("includes the auto-print script by default (export mode)", () => {
+    const html = buildGanttPdfHtml(createProject(), [createTask()], "2025-01-04", 12);
+
+    expect(html).toContain("window.print()");
+  });
+
   it("shows the project status label when present", () => {
     const html = buildGanttPdfHtml(
       createProject({ status: "active" }),
