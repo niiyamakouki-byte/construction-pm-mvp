@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { NavIcon } from "./NavIcons.js";
 
 type MobileNavItem = {
   key: string;
@@ -148,8 +149,8 @@ export function MobileNav({
                         : "text-slate-600 hover:bg-[#007AFF]/5"
                     }`}
                   >
-                    <span className="text-lg" aria-hidden="true">
-                      {item.icon}
+                    <span className="flex shrink-0 items-center justify-center" aria-hidden="true">
+                      <NavIcon id={item.icon} />
                     </span>
                     <span className="text-sm font-semibold">{item.label}</span>
                   </button>

@@ -53,6 +53,7 @@
     "i18next": "^26.0.10",
     "i18next-browser-languagedetector": "^8.2.1",
     "jspdf": "^4.2.1",
+    "lucide-react": "^1.17.0",
     "pdfjs-dist": "4",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",

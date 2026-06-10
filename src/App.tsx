@@ -1,5 +1,6 @@
 import { lazy, Suspense, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { NavIcon } from "./components/NavIcons.js";
 import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts.js";
 import { KeyboardShortcutHelp } from "./components/KeyboardShortcutHelp.js";
 import { InstallPrompt } from "./components/InstallPrompt.js";
@@ -240,28 +241,28 @@ function AppShell() {
     {
       key: "home",
       label: t("common:nav.home"),
-      icon: "🏠",
+      icon: "home",
       path: "/app",
       matchRoute: (currentRoute) => currentRoute === "/app" || currentRoute === "/" || currentRoute === "",
     },
     {
       key: "gantt",
       label: t("common:nav.gantt"),
-      icon: "📊",
+      icon: "gantt",
       path: ganttPath,
       matchRoute: (currentRoute) => currentRoute === "/gantt" || currentRoute.startsWith("/gantt/"),
     },
     {
       key: "tasks",
       label: t("common:nav.tasks"),
-      icon: "🗂",
+      icon: "tasks",
       path: "/tasks",
       matchRoute: (currentRoute) => currentRoute === "/tasks",
     },
     {
       key: "more",
       label: t("common:nav.more"),
-      icon: "☰",
+      icon: "more",
       path: "/notifications",
       matchRoute: (currentRoute) =>
         ["/today", "/invoice", "/estimate", "/takeoff", "/contractors", "/notifications", "/help", "/node-schedule", "/cost-management", "/weather", "/safety", "/procurement", "/orders", "/crm", "/reports", "/invoices", "/invoices/reconcile", "/cross-project-gantt", "/progress-review", "/photos", "/freee", "/finishing", "/schedule", "/phase-templates"].includes(currentRoute) || currentRoute.startsWith("/reports/") || currentRoute.startsWith("/freee?") || currentRoute.startsWith("/finishing"),
@@ -272,28 +273,28 @@ function AppShell() {
     {
       key: "today",
       label: t("common:nav.today"),
-      icon: "📋",
+      icon: "today",
       path: "/today",
       matchRoute: (currentRoute) => currentRoute === "/today",
     },
     {
       key: "notifications",
       label: t("common:nav.notifications"),
-      icon: "🔔",
+      icon: "notifications",
       path: "/notifications",
       matchRoute: (currentRoute) => currentRoute === "/notifications",
     },
     {
       key: "weather",
       label: t("common:nav.weather"),
-      icon: "☔",
+      icon: "weather",
       path: "/weather",
       matchRoute: (currentRoute) => currentRoute === "/weather",
     },
     {
       key: "contractors",
       label: t("common:nav.contractors"),
-      icon: "🏢",
+      icon: "contractors",
       path: "/contractors",
       matchRoute: (currentRoute) => currentRoute === "/contractors",
       dataTour: "nav-contractors",
@@ -301,78 +302,78 @@ function AppShell() {
     {
       key: "estimate",
       label: t("common:nav.estimate"),
-      icon: "🧾",
+      icon: "estimate",
       path: "/estimate",
       matchRoute: (currentRoute) => currentRoute === "/estimate",
     },
     {
       key: "takeoff",
       label: "拾い出し",
-      icon: "📐",
+      icon: "takeoff",
       path: "/takeoff",
       matchRoute: (currentRoute) => currentRoute === "/takeoff",
     },
-    { key: "cross-gantt", label: t("common:nav.cross_gantt"), icon: "📅", path: "/cross-project-gantt", matchRoute: (currentRoute) => currentRoute === "/cross-project-gantt" },
-    { key: "progress-review", label: t("common:nav.progress_review"), icon: "📸", path: "/progress-review", matchRoute: (currentRoute) => currentRoute === "/progress-review" },
-    { key: "photos", label: t("common:nav.photos"), icon: "🖼", path: "/photos", matchRoute: (currentRoute) => currentRoute === "/photos" },
-    { key: "safety", label: t("common:nav.safety"), icon: "🦺", path: "/safety", matchRoute: (currentRoute) => currentRoute === "/safety" },
-    { key: "procurement", label: t("common:nav.procurement"), icon: "📦", path: "/procurement", matchRoute: (currentRoute) => currentRoute === "/procurement" },
-    { key: "orders", label: t("common:nav.orders"), icon: "🗒", path: "/orders", matchRoute: (currentRoute) => currentRoute === "/orders" },
-    { key: "cost", label: t("common:nav.cost"), icon: "💹", path: "/cost-management", matchRoute: (currentRoute) => currentRoute === "/cost-management" },
-    { key: "crm", label: t("common:nav.crm"), icon: "🤝", path: "/crm", matchRoute: (currentRoute) => currentRoute === "/crm" },
+    { key: "cross-gantt", label: t("common:nav.cross_gantt"), icon: "cross-gantt", path: "/cross-project-gantt", matchRoute: (currentRoute) => currentRoute === "/cross-project-gantt" },
+    { key: "progress-review", label: t("common:nav.progress_review"), icon: "progress-review", path: "/progress-review", matchRoute: (currentRoute) => currentRoute === "/progress-review" },
+    { key: "photos", label: t("common:nav.photos"), icon: "photos", path: "/photos", matchRoute: (currentRoute) => currentRoute === "/photos" },
+    { key: "safety", label: t("common:nav.safety"), icon: "safety", path: "/safety", matchRoute: (currentRoute) => currentRoute === "/safety" },
+    { key: "procurement", label: t("common:nav.procurement"), icon: "procurement", path: "/procurement", matchRoute: (currentRoute) => currentRoute === "/procurement" },
+    { key: "orders", label: t("common:nav.orders"), icon: "orders", path: "/orders", matchRoute: (currentRoute) => currentRoute === "/orders" },
+    { key: "cost", label: t("common:nav.cost"), icon: "cost", path: "/cost-management", matchRoute: (currentRoute) => currentRoute === "/cost-management" },
+    { key: "crm", label: t("common:nav.crm"), icon: "crm", path: "/crm", matchRoute: (currentRoute) => currentRoute === "/crm" },
     {
       key: "invoice",
       label: t("common:nav.invoice"),
-      icon: "💴",
+      icon: "invoice",
       path: "/invoice",
       matchRoute: (currentRoute) => currentRoute === "/invoice",
     },
     {
       key: "freee",
       label: t("common:nav.freee"),
-      icon: "📗",
+      icon: "freee",
       path: "/freee",
       matchRoute: (currentRoute) => currentRoute === "/freee" || currentRoute.startsWith("/freee?"),
     },
     {
       key: "help",
       label: t("common:nav.help"),
-      icon: "❓",
+      icon: "help",
       path: "/help",
       matchRoute: (currentRoute) => currentRoute === "/help",
     },
     {
       key: "node",
       label: t("common:nav.node"),
-      icon: "🕸",
+      icon: "node",
       path: "/node-schedule",
       matchRoute: (currentRoute) => currentRoute === "/node-schedule",
     },
     {
       key: "reports",
       label: t("common:nav.reports"),
-      icon: "📄",
+      icon: "reports",
       path: "/reports",
       matchRoute: (currentRoute) => currentRoute === "/reports" || currentRoute.startsWith("/reports/"),
     },
     {
       key: "finishing",
       label: "仕上表",
-      icon: "📋",
+      icon: "finishing",
       path: "/finishing",
       matchRoute: (currentRoute) => currentRoute === "/finishing" || currentRoute.startsWith("/finishing/"),
     },
     {
       key: "schedule",
       label: "工程表",
-      icon: "📅",
+      icon: "schedule",
       path: "/schedule",
       matchRoute: (currentRoute) => currentRoute === "/schedule",
     },
     {
       key: "phase-templates",
       label: "テンプレライブラリ",
-      icon: "📐",
+      icon: "phase-templates",
       path: "/phase-templates",
       matchRoute: (currentRoute) => currentRoute === "/phase-templates",
     },
@@ -834,25 +835,25 @@ function AppShell() {
   };
 
   const allSidebarItems: SidebarItem[] = [
-    { key: "today", label: t("common:nav.dashboard"), icon: "📊", path: "/today", active: route === "/today", group: "today", aiHint: "今日の遅延・予算・現場リスクを見る" },
-    { key: "app", label: t("common:nav.project_list"), icon: "📋", path: "/app", active: route === "/app" || route === "/" || route === "", group: "today", aiHint: "案件一覧から次に触る現場を選ぶ" },
-    { key: "tasks", label: t("common:nav.tasks"), icon: "✅", path: "/tasks", active: route === "/tasks", group: "today", aiHint: "未完了タスクと担当の穴を見る" },
-    { key: "cross-gantt", label: t("common:nav.gantt_chart"), icon: "📅", path: "/cross-project-gantt", active: route === "/cross-project-gantt", group: "field", aiHint: "全案件の工程ずれを比較する" },
-    { key: "schedule", label: "工程表", icon: "📅", path: "/schedule", active: route === "/schedule", group: "field", aiHint: "見積から工程を組む" },
-    { key: "finishing", label: "仕上表", icon: "📋", path: "/finishing", active: route === "/finishing" || route.startsWith("/finishing/"), group: "field", aiHint: "部屋別の仕様と未決を整理する" },
-    { key: "progress-review", label: t("common:nav.progress_review"), icon: "📸", path: "/progress-review", active: route === "/progress-review", group: "field", aiHint: "写真から進捗と不足証跡を見る" },
-    { key: "safety", label: t("common:nav.safety_management"), icon: "🏗️", path: "/safety", active: route === "/safety", group: "field", aiHint: "安全確認と是正漏れを見る" },
-    { key: "phase-templates", label: "テンプレライブラリ", icon: "📐", path: "/phase-templates", active: route === "/phase-templates", group: "field", aiHint: "標準工程テンプレートを探す" },
-    { key: "estimate", label: t("common:nav.estimate"), icon: "💰", path: "/estimate", active: route === "/estimate", group: "money", aiHint: "見積作成と粗利の前提を確認する" },
-    { key: "takeoff", label: "拾い出し", icon: "📐", path: "/takeoff", active: route === "/takeoff", group: "money", aiHint: "図面をなぞって数量を拾い見積へ送る" },
-    { key: "invoice", label: t("common:nav.invoices_nav"), icon: "🧾", path: "/invoice", active: route === "/invoice", group: "money", aiHint: "請求漏れと入金予定を見る" },
-    { key: "cost", label: t("common:nav.cost"), icon: "💹", path: "/cost-management", active: route === "/cost-management", group: "money", aiHint: "予算超過と原価差異を見る" },
-    { key: "reports", label: t("common:nav.reports"), icon: "📈", path: "/reports", active: route === "/reports" || route.startsWith("/reports/"), group: "money", aiHint: "報告書と経営向け集計を出す" },
-    { key: "freee", label: t("common:nav.freee"), icon: "📗", path: "/freee", active: route === "/freee" || route.startsWith("/freee?"), group: "money", aiHint: "会計連携と仕訳候補を見る" },
-    { key: "crm", label: t("common:nav.crm"), icon: "👥", path: "/crm", active: route === "/crm", group: "growth", aiHint: "見込み客と次回接触を整理する" },
-    { key: "contractors", label: t("common:nav.partner_companies"), icon: "🤝", path: "/contractors", active: route === "/contractors", group: "growth", aiHint: "協力会社と発注先候補を見る" },
-    { key: "help", label: t("common:nav.help"), icon: "❓", path: "/help", active: route === "/help", group: "system", aiHint: "使い方とショートカットを見る" },
-    { key: "account", label: "アカウント設定", icon: "⚙️", path: "/account", active: route === "/account", group: "system", aiHint: "ユーザー・組織・表示設定を変える" },
+    { key: "today", label: t("common:nav.dashboard"), icon: "dashboard", path: "/today", active: route === "/today", group: "today", aiHint: "今日の遅延・予算・現場リスクを見る" },
+    { key: "app", label: t("common:nav.project_list"), icon: "project-list", path: "/app", active: route === "/app" || route === "/" || route === "", group: "today", aiHint: "案件一覧から次に触る現場を選ぶ" },
+    { key: "tasks", label: t("common:nav.tasks"), icon: "tasks", path: "/tasks", active: route === "/tasks", group: "today", aiHint: "未完了タスクと担当の穴を見る" },
+    { key: "cross-gantt", label: t("common:nav.gantt_chart"), icon: "cross-gantt", path: "/cross-project-gantt", active: route === "/cross-project-gantt", group: "field", aiHint: "全案件の工程ずれを比較する" },
+    { key: "schedule", label: "工程表", icon: "schedule", path: "/schedule", active: route === "/schedule", group: "field", aiHint: "見積から工程を組む" },
+    { key: "finishing", label: "仕上表", icon: "finishing", path: "/finishing", active: route === "/finishing" || route.startsWith("/finishing/"), group: "field", aiHint: "部屋別の仕様と未決を整理する" },
+    { key: "progress-review", label: t("common:nav.progress_review"), icon: "progress-review", path: "/progress-review", active: route === "/progress-review", group: "field", aiHint: "写真から進捗と不足証跡を見る" },
+    { key: "safety", label: t("common:nav.safety_management"), icon: "safety", path: "/safety", active: route === "/safety", group: "field", aiHint: "安全確認と是正漏れを見る" },
+    { key: "phase-templates", label: "テンプレライブラリ", icon: "phase-templates", path: "/phase-templates", active: route === "/phase-templates", group: "field", aiHint: "標準工程テンプレートを探す" },
+    { key: "estimate", label: t("common:nav.estimate"), icon: "estimate", path: "/estimate", active: route === "/estimate", group: "money", aiHint: "見積作成と粗利の前提を確認する" },
+    { key: "takeoff", label: "拾い出し", icon: "takeoff", path: "/takeoff", active: route === "/takeoff", group: "money", aiHint: "図面をなぞって数量を拾い見積へ送る" },
+    { key: "invoice", label: t("common:nav.invoices_nav"), icon: "invoice", path: "/invoice", active: route === "/invoice", group: "money", aiHint: "請求漏れと入金予定を見る" },
+    { key: "cost", label: t("common:nav.cost"), icon: "cost", path: "/cost-management", active: route === "/cost-management", group: "money", aiHint: "予算超過と原価差異を見る" },
+    { key: "reports", label: t("common:nav.reports"), icon: "reports", path: "/reports", active: route === "/reports" || route.startsWith("/reports/"), group: "money", aiHint: "報告書と経営向け集計を出す" },
+    { key: "freee", label: t("common:nav.freee"), icon: "freee", path: "/freee", active: route === "/freee" || route.startsWith("/freee?"), group: "money", aiHint: "会計連携と仕訳候補を見る" },
+    { key: "crm", label: t("common:nav.crm"), icon: "crm", path: "/crm", active: route === "/crm", group: "growth", aiHint: "見込み客と次回接触を整理する" },
+    { key: "contractors", label: t("common:nav.partner_companies"), icon: "partner-companies", path: "/contractors", active: route === "/contractors", group: "growth", aiHint: "協力会社と発注先候補を見る" },
+    { key: "help", label: t("common:nav.help"), icon: "help", path: "/help", active: route === "/help", group: "system", aiHint: "使い方とショートカットを見る" },
+    { key: "account", label: "アカウント設定", icon: "account", path: "/account", active: route === "/account", group: "system", aiHint: "ユーザー・組織・表示設定を変える" },
   ];
   const sidebarGroups = (Object.keys(sidebarGroupLabels) as SidebarItem["group"][])
     .map((group) => ({
@@ -979,7 +980,7 @@ function AppShell() {
                         data-ai-route={item.key}
                         data-ai-intent={item.aiHint}
                       >
-                        <span className="text-base leading-none" aria-hidden="true">{item.icon}</span>
+                        <span className="flex shrink-0 items-center justify-center" aria-hidden="true"><NavIcon id={item.icon} /></span>
                         <span className="min-w-0 flex-1 truncate">{item.label}</span>
                       </button>
                     ))}
@@ -1041,7 +1042,7 @@ function AppShell() {
                   isActive ? "text-[#007AFF]" : "text-slate-400"
                 }`}
               >
-                <span className="text-xl leading-none" aria-hidden="true">{tab.icon}</span>
+                <span className="flex items-center justify-center" aria-hidden="true"><NavIcon id={tab.icon} /></span>
                 <span className="text-[10px] font-semibold leading-tight">{tab.label}</span>
               </button>
             );
@@ -1084,7 +1085,7 @@ function AppShell() {
                                 : "border-slate-200 bg-white text-slate-700"
                             }`}
                           >
-                            <span aria-hidden="true">{tab.icon}</span>
+                            <span className="flex items-center justify-center" aria-hidden="true"><NavIcon id={tab.icon} /></span>
                             {tab.label}
                           </button>
                         ))}
