@@ -65,6 +65,7 @@ const LongtermFollowupPageLazy = lazy(() => import("./components/LongtermFollowu
 const LocalSeoPageLazy = lazy(() => import("./components/LocalSeoPage.js").then((m) => ({ default: m.LocalSeoPage })));
 const InsuranceAssessmentPageLazy = lazy(() => import("./pages/InsuranceAssessmentPage.js").then((m) => ({ default: m.InsuranceAssessmentPage })));
 const PhaseTemplateLibraryPage = lazy(() => import("./pages/PhaseTemplateLibraryPage.js").then((m) => ({ default: m.PhaseTemplateLibraryPage })));
+const TakeoffPage = lazy(() => import("./pages/TakeoffPage.js").then((m) => ({ default: m.TakeoffPage })));
 import { ErrorBoundary } from "./components/ErrorBoundary.js";
 import { AuthGuard } from "./components/AuthGuard.js";
 import { OnboardingWizard, useOnboardingDone } from "./components/OnboardingWizard.js";
@@ -141,6 +142,7 @@ const moreTabGroup: Record<string, SidebarItem["group"]> = {
   "phase-templates": "field",
   node: "field",
   estimate: "money",
+  takeoff: "money",
   cost: "money",
   invoice: "money",
   freee: "money",
@@ -262,7 +264,7 @@ function AppShell() {
       icon: "☰",
       path: "/notifications",
       matchRoute: (currentRoute) =>
-        ["/today", "/invoice", "/estimate", "/contractors", "/notifications", "/help", "/node-schedule", "/cost-management", "/weather", "/safety", "/procurement", "/orders", "/crm", "/reports", "/invoices", "/invoices/reconcile", "/cross-project-gantt", "/progress-review", "/photos", "/freee", "/finishing", "/schedule", "/phase-templates"].includes(currentRoute) || currentRoute.startsWith("/reports/") || currentRoute.startsWith("/freee?") || currentRoute.startsWith("/finishing"),
+        ["/today", "/invoice", "/estimate", "/takeoff", "/contractors", "/notifications", "/help", "/node-schedule", "/cost-management", "/weather", "/safety", "/procurement", "/orders", "/crm", "/reports", "/invoices", "/invoices/reconcile", "/cross-project-gantt", "/progress-review", "/photos", "/freee", "/finishing", "/schedule", "/phase-templates"].includes(currentRoute) || currentRoute.startsWith("/reports/") || currentRoute.startsWith("/freee?") || currentRoute.startsWith("/finishing"),
     },
   ];
 
@@ -302,6 +304,13 @@ function AppShell() {
       icon: "🧾",
       path: "/estimate",
       matchRoute: (currentRoute) => currentRoute === "/estimate",
+    },
+    {
+      key: "takeoff",
+      label: "拾い出し",
+      icon: "📐",
+      path: "/takeoff",
+      matchRoute: (currentRoute) => currentRoute === "/takeoff",
     },
     { key: "cross-gantt", label: t("common:nav.cross_gantt"), icon: "📅", path: "/cross-project-gantt", matchRoute: (currentRoute) => currentRoute === "/cross-project-gantt" },
     { key: "progress-review", label: t("common:nav.progress_review"), icon: "📸", path: "/progress-review", matchRoute: (currentRoute) => currentRoute === "/progress-review" },
@@ -701,6 +710,13 @@ function AppShell() {
     if (route === "/estimate") {
       return <EstimatePage />;
     }
+    if (route === "/takeoff") {
+      return (
+        <ErrorBoundary fallbackTitle="拾い出しエラー">
+          <TakeoffPage />
+        </ErrorBoundary>
+      );
+    }
     if (route === "/cost-management") {
       return (
         <ErrorBoundary fallbackTitle={t("errors:page_error.cost")}>
@@ -828,6 +844,7 @@ function AppShell() {
     { key: "safety", label: t("common:nav.safety_management"), icon: "🏗️", path: "/safety", active: route === "/safety", group: "field", aiHint: "安全確認と是正漏れを見る" },
     { key: "phase-templates", label: "テンプレライブラリ", icon: "📐", path: "/phase-templates", active: route === "/phase-templates", group: "field", aiHint: "標準工程テンプレートを探す" },
     { key: "estimate", label: t("common:nav.estimate"), icon: "💰", path: "/estimate", active: route === "/estimate", group: "money", aiHint: "見積作成と粗利の前提を確認する" },
+    { key: "takeoff", label: "拾い出し", icon: "📐", path: "/takeoff", active: route === "/takeoff", group: "money", aiHint: "図面をなぞって数量を拾い見積へ送る" },
     { key: "invoice", label: t("common:nav.invoices_nav"), icon: "🧾", path: "/invoice", active: route === "/invoice", group: "money", aiHint: "請求漏れと入金予定を見る" },
     { key: "cost", label: t("common:nav.cost"), icon: "💹", path: "/cost-management", active: route === "/cost-management", group: "money", aiHint: "予算超過と原価差異を見る" },
     { key: "reports", label: t("common:nav.reports"), icon: "📈", path: "/reports", active: route === "/reports" || route.startsWith("/reports/"), group: "money", aiHint: "報告書と経営向け集計を出す" },
