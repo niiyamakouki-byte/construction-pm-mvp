@@ -213,6 +213,14 @@ function getWeatherRiskLabel(level: "normal" | "warning" | "danger"): string {
   return "施工可";
 }
 
+function formatPercent(value: number): string {
+  return `${value.toFixed(1)}%`;
+}
+
+function clampMinimumCount(value: number): number {
+  return Math.max(0, value);
+}
+
 // ── Main Component ─────────────────────────────────────
 
 function TodayDashboardPageContent() {
@@ -764,6 +772,75 @@ function TodayDashboardPageContent() {
     [allTasks, today],
   );
 
+  const dashboardCardMetrics = useMemo(() => {
+    const weekEnd = new Date(`${today}T00:00:00`);
+    weekEnd.setDate(weekEnd.getDate() + 6);
+    const weekEndStr = toLocalDateString(weekEnd);
+
+    const todayScheduleCount = tasks.length + (todayGoogleCalendar.connected ? todayGoogleCalendar.events.length : 0);
+    const weeklyActiveProjects = allProjects.filter((project) => {
+      if (project.status !== "active" && project.status !== "planning") return false;
+      const projectTasks = allTasks.filter((task) => task.projectId === project.id);
+      if (projectTasks.length === 0) return project.status === "active";
+      return projectTasks.some((task) => {
+        const startDate = task.startDate ?? task.dueDate;
+        const endDate = task.dueDate ?? task.startDate ?? startDate;
+        if (!startDate || !endDate || task.status === "done") return false;
+        return startDate <= weekEndStr && endDate >= today;
+      });
+    }).length;
+
+    const unreadNotificationCount = triggeredAlerts.length + procurementAlerts.length + overdueTasks;
+    const planningEstimateCount = allProjects.filter((project) => project.status === "planning").length;
+
+    const totalBudget = allProjects.reduce((sum, project) => sum + (project.budget ?? 0), 0);
+    const totalSpent = allProjects.reduce((sum, project) => {
+      const costRows = buildProjectCostRows(project.id, {
+        tasks: allProjectTasks,
+        costItems,
+        expenses,
+      });
+      return sum + costRows.reduce((projectSum, row) => projectSum + row.amount, 0);
+    }, 0);
+    const grossMargin =
+      totalBudget > 0
+        ? ((totalBudget - totalSpent) / totalBudget) * 100
+        : null;
+
+    const openIssueCount = clampMinimumCount(overdueTasks + procurementAlerts.length + triggeredAlerts.length + inProgressTasks);
+
+    return {
+      todayScheduleValue: `${todayScheduleCount}件`,
+      todayScheduleSubtext: todayGoogleCalendar.connected
+        ? `個人予定 ${todayGoogleCalendar.events.length}件を含む`
+        : "会議・打合せ含む",
+      weeklyActiveProjectsValue: `${weeklyActiveProjects}現場稼働`,
+      weeklyActiveProjectsSubtext: weeklyActiveProjects > 0 ? `今週 ${weeklyActiveProjects}件が進行予定` : "今週の稼働予定なし",
+      unreadNotificationsValue: `${unreadNotificationCount}件`,
+      unreadNotificationsSubtext: `期限超過 ${overdueTasks} / 調達 ${procurementAlerts.length}`,
+      planningEstimateValue: `${planningEstimateCount}件`,
+      planningEstimateSubtext: planningEstimateCount > 0 ? "着工前・見積調整中" : "見積案件なし",
+      grossMarginValue: grossMargin === null ? "未設定" : formatPercent(grossMargin),
+      grossMarginSubtext: totalBudget > 0 ? `予算 ${formatCurrency(totalBudget)}` : "予算データ未設定",
+      openIssuesValue: `${openIssueCount}件`,
+      openIssuesSubtext: `進行中 ${inProgressTasks} / アラート ${triggeredAlerts.length}`,
+    };
+  }, [
+    allProjectTasks,
+    allProjects,
+    allTasks,
+    costItems,
+    expenses,
+    inProgressTasks,
+    overdueTasks,
+    procurementAlerts.length,
+    tasks.length,
+    today,
+    todayGoogleCalendar.connected,
+    todayGoogleCalendar.events.length,
+    triggeredAlerts.length,
+  ]);
+
   // ── Render ───────────────────────────────────────────
   if (loading) {
     return <TodayDashboardSkeleton />;
@@ -837,48 +914,48 @@ function TodayDashboardPageContent() {
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
         <DashboardCard
           title="今日の予定"
-          value="3件"
-          subtext="会議・打合せ含む"
+          value={dashboardCardMetrics.todayScheduleValue}
+          subtext={dashboardCardMetrics.todayScheduleSubtext}
           icon="📅"
           accent="primary"
           onClick={() => navigate("/tasks")}
         />
         <DashboardCard
           title="今週の現場"
-          value="5現場稼働"
-          subtext="南青山・品川・他"
+          value={dashboardCardMetrics.weeklyActiveProjectsValue}
+          subtext={dashboardCardMetrics.weeklyActiveProjectsSubtext}
           icon="🏗️"
           accent="primary"
           onClick={() => navigate("/app")}
         />
         <DashboardCard
           title="未読通知"
-          value="12件"
-          subtext="タスク・アラート他"
+          value={dashboardCardMetrics.unreadNotificationsValue}
+          subtext={dashboardCardMetrics.unreadNotificationsSubtext}
           icon="🔔"
           accent="warning"
           onClick={() => navigate("/notifications")}
         />
         <DashboardCard
           title="進行中の見積"
-          value="8件"
-          subtext="提出待ち含む"
+          value={dashboardCardMetrics.planningEstimateValue}
+          subtext={dashboardCardMetrics.planningEstimateSubtext}
           icon="📝"
           accent="warm"
           onClick={() => navigate("/estimate")}
         />
         <DashboardCard
           title="今月の粗利率"
-          value="32.5%"
-          subtext="目標 30% 超過"
+          value={dashboardCardMetrics.grossMarginValue}
+          subtext={dashboardCardMetrics.grossMarginSubtext}
           icon="📊"
           accent="success"
           onClick={() => navigate("/reports")}
         />
         <DashboardCard
           title="残課題"
-          value="14件"
-          subtext="期限超過・未対応"
+          value={dashboardCardMetrics.openIssuesValue}
+          subtext={dashboardCardMetrics.openIssuesSubtext}
           icon="⚠️"
           accent="warning"
           onClick={() => navigate("/tasks")}

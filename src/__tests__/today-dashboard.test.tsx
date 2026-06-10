@@ -2,9 +2,9 @@
  * TodayDashboardPage のテスト
  */
 import { describe, expect, it, beforeEach, vi } from "vitest";
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { TodayDashboardPage } from "../pages/TodayDashboardPage.js";
-import type { Task, Project } from "../domain/types.js";
+import type { Task, Project, CostItem, Expense, Contractor } from "../domain/types.js";
 
 // Mock fetch for weather API
 vi.stubGlobal("fetch", vi.fn(() => Promise.reject(new Error("network"))));
@@ -12,10 +12,16 @@ vi.stubGlobal("fetch", vi.fn(() => Promise.reject(new Error("network"))));
 // Shared store mock state
 let mockTasks: Task[] = [];
 let mockProjects: Project[] = [];
+let mockCostItems: CostItem[] = [];
+let mockExpenses: Expense[] = [];
+let mockContractors: Contractor[] = [];
 
 const mockTaskFindAll = vi.fn(async () => [...mockTasks]);
 const mockTaskUpdate = vi.fn(async () => {});
 const mockProjectFindAll = vi.fn(async () => [...mockProjects]);
+const mockCostItemFindAll = vi.fn(async () => [...mockCostItems]);
+const mockContractorFindAll = vi.fn(async () => [...mockContractors]);
+const mockExpenseFindAll = vi.fn(async () => [...mockExpenses]);
 const mockPhotoUpload = vi.fn(async (_file: File, _projectId: string) => ({
   id: "photo-1",
   url: "https://example.com/photo.jpg",
@@ -41,6 +47,24 @@ vi.mock("../stores/task-store.js", () => ({
 vi.mock("../stores/project-store.js", () => ({
   createProjectRepository: () => ({
     findAll: mockProjectFindAll,
+  }),
+}));
+
+vi.mock("../stores/cost-item-store.js", () => ({
+  createCostItemRepository: () => ({
+    findAll: mockCostItemFindAll,
+  }),
+}));
+
+vi.mock("../stores/contractor-store.js", () => ({
+  createContractorRepository: () => ({
+    findAll: mockContractorFindAll,
+  }),
+}));
+
+vi.mock("../infra/create-app-repository.js", () => ({
+  createAppRepository: () => ({
+    findAll: mockExpenseFindAll,
   }),
 }));
 
@@ -98,15 +122,38 @@ function makeProject(overrides: Partial<Project> = {}): Project {
   };
 }
 
+function makeCostItem(overrides: Partial<CostItem> = {}): CostItem {
+  const now = new Date().toISOString();
+  const today = new Date().toISOString().slice(0, 10);
+  return {
+    id: "11111111-1111-4111-8111-111111111111",
+    projectId: "11111111-1111-4111-8111-111111111112",
+    description: "材料仕入",
+    amount: 100000,
+    category: "材料費",
+    costDate: today,
+    paymentStatus: "paid",
+    createdAt: now,
+    updatedAt: now,
+    ...overrides,
+  };
+}
+
 
 describe("TodayDashboardPage", () => {
   beforeEach(() => {
     cleanup();
     mockTasks = [];
     mockProjects = [];
+    mockCostItems = [];
+    mockExpenses = [];
+    mockContractors = [];
     mockTaskFindAll.mockClear();
     mockTaskUpdate.mockClear();
     mockProjectFindAll.mockClear();
+    mockCostItemFindAll.mockClear();
+    mockContractorFindAll.mockClear();
+    mockExpenseFindAll.mockClear();
     mockPhotoUpload.mockClear();
     mockPhotoClassificationUpdate.mockClear();
     Object.defineProperty(globalThis.URL, "createObjectURL", {
@@ -129,7 +176,11 @@ describe("TodayDashboardPage", () => {
   it("データ読み込み後にタスク件数バッジが表示される", async () => {
     mockTasks = [makeTask({ name: "タスクA" })];
     render(<TodayDashboardPage />);
-    await waitFor(() => expect(screen.getByText("1件")).toBeDefined());
+    await waitFor(() => {
+      const scheduleCard = screen.getByText("今日の予定").closest("button");
+      expect(scheduleCard).not.toBeNull();
+      expect(within(scheduleCard as HTMLElement).getByText("1件")).toBeDefined();
+    });
   });
 
   it("初回ロード中はダッシュボード用スケルトンが表示される", () => {
@@ -189,6 +240,80 @@ describe("TodayDashboardPage", () => {
       expect(screen.getByText("完了タスク")).toBeDefined();
       expect(screen.getByText("期限超過")).toBeDefined();
     });
+  });
+
+  it("ダッシュボードカードが実データを表示する", async () => {
+    const today = new Date().toISOString().slice(0, 10);
+    mockProjects = [
+      makeProject({
+        id: "11111111-1111-4111-8111-111111111112",
+        budget: 500000,
+      }),
+      makeProject({
+        id: "11111111-1111-4111-8111-111111111113",
+        name: "世田谷内装改修",
+        status: "planning",
+        budget: 250000,
+      }),
+    ];
+    mockTasks = [
+      makeTask({
+        id: "11111111-1111-4111-8111-111111111114",
+        projectId: "11111111-1111-4111-8111-111111111112",
+        name: "今日対応タスク",
+        dueDate: today,
+      }),
+      makeTask({
+        id: "11111111-1111-4111-8111-111111111115",
+        projectId: "11111111-1111-4111-8111-111111111112",
+        name: "進行中タスク",
+        status: "in_progress",
+        startDate: today,
+        dueDate: today,
+      }),
+      makeTask({
+        id: "11111111-1111-4111-8111-111111111116",
+        projectId: "11111111-1111-4111-8111-111111111113",
+        name: "見積作成",
+        status: "todo",
+        startDate: today,
+        dueDate: today,
+      }),
+    ];
+    mockCostItems = [
+      makeCostItem({
+        projectId: "11111111-1111-4111-8111-111111111112",
+        amount: 150000,
+      }),
+    ];
+
+    render(<TodayDashboardPage />);
+
+    await waitFor(() => {
+      const scheduleCard = screen.getByText("今日の予定").closest("button");
+      const siteCard = screen.getByText("今週の現場").closest("button");
+      const notificationCard = screen.getByText("未読通知").closest("button");
+      const estimateCard = screen.getByText("進行中の見積").closest("button");
+      const marginCard = screen.getByText("今月の粗利率").closest("button");
+      const issueCard = screen.getByText("残課題").closest("button");
+
+      expect(scheduleCard).not.toBeNull();
+      expect(siteCard).not.toBeNull();
+      expect(notificationCard).not.toBeNull();
+      expect(estimateCard).not.toBeNull();
+      expect(marginCard).not.toBeNull();
+      expect(issueCard).not.toBeNull();
+
+      expect(within(scheduleCard as HTMLElement).getByText("3件")).toBeDefined();
+      expect(within(siteCard as HTMLElement).getByText("2現場稼働")).toBeDefined();
+      expect(within(notificationCard as HTMLElement).getByText("0件")).toBeDefined();
+      expect(within(estimateCard as HTMLElement).getByText("1件")).toBeDefined();
+      expect(within(marginCard as HTMLElement).getByText("80.0%")).toBeDefined();
+      expect(within(issueCard as HTMLElement).getByText("1件")).toBeDefined();
+    });
+
+    expect(screen.getByText("予算 ￥750,000")).toBeDefined();
+    expect(screen.queryByText("32.5%")).toBeNull();
   });
 
   it("「本日の概要」ヘッダーが表示される", async () => {
