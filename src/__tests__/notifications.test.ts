@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { CostItem, Expense, Project, Task } from "../domain/types.js";
-import { buildNotifications } from "../lib/notifications.js";
+import { buildNotifications, isStaleOverdue, STALE_OVERDUE_DAYS } from "../lib/notifications.js";
 
 function makeProject(overrides: Partial<Project> = {}): Project {
   return {
@@ -105,5 +105,37 @@ describe("buildNotifications", () => {
     expect(notifications[0].tone).toBe("orange");
     expect(notifications[0].message).toContain("リードタイム 2日");
     expect(notifications[0].path).toBe("/gantt/p-1");
+  });
+
+  it("annotates overdue notifications with daysOverdue", () => {
+    const notifications = buildNotifications({
+      projects: [makeProject({ budget: 0 })],
+      tasks: [
+        makeTask({ id: "t-fresh", name: "壁紙貼り", dueDate: "2025-01-05" }),
+        makeTask({ id: "t-stale", name: "巾木補修", dueDate: "2024-11-01" }),
+      ],
+      today: "2025-01-10",
+    });
+
+    const fresh = notifications.find((item) => item.taskId === "t-fresh");
+    const stale = notifications.find((item) => item.taskId === "t-stale");
+    expect(fresh?.daysOverdue).toBe(5);
+    expect(stale?.daysOverdue).toBeGreaterThanOrEqual(STALE_OVERDUE_DAYS);
+    expect(isStaleOverdue(fresh!)).toBe(false);
+    expect(isStaleOverdue(stale!)).toBe(true);
+  });
+
+  it("keeps stale overdue notifications in the result set (no filtering)", () => {
+    // 古い超過もデータとしては残し、UI側でサブグループに収納する
+    const notifications = buildNotifications({
+      projects: [makeProject({ budget: 0 })],
+      tasks: [
+        makeTask({ id: "t-very-old", name: "古い超過", dueDate: "2024-01-01" }),
+      ],
+      today: "2025-01-10",
+    });
+    expect(notifications).toHaveLength(1);
+    expect(notifications[0].type).toBe("overdue_task");
+    expect(isStaleOverdue(notifications[0])).toBe(true);
   });
 });

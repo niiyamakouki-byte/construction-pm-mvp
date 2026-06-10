@@ -22,7 +22,28 @@ export type AppNotification = {
   projectId?: string;
   taskId?: string;
   sortDate?: string;
+  daysOverdue?: number;
 };
+
+/**
+ * 期限から STALE_OVERDUE_DAYS 日以上経過した overdue_task は
+ * バナーUI上で「古い超過」サブグループに収納する（情報は消さない）。
+ */
+export const STALE_OVERDUE_DAYS = 30;
+
+export function isStaleOverdue(notification: AppNotification): boolean {
+  return (
+    notification.type === "overdue_task" &&
+    typeof notification.daysOverdue === "number" &&
+    notification.daysOverdue >= STALE_OVERDUE_DAYS
+  );
+}
+
+function diffDays(fromDateString: string, toDateString: string): number {
+  const from = new Date(`${fromDateString}T00:00:00`).getTime();
+  const to = new Date(`${toDateString}T00:00:00`).getTime();
+  return Math.floor((to - from) / (1000 * 60 * 60 * 24));
+}
 
 type NotificationInput = {
   projects: Project[];
@@ -78,16 +99,18 @@ export function buildNotifications({
     .filter((task) => task.status !== "done" && task.dueDate && task.dueDate < today)
     .map((task) => {
       const projectName = projectMap.get(task.projectId)?.name ?? "未割当案件";
+      const dueDate = task.dueDate as string;
       return {
         id: `overdue:${task.id}`,
         type: "overdue_task" as const,
         tone: "red" as const,
         title: "期限超過タスク",
-        message: `${projectName}: ${task.name} は ${task.dueDate} までに対応が必要でした。`,
+        message: `${projectName}: ${task.name} は ${dueDate} までに対応が必要でした。`,
         path: "/tasks",
         projectId: task.projectId,
         taskId: task.id,
-        sortDate: task.dueDate,
+        sortDate: dueDate,
+        daysOverdue: diffDays(dueDate, today),
       };
     });
 
