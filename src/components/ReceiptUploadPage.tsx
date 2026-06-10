@@ -63,7 +63,7 @@ function DropZone({ onTextReady }: DropZoneProps) {
       className={[
         "flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed py-8 text-sm transition-colors",
         dragging
-          ? "border-blue-400 bg-blue-50 text-blue-700"
+          ? "border-emerald-400 bg-emerald-50 text-emerald-700"
           : "border-slate-300 bg-slate-50 text-slate-500",
       ].join(" ")}
     >
@@ -247,7 +247,7 @@ export function ReceiptUploadPage() {
           <button
             onClick={handleParse}
             disabled={!rawText.trim()}
-            className="w-full rounded-lg bg-blue-600 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-40"
+            className="w-full rounded-lg bg-emerald-600 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-40"
           >
             内容を読み取る
           </button>
@@ -268,7 +268,7 @@ export function ReceiptUploadPage() {
             <button
               onClick={handleSubmit}
               disabled={submitting}
-              className="flex-1 rounded-lg bg-blue-600 px-4 py-3 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
+              className="flex-1 rounded-lg bg-emerald-600 px-4 py-3 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-50"
             >
               {submitting ? "送信中…" : "freee に送信"}
             </button>

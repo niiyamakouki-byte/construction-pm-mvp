@@ -214,7 +214,7 @@ export function InvoiceManagementPage() {
         <h1 className="text-xl font-bold text-slate-800">請求書管理</h1>
         <button
           onClick={() => setShowForm((v) => !v)}
-          className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+          className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700"
         >
           {showForm ? "閉じる" : ACTION_LABELS.invoice.register}
         </button>
@@ -352,7 +352,7 @@ export function InvoiceManagementPage() {
             <button
               onClick={() => void handleSubmit()}
               disabled={saving}
-              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+              className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-50"
             >
               {saving ? ACTION_LABELS.invoice.registering : ACTION_LABELS.invoice.register}
             </button>
@@ -393,7 +393,7 @@ export function InvoiceManagementPage() {
             onClick={() => setFilterStatus(s)}
             className={`shrink-0 rounded-full px-3 py-1 text-xs font-medium ${
               filterStatus === s
-                ? "bg-blue-600 text-white"
+                ? "bg-emerald-600 text-white"
                 : "bg-slate-100 text-slate-600 hover:bg-slate-200"
             }`}
           >
@@ -414,7 +414,7 @@ export function InvoiceManagementPage() {
               <button
                 type="button"
                 onClick={() => setShowForm(true)}
-                className="mt-5 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700"
+                className="mt-5 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700"
               >
                 {ACTION_LABELS.invoice.register}
               </button>
@@ -428,7 +428,7 @@ export function InvoiceManagementPage() {
               <button
                 type="button"
                 onClick={() => setFilterStatus("全部")}
-                className="mt-5 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700"
+                className="mt-5 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700"
               >
                 フィルターを解除
               </button>

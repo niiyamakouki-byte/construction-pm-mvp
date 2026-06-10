@@ -269,7 +269,7 @@ function CommentForm({ projectId }: { projectId: string }) {
         <button
           type="submit"
           disabled={!comment.trim()}
-          className="rounded-xl bg-blue-600 py-3 text-sm font-semibold text-white disabled:opacity-40"
+          className="rounded-xl bg-emerald-600 py-3 text-sm font-semibold text-white disabled:opacity-40"
         >
           送信する
         </button>

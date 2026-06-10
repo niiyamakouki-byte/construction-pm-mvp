@@ -1201,7 +1201,7 @@ export function DrawingViewer({
                     ? "bg-emerald-600 text-white"
                     : key === "diff"
                     ? "bg-purple-600 text-white"
-                    : "bg-blue-600 text-white"
+                    : "bg-emerald-600 text-white"
                   : "bg-slate-800 text-white hover:bg-slate-700"
               }`}
             >
@@ -1397,7 +1397,7 @@ export function DrawingViewer({
             <button
               type="button"
               onClick={() => { setPopover(null); }}
-              className="rounded-2xl py-3 text-sm font-bold transition-colors bg-blue-600 text-white"
+              className="rounded-2xl py-3 text-sm font-bold transition-colors bg-emerald-600 text-white"
               style={{ display: "none" }}
             />
             {/* PDF report download button */}

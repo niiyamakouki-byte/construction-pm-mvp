@@ -367,7 +367,7 @@ function OrderForm({
             </button>
             <button
               type="submit"
-              className="px-5 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700"
+              className="px-5 py-2 rounded-lg bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700"
             >
               下書き保存
             </button>
@@ -464,7 +464,7 @@ function OrderCard({
           <button
             key={next}
             onClick={() => onTransition(order.id, next)}
-            className="px-3 py-1 rounded-lg text-xs font-medium bg-blue-600 text-white hover:bg-blue-700"
+            className="px-3 py-1 rounded-lg text-xs font-medium bg-emerald-600 text-white hover:bg-emerald-700"
           >
             → {next}
           </button>
@@ -642,7 +642,7 @@ export function OrderManagementPage({
         </div>
         <button
           onClick={() => setShowForm(true)}
-          className="px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 shadow-sm"
+          className="px-4 py-2 rounded-lg bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700 shadow-sm"
         >
           + 発注書作成
         </button>
@@ -675,13 +675,13 @@ export function OrderManagementPage({
         <div className="flex rounded-lg border border-slate-200 overflow-hidden text-sm">
           <button
             onClick={() => setViewMode("list")}
-            className={`px-3 py-1.5 ${viewMode === "list" ? "bg-blue-600 text-white" : "bg-white text-slate-600 hover:bg-slate-50"}`}
+            className={`px-3 py-1.5 ${viewMode === "list" ? "bg-emerald-600 text-white" : "bg-white text-slate-600 hover:bg-slate-50"}`}
           >
             リスト
           </button>
           <button
             onClick={() => setViewMode("kanban")}
-            className={`px-3 py-1.5 ${viewMode === "kanban" ? "bg-blue-600 text-white" : "bg-white text-slate-600 hover:bg-slate-50"}`}
+            className={`px-3 py-1.5 ${viewMode === "kanban" ? "bg-emerald-600 text-white" : "bg-white text-slate-600 hover:bg-slate-50"}`}
           >
             カンバン
           </button>

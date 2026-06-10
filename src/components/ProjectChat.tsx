@@ -311,7 +311,7 @@ export function ProjectChat({
             onClick={() => setFilterType(tab.value)}
             className={`shrink-0 rounded-full px-2.5 py-0.5 text-[11px] font-medium transition-colors ${
               filterType === tab.value
-                ? "bg-blue-600 text-white"
+                ? "bg-emerald-600 text-white"
                 : "bg-white text-slate-500 border border-slate-200 hover:bg-slate-100"
             }`}
           >
@@ -513,7 +513,7 @@ export function ProjectChat({
           <button
             type="submit"
             disabled={submitting || !inputValue.trim()}
-            className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-blue-600 text-white hover:bg-blue-700 transition-colors disabled:opacity-40"
+            className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-emerald-600 text-white hover:bg-emerald-700 transition-colors disabled:opacity-40"
             aria-label="送信"
           >
             <svg
