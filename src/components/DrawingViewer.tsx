@@ -22,6 +22,7 @@ import {
   saveScale,
   type Point,
 } from "../lib/drawing-measure.js";
+import { resolveDrawingScale } from "../lib/drawing-scale-auto.js";
 import { comparePDFs, type DiffResult, type DiffColor } from "../lib/blueprint-diff.js";
 import {
   createSession,
@@ -74,6 +75,20 @@ type Props = {
   costMaster?: CostMasterEntry[];
   /** Project ID for session persistence */
   projectId?: string;
+  /**
+   * PDF テキスト検出による縮尺（mm/pt）。
+   * localStorage に手動値がなければ自動的に scale の初期値として使われる。
+   */
+  detectedScaleMmPerPt?: number;
+  /**
+   * 表示用縮尺ラベル（例: "1:50"）。detectedScaleMmPerPt が有効なときに UI に表示。
+   */
+  detectedScaleLabel?: string;
+  /**
+   * PDF をラスタライズした際のレンダリング解像度（px/pt）。
+   * 省略時は標準スクリーン解像度 96dpi (= 96/72 ≈ 1.333 px/pt) を使用。
+   */
+  renderPxPerPt?: number;
 };
 
 type PopoverState = {
@@ -105,12 +120,17 @@ export function DrawingViewer({
   drawingName = "図面",
   costMaster = [],
   projectId,
+  detectedScaleMmPerPt,
+  detectedScaleLabel,
+  renderPxPerPt,
 }: Props) {
   const [pins, setPins] = useState<DrawingPin[]>(initialPins);
   const [popover, setPopover] = useState<PopoverState | null>(null);
   const [draft, setDraft] = useState<Partial<DrawingPin>>({});
   const [mode, setMode] = useState<ViewerMode>("pin");
   const [scale, setScale] = useState<number | null>(null);
+  const [scaleIsAuto, setScaleIsAuto] = useState(false);
+  const [autoScaleLabel, setAutoScaleLabel] = useState<string | null>(null);
   const [measureState, setMeasureState] = useState<MeasureState>({ stage: "idle" });
   const [areaState, setAreaState] = useState<AreaState>({ stage: "collecting", points: [] });
   const [calibrateState, setCalibrateState] = useState<CalibrateState>({ stage: "idle" });
@@ -143,12 +163,22 @@ export function DrawingViewer({
   // AI prediction: ghost point for next likely position
   const [pickupPrediction, setPickupPrediction] = useState<TakeoffPoint | null>(null);
 
-  // Load persisted scale on mount
+  // Load persisted scale on mount; fall back to PDF auto-detected scale if no manual value saved
   useEffect(() => {
     const saved = loadScale(drawingId);
+    const resolved = resolveDrawingScale(
+      saved,
+      detectedScaleMmPerPt ?? null,
+      detectedScaleLabel ?? null,
+      renderPxPerPt,
+    );
     // eslint-disable-next-line react-hooks/set-state-in-effect -- drawingId変化時にlocalStorageから倍率を復元する初期化パターン
-    if (saved !== null) setScale(saved);
-  }, [drawingId]);
+    if (resolved.scale !== null) setScale(resolved.scale);
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- 同上
+    setScaleIsAuto(resolved.isAutoDetected);
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- 同上
+    setAutoScaleLabel(resolved.detectedScaleLabel);
+  }, [drawingId, detectedScaleMmPerPt, detectedScaleLabel, renderPxPerPt]);
 
   // Load most recent pickup session for this drawing on mount
   useEffect(() => {
@@ -453,6 +483,8 @@ export function DrawingViewer({
     if (isNaN(mm) || mm <= 0) return;
     const newScale = calibrateScale(calibrateState.first, calibrateState.second, mm);
     setScale(newScale);
+    setScaleIsAuto(false);
+    setAutoScaleLabel(null);
     saveScale(drawingId, newScale);
     setCalibrateState({ stage: "idle" });
     setCalibrateInput("");
@@ -897,8 +929,15 @@ export function DrawingViewer({
 
         {/* Scale status */}
         {scale !== null && (
-          <div className="rounded-xl bg-slate-50 border border-slate-200 px-3 py-2 text-xs text-slate-600">
-            縮尺: <span className="font-bold">{scale.toFixed(4)} px/mm</span>
+          <div className="rounded-xl bg-slate-50 border border-slate-200 px-3 py-2 text-xs text-slate-600 space-y-0.5">
+            <div>
+              縮尺: <span className="font-bold">{scale.toFixed(4)} px/mm</span>
+            </div>
+            {scaleIsAuto && autoScaleLabel && (
+              <div className="text-[10px] text-teal-700 font-medium">
+                縮尺 {autoScaleLabel} を自動検出
+              </div>
+            )}
           </div>
         )}
 
