@@ -243,6 +243,73 @@ describe("NotificationBanner", () => {
     expect(screen.getByText(/リードタイム 2日/)).toBeDefined();
   });
 
+  it("groups same-kind notifications behind a collapsible header", async () => {
+    const user = userEvent.setup();
+    mockProjects = [makeProject({ id: "p-1", name: "青山オフィス改修", budget: 0 })];
+    // 3件のfresh overdueを投入してグルーピングが発火することを確認
+    const today = new Date();
+    const d = (offset: number) => {
+      const dt = new Date(today);
+      dt.setDate(today.getDate() - offset);
+      return toLocalDateString(dt);
+    };
+    mockTasks = [
+      makeTask({ id: "t-1", name: "外壁洗浄", dueDate: d(3) }),
+      makeTask({ id: "t-2", name: "床養生", dueDate: d(5) }),
+      makeTask({ id: "t-3", name: "搬入確認", dueDate: d(7) }),
+    ];
+
+    render(<NotificationBanner refreshKey="/grouping" />);
+
+    // 重要通知件数とグループヘッダーが見える
+    expect(await screen.findByText("重要通知 3件")).toBeDefined();
+    const header = screen.getByRole("button", { name: /期限超過タスク 3件/ });
+    expect(header).toBeDefined();
+    expect(header.getAttribute("aria-expanded")).toBe("false");
+
+    // デフォルトでは個別タスク名は折りたたまれている
+    expect(screen.queryByText(/外壁洗浄/)).toBeNull();
+
+    // 展開すると個別が出る
+    await user.click(header);
+    expect(header.getAttribute("aria-expanded")).toBe("true");
+    expect(await screen.findByText(/外壁洗浄/)).toBeDefined();
+    expect(screen.getByText(/床養生/)).toBeDefined();
+    expect(screen.getByText(/搬入確認/)).toBeDefined();
+  });
+
+  it("hides stale overdue items behind a sub-group inside the overdue group", async () => {
+    const user = userEvent.setup();
+    mockProjects = [makeProject({ id: "p-1", name: "青山オフィス改修", budget: 0 })];
+    // 1件は最近 (fresh), 2件は30日以上前 (stale)
+    const today = new Date();
+    const recentOverdue = new Date(today);
+    recentOverdue.setDate(today.getDate() - 3);
+    const oldOverdue = new Date(today);
+    oldOverdue.setDate(today.getDate() - 90);
+    mockTasks = [
+      makeTask({ id: "t-fresh", name: "新しい超過A", dueDate: toLocalDateString(recentOverdue) }),
+      makeTask({ id: "t-old-1", name: "古い超過A", dueDate: toLocalDateString(oldOverdue) }),
+      makeTask({ id: "t-old-2", name: "古い超過B", dueDate: toLocalDateString(oldOverdue) }),
+    ];
+
+    render(<NotificationBanner refreshKey="/stale" />);
+
+    // 親グループを展開
+    const header = await screen.findByRole("button", { name: /期限超過タスク 3件/ });
+    await user.click(header);
+
+    // freshはすぐ見える、staleは折りたたみ内
+    expect(await screen.findByText(/新しい超過A/)).toBeDefined();
+    expect(screen.queryByText(/古い超過A/)).toBeNull();
+
+    // staleサブグループを展開
+    const staleHeader = screen.getByRole("button", { name: /30日以上前の超過 2件/ });
+    await user.click(staleHeader);
+    expect(await screen.findByText(/古い超過A/)).toBeDefined();
+    expect(screen.getByText(/古い超過B/)).toBeDefined();
+  });
+
   it("keeps non-critical notifications collapsed by default", async () => {
     const today = new Date();
     const tomorrow = new Date(today);
