@@ -870,20 +870,25 @@ function TodayDashboardPageContent() {
 
       {/* 今日のおすすめアクション (ファーストビュー: スクロール前に「次やること」を見せる) */}
       {allProjects.length > 0 && (() => {
-        const actions: { icon: string; label: string; path: string; highlight?: boolean }[] = [];
+        // deadlineSortKey: 負数=期限超過(絶対値が大きいほど緊急), 0=今日, 1-7=今週, Infinity=期限なし
+        const actions: { icon: string; label: string; path: string; highlight?: boolean; deadlineSortKey: number }[] = [];
         if (overdueTasks > 0) {
-          actions.push({ icon: "⚠", label: `期限超過 ${overdueTasks}件を確認`, path: "/tasks", highlight: true });
+          const maxOverdueDays = allTasks
+            .filter((t) => t.status !== "done" && t.dueDate && t.dueDate < today)
+            .reduce((max, t) => Math.max(max, Math.max(1, daysBetween(t.dueDate!, today))), 0);
+          actions.push({ icon: "⚠", label: `期限超過 ${overdueTasks}件を確認`, path: "/tasks", highlight: true, deadlineSortKey: -maxOverdueDays });
         }
         if (tasks.length > 0) {
-          actions.push({ icon: "✓", label: `今日のタスク ${tasks.length}件を処理`, path: "/today" });
+          actions.push({ icon: "✓", label: `今日のタスク ${tasks.length}件を処理`, path: "/today", deadlineSortKey: 0 });
         }
         if (allProjects.length === 0) {
-          actions.push({ icon: "🏗️", label: ACTION_LABELS.project.createFirst, path: "/app", highlight: true });
+          actions.push({ icon: "🏗️", label: ACTION_LABELS.project.createFirst, path: "/app", highlight: true, deadlineSortKey: Infinity });
         }
         if (allTasks.filter((t) => t.status === "todo" && !t.startDate).length > 0) {
-          actions.push({ icon: "📊", label: "工程表で未開始タスクを確認", path: insightProject ? `/gantt/${insightProject.id}` : "/gantt" });
+          actions.push({ icon: "📊", label: "工程表で未開始タスクを確認", path: insightProject ? `/gantt/${insightProject.id}` : "/gantt", deadlineSortKey: Infinity });
         }
-        actions.push({ icon: "📸", label: "現場写真をアップロード", path: "/today" });
+        actions.push({ icon: "📸", label: "現場写真をアップロード", path: "/today", deadlineSortKey: Infinity });
+        actions.sort((a, b) => a.deadlineSortKey - b.deadlineSortKey);
         if (actions.length === 0) return null;
         return (
           <section>

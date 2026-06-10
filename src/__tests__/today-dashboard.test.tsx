@@ -402,4 +402,35 @@ describe("TodayDashboardPage", () => {
     expect((screen.getByLabelText("カテゴリ") as HTMLSelectElement).value).toBe("foundation");
     expect(screen.getByText(/ファイル名から 基礎工事 に設定済み/)).toBeDefined();
   });
+
+  it("今日のおすすめ: 期限超過 > 今日のタスク > 期限なし の順に並ぶ", async () => {
+    const today = new Date().toISOString().slice(0, 10);
+    const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+    mockProjects = [makeProject()];
+    mockTasks = [
+      makeTask({ id: "t-overdue", name: "期限超過タスク", status: "in_progress", dueDate: yesterday }),
+      makeTask({ id: "t-today", name: "今日締切タスク", status: "todo", dueDate: today }),
+      makeTask({ id: "t-nodate", name: "日付なしタスク", status: "todo", startDate: undefined, dueDate: undefined }),
+    ];
+    render(<TodayDashboardPage />);
+
+    await waitFor(() =>
+      expect(screen.getByText("今日のおすすめアクション")).toBeDefined(),
+    );
+
+    const section = screen.getByText("今日のおすすめアクション").closest("section");
+    expect(section).not.toBeNull();
+    const buttons = Array.from((section as HTMLElement).querySelectorAll("button"));
+    const labels = buttons.map((b) => b.textContent ?? "");
+
+    const overdueIdx = labels.findIndex((l) => l.includes("期限超過"));
+    const todayIdx = labels.findIndex((l) => l.includes("今日のタスク"));
+    const noDateIdx = labels.findIndex((l) => l.includes("工程表で未開始タスクを確認") || l.includes("現場写真"));
+
+    expect(overdueIdx).toBeGreaterThanOrEqual(0);
+    expect(todayIdx).toBeGreaterThanOrEqual(0);
+    // 期限超過が最初、今日のタスクがその後、期限なしは最後
+    expect(overdueIdx).toBeLessThan(todayIdx);
+    expect(todayIdx).toBeLessThan(noDateIdx);
+  });
 });
