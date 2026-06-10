@@ -79,6 +79,7 @@ USE_SUPABASE=true
 SUPABASE_URL=（ステップ3でコピーした Project URL）
 SUPABASE_ANON_KEY=（ステップ3でコピーした anon キー）
 API_KEY=任意の長い文字列（例: my-secret-key-12345）
+CRON_SECRET=16文字以上のランダム文字列（本番の keepalive cron 用）
 
 # フロントエンド用（同じ値を VITE_ プレフィックスでも設定）
 VITE_SUPABASE_URL=（ステップ3でコピーした Project URL）
@@ -135,6 +136,10 @@ pnpm dev
 ### SQL エディタで「permission denied」エラー
 
 → Supabase プロジェクトの作成が完了していない可能性。ダッシュボードに戻り「Project is ready」の表示を確認してから再実行。
+
+### `Project is paused` や 7 日放置後の冷スタートを避けたい
+
+→ `vercel.json` に `/api/cron/supabase-keepalive` の日次 cron を設定済みです。Vercel 本番の Environment Variables に `CRON_SECRET` を追加すると、cron が毎日 Supabase read を実行して無料枠の自動停止を避けやすくなります。
 
 ---
 
