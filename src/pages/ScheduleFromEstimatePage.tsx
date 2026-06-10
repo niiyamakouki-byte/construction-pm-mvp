@@ -740,16 +740,16 @@ export function ScheduleFromEstimatePage({
               {category}
             </h2>
 
-            <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
-              <table className="w-full border-collapse" data-testid="schedule-table">
+            <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white">
+              <table className="w-full min-w-[560px] border-collapse" data-testid="schedule-table">
                 <thead>
                   <tr className="border-b border-slate-100 bg-slate-50">
-                    <th className="px-4 py-2.5 text-left text-xs font-semibold text-slate-500">工事名</th>
+                    <th className="px-4 py-2.5 text-left text-xs font-semibold text-slate-500 whitespace-nowrap">工事名</th>
                     <th className="px-4 py-2.5 text-left text-xs font-semibold text-slate-500 whitespace-nowrap">開始日</th>
                     <th className="px-4 py-2.5 text-left text-xs font-semibold text-slate-500 whitespace-nowrap">終了日</th>
-                    <th className="px-4 py-2.5 text-left text-xs font-semibold text-slate-500">依存タスク</th>
-                    <th className="px-4 py-2.5 text-left text-xs font-semibold text-slate-500">担当者</th>
-                    <th className="px-4 py-2.5 text-left text-xs font-semibold text-slate-500">状態</th>
+                    <th className="px-4 py-2.5 text-left text-xs font-semibold text-slate-500 whitespace-nowrap">依存タスク</th>
+                    <th className="px-4 py-2.5 text-left text-xs font-semibold text-slate-500 whitespace-nowrap">担当者</th>
+                    <th className="px-4 py-2.5 text-left text-xs font-semibold text-slate-500 whitespace-nowrap">状態</th>
                   </tr>
                 </thead>
                 <tbody>

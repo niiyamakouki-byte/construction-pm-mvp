@@ -231,12 +231,12 @@ export function NotificationBanner({ refreshKey }: NotificationBannerProps) {
   if (collapsed) {
     return (
       <section className="border-b border-slate-200 bg-[linear-gradient(180deg,#fffef8_0%,#ffffff_100%)]">
-        <div className="mx-auto max-w-6xl px-4 py-2">
-          <div className="flex items-center gap-3">
+        <div className="mx-auto max-w-6xl px-4">
+          <div className="flex min-h-[44px] items-center gap-2">
             <button
               type="button"
               onClick={handleExpand}
-              className="flex flex-1 items-center gap-2 text-left"
+              className="flex min-h-[44px] flex-1 items-center gap-2 text-left"
               aria-label="通知を展開"
             >
               <span className="text-sm" aria-hidden="true">⚠</span>
@@ -244,14 +244,14 @@ export function NotificationBanner({ refreshKey }: NotificationBannerProps) {
                 重要通知 {freshCount}件
               </span>
               {staleHint && (
-                <span className="text-[10px] text-slate-400">{staleHint}</span>
+                <span className="hidden text-[10px] text-slate-400 sm:inline">{staleHint}</span>
               )}
               <span className="text-[10px] text-slate-400">（タップで展開）</span>
             </button>
             <button
               type="button"
               onClick={() => navigate("/notifications")}
-              className="rounded-full border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+              className="inline-flex h-9 min-w-[44px] items-center justify-center rounded-full border border-slate-300 bg-white px-3 text-xs font-semibold text-slate-700 hover:bg-slate-50"
             >
               一覧
             </button>
@@ -259,7 +259,7 @@ export function NotificationBanner({ refreshKey }: NotificationBannerProps) {
               type="button"
               onClick={handleExpand}
               aria-label="通知を展開"
-              className="p-1 text-slate-400 hover:text-slate-600"
+              className="inline-flex h-9 w-9 items-center justify-center text-slate-400 hover:text-slate-600"
             >
               <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden="true">
                 <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
