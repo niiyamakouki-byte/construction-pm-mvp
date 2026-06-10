@@ -58,6 +58,7 @@ export function ProjectListPage() {
   const [nameError, setNameError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [createdProjectName, setCreatedProjectName] = useState<string | null>(null);
   // Sprint 70: 工程テンプレ選択 (大項目名 Set)
   const [selectedTemplateMajors, setSelectedTemplateMajors] = useState<Set<string>>(new Set());
   const templateMajorNames = useMemo(() => getTemplateMajorNames(), []);
@@ -149,6 +150,7 @@ export function ProjectListPage() {
         }
       }
 
+      const createdName = name.trim();
       setName("");
       setDescription("");
       setAddress("");
@@ -157,6 +159,7 @@ export function ProjectListPage() {
       setSelectedTemplateMajors(new Set());
       setCaptureMode("memo");
       setShowForm(false);
+      setCreatedProjectName(createdName);
       await loadProjects();
     } catch (err) {
       setError(err instanceof Error ? err.message : t("errors:create_failed"));
@@ -211,6 +214,37 @@ export function ProjectListPage() {
           </button>
         </div>
       </section>
+
+      {createdProjectName ? (
+        <div
+          role="status"
+          className="flex flex-col gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800 sm:flex-row sm:items-center sm:justify-between"
+        >
+          <p className="font-semibold">
+            {t("pages:project_list.created_banner_title", { name: createdProjectName })}
+          </p>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                setCreatedProjectName(null);
+                navigate("/estimate");
+              }}
+              className="ios-btn-primary px-4 py-2 text-xs"
+            >
+              {t("pages:project_list.created_banner_cta")}
+            </button>
+            <button
+              type="button"
+              onClick={() => setCreatedProjectName(null)}
+              aria-label={t("common:actions.close")}
+              className="rounded-full bg-white px-2.5 py-1 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-200"
+            >
+              ×
+            </button>
+          </div>
+        </div>
+      ) : null}
 
       {showForm ? (
         <section className="rounded-[28px] bg-white p-5 shadow-sm ring-1 ring-slate-200 sm:p-6">
@@ -455,6 +489,13 @@ export function ProjectListPage() {
               className="ios-btn-primary px-5 py-3 text-sm"
             >
               {t("common:actions.create_self")}
+            </button>
+            <button
+              type="button"
+              onClick={() => navigate("/estimate")}
+              className="rounded-2xl bg-slate-100 px-5 py-3 text-sm font-semibold text-slate-600"
+            >
+              {t("pages:project_list.empty_estimate_only")}
             </button>
           </div>
           <p className="mt-3 text-xs text-slate-400">{t("common:messages.sample_deletable")}</p>

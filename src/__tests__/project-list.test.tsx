@@ -4,10 +4,16 @@ import userEvent from "@testing-library/user-event";
 import "../i18n/index.js";
 import { ProjectListPage } from "../pages/ProjectListPage.js";
 import { projectRepository } from "../stores/project-store.js";
+import { navigate } from "../hooks/useHashRouter.js";
+
+vi.mock("../hooks/useHashRouter.js", () => ({
+  navigate: vi.fn(),
+}));
 
 describe("ProjectListPage", () => {
   beforeEach(async () => {
     cleanup();
+    vi.mocked(navigate).mockClear();
     const all = await projectRepository.findAll();
     for (const p of all) {
       await projectRepository.delete(p.id);
@@ -122,5 +128,60 @@ describe("ProjectListPage", () => {
 
     const alert = await screen.findByRole("alert");
     expect(alert.textContent).toContain("テストエラー");
+  });
+
+  it("登録成功後に見積作成CTAバナーが表示される", async () => {
+    const user = userEvent.setup();
+    render(<ProjectListPage />);
+
+    await screen.findByText("新規プロジェクト");
+    await user.click(screen.getByText("新規プロジェクト"));
+
+    await user.type(
+      screen.getByPlaceholderText("例: 渋谷オフィスビル内装工事"),
+      "CTAテスト案件",
+    );
+    await user.click(screen.getByRole("button", { name: "作成" }));
+
+    expect(
+      await screen.findByText("「CTAテスト案件」を登録しました"),
+    ).toBeDefined();
+    expect(
+      screen.getByRole("button", { name: "見積を作成する" }),
+    ).toBeDefined();
+  });
+
+  it("見積CTAクリックで /estimate へ遷移する", async () => {
+    const user = userEvent.setup();
+    render(<ProjectListPage />);
+
+    await screen.findByText("新規プロジェクト");
+    await user.click(screen.getByText("新規プロジェクト"));
+
+    await user.type(
+      screen.getByPlaceholderText("例: 渋谷オフィスビル内装工事"),
+      "遷移テスト案件",
+    );
+    await user.click(screen.getByRole("button", { name: "作成" }));
+
+    const cta = await screen.findByRole("button", {
+      name: "見積を作成する",
+    });
+    await user.click(cta);
+
+    expect(vi.mocked(navigate)).toHaveBeenCalledWith("/estimate");
+  });
+
+  it("空状態に見積だけ先に作る導線が表示され /estimate へ遷移する", async () => {
+    const user = userEvent.setup();
+    render(<ProjectListPage />);
+
+    const estimateOnly = await screen.findByRole("button", {
+      name: "見積だけ先に作る",
+    });
+    expect(estimateOnly).toBeDefined();
+
+    await user.click(estimateOnly);
+    expect(vi.mocked(navigate)).toHaveBeenCalledWith("/estimate");
   });
 });

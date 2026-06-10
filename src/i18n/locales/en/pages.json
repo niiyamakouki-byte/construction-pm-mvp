@@ -7,6 +7,9 @@
     "capture_mode_schedule_desc": "For upcoming work. Add tasks in the schedule after creation.",
     "capture_mode_record": "Completed or no schedule",
     "capture_mode_record_desc": "A project name is enough. Use it later for photos, invoices, and notes.",
+    "empty_estimate_only": "Create an estimate first",
+    "created_banner_title": "Created \"{{name}}\"",
+    "created_banner_cta": "Create an estimate",
     "open_record": "Open record",
     "mode": {
       "memo": "Memo",
