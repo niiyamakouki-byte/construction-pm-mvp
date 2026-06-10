@@ -205,11 +205,11 @@ export function TakeoffPage() {
   const costMaster = useMemo(() => COST_MASTER, []);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       <header className="flex items-center justify-between gap-3">
-        <div>
+        <div className="min-w-0">
           <h1 className="text-xl font-bold text-slate-900">図面拾い出し</h1>
-          <p className="mt-1 text-xs text-slate-500">
+          <p className="mt-1 text-xs text-slate-500 truncate">
             PDFか図面画像をアップロード → なぞって拾い出し → 見積へ
           </p>
         </div>
@@ -217,9 +217,9 @@ export function TakeoffPage() {
           <button
             type="button"
             onClick={handleReset}
-            className="rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50"
+            className="flex-shrink-0 rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50 whitespace-nowrap"
           >
-            別の図面に切替
+            切替
           </button>
         )}
       </header>

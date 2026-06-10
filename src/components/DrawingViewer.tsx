@@ -925,8 +925,11 @@ export function DrawingViewer({
 
   const noScaleWarning = (mode === "measure" || mode === "area") && !scale;
 
+  // Mobile: sidebar open/close toggle (hidden below lg)
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+
   return (
-    <div className="flex flex-col gap-4 lg:flex-row" ref={containerRef}>
+    <div className="flex flex-col gap-2 lg:flex-row lg:gap-4" ref={containerRef}>
       {/* Drawing canvas area */}
       <div className="relative flex-1 overflow-hidden rounded-2xl border border-slate-200 bg-slate-100 select-none">
         <img
@@ -1090,14 +1093,14 @@ export function DrawingViewer({
 
       {/* Sidebar */}
       <div className="flex w-full flex-col gap-3 lg:w-72">
-        {/* Mode buttons */}
-        <div className="grid grid-cols-2 gap-2">
+        {/* Mode buttons: horizontal scroll on mobile, 2-column grid on desktop */}
+        <div className="flex gap-1.5 overflow-x-auto pb-0.5 no-scrollbar lg:grid lg:grid-cols-2 lg:gap-2 lg:overflow-visible lg:pb-0">
           {modeBtns.map(({ key, label }) => (
             <button
               key={key}
               type="button"
               onClick={() => switchMode(key)}
-              className={`rounded-2xl py-2.5 text-xs font-bold transition-colors ${
+              className={`flex-shrink-0 rounded-2xl px-3 min-h-[44px] py-2 text-xs font-bold transition-colors lg:flex-shrink lg:py-2.5 ${
                 mode === key
                   ? key === "calibrate"
                     ? "bg-amber-500 text-white"
@@ -1115,6 +1118,20 @@ export function DrawingViewer({
             </button>
           ))}
         </div>
+
+        {/* Mobile: panel toggle — shown only below lg */}
+        <button
+          type="button"
+          onClick={() => setMobileSidebarOpen((o) => !o)}
+          className="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 min-h-[44px] lg:hidden"
+          aria-label={mobileSidebarOpen ? "パネルを閉じる" : "パネルを開く"}
+        >
+          <span>{mobileSidebarOpen ? "設定・集計パネルを閉じる" : "設定・集計パネルを開く"}</span>
+          <span>{mobileSidebarOpen ? "▲" : "▼"}</span>
+        </button>
+
+        {/* Panel content: always shown on desktop, toggle-able on mobile */}
+        <div className={`flex flex-col gap-3 lg:flex ${mobileSidebarOpen ? "flex" : "hidden"}`}>
 
         {/* Scale status */}
         {scale !== null && (
@@ -1330,6 +1347,7 @@ export function DrawingViewer({
             </div>
           </>
         )}
+        </div>{/* end panel-content */}
       </div>
 
       {/* Calibrate distance dialog */}
