@@ -11,7 +11,6 @@ import { ProjectDetailTabs } from "../components/ProjectDetailTabs.js";
 import { ProjectMapEmbed } from "../components/ProjectMapEmbed.js";
 import { ProjectFlowWidget } from "../components/ProjectFlowWidget.js";
 import { createInitialStageProgresses } from "../lib/project-flow.js";
-import { ProjectChat } from "../components/ProjectChat.js";
 import { ProjectFinancePanel } from "../components/ProjectFinancePanel.js";
 import { ConfirmDialog } from "../components/common/ConfirmDialog.js";
 import { ACTION_LABELS } from "../lib/action-labels.js";
@@ -545,8 +544,18 @@ export function ProjectDetailPage({
 
       {/* Chat tab */}
       {subPath === "chat" && (
-        <div className="rounded-xl border border-slate-200 bg-white shadow-sm flex flex-col" style={{ minHeight: "60vh" }}>
-          <ProjectChat projectId={projectId} />
+        <div className="rounded-xl border border-slate-200 bg-white shadow-sm p-6 flex flex-col items-center gap-4 text-center" style={{ minHeight: "60vh" }}>
+          <h2 className="text-base font-semibold text-slate-800">連絡・相談</h2>
+          <p className="text-sm text-slate-600 max-w-sm">
+            チャットはAI秘書に一本化しました。質問や連絡はAI秘書パネルからどうぞ（担当に届きます）
+          </p>
+          <button
+            type="button"
+            className="min-h-[44px] rounded-lg bg-slate-800 px-6 py-3 text-sm font-medium text-white hover:bg-slate-700 active:bg-slate-900"
+            onClick={() => window.dispatchEvent(new CustomEvent("genbahub:assistant-open"))}
+          >
+            AI秘書に相談する
+          </button>
         </div>
       )}
 

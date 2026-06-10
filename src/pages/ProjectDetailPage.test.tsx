@@ -60,10 +60,6 @@ vi.mock("../components/ProjectFlowWidget.js", () => ({
   ProjectFlowWidget: () => <div data-testid="project-flow-widget" />,
 }));
 
-vi.mock("../components/ProjectChat.js", () => ({
-  ProjectChat: () => <div data-testid="project-chat" />,
-}));
-
 vi.mock("../lib/project-flow.js", () => ({
   createInitialStageProgresses: () => [],
 }));
@@ -218,5 +214,21 @@ describe("ProjectDetailPage", () => {
     expect(fetchMock).toHaveBeenCalledTimes(2);
     expect(fetchMock.mock.calls[0]?.[0]).toContain("latitude=35.67");
     expect(fetchMock.mock.calls[1]?.[0]).toContain("latitude=35.66");
+  });
+
+  it("dispatches genbahub:assistant-open when AI秘書に相談する button is clicked", async () => {
+    const user = userEvent.setup();
+    const received: Event[] = [];
+    const handler = (e: Event) => received.push(e);
+    window.addEventListener("genbahub:assistant-open", handler);
+
+    render(<ProjectDetailPage projectId="proj-1" subPath="chat" />);
+    await screen.findByRole("button", { name: "AI秘書に相談する" });
+    await user.click(screen.getByRole("button", { name: "AI秘書に相談する" }));
+
+    expect(received).toHaveLength(1);
+    expect(received[0]?.type).toBe("genbahub:assistant-open");
+
+    window.removeEventListener("genbahub:assistant-open", handler);
   });
 });
