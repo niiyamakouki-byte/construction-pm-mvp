@@ -279,7 +279,7 @@ function CanvasItem({
         height: item.size.h,
         cursor: "grab",
       }}
-      className={`rounded-xl border-2 shadow-md overflow-hidden ${CATEGORY_COLOR[item.category]}`}
+      className={`rounded-lg border shadow-sm overflow-hidden ${CATEGORY_COLOR[item.category]}`}
       onMouseDown={handleMouseDown}
     >
       <img
