@@ -8,7 +8,8 @@ export type AppNotificationType =
   | "upcoming_deadline"
   | "weather_warning"
   | "cost_overrun"
-  | "procurement_alert";
+  | "procurement_alert"
+  | "payment_confirmed";
 
 export type AppNotificationTone = "red" | "yellow" | "blue" | "orange";
 
@@ -187,4 +188,77 @@ export function buildNotifications({
     ...procurementNotifications,
     ...upcomingNotifications,
   ]);
+}
+
+// ── 入金確定通知キュー ────────────────────────────────────────────────────────
+// InvoiceReconcilePage で「確定」操作が成功した時に pushPaymentConfirmedNotification を呼ぶ。
+// NotificationBanner は getPaymentConfirmedNotifications で読み出して表示する。
+// localStorage に JSON 配列として永続化し、dismissals で既読管理される。
+
+const PAYMENT_CONFIRMED_KEY = "gh-payment-confirmed-notifs";
+
+export type PaymentConfirmedEntry = {
+  invoiceId: string;
+  invoiceNumber: string;
+  vendorName: string;
+  amount: number;
+  confirmedAt: string;
+};
+
+function loadPaymentConfirmedEntries(): PaymentConfirmedEntry[] {
+  try {
+    const raw = localStorage.getItem(PAYMENT_CONFIRMED_KEY);
+    if (!raw) return [];
+    return JSON.parse(raw) as PaymentConfirmedEntry[];
+  } catch {
+    return [];
+  }
+}
+
+function savePaymentConfirmedEntries(entries: PaymentConfirmedEntry[]): void {
+  try {
+    localStorage.setItem(PAYMENT_CONFIRMED_KEY, JSON.stringify(entries));
+  } catch {
+    // localStorage が使えない環境（テスト等）では無視
+  }
+}
+
+/**
+ * 入金確定通知を1件追加する。
+ * 同じ invoiceId が既に存在する場合は重複を作らない（冪等）。
+ */
+export function pushPaymentConfirmedNotification(entry: PaymentConfirmedEntry): void {
+  const entries = loadPaymentConfirmedEntries();
+  const alreadyExists = entries.some((e) => e.invoiceId === entry.invoiceId);
+  if (alreadyExists) return;
+  entries.push(entry);
+  savePaymentConfirmedEntries(entries);
+  // NotificationBanner に再描画を促す
+  try {
+    window.dispatchEvent(new CustomEvent("gh:payment-confirmed"));
+  } catch {
+    // SSR / テスト環境では無視
+  }
+}
+
+/** localStorage キューを AppNotification[] に変換して返す */
+export function getPaymentConfirmedNotifications(): AppNotification[] {
+  return loadPaymentConfirmedEntries().map((entry) => ({
+    id: `payment_confirmed:${entry.invoiceId}`,
+    type: "payment_confirmed" as const,
+    tone: "blue" as const,
+    title: "入金確認",
+    message: `✓ 請求書 ${entry.invoiceNumber}（${entry.vendorName}）¥${entry.amount.toLocaleString("ja-JP")} の入金を確認しました。`,
+    path: "/invoices/reconcile",
+    sortDate: entry.confirmedAt,
+  }));
+}
+
+/** テスト用: キューをクリアする */
+export function clearPaymentConfirmedNotifications(): void {
+  try {
+    localStorage.removeItem(PAYMENT_CONFIRMED_KEY);
+  } catch {
+    // ignore
+  }
 }

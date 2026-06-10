@@ -11,7 +11,8 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { InvoiceMatchPanel } from "../components/InvoiceMatchPanel.js";
 import { FreeeRepository } from "../lib/freee/FreeeRepository.js";
 import { matchInvoicesToFreeeDeals } from "../lib/freee/MatchingEngine.js";
-import { getAllInvoices, updateInvoiceStatus } from "../lib/invoice-store.js";
+import { getAllInvoices, getInvoice, updateInvoiceStatus } from "../lib/invoice-store.js";
+import { pushPaymentConfirmedNotification } from "../lib/notifications.js";
 import type { FreeeDeal, MatchResult } from "../lib/freee/MatchingEngine.js";
 import type { Company, Deal } from "../lib/freee/types.js";
 import { getSupabaseClient, hasSupabaseEnv } from "../infra/supabase-client.js";
@@ -150,6 +151,17 @@ export function InvoiceReconcilePage() {
         );
         // 請求書 status を「振込済」に更新（永続化）
         updateInvoiceStatus(action.invoiceId, "振込済");
+        // 入金確定通知を通知パネルに流す
+        const invoice = getInvoice(action.invoiceId);
+        if (invoice) {
+          pushPaymentConfirmedNotification({
+            invoiceId: invoice.id,
+            invoiceNumber: invoice.id,
+            vendorName: invoice.vendorName,
+            amount: invoice.total,
+            confirmedAt: new Date().toISOString().slice(0, 10),
+          });
+        }
         setConfirmedCount((n) => n + 1);
         // 照合済みを matched から除外
         setMatchResult((prev) => ({

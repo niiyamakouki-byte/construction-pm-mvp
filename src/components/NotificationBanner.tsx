@@ -4,7 +4,7 @@ import { useOrganizationContext } from "../contexts/OrganizationContext.js";
 import { navigate } from "../hooks/useHashRouter.js";
 import { createAppRepository } from "../infra/create-app-repository.js";
 import type { AppNotification, AppNotificationType } from "../lib/notifications.js";
-import { buildNotifications, isStaleOverdue, sortNotifications, STALE_OVERDUE_DAYS } from "../lib/notifications.js";
+import { buildNotifications, getPaymentConfirmedNotifications, isStaleOverdue, sortNotifications, STALE_OVERDUE_DAYS } from "../lib/notifications.js";
 import {
   getNextSnoozeUntil,
   isDismissed,
@@ -45,6 +45,7 @@ const iconMap = {
   weather_warning: "☔",
   cost_overrun: "¥",
   procurement_alert: "📦",
+  payment_confirmed: "✓",
 } as const;
 
 const groupLabelMap: Record<AppNotificationType, string> = {
@@ -53,6 +54,7 @@ const groupLabelMap: Record<AppNotificationType, string> = {
   cost_overrun: "予算超過",
   procurement_alert: "調達アラート",
   weather_warning: "天候注意",
+  payment_confirmed: "入金確認",
 };
 
 // 種別ごとの表示順（toneと合わせて視覚優先度を維持）
@@ -62,6 +64,7 @@ const GROUP_ORDER: AppNotificationType[] = [
   "procurement_alert",
   "upcoming_deadline",
   "weather_warning",
+  "payment_confirmed",
 ];
 
 type NotificationGroup = {
@@ -153,7 +156,8 @@ export function NotificationBanner({ refreshKey }: NotificationBannerProps) {
         sortDate: String(warning.day.dt),
       }));
 
-      const merged = sortNotifications([...workflowNotifications, ...weatherWarnings]);
+      const paymentConfirmed = getPaymentConfirmedNotifications();
+      const merged = sortNotifications([...workflowNotifications, ...weatherWarnings, ...paymentConfirmed]);
       setNotifications(merged);
       // 現存しない id を localStorage から掃除
       setDismissals((prev) => {
@@ -179,6 +183,12 @@ export function NotificationBanner({ refreshKey }: NotificationBannerProps) {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- 通知データの取得・更新トリガー
     void loadNotifications();
   }, [loadNotifications, refreshKey]);
+
+  useEffect(() => {
+    const handler = () => { void loadNotifications(); };
+    window.addEventListener("gh:payment-confirmed", handler);
+    return () => { window.removeEventListener("gh:payment-confirmed", handler); };
+  }, [loadNotifications]);
 
   const visibleNotifications = useMemo(
     () => notifications.filter((n) => !isDismissed(dismissals[n.id])),

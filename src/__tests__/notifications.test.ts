@@ -1,6 +1,27 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { CostItem, Expense, Project, Task } from "../domain/types.js";
-import { buildNotifications, isStaleOverdue, STALE_OVERDUE_DAYS } from "../lib/notifications.js";
+import {
+  buildNotifications,
+  clearPaymentConfirmedNotifications,
+  getPaymentConfirmedNotifications,
+  isStaleOverdue,
+  pushPaymentConfirmedNotification,
+  STALE_OVERDUE_DAYS,
+} from "../lib/notifications.js";
+
+// jsdom の --localstorage-file 問題を回避するため手動スタブ
+const localStorageData: Record<string, string> = {};
+const localStorageMock = {
+  getItem: vi.fn((key: string) => localStorageData[key] ?? null),
+  setItem: vi.fn((key: string, value: string) => { localStorageData[key] = value; }),
+  removeItem: vi.fn((key: string) => { delete localStorageData[key]; }),
+  clear: vi.fn(() => { for (const k of Object.keys(localStorageData)) delete localStorageData[k]; }),
+};
+
+beforeEach(() => {
+  vi.stubGlobal("localStorage", localStorageMock);
+  localStorageMock.clear();
+});
 
 function makeProject(overrides: Partial<Project> = {}): Project {
   return {
@@ -137,5 +158,55 @@ describe("buildNotifications", () => {
     expect(notifications).toHaveLength(1);
     expect(notifications[0].type).toBe("overdue_task");
     expect(isStaleOverdue(notifications[0])).toBe(true);
+  });
+});
+
+describe("pushPaymentConfirmedNotification", () => {
+  afterEach(() => {
+    clearPaymentConfirmedNotifications();
+  });
+
+  it("確定後に getPaymentConfirmedNotifications で通知が1件返る", () => {
+    pushPaymentConfirmedNotification({
+      invoiceId: "inv-1",
+      invoiceNumber: "inv-1",
+      vendorName: "山田建設",
+      amount: 330_000,
+      confirmedAt: "2026-06-10",
+    });
+
+    const notifs = getPaymentConfirmedNotifications();
+    expect(notifs).toHaveLength(1);
+    expect(notifs[0].type).toBe("payment_confirmed");
+    expect(notifs[0].tone).toBe("blue");
+    expect(notifs[0].message).toContain("山田建設");
+    expect(notifs[0].message).toContain("330,000");
+    expect(notifs[0].path).toBe("/invoices/reconcile");
+  });
+
+  it("同じ invoiceId を2回 push しても重複しない（冪等）", () => {
+    pushPaymentConfirmedNotification({
+      invoiceId: "inv-2",
+      invoiceNumber: "inv-2",
+      vendorName: "鈴木工務店",
+      amount: 110_000,
+      confirmedAt: "2026-06-10",
+    });
+    pushPaymentConfirmedNotification({
+      invoiceId: "inv-2",
+      invoiceNumber: "inv-2",
+      vendorName: "鈴木工務店",
+      amount: 110_000,
+      confirmedAt: "2026-06-10",
+    });
+
+    const notifs = getPaymentConfirmedNotifications();
+    expect(notifs).toHaveLength(1);
+  });
+
+  it("失敗パス: 確定処理が呼ばれなければ通知は作られない", () => {
+    // pushPaymentConfirmedNotification を呼ばなければキューは空のまま
+    const notifs = getPaymentConfirmedNotifications();
+    expect(notifs).toHaveLength(0);
   });
 });
