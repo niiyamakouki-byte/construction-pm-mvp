@@ -57,6 +57,8 @@ import {
 } from "../lib/site-entry-log.js";
 import { generateForecastReport } from "../lib/cost-forecaster.js";
 import { criticalPath } from "../lib/schedule-validator.js";
+import { useGoogleCalendar } from "../hooks/useGoogleCalendar.js";
+import { detectScheduleConflicts } from "../lib/schedule-conflict.js";
 import {
   CockpitDashboard,
   type CriticalPathStatus,
@@ -382,6 +384,27 @@ function TodayDashboardPageContent() {
   }, [allProjects, allTasks]);
 
   const insightProject = useMemo(() => getPriorityProject(allProjects), [allProjects]);
+
+  // Googleカレンダー個人予定 × 今日のタスクのダブり (Phase A: 今日だけ警告チップ)
+  const todayBoundsRange = useMemo(() => {
+    const start = new Date(`${today}T00:00:00`);
+    const end = new Date(`${today}T23:59:59`);
+    return { timeMin: start, timeMax: end };
+  }, [today]);
+  const todayGoogleCalendar = useGoogleCalendar(todayBoundsRange);
+  const todayHasConflict = useMemo(() => {
+    if (!todayGoogleCalendar.connected) return false;
+    const todayTasks = allTasks
+      .filter((t) => {
+        const start = t.startDate ?? undefined;
+        const due = t.dueDate ?? start;
+        if (!start) return false;
+        return start <= today && (due ?? start) >= today;
+      })
+      .map((t) => ({ id: t.id, startDate: t.startDate ?? null, endDate: t.dueDate ?? t.startDate ?? null }));
+    const result = detectScheduleConflicts(todayGoogleCalendar.events, todayTasks);
+    return Object.keys(result.conflictsByTaskId).length > 0;
+  }, [allTasks, today, todayGoogleCalendar.connected, todayGoogleCalendar.events]);
 
   const insightTasks = useMemo(
     () => (insightProject ? allTasks.filter((task) => task.projectId === insightProject.id) : []),
@@ -760,6 +783,13 @@ function TodayDashboardPageContent() {
       {/* Greeting Header */}
       <h1 className="sr-only">今日のダッシュボード</h1>
       <GreetingHeader userName="光輝さん" />
+
+      {/* Googleカレンダー個人予定とのダブり警告 (Phase A) */}
+      {todayHasConflict && (
+        <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-2 text-sm font-semibold text-amber-800" role="status">
+          ⚠ 今日は個人予定と現場が重なっています
+        </div>
+      )}
 
       {/* 今日のおすすめアクション (ファーストビュー: スクロール前に「次やること」を見せる) */}
       {allProjects.length > 0 && (() => {

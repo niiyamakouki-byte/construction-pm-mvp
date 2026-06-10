@@ -71,7 +71,12 @@ export function LoginPage() {
       const client = await getSupabaseClient();
       await client.auth.signInWithOAuth({
         provider: "google",
-        options: { redirectTo: getOAuthRedirectUrl() },
+        options: {
+          redirectTo: getOAuthRedirectUrl(),
+          // Googleカレンダー(read-only)も同時に取得し、案件×個人予定のダブり可視化に使う
+          scopes: "https://www.googleapis.com/auth/calendar.readonly",
+          queryParams: { access_type: "offline", prompt: "consent" },
+        },
       });
     } catch (err) {
       console.error("Failed to start Google login", err);

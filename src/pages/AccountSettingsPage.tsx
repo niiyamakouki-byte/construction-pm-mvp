@@ -4,15 +4,47 @@
  */
 
 import { useState, type FormEvent } from "react";
-import { useAuth } from "../contexts/AuthContext.js";
+import { useAuth, readGoogleProviderToken } from "../contexts/AuthContext.js";
 import { getSupabaseClient, hasSupabaseEnv } from "../infra/supabase-client.js";
 import {
   clearPasswordRecoveryMode,
   isPasswordRecoveryMode,
 } from "../lib/password-recovery.js";
 
+function getOAuthRedirectUrl(): string | undefined {
+  if (typeof window === "undefined") return undefined;
+  return `${window.location.origin}/#/account`;
+}
+
 export function AccountSettingsPage() {
   const { user } = useAuth();
+
+  // Googleカレンダー連携
+  const [googleConnected, setGoogleConnected] = useState(() => readGoogleProviderToken() !== null);
+  const [googleError, setGoogleError] = useState<string | null>(null);
+
+  const handleConnectGoogleCalendar = async () => {
+    if (!hasSupabaseEnv()) {
+      setGoogleError("Supabase が設定されていません");
+      return;
+    }
+    setGoogleError(null);
+    try {
+      const client = await getSupabaseClient();
+      await client.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: getOAuthRedirectUrl(),
+          scopes: "https://www.googleapis.com/auth/calendar.readonly",
+          queryParams: { access_type: "offline", prompt: "consent" },
+        },
+      });
+      // OAuth リダイレクトで遷移するためここには通常戻ってこない
+      setGoogleConnected(readGoogleProviderToken() !== null);
+    } catch {
+      setGoogleError("Googleカレンダー連携に失敗しました");
+    }
+  };
 
   // パスワード変更
   const [currentPassword, setCurrentPassword] = useState("");
@@ -89,6 +121,37 @@ export function AccountSettingsPage() {
             <p className="mt-0.5 font-mono text-xs text-slate-500">{user?.id ?? "—"}</p>
           </div>
         </div>
+      </section>
+
+      {/* Googleカレンダー連携 */}
+      <section className="mb-8 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+        <h2 className="mb-2 text-base font-semibold text-slate-800">Googleカレンダー連携</h2>
+        <p className="mb-4 text-sm text-slate-500">
+          連携すると、工程表に個人予定とのダブりが表示されます。読み取り専用で予定の追加・削除はしません。
+        </p>
+        <div className="flex flex-wrap items-center gap-3">
+          <span
+            className={`rounded-full px-3 py-1 text-xs font-semibold ${
+              googleConnected
+                ? "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200"
+                : "bg-slate-100 text-slate-600 ring-1 ring-slate-200"
+            }`}
+          >
+            {googleConnected ? "連携済み" : "未連携"}
+          </span>
+          <button
+            type="button"
+            onClick={() => { void handleConnectGoogleCalendar(); }}
+            className="rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-brand-700"
+          >
+            {googleConnected ? "再連携" : "Googleカレンダーを連携"}
+          </button>
+        </div>
+        {googleError && (
+          <p className="mt-3 text-sm text-red-700" role="alert">
+            {googleError}
+          </p>
+        )}
       </section>
 
       {/* パスワード変更 */}

@@ -34,6 +34,8 @@ import { cascadeSchedule } from "../lib/cascade-scheduler.js";
 import { filterScheduleTasks } from "../lib/cost-management.js";
 import { exportGanttToPdf } from "../lib/gantt-pdf-export.js";
 import { downloadProjectICS } from "../lib/gantt-ics-export.js";
+import { useGoogleCalendar } from "../hooks/useGoogleCalendar.js";
+import { detectScheduleConflicts } from "../lib/schedule-conflict.js";
 import {
   checkMilestoneStatus,
   createMilestones,
@@ -874,6 +876,27 @@ function GanttPageContent({ initialProjectId = null }: GanttPageProps) {
       dayWidth,
     };
   }, [dayWidth, selectedProject, selectedProjectTasks, today]);
+
+  // ─── Googleカレンダー個人予定とのダブり可視化 (Phase A) ────────
+  const googleCalendarRange = useMemo(() => {
+    if (!chartLayout) return { timeMin: null, timeMax: null } as const;
+    return {
+      timeMin: new Date(`${chartLayout.chartStart}T00:00:00`),
+      timeMax: new Date(`${addDays(chartLayout.chartStart, chartLayout.totalDays)}T23:59:59`),
+    };
+  }, [chartLayout]);
+  const googleCalendar = useGoogleCalendar(googleCalendarRange);
+  const scheduleConflicts = useMemo(
+    () => detectScheduleConflicts(googleCalendar.events, selectedProjectTasks),
+    [googleCalendar.events, selectedProjectTasks],
+  );
+  const personalEventLabelsByDate = useMemo(() => {
+    const out: Record<string, string[]> = {};
+    for (const [date, events] of Object.entries(scheduleConflicts.eventsByDate)) {
+      out[date] = events.map((e) => e.summary);
+    }
+    return out;
+  }, [scheduleConflicts.eventsByDate]);
 
   const handleProjectSelect = useCallback((projectId: string) => {
     setSelectedProjectId(projectId);
@@ -1898,6 +1921,19 @@ function GanttPageContent({ initialProjectId = null }: GanttPageProps) {
         </div>
       </section>
 
+      {googleCalendar.needsReconnect && (
+        <div className="mb-3 flex items-center justify-between gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800" role="status">
+          <span>Google連携の有効期限が切れました</span>
+          <button
+            type="button"
+            onClick={() => { void googleCalendar.reconnect(); }}
+            className="rounded-md bg-amber-600 px-2.5 py-1 text-xs font-semibold text-white hover:bg-amber-700"
+          >
+            再連携
+          </button>
+        </div>
+      )}
+
       {selectedProjectTasks.length === 0 || !chartLayout ? (
         <EmptyScheduleState
           title="この案件に工程がありません"
@@ -1929,6 +1965,7 @@ function GanttPageContent({ initialProjectId = null }: GanttPageProps) {
           onTimelineTouchStart={handleTimelineTouchStart}
           onTimelineTouchMove={handleTimelineTouchMove}
           onTimelineTouchEnd={handleTimelineTouchEnd}
+          personalEventLabelsByDate={googleCalendar.connected ? personalEventLabelsByDate : undefined}
         />
       )}
 

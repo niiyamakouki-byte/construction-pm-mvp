@@ -113,6 +113,10 @@ type SupabaseUser = {
 type SupabaseSession = {
   user: SupabaseUser;
   access_token: string;
+  /** Google等OAuthプロバイダーのアクセストークン。リダイレクト直後のセッションのみで取得可能 */
+  provider_token?: string | null;
+  /** プロバイダーのリフレッシュトークン（access_type=offline 取得時のみ） */
+  provider_refresh_token?: string | null;
 };
 
 type StorageLike = {
@@ -132,7 +136,16 @@ type SupabaseAuthClient = {
   getSession(): Promise<{ data: { session: SupabaseSession | null }; error: { message: string } | null }>;
   signInWithPassword(credentials: { email: string; password: string }): Promise<{ data: { session: SupabaseSession | null }; error: { message: string } | null }>;
   signInWithOtp(credentials: { email: string }): Promise<{ data: { session: SupabaseSession | null }; error: { message: string } | null }>;
-  signInWithOAuth(options: { provider: string; options?: { redirectTo?: string } }): Promise<{ data: unknown; error: { message: string } | null }>;
+  signInWithOAuth(options: {
+    provider: string;
+    options?: {
+      redirectTo?: string;
+      /** OAuthプロバイダーへ要求する追加スコープ（スペース区切り） */
+      scopes?: string;
+      /** OAuth認可URLに付与するクエリパラメータ（例: access_type, prompt） */
+      queryParams?: Record<string, string>;
+    };
+  }): Promise<{ data: unknown; error: { message: string } | null }>;
   signUp(credentials: { email: string; password: string; options?: { data?: Record<string, unknown> } }): Promise<{ data: { session: SupabaseSession | null }; error: { message: string } | null }>;
   signOut(): Promise<{ error: { message: string } | null }>;
   resetPasswordForEmail(email: string, options?: { redirectTo?: string }): Promise<{ data: unknown; error: { message: string } | null }>;

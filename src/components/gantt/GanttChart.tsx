@@ -40,6 +40,11 @@ type Props = {
   onTimelineTouchStart?: (event: ReactTouchEvent<HTMLDivElement>) => void;
   onTimelineTouchMove?: (event: ReactTouchEvent<HTMLDivElement>) => void;
   onTimelineTouchEnd?: (event: ReactTouchEvent<HTMLDivElement>) => void;
+  /**
+   * 個人カレンダー予定が入っている日付（YYYY-MM-DD）→ 表示用ラベル配列。
+   * Phase A: タイムラインヘッダー直下にマーカーを薄く表示する。
+   */
+  personalEventLabelsByDate?: Record<string, string[]>;
 };
 
 export function GanttChart({
@@ -65,6 +70,7 @@ export function GanttChart({
   onTimelineTouchStart,
   onTimelineTouchMove,
   onTimelineTouchEnd,
+  personalEventLabelsByDate,
 }: Props) {
   const { phaseRowHeight, headerHeight, labelWidth } = gantt;
   const { chartStart, totalDays, dateInfo, highlightedDates, todayOffset, dayWidth } = chartLayout;
@@ -181,11 +187,15 @@ export function GanttChart({
               <div className="relative flex" style={{ height: dayRowHeight }}>
                 {dateInfo.map((date) => {
                   const weekday = formatWeekdayLabel(date.date);
+                  const personalEvents = personalEventLabelsByDate?.[date.date];
+                  const hasPersonalEvent = personalEvents != null && personalEvents.length > 0;
+                  const personalEventTitle = hasPersonalEvent ? `個人予定: ${personalEvents.join(", ")}` : undefined;
                   return (
                     <div
                       key={date.date}
                       data-today={date.isToday ? "true" : undefined}
-                      title={date.holidayName ?? undefined}
+                      data-has-personal-event={hasPersonalEvent ? "true" : undefined}
+                      title={personalEventTitle ?? date.holidayName ?? undefined}
                       className={`relative flex flex-col items-center justify-center border-r border-slate-100 ${
                         date.isToday
                           ? "bg-red-50"
@@ -211,6 +221,12 @@ export function GanttChart({
                       >
                         {weekday}
                       </span>
+                      {hasPersonalEvent && (
+                        <span
+                          aria-label={personalEventTitle}
+                          className="absolute bottom-0.5 left-1/2 h-1.5 w-1.5 -translate-x-1/2 rounded-full bg-amber-400"
+                        />
+                      )}
                     </div>
                   );
                 })}

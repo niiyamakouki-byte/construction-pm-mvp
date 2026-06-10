@@ -2,14 +2,16 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { AccountSettingsPage } from "./AccountSettingsPage.js";
 
-const { useAuth, getSupabaseClient, hasSupabaseEnv } = vi.hoisted(() => ({
+const { useAuth, getSupabaseClient, hasSupabaseEnv, readGoogleProviderToken } = vi.hoisted(() => ({
   useAuth: vi.fn(),
   getSupabaseClient: vi.fn(),
   hasSupabaseEnv: vi.fn(),
+  readGoogleProviderToken: vi.fn(() => null),
 }));
 
 vi.mock("../contexts/AuthContext.js", () => ({
   useAuth,
+  readGoogleProviderToken,
 }));
 
 vi.mock("../infra/supabase-client.js", () => ({

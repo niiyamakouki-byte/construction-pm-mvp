@@ -54,7 +54,11 @@ describe("LoginPage", () => {
     await waitFor(() => {
       expect(signInWithOAuth).toHaveBeenCalledWith({
         provider: "google",
-        options: { redirectTo: "http://localhost:3000/" },
+        options: {
+          redirectTo: "http://localhost:3000/",
+          scopes: "https://www.googleapis.com/auth/calendar.readonly",
+          queryParams: { access_type: "offline", prompt: "consent" },
+        },
       });
     });
   });

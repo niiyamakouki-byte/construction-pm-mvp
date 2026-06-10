@@ -16,7 +16,44 @@ type User = {
 type Session = {
   user: User;
   access_token: string;
+  provider_token?: string | null;
+  provider_refresh_token?: string | null;
 };
+
+/** Googleカレンダー連携用のprovider_tokenを保持するsessionStorageキー */
+export const GOOGLE_PROVIDER_TOKEN_STORAGE_KEY = "genbahub_google_provider_token";
+
+/** sessionStorageからGoogleカレンダー用provider_tokenを読み出す。なければnull */
+export function readGoogleProviderToken(): string | null {
+  if (typeof window === "undefined") return null;
+  try {
+    return window.sessionStorage.getItem(GOOGLE_PROVIDER_TOKEN_STORAGE_KEY);
+  } catch {
+    return null;
+  }
+}
+
+function persistGoogleProviderToken(token: string | null | undefined): void {
+  if (typeof window === "undefined") return;
+  try {
+    if (token) {
+      window.sessionStorage.setItem(GOOGLE_PROVIDER_TOKEN_STORAGE_KEY, token);
+    }
+    // 重要: provider_token はOAuthリダイレクト直後のSIGNED_INでしか入らない。
+    // TOKEN_REFRESHED で undefined が来ても既存トークンは消さない。
+  } catch {
+    // sessionStorage が使えなくても致命傷ではないので握りつぶす
+  }
+}
+
+function clearGoogleProviderToken(): void {
+  if (typeof window === "undefined") return;
+  try {
+    window.sessionStorage.removeItem(GOOGLE_PROVIDER_TOKEN_STORAGE_KEY);
+  } catch {
+    // noop
+  }
+}
 
 type AuthContextValue = {
   session: Session | null;
@@ -72,6 +109,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
           setSession(newSession);
           setLoading(false);
+          // Googleカレンダー連携用: SIGNED_INの瞬間だけ provider_token が入る
+          if (event === "SIGNED_IN") {
+            persistGoogleProviderToken(newSession?.provider_token);
+          }
           if (event === "PASSWORD_RECOVERY") {
             markPasswordRecoveryMode();
             navigate("/account");
@@ -79,6 +120,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           }
           if (event === "SIGNED_OUT") {
             clearPasswordRecoveryMode();
+            clearGoogleProviderToken();
           }
           // OAuth/メールログイン後、ランディング/ログインページにいたらアプリへ遷移
           // email_confirmed_at が null の場合はメール未確認のため遷移しない
