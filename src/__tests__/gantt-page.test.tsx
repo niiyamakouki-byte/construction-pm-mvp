@@ -38,6 +38,7 @@ vi.mock("../stores/notification-store.js", () => ({
 
 vi.mock("../lib/gantt-pdf-export.js", () => ({
   exportGanttToPdf: (...args: unknown[]) => mockExportGanttToPdf(...args),
+  buildGanttPdfHtml: () => "<html><body>preview</body></html>",
 }));
 
 vi.mock("../contexts/OrganizationContext.js", () => ({
@@ -395,6 +396,9 @@ describe("GanttPage", () => {
 
     await screen.findByRole("figure", { name: "ガントチャート: 1タスク" });
     await user.click(screen.getByRole("button", { name: "PDF出力" }));
+
+    await screen.findByRole("dialog", { name: "工程表PDFプレビュー" });
+    await user.click(screen.getByRole("button", { name: "印刷 / PDF保存" }));
 
     expect(mockExportGanttToPdf).toHaveBeenCalledWith(
       expect.objectContaining({ id: "p1" }),
