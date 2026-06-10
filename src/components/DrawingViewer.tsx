@@ -107,6 +107,11 @@ type MeasureState =
   | { stage: "done"; first: Point; second: Point; label: string }
   | { stage: "adjust"; first: Point; second: Point; target: "first" | "second" };
 
+type MeasurePreviewState = {
+  point: Point;
+  label: string;
+};
+
 type AreaState =
   | { stage: "collecting"; points: Point[] }
   | { stage: "done"; points: Point[]; areaSqm: number };
@@ -138,6 +143,7 @@ export function DrawingViewer({
   const [scaleIsAuto, setScaleIsAuto] = useState(false);
   const [autoScaleLabel, setAutoScaleLabel] = useState<string | null>(null);
   const [measureState, setMeasureState] = useState<MeasureState>({ stage: "idle" });
+  const [measurePreview, setMeasurePreview] = useState<MeasurePreviewState | null>(null);
   const [areaState, setAreaState] = useState<AreaState>({ stage: "collecting", points: [] });
   const [calibrateState, setCalibrateState] = useState<CalibrateState>({ stage: "idle" });
   const [calibrateInput, setCalibrateInput] = useState("");
@@ -185,6 +191,15 @@ export function DrawingViewer({
     const { snapped } = processPickupPoint(candidate, [anchor]);
     return snapped;
   }, []);
+
+  const buildMeasurePreview = useCallback(
+    (first: Point, candidate: Point): MeasurePreviewState => {
+      const snapped = snapMeasurePoint(candidate, first);
+      const result = measureDistance(first, snapped, scale ?? 0);
+      return { point: snapped, label: result.label };
+    },
+    [scale, snapMeasurePoint],
+  );
 
   // Load persisted scale on mount; fall back to PDF auto-detected scale if no manual value saved
   useEffect(() => {
@@ -352,6 +367,41 @@ export function DrawingViewer({
     [mode, pinchActive, calibrateState, measureState, areaState, scale, getPixelPos, getRelativePos, buildMeasureDoneState, snapMeasurePoint]
   );
 
+  const handleMeasurePointerMove = useCallback(
+    (e: React.PointerEvent<HTMLCanvasElement>) => {
+      if (mode !== "measure" || !scale) return;
+      if (measureState.stage !== "first" && measureState.stage !== "adjust") {
+        setMeasurePreview(null);
+        return;
+      }
+      const px = getPixelPos(e.clientX, e.clientY);
+      if (!px) {
+        setMeasurePreview(null);
+        return;
+      }
+      if (measureState.stage === "first") {
+        setMeasurePreview(buildMeasurePreview(measureState.first, px));
+        return;
+      }
+      const anchor = measureState.target === "first" ? measureState.second : measureState.first;
+      setMeasurePreview(buildMeasurePreview(anchor, px));
+    },
+    [mode, scale, measureState, getPixelPos, buildMeasurePreview],
+  );
+
+  const clearMeasurePreview = useCallback(() => {
+    setMeasurePreview(null);
+  }, []);
+
+  useEffect(() => {
+    if (
+      mode !== "measure" ||
+      (measureState.stage !== "first" && measureState.stage !== "adjust")
+    ) {
+      setMeasurePreview(null);
+    }
+  }, [mode, measureState]);
+
   // Draw overlays on canvas
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -402,6 +452,25 @@ export function DrawingViewer({
       };
       if (measureState.stage === "first") {
         drawPoint(measureState.first);
+        if (measurePreview) {
+          drawPoint(measurePreview.point);
+          ctx.beginPath();
+          ctx.moveTo(measureState.first.x, measureState.first.y);
+          ctx.lineTo(measurePreview.point.x, measurePreview.point.y);
+          ctx.strokeStyle = "rgba(59,130,246,0.6)";
+          ctx.lineWidth = 2;
+          ctx.setLineDash([6, 3]);
+          ctx.stroke();
+          ctx.setLineDash([]);
+          const mx = (measureState.first.x + measurePreview.point.x) / 2;
+          const my = (measureState.first.y + measurePreview.point.y) / 2;
+          ctx.font = "bold 13px sans-serif";
+          ctx.fillStyle = "#1e3a8a";
+          ctx.strokeStyle = "#fff";
+          ctx.lineWidth = 4;
+          ctx.strokeText(measurePreview.label, mx + 4, my - 6);
+          ctx.fillText(measurePreview.label, mx + 4, my - 6);
+        }
       } else if (measureState.stage === "done" || measureState.stage === "adjust") {
         drawPoint(measureState.first);
         drawPoint(measureState.second);
@@ -411,6 +480,26 @@ export function DrawingViewer({
         ctx.strokeStyle = "#3b82f6";
         ctx.lineWidth = 2;
         ctx.stroke();
+        if (measureState.stage === "adjust" && measurePreview) {
+          const anchor = measureState.target === "first" ? measureState.second : measureState.first;
+          drawPoint(measurePreview.point);
+          ctx.beginPath();
+          ctx.moveTo(anchor.x, anchor.y);
+          ctx.lineTo(measurePreview.point.x, measurePreview.point.y);
+          ctx.strokeStyle = "rgba(59,130,246,0.6)";
+          ctx.lineWidth = 2;
+          ctx.setLineDash([6, 3]);
+          ctx.stroke();
+          ctx.setLineDash([]);
+          const mx = (anchor.x + measurePreview.point.x) / 2;
+          const my = (anchor.y + measurePreview.point.y) / 2;
+          ctx.font = "bold 13px sans-serif";
+          ctx.fillStyle = "#1e3a8a";
+          ctx.strokeStyle = "#fff";
+          ctx.lineWidth = 4;
+          ctx.strokeText(measurePreview.label, mx + 4, my - 6);
+          ctx.fillText(measurePreview.label, mx + 4, my - 6);
+        }
         if (measureState.stage === "done") {
           const mx = (measureState.first.x + measureState.second.x) / 2;
           const my = (measureState.first.y + measureState.second.y) / 2;
@@ -531,7 +620,7 @@ export function DrawingViewer({
         ctx.stroke();
       }
     }
-  }, [mode, calibrateState, measureState, areaState, pickupPoints, pickupPrediction, pickupKind, pickupCategory, penStrokePreview]);
+  }, [mode, calibrateState, measureState, measurePreview, areaState, pickupPoints, pickupPrediction, pickupKind, pickupCategory, penStrokePreview]);
 
   const confirmCalibrate = () => {
     if (calibrateState.stage !== "dialog") return;
@@ -789,6 +878,7 @@ export function DrawingViewer({
     setPopover(null);
     if (next !== "calibrate") setCalibrateState({ stage: "idle" });
     if (next !== "measure") setMeasureState({ stage: "idle" });
+    if (next !== "measure") setMeasurePreview(null);
     if (next !== "area") setAreaState({ stage: "collecting", points: [] });
     if (next !== "diff") { setDiffResult(null); }
     if (next !== "pickup") { setPickupPoints([]); setPickupDrawing(false); setPickupPrediction(null); }
@@ -953,8 +1043,9 @@ export function DrawingViewer({
             onClick={handleCanvasClick}
             onTouchStart={(e) => { handleTouchStart(e); if (e.touches.length === 1) handleCanvasClick(e); }}
             onTouchEnd={handleTouchEnd}
+            onPointerMove={mode === "measure" ? handleMeasurePointerMove : mode === "pickup" ? handlePickupPointerMove : undefined}
+            onPointerLeave={mode === "measure" ? clearMeasurePreview : undefined}
             onPointerDown={mode === "pickup" ? handlePickupPointerDown : undefined}
-            onPointerMove={mode === "pickup" ? handlePickupPointerMove : undefined}
             onPointerUp={mode === "pickup" ? handlePickupPointerUp : undefined}
             onPointerCancel={mode === "pickup" ? handlePickupPointerCancel : undefined}
           />
@@ -1189,6 +1280,13 @@ export function DrawingViewer({
                 再計測
               </button>
             </div>
+          </div>
+        )}
+
+        {mode === "measure" && measurePreview && (measureState.stage === "first" || measureState.stage === "adjust") && (
+          <div className="rounded-xl border border-sky-200 bg-sky-50 px-3 py-2 text-center text-xs text-sky-800">
+            <div className="font-bold">プレビュー: {measurePreview.label}</div>
+            <div className="mt-1 text-[11px] text-sky-600">タップ前の吸着位置を表示中</div>
           </div>
         )}
 

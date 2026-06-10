@@ -144,6 +144,56 @@ describe("DrawingViewer", () => {
     }
   });
 
+  it("shows snapped measurement preview before the second point is confirmed", () => {
+    const restore = patchElementSize();
+    try {
+      const { container } = render(
+        <DrawingViewer
+          drawingUrl={DRAWING_URL}
+          drawingId="measure-preview"
+          detectedScaleMmPerPt={1}
+          renderPxPerPt={1}
+        />,
+      );
+      fireEvent.click(screen.getByText("距離計測"));
+      const canvas = container.querySelector("canvas");
+      expect(canvas).not.toBeNull();
+
+      fireEvent.click(canvas!, { clientX: 100, clientY: 100 });
+      fireEvent.pointerMove(canvas!, { clientX: 197, clientY: 108 });
+
+      expect(screen.getByText("プレビュー: 97 mm")).toBeDefined();
+    } finally {
+      restore();
+    }
+  });
+
+  it("updates the snapped preview while adjusting an existing measurement point", () => {
+    const restore = patchElementSize();
+    try {
+      const { container } = render(
+        <DrawingViewer
+          drawingUrl={DRAWING_URL}
+          drawingId="measure-adjust-preview"
+          detectedScaleMmPerPt={1}
+          renderPxPerPt={1}
+        />,
+      );
+      fireEvent.click(screen.getByText("距離計測"));
+      const canvas = container.querySelector("canvas");
+      expect(canvas).not.toBeNull();
+
+      fireEvent.click(canvas!, { clientX: 100, clientY: 100 });
+      fireEvent.click(canvas!, { clientX: 200, clientY: 100 });
+      fireEvent.click(screen.getByText("始点調整"));
+      fireEvent.pointerMove(canvas!, { clientX: 50, clientY: 94 });
+
+      expect(screen.getByText("プレビュー: 150 mm")).toBeDefined();
+    } finally {
+      restore();
+    }
+  });
+
   it("opens popover when sidebar pin clicked", () => {
     const pin = makePin({ comment: "テスト亀裂" });
     render(<DrawingViewer drawingUrl={DRAWING_URL} initialPins={[pin]} />);
