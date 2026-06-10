@@ -4,7 +4,7 @@
  * (3) panel 折りたたみ/展開
  */
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { render, screen, fireEvent, waitFor, cleanup } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor, cleanup, act } from "@testing-library/react";
 import { AssistantChatPanel } from "../components/AssistantChatPanel.js";
 
 // framer-motion をスタブ化: jsdom では exit アニメーションが DOM に残るため
@@ -57,7 +57,12 @@ afterEach(() => {
 });
 
 describe("AssistantChatPanel", () => {
-  it("初期状態では FAB ボタンのみ表示される（チャットウィンドウは非表示）", () => {
+  beforeEach(() => {
+    Object.defineProperty(window, "innerWidth", { configurable: true, writable: true, value: 390 });
+    Object.defineProperty(window, "innerHeight", { configurable: true, writable: true, value: 844 });
+  });
+
+  it("モバイル初期状態では FAB ボタンのみ表示される（チャットウィンドウは非表示）", () => {
     render(<AssistantChatPanel userId="test-user" />);
 
     const fab = screen.getByTestId("assistant-chat-fab");
@@ -65,6 +70,34 @@ describe("AssistantChatPanel", () => {
 
     // チャットウィンドウは表示されていない
     expect(screen.queryByRole("dialog")).toBeNull();
+  });
+
+  it("デスクトップ初期状態では FAB を表示しない", () => {
+    Object.defineProperty(window, "innerWidth", { configurable: true, writable: true, value: 1280 });
+    render(<AssistantChatPanel userId="test-user" />);
+
+    expect(screen.queryByTestId("assistant-chat-fab")).toBeNull();
+    expect(screen.queryByRole("dialog")).toBeNull();
+  });
+
+  it("デスクトップでは assistant-open イベントでチャットを開ける", async () => {
+    Object.defineProperty(window, "innerWidth", { configurable: true, writable: true, value: 1280 });
+    render(<AssistantChatPanel userId="test-user" />);
+
+    act(() => {
+      window.dispatchEvent(new CustomEvent("genbahub:assistant-open"));
+    });
+
+    await waitFor(() => {
+      expect(screen.getByRole("dialog")).toBeTruthy();
+    });
+  });
+
+  it("モバイルの FAB は下ナビを避けた位置に出る", () => {
+    render(<AssistantChatPanel userId="test-user" />);
+
+    const wrapper = screen.getByTestId("assistant-chat-fab").parentElement as HTMLElement;
+    expect(wrapper.style.top).toBe("676px");
   });
 
   it("FAB ボタンをクリックするとチャットウィンドウが展開する", () => {

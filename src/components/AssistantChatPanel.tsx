@@ -27,6 +27,12 @@ const POLL_INTERVAL_MS = 2000;
 
 const MIN_W = 320;
 const MIN_H = 400;
+const FAB_SIZE = 56;
+const FAB_RADIUS = FAB_SIZE / 2;
+const FAB_EDGE_GAP = 20;
+const MOBILE_BREAKPOINT = 768;
+const MOBILE_NAV_CLEARANCE = 92;
+const PANEL_EDGE_GAP = 16;
 
 function loadHistory(): ChatMessage[] {
   try {
@@ -89,9 +95,12 @@ function saveSize(size: { w: number; h: number }): void {
 }
 
 function defaultPos(): { x: number; y: number } {
+  const mobileBottomOffset = window.innerWidth < MOBILE_BREAKPOINT ? MOBILE_NAV_CLEARANCE : 0;
+  const desiredLeft = window.innerWidth - FAB_SIZE - FAB_EDGE_GAP;
+  const desiredTop = window.innerHeight - FAB_SIZE - FAB_EDGE_GAP - mobileBottomOffset;
   return {
-    x: window.innerWidth - 80,
-    y: window.innerHeight - 80,
+    x: desiredLeft + FAB_RADIUS,
+    y: desiredTop + FAB_RADIUS,
   };
 }
 
@@ -102,9 +111,12 @@ function defaultSize(): { w: number; h: number } {
 function clampPanelPos(x: number, y: number, w: number, h: number): { x: number; y: number } {
   const vw = window.innerWidth;
   const vh = window.innerHeight;
+  const compactMode = w <= FAB_SIZE && h <= FAB_SIZE;
+  const bottomInset = compactMode && vw < MOBILE_BREAKPOINT ? MOBILE_NAV_CLEARANCE : 0;
+  const edge = compactMode ? 0 : PANEL_EDGE_GAP;
   return {
-    x: Math.max(0, Math.min(x, vw - w)),
-    y: Math.max(0, Math.min(y, vh - h)),
+    x: Math.max(edge, Math.min(x, vw - w - edge)),
+    y: Math.max(edge, Math.min(y, vh - h - edge - bottomInset)),
   };
 }
 
@@ -124,6 +136,9 @@ type Props = {
 };
 
 export function AssistantChatPanel({ userId = "demo-user" }: Props) {
+  const [viewportWidth, setViewportWidth] = useState(() =>
+    typeof window !== "undefined" ? window.innerWidth : 1280,
+  );
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>(() => {
     const history = loadHistory();
@@ -151,6 +166,25 @@ export function AssistantChatPanel({ userId = "demo-user" }: Props) {
 
   const dragRef = useRef<{ startMouseX: number; startMouseY: number; startPosX: number; startPosY: number } | null>(null);
   const resizeRef = useRef<{ startMouseX: number; startMouseY: number; startW: number; startH: number } | null>(null);
+  const showFab = viewportWidth < MOBILE_BREAKPOINT;
+
+  useEffect(() => {
+    const onResize = () => {
+      setViewportWidth(window.innerWidth);
+      setPos((current) => {
+        if (window.innerWidth < MOBILE_BREAKPOINT) {
+          return clampPanelPos(current.x, current.y, open ? size.w : FAB_SIZE, open ? size.h : FAB_SIZE);
+        }
+        if (!open) {
+          return defaultPos();
+        }
+        return clampPanelPos(current.x, current.y, size.w, size.h);
+      });
+    };
+
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, [open, size.h, size.w]);
 
   // ⌘K / Ctrl+K でトグル
   useEffect(() => {
@@ -369,8 +403,8 @@ export function AssistantChatPanel({ userId = "demo-user" }: Props) {
 
   const fabStyle: React.CSSProperties = {
     position: "fixed",
-    left: pos.x - (open ? 0 : 28),
-    top: pos.y - (open ? 0 : 28),
+    left: pos.x - (open ? 0 : FAB_RADIUS),
+    top: pos.y - (open ? 0 : FAB_RADIUS),
     zIndex: 50,
   };
 
@@ -554,7 +588,7 @@ export function AssistantChatPanel({ userId = "demo-user" }: Props) {
 
       {/* FAB ボタン */}
       <AnimatePresence>
-        {!open && (
+        {!open && showFab && (
           <motion.button
             key="chat-fab"
             initial={{ scale: 0.8, opacity: 0 }}
