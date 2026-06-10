@@ -4,6 +4,24 @@ import { createPaymentPlanRepository } from "../stores/payment-plan-store.js";
 import { createExecutionBudgetRepository } from "../stores/execution-budget-store.js";
 import { useOrganizationContext } from "../contexts/OrganizationContext.js";
 import { ChangeRequestAdminPanel } from "./ChangeRequestAdminPanel.js";
+import { getInvoicesByProject, type Invoice } from "../lib/invoice-store.js";
+
+/**
+ * 案件の請求書から「入金済み合計」「未入金合計」を算出する。
+ * 表示計算専用 — 既存テーブルに書き込みは行わない。
+ */
+export function summarizeInvoicePayments(invoices: Invoice[]): {
+  paidTotal: number;
+  unpaidTotal: number;
+} {
+  let paidTotal = 0;
+  let unpaidTotal = 0;
+  for (const inv of invoices) {
+    if (inv.status === "振込済") paidTotal += inv.total;
+    else unpaidTotal += inv.total;
+  }
+  return { paidTotal, unpaidTotal };
+}
 
 const currency = new Intl.NumberFormat("ja-JP", {
   style: "currency",
@@ -189,6 +207,11 @@ export function ProjectFinancePanel({ projectId }: { projectId: string }) {
   const totalPlannedBudget = budgets.reduce((s, b) => s + b.plannedAmount, 0);
   const totalActualBudget = budgets.reduce((s, b) => s + b.actualAmount, 0);
 
+  // 請求書ベースの入金状況（表示のみ・既存テーブルへの書き込みなし）
+  const projectInvoices = getInvoicesByProject(projectId);
+  const { paidTotal: invoicePaidTotal, unpaidTotal: invoiceUnpaidTotal } =
+    summarizeInvoicePayments(projectInvoices);
+
   return (
     <div className="space-y-4">
       {error && (
@@ -216,7 +239,7 @@ export function ProjectFinancePanel({ projectId }: { projectId: string }) {
             {syncing ? "freee 同期中..." : "freee 同期"}
           </button>
         </div>
-        <div className="grid grid-cols-3 gap-2 mb-4 text-center">
+        <div className="grid grid-cols-3 gap-2 mb-3 text-center">
           <div className="rounded-lg bg-slate-50 p-2">
             <p className="text-[10px] text-slate-500">予定合計</p>
             <p className="text-sm font-bold text-slate-800 tabular-nums">{currency.format(totalScheduled)}</p>
@@ -228,6 +251,18 @@ export function ProjectFinancePanel({ projectId }: { projectId: string }) {
           <div className="rounded-lg bg-amber-50 p-2">
             <p className="text-[10px] text-amber-600">未収</p>
             <p className="text-sm font-bold text-amber-700 tabular-nums">{currency.format(outstanding)}</p>
+          </div>
+        </div>
+
+        {/* 請求書ベース（freee 照合反映） */}
+        <div className="grid grid-cols-2 gap-2 mb-4 text-center" data-testid="invoice-payment-summary">
+          <div className="rounded-lg border border-emerald-100 bg-white p-2">
+            <p className="text-[10px] text-emerald-600">請求書 入金済み合計</p>
+            <p className="text-sm font-bold text-emerald-700 tabular-nums">{currency.format(invoicePaidTotal)}</p>
+          </div>
+          <div className="rounded-lg border border-amber-100 bg-white p-2">
+            <p className="text-[10px] text-amber-600">請求書 未入金合計</p>
+            <p className="text-sm font-bold text-amber-700 tabular-nums">{currency.format(invoiceUnpaidTotal)}</p>
           </div>
         </div>
 
