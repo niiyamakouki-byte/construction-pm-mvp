@@ -194,10 +194,10 @@ describe("TodayDashboardPage", () => {
     ).toBeDefined();
   });
 
-  it("空状態メッセージ「今日のタスクはありません」が表示される", async () => {
+  it("空状態メッセージ「今日の予定タスクはありません」が表示される", async () => {
     render(<TodayDashboardPage />);
     await waitFor(() =>
-      expect(screen.getByText("今日のタスクはありません")).toBeDefined(),
+      expect(screen.getByText("今日の予定タスクはありません")).toBeDefined(),
     );
   });
 

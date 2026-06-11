@@ -232,7 +232,7 @@ describe("CostManagementPage", () => {
     expect(screen.queryByText("壁紙変更")).toBeNull();
   });
 
-  it("案件ゼロのとき「案件を選択する」「見積を取り込む」CTAを表示する", async () => {
+  it("案件ゼロのとき「案件を登録する」CTAを表示する", async () => {
     mockProjectRepository.findAll.mockResolvedValue([]);
     mockTaskRepository.findAll.mockResolvedValue([]);
     mockCostItemRepository.findAll.mockResolvedValue([]);
@@ -240,11 +240,11 @@ describe("CostManagementPage", () => {
 
     render(<CostManagementPage />);
 
-    expect(await screen.findByText("案件を選択する")).toBeDefined();
-    expect(screen.getByText("見積を取り込む")).toBeDefined();
+    expect(await screen.findByText("案件を登録してコスト管理を始める")).toBeDefined();
+    expect(screen.getByText("案件を登録する")).toBeDefined();
   });
 
-  it("案件ゼロのCTAから案件一覧と見積へ遷移する", async () => {
+  it("案件ゼロのCTAから案件一覧へ遷移する", async () => {
     const user = userEvent.setup();
     mockProjectRepository.findAll.mockResolvedValue([]);
     mockTaskRepository.findAll.mockResolvedValue([]);
@@ -253,11 +253,8 @@ describe("CostManagementPage", () => {
 
     render(<CostManagementPage />);
 
-    await user.click(await screen.findByRole("button", { name: "案件を選択する" }));
+    await user.click(await screen.findByRole("button", { name: "案件を登録する" }));
     expect(vi.mocked(navigate)).toHaveBeenCalledWith("/app");
-
-    await user.click(screen.getByRole("button", { name: "見積を取り込む" }));
-    expect(vi.mocked(navigate)).toHaveBeenCalledWith("/estimate");
   });
 
   it("リスクレベルバッジを日本語で表示する（高リスク/中リスク/低リスク）", async () => {
@@ -309,7 +306,7 @@ describe("CostManagementPage", () => {
     expect(screen.queryByText("Low Risk")).toBeNull();
   });
 
-  it("コスト項目ゼロのとき「見積を取り込む」「予算ベースラインを作成」CTAを表示する", async () => {
+  it("コスト項目ゼロのとき「見積を作成する」CTAを表示する", async () => {
     mockProjectRepository.findAll.mockResolvedValue([
       {
         id: "p1",
@@ -329,9 +326,8 @@ describe("CostManagementPage", () => {
 
     render(<CostManagementPage />);
 
-    expect(await screen.findByText("コスト項目はまだありません")).toBeDefined();
-    expect(screen.getAllByText("見積を取り込む").length).toBeGreaterThan(0);
-    expect(screen.getAllByText("予算ベースラインを作成").length).toBeGreaterThan(0);
+    expect(await screen.findByText("まだコスト項目がありません")).toBeDefined();
+    expect(screen.getByText("見積を作成する")).toBeDefined();
   });
 
 });

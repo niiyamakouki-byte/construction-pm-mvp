@@ -54,6 +54,8 @@ import { savePhaseTemplate } from "../lib/phase-template/storage.js";
 import type { PhaseTemplate, PhaseTemplateTag } from "../lib/phase-template/types.js";
 import { ConfirmDialog } from "../components/common/ConfirmDialog.js";
 import { ACTION_LABELS } from "../lib/action-labels.js";
+import { BarChart2, FolderKanban } from "lucide-react";
+import { EmptyState } from "../components/EmptyState.js";
 
 const MAX_CHART_DAYS = 240;
 const MIN_DAY_WIDTH = 8;
@@ -324,31 +326,6 @@ function buildProjectPeriod(project: Project, tasks: GanttTask[]) {
   return `${formatScheduleDate(rangeStart)} - ${formatScheduleDate(rangeEnd)}`;
 }
 
-function EmptyScheduleState({
-  title,
-  description,
-  actionLabel,
-  onAction,
-}: {
-  title: string;
-  description: string;
-  actionLabel: string;
-  onAction: () => void;
-}) {
-  return (
-    <div className="rounded-[26px] border border-dashed border-slate-300 bg-white px-6 py-10 text-center shadow-sm">
-      <h2 className="text-xl font-bold text-slate-900">{title}</h2>
-      <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-slate-500">{description}</p>
-      <button
-        type="button"
-        onClick={onAction}
-        className="mt-6 rounded-2xl bg-brand-600 px-5 py-3 text-sm font-semibold text-white shadow-sm"
-      >
-        {actionLabel}
-      </button>
-    </div>
-  );
-}
 
 type GanttPageProps = {
   initialProjectId?: string | null;
@@ -1236,10 +1213,11 @@ function GanttPageContent({ initialProjectId = null }: GanttPageProps) {
 
   if (projects.length === 0) {
     return (
-      <EmptyScheduleState
+      <EmptyState
+        icon={<FolderKanban size={22} strokeWidth={1.75} />}
         title="案件がありません"
         description="先に案件を1件作成すると、案件を選んですぐ工程表を開けます。"
-        actionLabel="案件一覧へ"
+        actionLabel="案件を登録する"
         onAction={() => navigate("/app")}
       />
     );
@@ -1247,9 +1225,10 @@ function GanttPageContent({ initialProjectId = null }: GanttPageProps) {
 
   if (!selectedProject) {
     return (
-      <EmptyScheduleState
-        title="案件を選択してください"
-        description="案件一覧または上の案件チップから工程表を開けます。"
+      <EmptyState
+        icon={<BarChart2 size={22} strokeWidth={1.75} />}
+        title="案件を選んで工程表を開く"
+        description="上の案件チップ、または案件一覧から工程表を開けます。"
         actionLabel="案件一覧へ"
         onAction={() => navigate("/app")}
       />
@@ -1955,10 +1934,11 @@ function GanttPageContent({ initialProjectId = null }: GanttPageProps) {
       )}
 
       {selectedProjectTasks.length === 0 || !chartLayout ? (
-        <EmptyScheduleState
-          title="この案件に工程がありません"
-          description="右下の追加ボタンから最初の工程を登録すると、すぐにバーで表示されます。"
-          actionLabel="工程を追加"
+        <EmptyState
+          icon={<BarChart2 size={22} strokeWidth={1.75} />}
+          title="この案件に工程がまだありません"
+          description="最初の工程を追加すると、ガントバーで期間と進捗が一目で確認できます。"
+          actionLabel="工程を追加する"
           onAction={() => openQuickAdd(selectedProject.id, selectedProject.name)}
         />
       ) : (

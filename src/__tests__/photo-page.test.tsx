@@ -64,12 +64,10 @@ describe("PhotoPage", () => {
     render(<PhotoPage />);
 
     await waitFor(() => {
-      expect(screen.getByText("保存済み写真がありません")).toBeDefined();
+      expect(screen.getByText("現場写真はまだありません")).toBeDefined();
     });
 
-    expect(screen.getByText(/今日の現場写真をアップロード/)).toBeDefined();
     expect(screen.getByText("今日の写真をアップロード")).toBeDefined();
-    expect(screen.getByText("案件トップへ戻る")).toBeDefined();
   });
 
   it("主ボタンから今日の写真アップロードへ遷移する", async () => {
@@ -86,9 +84,9 @@ describe("PhotoPage", () => {
 
     render(<PhotoPage />);
 
-    const createButton = await screen.findByText("案件を作成する");
+    const createButton = await screen.findByText("案件を登録する");
     fireEvent.click(createButton);
 
-    expect(navigate).toHaveBeenCalledWith("/cross-project-gantt");
+    expect(navigate).toHaveBeenCalledWith("/app");
   });
 });

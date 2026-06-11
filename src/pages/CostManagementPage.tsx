@@ -49,6 +49,8 @@ import { createProjectRepository } from "../stores/project-store.js";
 import { createTaskRepository } from "../stores/task-store.js";
 import { createCostItemRepository } from "../stores/cost-item-store.js";
 import { ACTION_LABELS } from "../lib/action-labels.js";
+import { TrendingUp, FileText } from "lucide-react";
+import { EmptyState } from "../components/EmptyState.js";
 
 const currencyFormatter = new Intl.NumberFormat("ja-JP", {
   style: "currency",
@@ -716,28 +718,13 @@ export function CostManagementPage() {
 
   if (projects.length === 0) {
     return (
-      <div className="rounded-[28px] border border-dashed border-slate-300 bg-white px-6 py-12 text-center shadow-sm">
-        <h1 className="text-2xl font-bold text-slate-900">コスト管理を開始</h1>
-        <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-slate-500">
-          案件を作成または選択してから、見積取り込みか予算ベースライン作成に進みます。
-        </p>
-        <div className="mt-5 flex flex-col justify-center gap-2 sm:flex-row">
-          <button
-            type="button"
-            onClick={() => navigate("/app")}
-            className="rounded-lg bg-brand-700 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-brand-800"
-          >
-            {ACTION_LABELS.project.select}
-          </button>
-          <button
-            type="button"
-            onClick={() => navigate("/estimate")}
-            className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50"
-          >
-            {ACTION_LABELS.estimate.import}
-          </button>
-        </div>
-      </div>
+      <EmptyState
+        icon={<TrendingUp size={22} strokeWidth={1.75} />}
+        title="案件を登録してコスト管理を始める"
+        description="案件を作成すると、見積・予算・実費をこの画面でまとめて追跡できます。"
+        actionLabel="案件を登録する"
+        onAction={() => navigate("/app")}
+      />
     );
   }
 
@@ -1093,28 +1080,13 @@ export function CostManagementPage() {
         ]}
       />
       {projectCostRows.length === 0 ? (
-        <div className="rounded-[28px] border border-dashed border-slate-300 bg-white px-6 py-12 text-center shadow-sm">
-          <h2 className="text-xl font-bold text-slate-900">コスト項目はまだありません</h2>
-          <p className="mt-3 text-sm leading-6 text-slate-500">
-            見積データを取り込むか、実行予算のベースラインを作成すると、この案件の原価差異を追跡できます。
-          </p>
-          <div className="mt-5 flex flex-col justify-center gap-2 sm:flex-row">
-            <button
-              type="button"
-              onClick={() => navigate("/estimate")}
-              className="rounded-lg bg-brand-700 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-brand-800"
-            >
-              {ACTION_LABELS.estimate.import}
-            </button>
-            <button
-              type="button"
-              onClick={() => navigate("/estimate")}
-              className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50"
-            >
-              {ACTION_LABELS.budget.createBaseline}
-            </button>
-          </div>
-        </div>
+        <EmptyState
+          icon={<FileText size={22} strokeWidth={1.75} />}
+          title="まだコスト項目がありません"
+          description="見積を作成してこの案件に紐づけると、予算と実費の差異をここで追跡できます。"
+          actionLabel="見積を作成する"
+          onAction={() => navigate("/estimate")}
+        />
       ) : (
         <>
           {categoryGroups.filter((group) => group.rows.length > 0).map((group) => (

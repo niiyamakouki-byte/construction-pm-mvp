@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useMemo, useState, type ChangeEvent } from "react";
+import { CalendarDays } from "lucide-react";
+import { EmptyState } from "../components/EmptyState.js";
 import type { Contractor, CostItem, Expense, Task, TaskStatus, Project } from "../domain/types.js";
 import { createTaskRepository } from "../stores/task-store.js";
 import { createProjectRepository } from "../stores/project-store.js";
@@ -1431,17 +1433,13 @@ function TodayDashboardPageContent() {
         </h2>
 
         {tasks.length === 0 ? (
-          <div className="rounded-2xl border-2 border-dashed border-slate-200 bg-white p-8 text-center">
-            <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-emerald-50">
-              <span className="text-2xl">✓</span>
-            </div>
-            <p className="text-sm font-semibold text-slate-700">
-              今日のタスクはありません
-            </p>
-            <p className="mt-1 text-xs text-slate-400">
-              お疲れ様です。プロジェクト一覧からタスクを追加できます。
-            </p>
-          </div>
+          <EmptyState
+            icon={<CalendarDays size={22} strokeWidth={1.75} />}
+            title="今日の予定タスクはありません"
+            description="工程表でタスクを追加すると、今日の担当分がここに表示されます。"
+            actionLabel="工程表を開く"
+            onAction={() => navigate("/gantt")}
+          />
         ) : (
           <ul className="space-y-3">
             {tasks.map((task) => (
