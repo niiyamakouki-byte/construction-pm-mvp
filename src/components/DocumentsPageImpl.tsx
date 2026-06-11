@@ -303,7 +303,7 @@ export function DocumentsPage({ projectId }: { projectId: string }) {
         </div>
       ) : null}
 
-      <section className="rounded-3xl bg-gradient-to-br from-brand-700 via-brand-800 to-brand-900 p-6 text-white shadow-lg">
+      <section className="rounded-3xl bg-brand-800 p-6 text-white shadow-sm">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div className="space-y-2">
             <p className="text-xs font-semibold uppercase tracking-[0.24em] text-brand-200">Project Documents</p>
