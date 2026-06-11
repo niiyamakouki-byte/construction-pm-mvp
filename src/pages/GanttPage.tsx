@@ -582,7 +582,8 @@ function GanttPageContent({ initialProjectId = null, openMaster = false }: Gantt
       const hash = window.location.hash;
       const cleanHash = hash.replace(/[?&]openMaster=1/, "").replace(/[?]$/, "");
       if (cleanHash !== hash) {
-        window.location.replace(window.location.pathname + window.location.search + cleanHash);
+        // hashchange を発火させずURLだけ書き換える（replaceだとhashchange→再レンダー→openMaster=falseでモーダルが閉じる）
+        window.history.replaceState(null, "", window.location.pathname + window.location.search + cleanHash);
       }
     }
   }, [loading, openMaster]);
