@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { BarChart3, TrendingUp, Users } from "lucide-react";
+import { BarChart3, TrendingUp, Users, Phone, Mail, MapPin, Pencil } from "lucide-react";
 import {
   addCustomer,
   addDeal,
@@ -499,9 +499,9 @@ function CustomerDetail({
         <h2 className="text-lg font-bold text-slate-900">{customer.name}</h2>
         <p className="text-sm text-slate-500">{customer.company}</p>
         <div className="mt-2 space-y-1 text-sm text-slate-600">
-          {customer.phone && <p>📞 {customer.phone}</p>}
-          {customer.email && <p>📧 {customer.email}</p>}
-          {customer.address && <p>📍 {customer.address}</p>}
+          {customer.phone && <p className="flex items-center gap-1.5"><Phone className="h-3.5 w-3.5" aria-hidden="true" /> {customer.phone}</p>}
+          {customer.email && <p className="flex items-center gap-1.5"><Mail className="h-3.5 w-3.5" aria-hidden="true" /> {customer.email}</p>}
+          {customer.address && <p className="flex items-center gap-1.5"><MapPin className="h-3.5 w-3.5" aria-hidden="true" /> {customer.address}</p>}
         </div>
         <div className="mt-3">
           {editNote ? (
@@ -513,8 +513,8 @@ function CustomerDetail({
               </div>
             </div>
           ) : (
-            <button type="button" onClick={() => setEditNote(true)} className="text-xs text-slate-500 hover:text-slate-700">
-              {customer.note ? customer.note : "メモを追加..."} ✏️
+            <button type="button" onClick={() => setEditNote(true)} className="inline-flex items-center gap-1 text-xs text-slate-500 hover:text-slate-700">
+              {customer.note ? customer.note : "メモを追加..."} <Pencil className="h-3.5 w-3.5" aria-hidden="true" />
             </button>
           )}
         </div>

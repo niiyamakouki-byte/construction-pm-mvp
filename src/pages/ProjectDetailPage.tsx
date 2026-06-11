@@ -1,5 +1,18 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { CalendarDays } from "lucide-react";
+import type { ReactNode } from "react";
+import {
+  CalendarDays,
+  Sun,
+  CloudSun,
+  Cloud,
+  CloudDrizzle,
+  CloudRain,
+  CloudLightning,
+  Thermometer,
+  MapPin,
+  Printer,
+  HardHat,
+} from "lucide-react";
 import type { Project, ProjectMode, Task, TaskStatus, CostItem, Expense } from "../domain/types.js";
 import { createProjectRepository } from "../stores/project-store.js";
 import { createTaskRepository } from "../stores/task-store.js";
@@ -120,22 +133,22 @@ function projectMode(project: Project): ProjectMode {
 type WeatherData = {
   temperature: number;
   description: string;
-  icon: string;
+  icon: ReactNode;
 };
 
-const weatherCodes: Record<number, { desc: string; icon: string }> = {
-  0: { desc: "快晴", icon: "☀️" },
-  1: { desc: "晴れ", icon: "🌤" },
-  2: { desc: "曇り", icon: "⛅" },
-  3: { desc: "曇天", icon: "☁️" },
-  51: { desc: "小雨", icon: "🌦" },
-  53: { desc: "雨", icon: "🌧" },
-  55: { desc: "強い雨", icon: "🌧" },
-  61: { desc: "小雨", icon: "🌦" },
-  63: { desc: "雨", icon: "🌧" },
-  65: { desc: "大雨", icon: "🌧" },
-  80: { desc: "にわか雨", icon: "🌦" },
-  95: { desc: "雷雨", icon: "⛈" },
+const weatherCodes: Record<number, { desc: string; icon: ReactNode }> = {
+  0: { desc: "快晴", icon: <Sun className="h-5 w-5" aria-hidden="true" /> },
+  1: { desc: "晴れ", icon: <CloudSun className="h-5 w-5" aria-hidden="true" /> },
+  2: { desc: "曇り", icon: <Cloud className="h-5 w-5" aria-hidden="true" /> },
+  3: { desc: "曇天", icon: <Cloud className="h-5 w-5" aria-hidden="true" /> },
+  51: { desc: "小雨", icon: <CloudDrizzle className="h-5 w-5" aria-hidden="true" /> },
+  53: { desc: "雨", icon: <CloudRain className="h-5 w-5" aria-hidden="true" /> },
+  55: { desc: "強い雨", icon: <CloudRain className="h-5 w-5" aria-hidden="true" /> },
+  61: { desc: "小雨", icon: <CloudDrizzle className="h-5 w-5" aria-hidden="true" /> },
+  63: { desc: "雨", icon: <CloudRain className="h-5 w-5" aria-hidden="true" /> },
+  65: { desc: "大雨", icon: <CloudRain className="h-5 w-5" aria-hidden="true" /> },
+  80: { desc: "にわか雨", icon: <CloudDrizzle className="h-5 w-5" aria-hidden="true" /> },
+  95: { desc: "雷雨", icon: <CloudLightning className="h-5 w-5" aria-hidden="true" /> },
 };
 
 function inferWorkType(project: Project, tasks: Task[]): string {
@@ -215,7 +228,10 @@ async function fetchWeather(
     const current = data.current;
     if (current) {
       const code = current.weather_code ?? 0;
-      const info = weatherCodes[code] ?? { desc: "不明", icon: "🌡" };
+      const info = weatherCodes[code] ?? {
+        desc: "不明",
+        icon: <Thermometer className="h-5 w-5" aria-hidden="true" />,
+      };
       return {
         temperature: current.temperature_2m ?? 0,
         description: info.desc,
@@ -579,7 +595,7 @@ export function ProjectDetailPage({
         <div className="mt-4 flex flex-wrap gap-4 text-sm">
           {project.address && (
             <span className="flex items-center gap-1 text-white/60">
-              <span aria-hidden="true">📍</span>
+              <MapPin className="h-3.5 w-3.5" aria-hidden="true" />
               {project.address}
             </span>
           )}
@@ -593,7 +609,7 @@ export function ProjectDetailPage({
         {/* Weather */}
         {weather && (
           <div className="mt-4 inline-flex items-center gap-2 rounded-xl bg-white/10 px-3 py-2">
-            <span className="text-xl">{weather.icon}</span>
+            <span className="inline-flex items-center">{weather.icon}</span>
             <span className="font-bold">{weather.temperature}°C</span>
             <span className="text-sm text-white/60">{weather.description}</span>
           </div>
@@ -1411,7 +1427,7 @@ export function ProjectDetailPage({
             }}
             className="inline-flex items-center gap-1.5 rounded-lg bg-slate-800 px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-slate-700 active:bg-slate-900 transition-colors"
           >
-            <span aria-hidden="true">🖨</span>
+            <Printer className="h-3.5 w-3.5" aria-hidden="true" />
             QR印刷
           </button>
         </div>
@@ -1421,7 +1437,7 @@ export function ProjectDetailPage({
 
         {/* On-site count badge */}
         <div className="mb-4 inline-flex items-center gap-2 rounded-xl bg-emerald-50 border border-emerald-200 px-3 py-2">
-          <span className="text-xl" aria-hidden="true">👷</span>
+          <HardHat className="h-6 w-6 text-emerald-600" aria-hidden="true" />
           <div>
             <p className="text-xs font-semibold text-emerald-700">現在の入場者数</p>
             <p className="text-2xl font-bold text-emerald-800 tabular-nums leading-tight">{onSiteCount}<span className="text-sm font-normal ml-0.5">名</span></p>
