@@ -14,6 +14,45 @@ function toDate(dateStr: string): Date {
   return new Date(`${dateStr}T00:00:00`);
 }
 
+type GanttRowOrder = { sortIndex?: number; startDate: string; endDate: string };
+
+/**
+ * 工程表の行ソート順。両方に sortIndex があれば手動並び順を優先し、
+ * それ以外は従来通り startDate → endDate の昇順で比較する。
+ */
+export function compareGanttRows(left: GanttRowOrder, right: GanttRowOrder): number {
+  if (left.sortIndex !== undefined && right.sortIndex !== undefined) {
+    return left.sortIndex - right.sortIndex;
+  }
+  const byStart = left.startDate.localeCompare(right.startDate);
+  if (byStart !== 0) return byStart;
+  return left.endDate.localeCompare(right.endDate);
+}
+
+/**
+ * 表示順の taskId 配列に対し、指定タスクを上/下の隣と入れ替えた
+ * sortIndex 採番を返す。現在の表示順で全行を 0..n に一括採番してから
+ * 対象と隣を入れ替えるため、未定義との混在状態が生じない。
+ * 端の行で移動できない場合は changed:false を返す。
+ */
+export function computeReorder(
+  orderedIds: string[],
+  taskId: string,
+  direction: "up" | "down",
+): { sortIndexById: Map<string, number>; changed: boolean } {
+  const sortIndexById = new Map(orderedIds.map((id, index) => [id, index]));
+  const index = orderedIds.indexOf(taskId);
+  if (index < 0) return { sortIndexById, changed: false };
+  const targetIndex = direction === "up" ? index - 1 : index + 1;
+  if (targetIndex < 0 || targetIndex >= orderedIds.length) {
+    return { sortIndexById, changed: false };
+  }
+  const neighborId = orderedIds[targetIndex];
+  sortIndexById.set(taskId, targetIndex);
+  sortIndexById.set(neighborId, index);
+  return { sortIndexById, changed: true };
+}
+
 export function addDays(dateStr: string, days: number): string {
   const d = toDate(dateStr);
   d.setDate(d.getDate() + days);

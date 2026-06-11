@@ -23,6 +23,8 @@ import {
   addDays,
   addDaysBySchedule,
   addDaysSkipWeekends,
+  compareGanttRows,
+  computeReorder,
   daysBetween,
   formatScheduleDate,
   hasCycle,
@@ -454,11 +456,7 @@ function GanttPageContent({ initialProjectId = null, openMaster = false }: Gantt
             contractorName: task.contractorId ? contractorMap.get(task.contractorId)?.name : undefined,
           } satisfies GanttTask;
         })
-        .sort((left, right) => {
-          const byStart = left.startDate.localeCompare(right.startDate);
-          if (byStart !== 0) return byStart;
-          return left.endDate.localeCompare(right.endDate);
-        });
+        .sort(compareGanttRows);
 
       setGanttTasks(nextTasks);
       setSelectedProjectId((current) => {
@@ -524,6 +522,22 @@ function GanttPageContent({ initialProjectId = null, openMaster = false }: Gantt
   const filteredProjectTasks = useMemo(
     () => selectedProjectTasks.filter((task) => activeTrades.has(resolveTradeCategory(task))),
     [selectedProjectTasks, activeTrades, resolveTradeCategory],
+  );
+
+  const handleMoveTask = useCallback(
+    async (task: GanttTask, direction: "up" | "down") => {
+      const orderedIds = filteredProjectTasks.map((t) => t.id);
+      const { sortIndexById, changed } = computeReorder(orderedIds, task.id, direction);
+      if (!changed) return;
+      const now = new Date().toISOString();
+      await Promise.all(
+        filteredProjectTasks.map((t) =>
+          taskRepository.update(t.id, { sortIndex: sortIndexById.get(t.id), updatedAt: now }),
+        ),
+      );
+      await loadData();
+    },
+    [filteredProjectTasks, taskRepository, loadData],
   );
 
   const selectedProjectPeriod = useMemo(() => {
@@ -2019,6 +2033,7 @@ function GanttPageContent({ initialProjectId = null, openMaster = false }: Gantt
           onTaskDragStart={startTaskDrag}
           onTaskResizeStart={startTaskResize}
           onOpenTaskDetail={openTaskDetail}
+          onMoveTask={(task, direction) => void handleMoveTask(task, direction)}
           onOpenQuickAdd={openQuickAdd}
           onTogglePhase={() => undefined}
           onSetConnectState={setConnectState}

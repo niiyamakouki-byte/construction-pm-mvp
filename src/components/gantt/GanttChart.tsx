@@ -33,6 +33,7 @@ type Props = {
   onTaskDragStart: (task: GanttTask, event: ReactPointerEvent<HTMLDivElement>) => void;
   onTaskResizeStart: (task: GanttTask, event: ReactPointerEvent<HTMLDivElement>) => void;
   onOpenTaskDetail: (task: GanttTask) => void;
+  onMoveTask?: (task: GanttTask, direction: "up" | "down") => void;
   onOpenQuickAdd: (projectId: string, projectName: string) => void;
   onTogglePhase: (projectId: string) => void;
   onSetConnectState: (state: ConnectState | null) => void;
@@ -63,6 +64,7 @@ export function GanttChart({
   onTaskDragStart,
   onTaskResizeStart,
   onOpenTaskDetail,
+  onMoveTask,
   onOpenQuickAdd,
   onTogglePhase,
   onSetConnectState,
@@ -90,6 +92,8 @@ export function GanttChart({
       current.span += 1;
     }
   }
+
+  const taskRowIds = visibleRows.filter((row) => row.type === "task").map((row) => row.task.id);
 
   const visibleMilestones = showMilestones
     ? milestones
@@ -151,6 +155,7 @@ export function GanttChart({
               );
             }
 
+            const taskPosition = taskRowIds.indexOf(row.task.id);
             return (
               <GanttTaskLabel
                 key={row.task.id}
@@ -158,6 +163,9 @@ export function GanttChart({
                 today={today}
                 connectMode={connectMode}
                 onOpenTaskDetail={onOpenTaskDetail}
+                onMoveTask={onMoveTask}
+                isFirst={taskPosition === 0}
+                isLast={taskPosition === taskRowIds.length - 1}
               />
             );
           })}

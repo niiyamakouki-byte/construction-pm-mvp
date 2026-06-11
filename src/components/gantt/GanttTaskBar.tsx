@@ -1,4 +1,5 @@
 import { useRef } from "react";
+import { ChevronDown, ChevronUp } from "lucide-react";
 import type { ChartDateInfo, ConnectState, DragState, GanttTask } from "./types.js";
 import { daysBetween, formatScheduleDate, statusColor, statusLabel } from "./utils.js";
 import { gantt } from "../../theme/index.js";
@@ -211,21 +212,33 @@ type GanttTaskLabelProps = {
   today: string;
   connectMode: boolean;
   onOpenTaskDetail: (task: GanttTask) => void;
+  onMoveTask?: (task: GanttTask, direction: "up" | "down") => void;
+  isFirst?: boolean;
+  isLast?: boolean;
 };
 
-export function GanttTaskLabel({ task, connectMode, onOpenTaskDetail }: GanttTaskLabelProps) {
+export function GanttTaskLabel({
+  task,
+  connectMode,
+  onOpenTaskDetail,
+  onMoveTask,
+  isFirst = false,
+  isLast = false,
+}: GanttTaskLabelProps) {
   const { rowHeight } = gantt;
 
   return (
-    <button
-      type="button"
-      className="flex w-full items-center border-b border-slate-100 px-3 py-2 text-left transition-colors hover:bg-slate-50/80"
+    <div
+      className="flex w-full items-center gap-1 border-b border-slate-100 px-3 py-2"
       style={{ minHeight: rowHeight }}
-      onClick={() => {
-        if (!connectMode) onOpenTaskDetail(task);
-      }}
     >
-      <div className="min-w-0 flex-1">
+      <button
+        type="button"
+        className="min-w-0 flex-1 text-left transition-colors hover:bg-slate-50/80"
+        onClick={() => {
+          if (!connectMode) onOpenTaskDetail(task);
+        }}
+      >
         <div className="flex items-center gap-1.5">
           {task.majorCategory && (
             <span
@@ -247,7 +260,29 @@ export function GanttTaskLabel({ task, connectMode, onOpenTaskDetail }: GanttTas
           </div>
           <span className="shrink-0 text-[11px] font-semibold tabular-nums text-slate-500">{task.progress}%</span>
         </div>
-      </div>
-    </button>
+      </button>
+      {onMoveTask && (
+        <div className="flex shrink-0 flex-col">
+          <button
+            type="button"
+            aria-label="上へ移動"
+            disabled={isFirst}
+            className="flex h-4 w-4 items-center justify-center text-slate-400 hover:text-slate-600 disabled:opacity-30"
+            onClick={() => onMoveTask(task, "up")}
+          >
+            <ChevronUp className="h-3 w-3" />
+          </button>
+          <button
+            type="button"
+            aria-label="下へ移動"
+            disabled={isLast}
+            className="flex h-4 w-4 items-center justify-center text-slate-400 hover:text-slate-600 disabled:opacity-30"
+            onClick={() => onMoveTask(task, "down")}
+          >
+            <ChevronDown className="h-3 w-3" />
+          </button>
+        </div>
+      )}
+    </div>
   );
 }

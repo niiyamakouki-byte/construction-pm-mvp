@@ -82,6 +82,9 @@ export function buildGanttPdfHtml(
 ): string {
   const { autoPrint = true } = options;
   const sortedTasks = [...tasks].sort((left, right) => {
+    if (left.sortIndex !== undefined && right.sortIndex !== undefined) {
+      return left.sortIndex - right.sortIndex;
+    }
     const leftDate = left.startDate ?? getTaskEndDate(left) ?? "";
     const rightDate = right.startDate ?? getTaskEndDate(right) ?? "";
     return leftDate.localeCompare(rightDate) || left.name.localeCompare(right.name, "ja");

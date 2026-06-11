@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { addDaysBySchedule, addDaysSkipWeekends, hasCycle } from "./utils.js";
+import {
+  addDaysBySchedule,
+  addDaysSkipWeekends,
+  compareGanttRows,
+  computeReorder,
+  hasCycle,
+} from "./utils.js";
 
 describe("gantt utils", () => {
   it("task-level includeWeekends overrides the project setting", () => {
@@ -8,6 +14,51 @@ describe("gantt utils", () => {
 
   it("moves backward across weekends when weekends are excluded", () => {
     expect(addDaysBySchedule("2025-01-06", -1, false)).toBe("2025-01-03");
+  });
+});
+
+describe("compareGanttRows", () => {
+  it("orders by sortIndex when both rows have one", () => {
+    const left = { sortIndex: 2, startDate: "2025-01-01", endDate: "2025-01-02" };
+    const right = { sortIndex: 1, startDate: "2025-01-10", endDate: "2025-01-11" };
+    expect(compareGanttRows(left, right)).toBeGreaterThan(0);
+  });
+
+  it("falls back to startDate then endDate when sortIndex is missing", () => {
+    const left = { startDate: "2025-01-05", endDate: "2025-01-09" };
+    const right = { startDate: "2025-01-05", endDate: "2025-01-12" };
+    expect(compareGanttRows(left, right)).toBeLessThan(0);
+  });
+});
+
+describe("computeReorder", () => {
+  const ids = ["a", "b", "c"];
+
+  it("swaps a task with its lower neighbor when moving down", () => {
+    const { sortIndexById, changed } = computeReorder(ids, "a", "down");
+    expect(changed).toBe(true);
+    // a and b swap: a→1, b→0, c stays 2 → new order b, a, c
+    const ordered = [...ids].sort((l, r) => sortIndexById.get(l)! - sortIndexById.get(r)!);
+    expect(ordered).toEqual(["b", "a", "c"]);
+  });
+
+  it("swaps a task with its upper neighbor when moving up", () => {
+    const { sortIndexById, changed } = computeReorder(ids, "c", "up");
+    expect(changed).toBe(true);
+    const ordered = [...ids].sort((l, r) => sortIndexById.get(l)! - sortIndexById.get(r)!);
+    expect(ordered).toEqual(["a", "c", "b"]);
+  });
+
+  it("leaves order unchanged when the first row moves up", () => {
+    const { sortIndexById, changed } = computeReorder(ids, "a", "up");
+    expect(changed).toBe(false);
+    const ordered = [...ids].sort((l, r) => sortIndexById.get(l)! - sortIndexById.get(r)!);
+    expect(ordered).toEqual(["a", "b", "c"]);
+  });
+
+  it("leaves order unchanged when the last row moves down", () => {
+    const { changed } = computeReorder(ids, "c", "down");
+    expect(changed).toBe(false);
   });
 });
 

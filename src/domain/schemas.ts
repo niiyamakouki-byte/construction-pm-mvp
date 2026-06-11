@@ -141,6 +141,8 @@ export const TaskSchema = BaseEntitySchema.extend({
   majorCategory: z.string().optional(),
   middleCategory: z.string().optional(),
   minorCategory: z.string().optional(),
+  /** Manual row order in the Gantt view; undefined falls back to date sorting */
+  sortIndex: z.number().optional(),
 });
 
 export type Task = z.infer<typeof TaskSchema>;
