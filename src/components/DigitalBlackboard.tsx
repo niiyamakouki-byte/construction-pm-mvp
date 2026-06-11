@@ -1,5 +1,5 @@
 import { useRef, useState, useEffect, useCallback } from "react";
-import { Camera } from "lucide-react";
+import { Camera, X } from "lucide-react";
 import {
   compositeBlackboard,
   downloadCanvas,
@@ -145,7 +145,7 @@ export function DigitalBlackboard({ photoUrl, defaults }: Props) {
                 className="ml-1 text-slate-400 hover:text-red-500"
                 aria-label="テンプレート削除"
               >
-                ×
+                <X className="h-4 w-4" />
               </button>
             </div>
           ))}

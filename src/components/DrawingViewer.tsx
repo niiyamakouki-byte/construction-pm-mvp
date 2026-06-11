@@ -1589,8 +1589,7 @@ function PinDetail({ pin, editing, onEdit, onChange, onDelete, onClose }: PinDet
     <div className="flex flex-col gap-3">
       <div className="flex items-center justify-between">
         <h3 className="text-base font-bold text-slate-800">ピン詳細</h3>
-        <button type="button" onClick={onClose} className="text-slate-400 hover:text-slate-600 text-lg">×</button>
-      </div>
+                  <button type="button" onClick={onClose} className="text-slate-400 hover:text-slate-600"><X className="h-5 w-5" /></button>      </div>
       <div className="rounded-xl bg-slate-50 p-3 text-sm text-slate-700 space-y-1">
         <p><span className="font-semibold">コメント:</span> {pin.comment || "—"}</p>
         <p><span className="font-semibold">担当者:</span> {pin.assignee || "—"}</p>

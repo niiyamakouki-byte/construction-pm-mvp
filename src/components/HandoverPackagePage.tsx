@@ -5,6 +5,7 @@
  */
 
 import { useState, useEffect, useCallback } from "react";
+import { AlertTriangle } from "lucide-react";
 import type { HandoverPackage, HandoverDocumentKind } from "../lib/handover-package/types.js";
 import {
   DOCUMENT_KIND_LABELS,
@@ -525,8 +526,9 @@ export function HandoverPackagePage() {
                                 {DOCUMENT_KIND_LABELS[doc.kind]}
                               </span>
                               {isExpiringSoon && (
-                                <span className="text-xs font-bold" style={{ color: DANGER }}>
-                                  ⚠ 期限間近
+                                <span className="inline-flex items-center gap-1 text-xs font-bold" style={{ color: DANGER }}>
+                                  <AlertTriangle className="h-3 w-3" aria-hidden="true" />
+                                  期限間近
                                 </span>
                               )}
                             </div>

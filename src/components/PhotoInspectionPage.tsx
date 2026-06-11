@@ -5,6 +5,7 @@
  */
 
 import { useRef, useState, useEffect, useCallback } from "react";
+import { AlertTriangle } from "lucide-react";
 import { RuleBasedDetector } from "../lib/photo-inspection/defect-detector.js";
 import {
   InspectionStore,
@@ -379,8 +380,9 @@ export function PhotoInspectionPage({ projectId, projectName }: Props) {
           </p>
         )}
         {reworkCount > 0 && (
-          <p style={{ margin: "6px 0 0", fontSize: "0.85rem", color: COLOR_DANGER, fontWeight: 600 }}>
-            ⚠ 要手直し {reworkCount}件
+          <p className="flex items-center gap-1" style={{ margin: "6px 0 0", fontSize: "0.85rem", color: COLOR_DANGER, fontWeight: 600 }}>
+            <AlertTriangle className="h-3.5 w-3.5" aria-hidden="true" />
+            要手直し {reworkCount}件
           </p>
         )}
       </div>

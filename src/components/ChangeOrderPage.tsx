@@ -5,6 +5,7 @@
  */
 
 import { useState, useEffect, useCallback } from "react";
+import { AlertTriangle } from "lucide-react";
 import type { ChangeOrder, ChangeOrderKind, ChangeOrderStatus } from "../lib/change-order/types.js";
 import {
   CHANGE_ORDER_KIND_LABELS,
@@ -106,7 +107,10 @@ function ChangeOrderRow({
         <div className="flex items-center gap-2 mb-0.5">
           <span className="text-xs text-slate-500">{CHANGE_ORDER_KIND_LABELS[co.kind]}</span>
           {dangerous && (
-            <span className="text-xs font-bold" style={{ color: DANGER }}>⚠ 10%超</span>
+            <span className="inline-flex items-center gap-1 text-xs font-bold" style={{ color: DANGER }}>
+              <AlertTriangle className="h-3.5 w-3.5" aria-hidden="true" />
+              10%超
+            </span>
           )}
         </div>
         <div className="text-sm text-slate-700 truncate">{co.descriptionJa}</div>
@@ -542,10 +546,11 @@ export function ChangeOrderPage() {
 
                   {isDangerousImpact(ia) && (
                     <div
-                      className="text-xs font-bold px-3 py-2 rounded-lg mb-3"
+                      className="flex items-center gap-1 text-xs font-bold px-3 py-2 rounded-lg mb-3"
                       style={{ background: "#fef2f2", color: DANGER }}
                     >
-                      ⚠ コスト増加率 {ia.costIncreaseRatioPct}% — 危険域 (10%超)
+                      <AlertTriangle className="h-3.5 w-3.5" aria-hidden="true" />
+                      コスト増加率 {ia.costIncreaseRatioPct}% — 危険域 (10%超)
                     </div>
                   )}
 

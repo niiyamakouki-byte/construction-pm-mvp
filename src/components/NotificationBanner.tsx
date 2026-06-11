@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
-import { AlertTriangle, Check, Hourglass, JapaneseYen, Package, Umbrella } from "lucide-react";
+import { AlertTriangle, Check, Hourglass, JapaneseYen, Package, Umbrella, X } from "lucide-react";
 import type { CostItem, Expense, Project, Task } from "../domain/types.js";
 import { useOrganizationContext } from "../contexts/OrganizationContext.js";
 import { navigate } from "../hooks/useHashRouter.js";
@@ -359,7 +359,7 @@ export function NotificationBanner({ refreshKey }: NotificationBannerProps) {
             aria-label="既読にして非表示"
             className="inline-flex h-11 min-w-[44px] items-center justify-center rounded-lg bg-white/70 text-base font-semibold text-slate-500 hover:bg-white hover:text-slate-700"
           >
-            ×
+            <X className="h-4 w-4" />
           </button>
         </div>
       </div>

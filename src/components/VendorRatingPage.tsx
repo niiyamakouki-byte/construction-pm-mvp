@@ -5,6 +5,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { X } from "lucide-react";
 import { calculateScore } from "../lib/vendor-rating/score-calculator.js";
 import { VendorEventStore } from "../lib/vendor-rating/event-store.js";
 import { recommendForCategory } from "../lib/vendor-rating/recommendation-engine.js";
@@ -104,7 +105,7 @@ function DetailPanel({
           aria-label="閉じる"
           className="rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
         >
-          ✕
+          <X className="h-4 w-4" aria-hidden="true" />
         </button>
       </div>
 
@@ -208,7 +209,7 @@ function OrderModal({
             aria-label="閉じる"
             className="rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
           >
-            ✕
+            <X className="h-4 w-4" aria-hidden="true" />
           </button>
         </div>
 
