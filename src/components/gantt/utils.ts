@@ -206,3 +206,26 @@ export function hasCycle(
   }
   return false;
 }
+
+export type DependencyDropResult =
+  | { ok: true; fromTaskId: string; toTaskId: string }
+  | { ok: false; reason: "no-target" | "self" | "duplicate" | "cycle" };
+
+/**
+ * バーをドラッグして別バーへ落とした結果を判定する純粋関数。
+ * fromTaskId=先行 / toTaskId=後続。落とし先が無い・自分自身・重複・循環は
+ * 接続不可（理由付き）を返し、それ以外のみ ok:true を返す。
+ */
+export function resolveDependencyDrop(
+  tasks: Array<{ id: string; dependencies?: string[] }>,
+  fromTaskId: string,
+  toTaskId: string | null,
+): DependencyDropResult {
+  if (!toTaskId) return { ok: false, reason: "no-target" };
+  if (toTaskId === fromTaskId) return { ok: false, reason: "self" };
+  const toTask = tasks.find((t) => t.id === toTaskId);
+  if (!toTask) return { ok: false, reason: "no-target" };
+  if (toTask.dependencies?.includes(fromTaskId)) return { ok: false, reason: "duplicate" };
+  if (hasCycle(tasks, fromTaskId, toTaskId)) return { ok: false, reason: "cycle" };
+  return { ok: true, fromTaskId, toTaskId };
+}

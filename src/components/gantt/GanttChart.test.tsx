@@ -59,6 +59,7 @@ describe("GanttChart", () => {
         onTogglePhase={vi.fn()}
         onSetConnectState={vi.fn()}
         onConnectTask={vi.fn()}
+        onConnectTasks={vi.fn()}
       />,
     );
 
@@ -100,6 +101,7 @@ describe("GanttChart", () => {
         onTogglePhase={vi.fn()}
         onSetConnectState={vi.fn()}
         onConnectTask={vi.fn()}
+        onConnectTasks={vi.fn()}
       />,
     );
 

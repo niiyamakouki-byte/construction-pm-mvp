@@ -27,7 +27,7 @@ import {
   computeReorder,
   daysBetween,
   formatScheduleDate,
-  hasCycle,
+  resolveDependencyDrop,
   toLocalDateString,
 } from "../components/gantt/utils.js";
 import { getHolidayName } from "../lib/japanese-holidays.js";
@@ -772,25 +772,19 @@ function GanttPageContent({ initialProjectId = null, openMaster = false }: Gantt
     }
   }, [contractors, ganttTasks, loadData, organizationId, taskDetail, taskRepository]);
 
-  const handleConnectTask = useCallback(async (toTaskId: string) => {
-    if (!connectState) return;
-    const { fromTaskId } = connectState;
-    if (fromTaskId === toTaskId) return;
-
-    setConnectState(null);
-    setConnectMode(false);
+  // 先行(fromTaskId)→後続(toTaskId)の依存を設定する共通ハンドラ。
+  // connectMode ボタン経由・バードラッグ接続の両方から呼ばれる。
+  const connectTasks = useCallback(async (fromTaskId: string, toTaskId: string) => {
+    const result = resolveDependencyDrop(ganttTasks, fromTaskId, toTaskId);
+    if (!result.ok) {
+      if (result.reason === "cycle") {
+        setError("循環依存関係が発生するため、この接続はできません。");
+      }
+      return;
+    }
 
     const toTask = ganttTasks.find((t) => t.id === toTaskId);
     if (!toTask) return;
-
-    // Prevent duplicate dependencies
-    if (toTask.dependencies?.includes(fromTaskId)) return;
-
-    // Prevent circular dependencies (A→B→A)
-    if (hasCycle(ganttTasks, fromTaskId, toTaskId)) {
-      setError("循環依存関係が発生するため、この接続はできません。");
-      return;
-    }
 
     try {
       await taskRepository.update(toTaskId, {
@@ -801,7 +795,15 @@ function GanttPageContent({ initialProjectId = null, openMaster = false }: Gantt
     } catch (err) {
       setError(err instanceof Error ? err.message : "依存関係の設定に失敗しました");
     }
-  }, [connectState, ganttTasks, loadData, taskRepository]);
+  }, [ganttTasks, loadData, taskRepository]);
+
+  const handleConnectTask = useCallback(async (toTaskId: string) => {
+    if (!connectState) return;
+    const { fromTaskId } = connectState;
+    setConnectState(null);
+    setConnectMode(false);
+    await connectTasks(fromTaskId, toTaskId);
+  }, [connectState, connectTasks]);
 
   const handleToggleConnectMode = useCallback(() => {
     setConnectMode((prev) => {
@@ -2038,6 +2040,7 @@ function GanttPageContent({ initialProjectId = null, openMaster = false }: Gantt
           onTogglePhase={() => undefined}
           onSetConnectState={setConnectState}
           onConnectTask={(toTaskId) => void handleConnectTask(toTaskId)}
+          onConnectTasks={(fromTaskId, toTaskId) => void connectTasks(fromTaskId, toTaskId)}
           onTimelineTouchStart={handleTimelineTouchStart}
           onTimelineTouchMove={handleTimelineTouchMove}
           onTimelineTouchEnd={handleTimelineTouchEnd}

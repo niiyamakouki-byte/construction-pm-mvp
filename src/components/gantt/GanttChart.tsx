@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from "react";
 import type {
   CSSProperties,
   MutableRefObject,
@@ -16,6 +17,17 @@ import { DependencyArrows } from "./DependencyArrows.js";
 type VisibleRow =
   | { type: "phase"; group: { projectId: string; projectName: string; tasks: GanttTask[]; collapsed: boolean } }
   | { type: "task"; task: GanttTask };
+
+/** バーの接続ハンドルからのドラッグ状態（チャート内座標） */
+type ConnectDragState = {
+  fromTaskId: string;
+  fromX: number;
+  fromY: number;
+  pointerX: number;
+  pointerY: number;
+  /** 現在ポインタが乗っている接続先タスク（自分自身は除外済み） */
+  overTaskId: string | null;
+};
 
 type Props = {
   ganttTasks: GanttTask[];
@@ -38,6 +50,8 @@ type Props = {
   onTogglePhase: (projectId: string) => void;
   onSetConnectState: (state: ConnectState | null) => void;
   onConnectTask: (toTaskId: string) => void;
+  /** バードラッグ接続の確定: fromTaskId=先行 / toTaskId=後続 */
+  onConnectTasks: (fromTaskId: string, toTaskId: string) => void;
   onTimelineTouchStart?: (event: ReactTouchEvent<HTMLDivElement>) => void;
   onTimelineTouchMove?: (event: ReactTouchEvent<HTMLDivElement>) => void;
   onTimelineTouchEnd?: (event: ReactTouchEvent<HTMLDivElement>) => void;
@@ -69,6 +83,7 @@ export function GanttChart({
   onTogglePhase,
   onSetConnectState,
   onConnectTask,
+  onConnectTasks,
   onTimelineTouchStart,
   onTimelineTouchMove,
   onTimelineTouchEnd,
@@ -80,6 +95,78 @@ export function GanttChart({
   const dayRowHeight = headerHeight - monthRowHeight;
   const chartWidth = (totalDays + 1) * dayWidth;
   const chartShellStyle = { "--gantt-label-width": `${labelWidth}px` } as CSSProperties;
+
+  // ── バードラッグによる依存関係接続 ───────────────────────────────
+  const chartBodyRef = useRef<HTMLDivElement | null>(null);
+  const connectDragRef = useRef<ConnectDragState | null>(null);
+  const [connectDrag, setConnectDrag] = useState<ConnectDragState | null>(null);
+  const onConnectTasksRef = useRef(onConnectTasks);
+  onConnectTasksRef.current = onConnectTasks;
+  const isConnecting = connectDrag !== null;
+
+  const startConnectDrag = (task: GanttTask, event: ReactPointerEvent<HTMLElement>) => {
+    event.stopPropagation();
+    event.preventDefault();
+    const rect = chartBodyRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    const x = event.clientX - rect.left;
+    const y = event.clientY - rect.top;
+    const next: ConnectDragState = {
+      fromTaskId: task.id,
+      fromX: x,
+      fromY: y,
+      pointerX: x,
+      pointerY: y,
+      overTaskId: null,
+    };
+    connectDragRef.current = next;
+    setConnectDrag(next);
+  };
+
+  useEffect(() => {
+    if (!isConnecting) return;
+
+    const resolveTaskAt = (clientX: number, clientY: number): string | null => {
+      const el = document.elementFromPoint(clientX, clientY);
+      const row = el?.closest<HTMLElement>("[data-task-id]");
+      return row?.dataset.taskId ?? null;
+    };
+
+    const handleMove = (event: PointerEvent) => {
+      const cur = connectDragRef.current;
+      const rect = chartBodyRef.current?.getBoundingClientRect();
+      if (!cur || !rect) return;
+      const overTaskId = resolveTaskAt(event.clientX, event.clientY);
+      const next: ConnectDragState = {
+        ...cur,
+        pointerX: event.clientX - rect.left,
+        pointerY: event.clientY - rect.top,
+        overTaskId: overTaskId && overTaskId !== cur.fromTaskId ? overTaskId : null,
+      };
+      connectDragRef.current = next;
+      setConnectDrag(next);
+    };
+
+    const handleUp = (event: PointerEvent) => {
+      const cur = connectDragRef.current;
+      connectDragRef.current = null;
+      setConnectDrag(null);
+      if (!cur) return;
+      const toTaskId = resolveTaskAt(event.clientX, event.clientY);
+      if (toTaskId && toTaskId !== cur.fromTaskId) {
+        onConnectTasksRef.current(cur.fromTaskId, toTaskId);
+      }
+    };
+
+    window.addEventListener("pointermove", handleMove);
+    window.addEventListener("pointerup", handleUp);
+    window.addEventListener("pointercancel", handleUp);
+    return () => {
+      window.removeEventListener("pointermove", handleMove);
+      window.removeEventListener("pointerup", handleUp);
+      window.removeEventListener("pointercancel", handleUp);
+    };
+  }, [isConnecting]);
 
   const monthSegments: Array<{ key: string; label: string; start: number; span: number }> = [];
   for (let index = 0; index < dateInfo.length; index += 1) {
@@ -178,7 +265,7 @@ export function GanttChart({
           onTouchMove={onTimelineTouchMove}
           onTouchEnd={onTimelineTouchEnd}
         >
-          <div className="relative" style={{ width: chartWidth, minWidth: "100%" }}>
+          <div ref={chartBodyRef} className="relative" style={{ width: chartWidth, minWidth: "100%" }}>
             <div className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 backdrop-blur">
               <div className="relative border-b border-slate-200" style={{ height: monthRowHeight }}>
                 {monthSegments.map((segment) => (
@@ -313,6 +400,7 @@ export function GanttChart({
                   onOpenTaskDetail={onOpenTaskDetail}
                   onSetConnectState={onSetConnectState}
                   onConnectTask={onConnectTask}
+                  onConnectDragStart={startConnectDrag}
                 />
               );
             })}
@@ -323,6 +411,41 @@ export function GanttChart({
               dayWidth={dayWidth}
               totalDays={totalDays}
             />
+
+            {connectDrag ? (
+              <svg
+                data-testid="connect-drag-preview"
+                className="pointer-events-none absolute inset-0 z-20"
+                style={{ width: chartWidth, height: "100%" }}
+                overflow="visible"
+              >
+                {(() => {
+                  const { fromX, fromY, pointerX, pointerY, overTaskId } = connectDrag;
+                  const cx = (fromX + pointerX) / 2;
+                  const d = `M ${fromX} ${fromY} C ${cx} ${fromY} ${cx} ${pointerY} ${pointerX} ${pointerY}`;
+                  return (
+                    <>
+                      <path
+                        d={d}
+                        fill="none"
+                        stroke="#94a3b8"
+                        strokeWidth="1.5"
+                        strokeOpacity="0.85"
+                        strokeDasharray="5 3"
+                      />
+                      <circle
+                        cx={pointerX}
+                        cy={pointerY}
+                        r="4"
+                        fill={overTaskId ? "#94a3b8" : "white"}
+                        stroke="#94a3b8"
+                        strokeWidth="1.5"
+                      />
+                    </>
+                  );
+                })()}
+              </svg>
+            ) : null}
           </div>
         </div>
       </div>

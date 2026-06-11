@@ -38,6 +38,8 @@ type GanttTaskBarProps = {
   onOpenTaskDetail: (task: GanttTask) => void;
   onSetConnectState: (state: ConnectState | null) => void;
   onConnectTask: (toTaskId: string) => void;
+  /** バー右端ハンドルからのドラッグ接続を開始する */
+  onConnectDragStart: (task: GanttTask, event: React.PointerEvent<HTMLElement>) => void;
 };
 
 function isOverdue(task: GanttTask, today: string): boolean {
@@ -60,6 +62,7 @@ export function GanttTaskBar({
   onOpenTaskDetail,
   onSetConnectState,
   onConnectTask,
+  onConnectDragStart,
 }: GanttTaskBarProps) {
   const { rowHeight } = gantt;
   const pointerStartXRef = useRef<number | null>(null);
@@ -118,6 +121,7 @@ export function GanttTaskBar({
       <div
         role="button"
         tabIndex={0}
+        data-task-id={task.id}
         aria-label={`${task.name} ${statusLabel[task.status]} ${task.progress}%${overdue ? " 期限超過" : ""}`}
         className={`absolute rounded-full border border-white/70 shadow-sm transition-transform ${
           isDragging ? "cursor-grabbing opacity-90" : "cursor-pointer active:scale-[0.99]"
@@ -203,6 +207,22 @@ export function GanttTaskBar({
           <div className="h-4 w-1 rounded-full bg-white/70" />
         </div>
       </div>
+      {/* 依存関係ドラッグ用ハンドル（バー右端の外側） */}
+      <button
+        type="button"
+        aria-label={`依存関係を接続: ${task.name}`}
+        className="absolute z-10 h-3 w-3 rounded-full border border-white bg-slate-400 shadow-sm hover:bg-slate-500"
+        style={{
+          left: barLeft + 4 + Math.max(barWidth - 8, 24) + 2,
+          top: 14 + (rowHeight - 28) / 2 - 6,
+          touchAction: "none",
+        }}
+        onPointerDown={(event) => {
+          event.stopPropagation();
+          onConnectDragStart(task, event);
+        }}
+        onClick={(event) => event.stopPropagation()}
+      />
     </div>
   );
 }
