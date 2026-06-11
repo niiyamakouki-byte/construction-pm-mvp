@@ -34,7 +34,7 @@ import { getHolidayName } from "../lib/japanese-holidays.js";
 import { readLastProjectId, writeLastProjectId } from "../lib/last-project.js";
 import { cascadeSchedule } from "../lib/cascade-scheduler.js";
 import { filterScheduleTasks } from "../lib/cost-management.js";
-import { buildGanttPdfHtml, exportGanttToPdf } from "../lib/gantt-pdf-export.js";
+import { buildGanttPdfHtml, exportGanttToPdf, type GanttPaperSize } from "../lib/gantt-pdf-export.js";
 import { downloadProjectICS } from "../lib/gantt-ics-export.js";
 import { useGoogleCalendar } from "../hooks/useGoogleCalendar.js";
 import { detectScheduleConflicts } from "../lib/schedule-conflict.js";
@@ -64,6 +64,25 @@ const MAX_CHART_DAYS = 240;
 const MIN_DAY_WIDTH = 8;
 const MAX_DAY_WIDTH = 60;
 const DEFAULT_DAY_WIDTH = 28;
+
+const GANTT_PAPER_SIZE_KEY = "genbahub:gantt-paper-size";
+
+function getSafeLocalStorage(): Storage | null {
+  if (typeof window === "undefined") return null;
+  const storage = window.localStorage;
+  if (!storage || typeof storage.getItem !== "function" || typeof storage.setItem !== "function") {
+    return null;
+  }
+  return storage;
+}
+
+function readGanttPaperSize(): GanttPaperSize {
+  return getSafeLocalStorage()?.getItem(GANTT_PAPER_SIZE_KEY) === "a3" ? "a3" : "a4";
+}
+
+function writeGanttPaperSize(value: GanttPaperSize): void {
+  getSafeLocalStorage()?.setItem(GANTT_PAPER_SIZE_KEY, value);
+}
 
 const projectStatusLabel: Record<ProjectStatus, string> = {
   planning: "計画中",
@@ -358,6 +377,7 @@ function GanttPageContent({ initialProjectId = null, openMaster = false }: Gantt
   const [pdfError, setPdfError] = useState<string | null>(null);
   const [pdfPreviewOpen, setPdfPreviewOpen] = useState(false);
   const [pdfPreviewHtml, setPdfPreviewHtml] = useState<string>("");
+  const [paperSize, setPaperSize] = useState<GanttPaperSize>(readGanttPaperSize);
   const [undoing, setUndoing] = useState(false);
   const [canUndo, setCanUndo] = useState(() => undoStack.canUndo());
   const [showMilestones, setShowMilestones] = useState(true);
@@ -918,22 +938,40 @@ function GanttPageContent({ initialProjectId = null, openMaster = false }: Gantt
     navigate(`/gantt/${projectId}`);
   }, []);
 
+  const buildPreviewHtml = useCallback((size: GanttPaperSize): string | null => {
+    if (!selectedProject) return null;
+    return buildGanttPdfHtml(
+      selectedProject,
+      selectedProjectTasks,
+      chartLayout?.chartStart ?? selectedProject.startDate,
+      chartLayout?.totalDays ?? 0,
+      { autoPrint: false, paperSize: size },
+    );
+  }, [chartLayout, selectedProject, selectedProjectTasks]);
+
   const handlePdfPreview = useCallback(() => {
     if (!selectedProject) return;
     try {
-      const html = buildGanttPdfHtml(
-        selectedProject,
-        selectedProjectTasks,
-        chartLayout?.chartStart ?? selectedProject.startDate,
-        chartLayout?.totalDays ?? 0,
-        { autoPrint: false },
-      );
+      const html = buildPreviewHtml(paperSize);
+      if (html === null) return;
       setPdfPreviewHtml(html);
       setPdfPreviewOpen(true);
     } catch (err) {
       setPdfError(err instanceof Error ? err.message : "PDFプレビューに失敗しました");
     }
-  }, [chartLayout, selectedProject, selectedProjectTasks]);
+  }, [buildPreviewHtml, paperSize, selectedProject]);
+
+  const handlePaperSizeChange = useCallback((size: GanttPaperSize) => {
+    setPaperSize(size);
+    writeGanttPaperSize(size);
+    if (!pdfPreviewOpen) return;
+    try {
+      const html = buildPreviewHtml(size);
+      if (html !== null) setPdfPreviewHtml(html);
+    } catch (err) {
+      setPdfError(err instanceof Error ? err.message : "PDFプレビューに失敗しました");
+    }
+  }, [buildPreviewHtml, pdfPreviewOpen]);
 
   const handlePdfExport = useCallback(() => {
     if (!selectedProject) return;
@@ -945,6 +983,7 @@ function GanttPageContent({ initialProjectId = null, openMaster = false }: Gantt
         selectedProjectTasks,
         chartLayout?.chartStart ?? selectedProject.startDate,
         chartLayout?.totalDays ?? 0,
+        paperSize,
       );
       setPdfPreviewOpen(false);
     } catch (err) {
@@ -952,7 +991,7 @@ function GanttPageContent({ initialProjectId = null, openMaster = false }: Gantt
     } finally {
       setPdfExporting(false);
     }
-  }, [chartLayout, selectedProject, selectedProjectTasks]);
+  }, [chartLayout, paperSize, selectedProject, selectedProjectTasks]);
 
   const icsExportableCount = useMemo(
     () => selectedProjectTasks.filter((t) => !!t.startDate).length,
@@ -2182,7 +2221,28 @@ function GanttPageContent({ initialProjectId = null, openMaster = false }: Gantt
               srcDoc={pdfPreviewHtml}
               className="flex-1 w-full rounded-2xl border border-slate-200 bg-white"
             />
-            <div className="mt-4 flex justify-end gap-3">
+            <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-semibold text-slate-500">用紙サイズ</span>
+                <div className="inline-flex rounded-2xl border border-slate-200 p-1">
+                  {(["a4", "a3"] as const).map((size) => (
+                    <button
+                      key={size}
+                      type="button"
+                      aria-pressed={paperSize === size}
+                      onClick={() => handlePaperSizeChange(size)}
+                      className={`min-h-[36px] rounded-xl px-4 py-1.5 text-sm font-semibold transition-colors ${
+                        paperSize === size
+                          ? "bg-brand-600 text-white shadow-sm"
+                          : "bg-white text-slate-600 hover:bg-slate-50"
+                      }`}
+                    >
+                      {size === "a4" ? "A4横" : "A3横"}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="flex justify-end gap-3">
               <button
                 type="button"
                 onClick={() => setPdfPreviewOpen(false)}
@@ -2198,6 +2258,7 @@ function GanttPageContent({ initialProjectId = null, openMaster = false }: Gantt
               >
                 {pdfExporting ? "出力中..." : "印刷 / PDF保存"}
               </button>
+              </div>
             </div>
           </div>
         </div>

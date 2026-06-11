@@ -405,6 +405,7 @@ describe("GanttPage", () => {
       expect.arrayContaining([expect.objectContaining({ id: "t1" })]),
       expect.any(String),
       expect.any(Number),
+      "a4",
     );
   });
 });

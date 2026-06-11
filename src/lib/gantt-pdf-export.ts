@@ -118,17 +118,30 @@ export function computePrintScale(contentWidth: number, pageWidth: number): numb
 
 // ラベル列(180px)内に収まる表示幅カラム数の目安。
 const LABEL_MAX_COLUMNS = 28;
-// A4横の印刷可能幅の目安(px @96dpi, 余白考慮)。これを超える幅は縮小して1ページに収める。
-const PRINT_PAGE_WIDTH = 1040;
+
+export type GanttPaperSize = "a4" | "a3";
+
+// 各用紙(横向き)の印刷可能幅の目安(px @96dpi, 余白考慮)。これを超える幅は縮小して1ページに収める。
+export const PRINT_PAGE_WIDTHS: Record<GanttPaperSize, number> = {
+  a4: 1040,
+  a3: 1560,
+};
+
+const PAGE_SIZE_LABELS: Record<GanttPaperSize, string> = {
+  a4: "A4",
+  a3: "A3",
+};
 
 export function buildGanttPdfHtml(
   project: Project,
   tasks: ExportTask[],
   chartStart: string,
   totalDays: number,
-  options: { autoPrint?: boolean } = {},
+  options: { autoPrint?: boolean; paperSize?: GanttPaperSize } = {},
 ): string {
-  const { autoPrint = true } = options;
+  const { autoPrint = true, paperSize = "a4" } = options;
+  const pageWidth = PRINT_PAGE_WIDTHS[paperSize];
+  const pageSizeLabel = PAGE_SIZE_LABELS[paperSize];
   const sortedTasks = [...tasks].sort((left, right) => {
     if (left.sortIndex !== undefined && right.sortIndex !== undefined) {
       return left.sortIndex - right.sortIndex;
@@ -153,7 +166,7 @@ export function buildGanttPdfHtml(
   const labelWidth = 180;
   const chartWidth = visibleDays * dayWidth;
   const contentWidth = labelWidth + chartWidth;
-  const printScale = computePrintScale(contentWidth, PRINT_PAGE_WIDTH);
+  const printScale = computePrintScale(contentWidth, pageWidth);
   const todayStr = toLocalDateString(new Date());
 
   // Build day column metadata
@@ -418,7 +431,7 @@ export function buildGanttPdfHtml(
       }
 
       @media print {
-        @page { size: A4 landscape; margin: 8mm; }
+        @page { size: ${pageSizeLabel} landscape; margin: 8mm; }
         body { padding: 0; }
         .gantt-container { overflow: visible; border: none; }
         /* 横長のチャートを1ページ幅に収める。収まる場合は scale(1) で等倍。 */
@@ -540,8 +553,9 @@ export function exportGanttToPdf(
   tasks: ExportTask[],
   chartStart: string,
   totalDays: number,
+  paperSize: GanttPaperSize = "a4",
 ): void {
-  const html = buildGanttPdfHtml(project, tasks, chartStart, totalDays);
+  const html = buildGanttPdfHtml(project, tasks, chartStart, totalDays, { paperSize });
 
   // Try window.open first, fall back to Blob download for iOS popup blocker
   const printWindow = window.open("", "_blank");

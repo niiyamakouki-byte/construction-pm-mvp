@@ -5,6 +5,7 @@ import {
   computePrintScale,
   exportGanttToPdf,
   measureLabelWidth,
+  PRINT_PAGE_WIDTHS,
   truncateLabel,
 } from "./gantt-pdf-export.js";
 
@@ -241,6 +242,41 @@ describe("computePrintScale", () => {
   it("returns 1 for invalid dimensions", () => {
     expect(computePrintScale(0, 1040)).toBe(1);
     expect(computePrintScale(1980, 0)).toBe(1);
+  });
+
+  it("shrinks A3 less aggressively than A4 for the same oversized chart", () => {
+    const contentWidth = 1980; // 90日チャート相当でA4/A3いずれの幅も超える
+    const a4Scale = computePrintScale(contentWidth, PRINT_PAGE_WIDTHS.a4);
+    const a3Scale = computePrintScale(contentWidth, PRINT_PAGE_WIDTHS.a3);
+
+    expect(a4Scale).toBeLessThan(1);
+    expect(a3Scale).toBeLessThan(1);
+    // A3は印刷可能幅が広いぶん縮小率が緩い（scaleが1に近い）
+    expect(a3Scale).toBeGreaterThan(a4Scale);
+  });
+
+  it("still shrinks content that exceeds even the A3 printable width", () => {
+    const contentWidth = PRINT_PAGE_WIDTHS.a3 + 600; // A3幅を超える広いチャート
+    const a3Scale = computePrintScale(contentWidth, PRINT_PAGE_WIDTHS.a3);
+
+    expect(a3Scale).toBeLessThan(1);
+    expect(contentWidth * a3Scale).toBeCloseTo(PRINT_PAGE_WIDTHS.a3, 5);
+  });
+});
+
+describe("gantt pdf paper size", () => {
+  it("declares A3 landscape when paperSize is a3", () => {
+    const html = buildGanttPdfHtml(createProject(), [createTask()], "2025-01-04", 12, {
+      paperSize: "a3",
+    });
+
+    expect(html).toContain("@page { size: A3 landscape;");
+  });
+
+  it("defaults to A4 landscape when paperSize is omitted", () => {
+    const html = buildGanttPdfHtml(createProject(), [createTask()], "2025-01-04", 12);
+
+    expect(html).toContain("@page { size: A4 landscape;");
   });
 });
 
