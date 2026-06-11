@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import type { Project, ProjectMode, ProjectStatus } from "../domain/types.js";
+import type { Project, ProjectMode, ProjectStatus, Task } from "../domain/types.js";
 import { createProjectRepository } from "../stores/project-store.js";
 import { createTaskRepository } from "../stores/task-store.js";
 import { geocodeAddress } from "../infra/geocode.js";
@@ -13,6 +13,37 @@ import {
   getTemplateIdsByMajor,
 } from "../lib/phase-template-master.js";
 import { expandWBSToPhases } from "../lib/work-breakdown/expansion.js";
+
+/** Returns "今日" / "昨日" / "N日前" for a given ISO date string. Pure function. */
+export function formatRelativeDate(isoString: string, now = new Date()): string {
+  const d = new Date(isoString);
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const targetStart = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  const diffDays = Math.round((todayStart.getTime() - targetStart.getTime()) / (1000 * 60 * 60 * 24));
+  if (diffDays === 0) return "今日";
+  if (diffDays === 1) return "昨日";
+  if (diffDays > 0) return `${diffDays}日前`;
+  return `${Math.abs(diffDays)}日後`;
+}
+
+/** Returns {done, total} counts for a project's tasks. Pure function. */
+export function computeTaskProgress(tasks: Task[]): { done: number; total: number } {
+  const total = tasks.length;
+  const done = tasks.filter((t) => t.status === "done").length;
+  return { done, total };
+}
+
+/** Build a Map<projectId, {done, total}> from all tasks at once (no N+1). */
+function buildProgressMap(allTasks: Task[]): Map<string, { done: number; total: number }> {
+  const map = new Map<string, { done: number; total: number }>();
+  for (const task of allTasks) {
+    const entry = map.get(task.projectId) ?? { done: 0, total: 0 };
+    entry.total += 1;
+    if (task.status === "done") entry.done += 1;
+    map.set(task.projectId, entry);
+  }
+  return map;
+}
 
 function toLocalDateString(date: Date): string {
   const y = date.getFullYear();
@@ -46,6 +77,7 @@ export function ProjectListPage() {
   const projectRepository = useMemo(() => createProjectRepository(() => organizationId), [organizationId]);
   const taskRepository = useMemo(() => createTaskRepository(() => organizationId), [organizationId]);
   const [projects, setProjects] = useState<Project[]>([]);
+  const [progressMap, setProgressMap] = useState<Map<string, { done: number; total: number }>>(new Map());
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [address, setAddress] = useState("");
@@ -68,14 +100,18 @@ export function ProjectListPage() {
 
   const loadProjects = useCallback(async () => {
     try {
-      const allProjects = await projectRepository.findAll();
+      const [allProjects, allTasks] = await Promise.all([
+        projectRepository.findAll(),
+        taskRepository.findAll(),
+      ]);
       setProjects(allProjects.sort((left, right) => right.updatedAt.localeCompare(left.updatedAt)));
+      setProgressMap(buildProgressMap(allTasks));
     } catch (err) {
       setError(err instanceof Error ? err.message : t("errors:project_load_failed"));
     } finally {
       setLoading(false);
     }
-  }, [projectRepository, t]);
+  }, [projectRepository, taskRepository, t]);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- プロジェクト一覧の取得トリガー
@@ -643,9 +679,19 @@ export function ProjectListPage() {
                   {projectMode(project) === "memo" ? t("pages:project_list.open_record") : t("pages:project_list.open_gantt")}
                 </span>
               </div>
-              <div className="mt-4 flex flex-wrap items-center gap-3 text-sm text-slate-500">
+              <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-slate-400">
                 <span>{project.address ?? t("common:labels.unset")}</span>
                 <span>{project.startDate}</span>
+                <span className="ml-auto">{formatRelativeDate(project.updatedAt)}</span>
+                {(() => {
+                  const prog = progressMap.get(project.id);
+                  if (!prog || prog.total === 0) return null;
+                  return (
+                    <span className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-xs font-medium text-slate-500">
+                      {prog.done}/{prog.total}完了
+                    </span>
+                  );
+                })()}
               </div>
             </button>
           ))}
