@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
+import { AlertTriangle, Check, Hourglass, JapaneseYen, Package, Umbrella } from "lucide-react";
 import type { CostItem, Expense, Project, Task } from "../domain/types.js";
 import { useOrganizationContext } from "../contexts/OrganizationContext.js";
 import { navigate } from "../hooks/useHashRouter.js";
@@ -39,14 +40,14 @@ const badgeClassMap = {
   orange: "bg-orange-100 text-orange-700",
 } as const;
 
-const iconMap = {
-  overdue_task: "⚠",
-  upcoming_deadline: "⏳",
-  weather_warning: "☔",
-  cost_overrun: "¥",
-  procurement_alert: "📦",
-  payment_confirmed: "✓",
-} as const;
+const iconMap: Record<AppNotificationType, ReactNode> = {
+  overdue_task: <AlertTriangle className="h-5 w-5" aria-hidden="true" />,
+  upcoming_deadline: <Hourglass className="h-5 w-5" aria-hidden="true" />,
+  weather_warning: <Umbrella className="h-5 w-5" aria-hidden="true" />,
+  cost_overrun: <JapaneseYen className="h-5 w-5" aria-hidden="true" />,
+  procurement_alert: <Package className="h-5 w-5" aria-hidden="true" />,
+  payment_confirmed: <Check className="h-5 w-5" aria-hidden="true" />,
+};
 
 const groupLabelMap: Record<AppNotificationType, string> = {
   overdue_task: "期限超過タスク",
@@ -249,7 +250,7 @@ export function NotificationBanner({ refreshKey }: NotificationBannerProps) {
               className="flex min-h-[44px] flex-1 items-center gap-2 text-left"
               aria-label="通知を展開"
             >
-              <span className="text-sm" aria-hidden="true">⚠</span>
+              <AlertTriangle className="h-4 w-4 text-amber-500" aria-hidden="true" />
               <span className="text-xs font-semibold text-slate-700">
                 重要通知 {freshCount}件
               </span>

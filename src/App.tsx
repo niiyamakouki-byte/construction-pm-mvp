@@ -1,4 +1,5 @@
 import { lazy, Suspense, useEffect, useState } from "react";
+import { Bot } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { NavIcon } from "./components/NavIcons.js";
 import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts.js";
@@ -438,7 +439,7 @@ function AppShell() {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <div className="text-center text-slate-500 text-sm">
-          <div className="text-2xl mb-2">🤖</div>
+          <div className="mb-2 flex justify-center"><Bot className="h-7 w-7" aria-hidden="true" /></div>
           <div className="font-semibold text-slate-700">{t("pages:assistant.demo_title")}</div>
           <div className="mt-1">{t("pages:assistant.demo_hint")}</div>
         </div>

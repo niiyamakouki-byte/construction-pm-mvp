@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from "react";
+import { Pin, X } from "lucide-react";
 import {
   sessionToEstimateItems,
   writeEstimateInject,
@@ -1090,7 +1091,7 @@ export function DrawingViewer({
             }}
             aria-label={`ピン: ${pin.comment || pin.assignee || pin.status}`}
           >
-            📌
+            <Pin className="h-4 w-4" aria-hidden="true" />
           </button>
         ))}
 
@@ -1863,7 +1864,7 @@ function PickupSidebar({
                             className="ml-2 text-red-400 hover:text-red-600"
                             aria-label="削除"
                           >
-                            ✕
+                            <X className="h-4 w-4" aria-hidden="true" />
                           </button>
                         </div>
                       ))}

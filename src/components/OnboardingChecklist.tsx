@@ -1,4 +1,5 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, type ReactNode } from "react";
+import { Building2, Camera, PenLine } from "lucide-react";
 import { navigate } from "../hooks/useHashRouter.js";
 import { trackFunnelStep } from "../lib/signup-funnel.js";
 
@@ -39,7 +40,7 @@ export function useChecklistDone(): boolean {
 
 type ChecklistStep = {
   id: StepId;
-  icon: string;
+  icon: ReactNode;
   title: string;
   description: string;
   path: string;
@@ -49,7 +50,7 @@ type ChecklistStep = {
 const STEPS: ChecklistStep[] = [
   {
     id: "create_project",
-    icon: "🏗️",
+    icon: <Building2 className="h-4 w-4 shrink-0" aria-hidden="true" />,
     title: "最初の案件を作成",
     description: "内装工事の工事名・現場を登録します。テンプレートで工程が自動生成されます。",
     path: "/app",
@@ -57,7 +58,7 @@ const STEPS: ChecklistStep[] = [
   },
   {
     id: "try_estimate",
-    icon: "📝",
+    icon: <PenLine className="h-4 w-4 shrink-0" aria-hidden="true" />,
     title: "PDF見積を試す",
     description: "見積PDFをアップロードすると、項目を自動で読み取って積算できます。",
     path: "/estimate",
@@ -65,7 +66,7 @@ const STEPS: ChecklistStep[] = [
   },
   {
     id: "upload_photo",
-    icon: "📸",
+    icon: <Camera className="h-4 w-4 shrink-0" aria-hidden="true" />,
     title: "現場写真をアップロード",
     description: "スマホで撮った写真を登録すると、AI分類して日報に自動反映されます。",
     path: "/today",
@@ -163,8 +164,9 @@ export function OnboardingChecklist({ hasProjects }: Props) {
               </span>
 
               <div className="min-w-0 flex-1">
-                <p className={`text-sm font-semibold ${done ? "text-emerald-800 line-through decoration-emerald-400" : "text-slate-800"}`}>
-                  {step.icon} {step.title}
+                <p className={`flex items-center gap-1.5 text-sm font-semibold ${done ? "text-emerald-800 line-through decoration-emerald-400" : "text-slate-800"}`}>
+                  {step.icon}
+                  {step.title}
                 </p>
                 {!done && (
                   <p className="mt-0.5 text-xs text-slate-500 leading-relaxed">{step.description}</p>

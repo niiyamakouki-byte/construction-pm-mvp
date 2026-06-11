@@ -4,10 +4,13 @@
  * and minimal navigation on construction sites.
  */
 
+import type { ReactNode } from "react";
+import { Camera, ClipboardList, PenLine } from "lucide-react";
+
 type FieldModeAction = {
   key: string;
   label: string;
-  icon: string;
+  icon: ReactNode;
   onClick: () => void;
 };
 
@@ -91,9 +94,9 @@ export function FieldModeView({
   extraActions,
 }: FieldModeViewProps) {
   const coreActions: FieldModeAction[] = [
-    { key: "photo", label: "写真撮影", icon: "📷", onClick: onTakePhoto },
-    { key: "schedule", label: "工程確認", icon: "📋", onClick: onCheckSchedule },
-    { key: "report", label: "日報入力", icon: "📝", onClick: onDailyReport },
+    { key: "photo", label: "写真撮影", icon: <Camera size={32} aria-hidden="true" />, onClick: onTakePhoto },
+    { key: "schedule", label: "工程確認", icon: <ClipboardList size={32} aria-hidden="true" />, onClick: onCheckSchedule },
+    { key: "report", label: "日報入力", icon: <PenLine size={32} aria-hidden="true" />, onClick: onDailyReport },
   ];
 
   const allActions = extraActions
