@@ -239,7 +239,7 @@ export function TakeoffPage() {
             <li>2. 縮尺を設定（PDFに「1:50」等あれば自動検出）</li>
             <li>3. 「拾い出し」モードでなぞる → 見積へ送る</li>
           </ol>
-          <label className="mt-5 inline-flex cursor-pointer items-center gap-2 rounded-2xl bg-[#007AFF] px-4 py-2 text-sm font-bold text-white shadow-sm hover:bg-[#005ecb]">
+          <label className="mt-5 inline-flex cursor-pointer items-center gap-2 rounded-2xl bg-brand-600 px-4 py-2 text-sm font-bold text-white shadow-sm hover:bg-brand-700">
             ファイルを選択
             <input
               ref={inputRef}

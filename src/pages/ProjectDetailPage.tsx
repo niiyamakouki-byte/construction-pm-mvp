@@ -756,7 +756,7 @@ export function ProjectDetailPage({
                 className="transition-all duration-700"
               />
             </svg>
-            <span className="absolute inset-0 flex items-center justify-center text-sm font-bold text-[#004fad] tabular-nums">
+            <span className="absolute inset-0 flex items-center justify-center text-sm font-bold text-brand-800 tabular-nums">
               {progressPercent}%
             </span>
           </div>
@@ -860,7 +860,7 @@ export function ProjectDetailPage({
           <h2 className="text-base font-semibold text-slate-800">タスク一覧</h2>
           <button
             onClick={() => setShowTaskForm(!showTaskForm)}
-            className="inline-flex items-center gap-1 rounded-lg bg-[#007AFF] px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-[#0063d6] active:opacity-85 transition-colors"
+            className="inline-flex items-center gap-1 rounded-lg bg-brand-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-brand-700 active:opacity-85 transition-colors"
           >
             <span className="text-sm leading-none">{showTaskForm ? "−" : "+"}</span>
             タスク追加
@@ -977,7 +977,7 @@ export function ProjectDetailPage({
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="rounded-lg bg-[#007AFF] px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-[#0063d6] disabled:opacity-50"
+                  className="rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-brand-700 disabled:opacity-50"
                 >
                   {submitting ? ACTION_LABELS.task.adding : ACTION_LABELS.task.add}
                 </button>
@@ -1047,7 +1047,7 @@ export function ProjectDetailPage({
                           </span>
                         )}
                         {task.assigneeId && (
-                          <span className="inline-flex items-center rounded-full bg-[#007AFF]/10 px-1.5 py-0.5 text-[10px] font-medium text-[#004fad]">
+                          <span className="inline-flex items-center rounded-full bg-brand-100 px-1.5 py-0.5 text-[10px] font-medium text-brand-800">
                             {task.assigneeId}
                           </span>
                         )}
@@ -1060,7 +1060,7 @@ export function ProjectDetailPage({
                     </div>
                     <button
                       onClick={() => void handleCopyTask(task)}
-                      className="shrink-0 rounded-lg p-2.5 text-slate-300 hover:text-[#007AFF] hover:bg-[#007AFF]/10 transition-colors"
+                      className="shrink-0 rounded-lg p-2.5 text-slate-300 hover:text-brand-700 hover:bg-brand-100 transition-colors"
                       title="コピー"
                       aria-label={`${task.name}をコピー`}
                     >

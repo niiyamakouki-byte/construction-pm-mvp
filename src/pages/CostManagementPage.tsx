@@ -970,7 +970,7 @@ export function CostManagementPage() {
             <StatCard
               label="諸経費込み合計"
               value={formatCurrency(overheadBreakdown.grandTotal)}
-              tone="border-[#007AFF]/20 bg-[#007AFF]/5 text-[#003d85]"
+              tone="border-brand-200 bg-brand-50 text-brand-800"
             />
           </div>
         </section>

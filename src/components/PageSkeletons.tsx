@@ -9,7 +9,7 @@ export function TodayDashboardSkeleton() {
       role="status"
       aria-label="ダッシュボードを読み込み中"
     >
-      <div className="rounded-2xl bg-slate-900/95 px-5 py-5 shadow-lg">
+      <div className="rounded-2xl bg-slate-900/95 px-5 py-5 shadow-sm">
         <SkeletonBlock className="h-3 w-24 bg-white/20" />
         <SkeletonBlock className="mt-3 h-8 w-40 bg-white/25" />
         <div className="mt-4 grid grid-cols-2 gap-2">
