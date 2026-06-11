@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useMemo, useState, type ChangeEvent } from "react";
-import { AlertTriangle, BarChart3, Bell, Building2, CalendarDays, Camera, FileText } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState, type ChangeEvent, type ReactNode } from "react";
+import { AlertTriangle, BarChart3, Bell, Building2, CalendarDays, Camera, FileText, Package } from "lucide-react";
 import { EmptyState } from "../components/EmptyState.js";
 import type { Contractor, CostItem, Expense, Task, TaskStatus, Project } from "../domain/types.js";
 import { createTaskRepository } from "../stores/task-store.js";
@@ -865,31 +865,32 @@ function TodayDashboardPageContent() {
 
       {/* Googleカレンダー個人予定とのダブり警告 (Phase A) */}
       {todayHasConflict && (
-        <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-2 text-sm font-semibold text-amber-800" role="status">
-          ⚠ 今日は個人予定と現場が重なっています
+        <div className="flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-2 text-sm font-semibold text-amber-800" role="status">
+          <AlertTriangle className="h-4 w-4 shrink-0 text-amber-600" aria-hidden="true" />
+          <span>今日は個人予定と現場が重なっています</span>
         </div>
       )}
 
       {/* 今日のおすすめアクション (ファーストビュー: スクロール前に「次やること」を見せる) */}
       {allProjects.length > 0 && (() => {
         // deadlineSortKey: 負数=期限超過(絶対値が大きいほど緊急), 0=今日, 1-7=今週, Infinity=期限なし
-        const actions: { icon: string; label: string; path: string; highlight?: boolean; deadlineSortKey: number }[] = [];
+        const actions: { icon: ReactNode; label: string; path: string; highlight?: boolean; deadlineSortKey: number }[] = [];
         if (overdueTasks > 0) {
           const maxOverdueDays = allTasks
             .filter((t) => t.status !== "done" && t.dueDate && t.dueDate < today)
             .reduce((max, t) => Math.max(max, Math.max(1, daysBetween(t.dueDate!, today))), 0);
-          actions.push({ icon: "⚠", label: `期限超過 ${overdueTasks}件を確認`, path: "/tasks", highlight: true, deadlineSortKey: -maxOverdueDays });
+          actions.push({ icon: <AlertTriangle className="h-4 w-4" aria-hidden="true" />, label: `期限超過 ${overdueTasks}件を確認`, path: "/tasks", highlight: true, deadlineSortKey: -maxOverdueDays });
         }
         if (tasks.length > 0) {
-          actions.push({ icon: "✓", label: `今日のタスク ${tasks.length}件を処理`, path: "/today", deadlineSortKey: 0 });
+          actions.push({ icon: <span className="text-base leading-none">✓</span>, label: `今日のタスク ${tasks.length}件を処理`, path: "/today", deadlineSortKey: 0 });
         }
         if (allProjects.length === 0) {
-          actions.push({ icon: "🏗️", label: ACTION_LABELS.project.createFirst, path: "/app", highlight: true, deadlineSortKey: Infinity });
+          actions.push({ icon: <Building2 className="h-4 w-4" aria-hidden="true" />, label: ACTION_LABELS.project.createFirst, path: "/app", highlight: true, deadlineSortKey: Infinity });
         }
         if (allTasks.filter((t) => t.status === "todo" && !t.startDate).length > 0) {
-          actions.push({ icon: "📊", label: "工程表で未開始タスクを確認", path: insightProject ? `/gantt/${insightProject.id}` : "/gantt", deadlineSortKey: Infinity });
+          actions.push({ icon: <BarChart3 className="h-4 w-4" aria-hidden="true" />, label: "工程表で未開始タスクを確認", path: insightProject ? `/gantt/${insightProject.id}` : "/gantt", deadlineSortKey: Infinity });
         }
-        actions.push({ icon: "📸", label: "現場写真をアップロード", path: "/today", deadlineSortKey: Infinity });
+        actions.push({ icon: <Camera className="h-4 w-4" aria-hidden="true" />, label: "現場写真をアップロード", path: "/today", deadlineSortKey: Infinity });
         actions.sort((a, b) => a.deadlineSortKey - b.deadlineSortKey);
         if (actions.length === 0) return null;
         return (
@@ -907,7 +908,7 @@ function TodayDashboardPageContent() {
                       : "border-slate-200 bg-white text-slate-700"
                   }`}
                 >
-                  <span className="text-lg" aria-hidden="true">{action.icon}</span>
+                  <span className="flex h-5 w-5 shrink-0 items-center justify-center" aria-hidden="true">{action.icon}</span>
                   <span className="flex-1">{action.label}</span>
                   <span className="text-slate-300" aria-hidden="true">›</span>
                 </button>
@@ -1462,7 +1463,7 @@ function TodayDashboardPageContent() {
       {triggeredAlerts.length > 0 && (
         <section>
           <h2 className="mb-3 flex items-center gap-2 text-base font-semibold text-slate-800">
-            <span className="text-amber-500">⚠</span> アラート ({triggeredAlerts.length})
+            <AlertTriangle className="h-4 w-4 text-amber-500" aria-hidden="true" /> アラート ({triggeredAlerts.length})
           </h2>
           <ul className="space-y-2">
             {triggeredAlerts.map((alert, i) => (
@@ -1478,7 +1479,7 @@ function TodayDashboardPageContent() {
       {procurementAlerts.length > 0 && (
         <section>
           <h2 className="mb-3 flex items-center gap-2 text-base font-semibold text-slate-800">
-            <span>📦</span> 資材発注アラート ({procurementAlerts.length})
+            <Package className="h-4 w-4 text-slate-500" aria-hidden="true" /> 資材発注アラート ({procurementAlerts.length})
           </h2>
           <ul className="space-y-2">
             {procurementAlerts.slice(0, 5).map((alert) => (
@@ -1599,12 +1600,12 @@ function TaskCard({
       {/* Due date */}
       {task.dueDate && (
         <p
-          className={`mb-3 text-xs ${
+          className={`mb-3 flex items-center gap-1 text-xs ${
             isOverdue ? "font-bold text-red-600" : "text-slate-500"
           }`}
         >
-          {isOverdue ? "⚠ 期限超過: " : "期限: "}
-          {task.dueDate}
+          {isOverdue && <AlertTriangle className="h-3.5 w-3.5" aria-hidden="true" />}
+          <span>{isOverdue ? "期限超過: " : "期限: "}{task.dueDate}</span>
         </p>
       )}
 
