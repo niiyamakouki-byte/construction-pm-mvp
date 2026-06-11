@@ -1087,6 +1087,11 @@ function GanttPageContent({ initialProjectId = null }: GanttPageProps) {
       await loadData();
       const preview = calcMasterPreview(masterSelectedEntryIds, allEntries);
       setMasterSuccessToast({ count: preview.count, totalDays: preview.totalDays });
+      // 追加工程が見えるようにガントチャート先頭へスクロール
+      const ganttEl = scrollRef.current?.closest('[role="figure"]');
+      if (ganttEl && typeof ganttEl.scrollIntoView === "function") {
+        ganttEl.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "マスタープリセットの適用に失敗しました");
     } finally {
