@@ -263,9 +263,9 @@ describe("NotificationBanner", () => {
 
     render(<NotificationBanner refreshKey="/grouping" />);
 
-    // 重要通知件数とグループヘッダーが見える
+    // 重要通知件数とグループヘッダーが見える（collapsed→expanded のuseEffect完了を待つ）
     expect(await screen.findByText("重要通知 3件")).toBeDefined();
-    const header = screen.getByRole("button", { name: /期限超過タスク 3件/ });
+    const header = await screen.findByRole("button", { name: /期限超過タスク 3件/ });
     expect(header).toBeDefined();
     expect(header.getAttribute("aria-expanded")).toBe("false");
 
