@@ -28,7 +28,7 @@ describe("ProjectListPage", () => {
   it("空状態でオンボーディングメッセージが表示される", async () => {
     render(<ProjectListPage />);
     expect(
-      await screen.findByText("最初のプロジェクトを作成しましょう"),
+      await screen.findByText("最初の案件を作成しましょう"),
     ).toBeDefined();
   });
 
@@ -37,8 +37,8 @@ describe("ProjectListPage", () => {
     render(<ProjectListPage />);
 
     // Wait for loading to complete, then open form
-    await screen.findByText("新規プロジェクト");
-    await user.click(screen.getByText("新規プロジェクト"));
+    await screen.findByText("新規案件");
+    await user.click(screen.getByText("新規案件"));
 
     await user.type(screen.getByPlaceholderText("例: 渋谷オフィスビル内装工事"), "テスト工事A");
     // 詳細フィールドは折り畳み済みなので展開してから入力
@@ -51,7 +51,7 @@ describe("ProjectListPage", () => {
     const elements = await screen.findAllByText("テスト工事A");
     expect(elements.length).toBeGreaterThan(0);
     expect(screen.getByText("メモ")).toBeDefined();
-    expect(screen.queryByText("最初のプロジェクトを作成しましょう")).toBeNull();
+    expect(screen.queryByText("最初の案件を作成しましょう")).toBeNull();
 
     const projects = await projectRepository.findAll();
     expect(projects.find((project) => project.name === "テスト工事A")?.mode).toBe("memo");
@@ -65,8 +65,8 @@ describe("ProjectListPage", () => {
     render(<ProjectListPage />);
 
     // Wait for loading to complete, then open form
-    await screen.findByText("新規プロジェクト");
-    await user.click(screen.getByText("新規プロジェクト"));
+    await screen.findByText("新規案件");
+    await user.click(screen.getByText("新規案件"));
 
     await user.type(screen.getByPlaceholderText("例: 渋谷オフィスビル内装工事"), "日付テスト");
     await user.click(screen.getByRole("button", { name: "作成" }));
@@ -79,8 +79,8 @@ describe("ProjectListPage", () => {
     const user = userEvent.setup();
     render(<ProjectListPage />);
 
-    await screen.findByText("新規プロジェクト");
-    await user.click(screen.getByText("新規プロジェクト"));
+    await screen.findByText("新規案件");
+    await user.click(screen.getByText("新規案件"));
 
     await user.click(screen.getByRole("button", { name: /完了済み・工程表なしで記録/ }));
     await user.type(screen.getByPlaceholderText("例: 渋谷オフィスビル内装工事"), "過去案件A");
@@ -99,8 +99,8 @@ describe("ProjectListPage", () => {
     const user = userEvent.setup();
     render(<ProjectListPage />);
 
-    await screen.findByText("新規プロジェクト");
-    await user.click(screen.getByText("新規プロジェクト"));
+    await screen.findByText("新規案件");
+    await user.click(screen.getByText("新規案件"));
 
     await user.click(screen.getByRole("button", { name: /工程表を作る案件/ }));
     await user.type(screen.getByPlaceholderText("例: 渋谷オフィスビル内装工事"), "通常案件A");
@@ -122,8 +122,8 @@ describe("ProjectListPage", () => {
     render(<ProjectListPage />);
 
     // Wait for loading to complete, then open form
-    await screen.findByText("新規プロジェクト");
-    await user.click(screen.getByText("新規プロジェクト"));
+    await screen.findByText("新規案件");
+    await user.click(screen.getByText("新規案件"));
 
     await user.type(screen.getByPlaceholderText("例: 渋谷オフィスビル内装工事"), "工事X");
     await user.click(screen.getByRole("button", { name: "作成" }));
@@ -136,8 +136,8 @@ describe("ProjectListPage", () => {
     const user = userEvent.setup();
     render(<ProjectListPage />);
 
-    await screen.findByText("新規プロジェクト");
-    await user.click(screen.getByText("新規プロジェクト"));
+    await screen.findByText("新規案件");
+    await user.click(screen.getByText("新規案件"));
 
     await user.type(
       screen.getByPlaceholderText("例: 渋谷オフィスビル内装工事"),
@@ -157,8 +157,8 @@ describe("ProjectListPage", () => {
     const user = userEvent.setup();
     render(<ProjectListPage />);
 
-    await screen.findByText("新規プロジェクト");
-    await user.click(screen.getByText("新規プロジェクト"));
+    await screen.findByText("新規案件");
+    await user.click(screen.getByText("新規案件"));
 
     await user.type(
       screen.getByPlaceholderText("例: 渋谷オフィスビル内装工事"),
@@ -178,8 +178,8 @@ describe("ProjectListPage", () => {
     const user = userEvent.setup();
     render(<ProjectListPage />);
 
-    await screen.findByText("新規プロジェクト");
-    await user.click(screen.getByText("新規プロジェクト"));
+    await screen.findByText("新規案件");
+    await user.click(screen.getByText("新規案件"));
 
     await user.click(screen.getByRole("button", { name: /工程表を作る案件/ }));
     await user.type(screen.getByPlaceholderText("例: 渋谷オフィスビル内装工事"), "工程テスト案件");

@@ -73,7 +73,7 @@ describe("OnboardingWizard", () => {
     const user = userEvent.setup();
     render(<OnboardingWizard onComplete={() => {}} />);
     await user.click(screen.getByText("はじめる →"));
-    expect(screen.getByText("会社情報と最初のプロジェクト")).toBeDefined();
+    expect(screen.getByText("会社情報と最初の案件")).toBeDefined();
     expect(screen.getByText("ステップ 2 / 4")).toBeDefined();
   });
 
@@ -82,7 +82,7 @@ describe("OnboardingWizard", () => {
     render(<OnboardingWizard onComplete={() => {}} />);
     await user.click(screen.getByText("はじめる →"));
     await user.click(screen.getByText("次へ →"));
-    expect(screen.getByText("プロジェクト名を入力してください")).toBeDefined();
+    expect(screen.getByText("案件名を入力してください")).toBeDefined();
   });
 
   it("ステップ2: 工事名入力でステップ3に進む", async () => {
@@ -153,7 +153,7 @@ describe("OnboardingWizard", () => {
     await user.type(screen.getByPlaceholderText("例: 渋谷オフィスビル内装工事"), "工事B");
     await user.click(screen.getByText("次へ →"));
     await user.click(screen.getByText("戻る"));
-    expect(screen.getByText("会社情報と最初のプロジェクト")).toBeDefined();
+    expect(screen.getByText("会社情報と最初の案件")).toBeDefined();
   });
 
   it("プロジェクト作成失敗時はエラーを表示してステップ3に留まる", async () => {

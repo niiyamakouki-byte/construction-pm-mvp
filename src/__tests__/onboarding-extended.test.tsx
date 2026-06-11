@@ -60,7 +60,7 @@ describe("OnboardingWizard 追加テスト", () => {
     await user.click(screen.getByText("はじめる →"));
     await user.type(screen.getByPlaceholderText("例: 渋谷オフィスビル内装工事"), "A");
     await user.click(screen.getByText("次へ →"));
-    expect(screen.getByText("プロジェクト名は2文字以上で入力してください")).toBeDefined();
+    expect(screen.getByText("案件名は2文字以上で入力してください")).toBeDefined();
   });
 
   it("ステップ3: テンプレート未選択では「作成する」ボタンが disabled", async () => {

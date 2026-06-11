@@ -103,11 +103,11 @@ export function OnboardingWizard({ onComplete }: Props) {
 
   const handleStep2Next = () => {
     if (!projectName.trim()) {
-      setNameError("プロジェクト名を入力してください");
+      setNameError("案件名を入力してください");
       return;
     }
     if (projectName.trim().length < 2) {
-      setNameError("プロジェクト名は2文字以上で入力してください");
+      setNameError("案件名は2文字以上で入力してください");
       return;
     }
     setNameError(null);
@@ -168,7 +168,7 @@ export function OnboardingWizard({ onComplete }: Props) {
       setCreateError(
         err instanceof Error
           ? err.message
-          : "プロジェクトの作成に失敗しました。もう一度お試しください。",
+          : "案件の作成に失敗しました。もう一度お試しください。",
       );
     } finally {
       setCreating(false);
@@ -403,7 +403,7 @@ function Step2({
       <div className="mb-6 flex items-center gap-3">
         <SquarePen className="h-9 w-9 shrink-0 text-brand-500" aria-hidden="true" />
         <div>
-          <h2 className="text-xl font-bold text-slate-900">会社情報と最初のプロジェクト</h2>
+          <h2 className="text-xl font-bold text-slate-900">会社情報と最初の案件</h2>
           <p className="mt-1 text-sm text-slate-500">
             基本情報を入力してください
           </p>
@@ -559,7 +559,7 @@ function Step4() {
       </div>
       <h2 className="text-2xl font-bold text-slate-900">準備完了！</h2>
       <p className="mt-4 text-base text-slate-600 leading-relaxed">
-        プロジェクトが作成されました。
+        案件が作成されました。
         <br />
         工程表からタスクを追加して、
         <br />
