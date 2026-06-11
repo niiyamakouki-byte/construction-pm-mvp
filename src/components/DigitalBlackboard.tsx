@@ -1,4 +1,5 @@
 import { useRef, useState, useEffect, useCallback } from "react";
+import { Camera } from "lucide-react";
 import {
   compositeBlackboard,
   downloadCanvas,
@@ -113,7 +114,7 @@ export function DigitalBlackboard({ photoUrl, defaults }: Props) {
         onDragOver={(e) => e.preventDefault()}
         aria-label="写真を選択またはドロップ"
       >
-        <span className="mb-1 text-2xl">📷</span>
+        <Camera className="mb-1 h-8 w-8" />
         <span>写真を選択またはドロップ</span>
         <input
           type="file"

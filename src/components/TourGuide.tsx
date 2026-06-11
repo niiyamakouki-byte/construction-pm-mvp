@@ -1,4 +1,11 @@
-import { useState, useEffect, useCallback } from "react";
+import { type ReactNode, useState, useEffect, useCallback } from "react";
+import {
+  BarChart3,
+  Plus,
+  MoveHorizontal,
+  Building2,
+  HelpCircle,
+} from "lucide-react";
 
 const TOUR_KEY = "genbahub_tour_done";
 
@@ -27,7 +34,7 @@ type TourStep = {
   id: number;
   title: string;
   description: string;
-  icon: string;
+  icon: ReactNode;
   /** data-tour attribute value to highlight */
   targetAttr: string;
   /** Popover position relative to highlighted element */
@@ -40,7 +47,7 @@ const TOUR_STEPS: TourStep[] = [
     title: "ここが工程表です",
     description:
       "ガントチャートで工事の流れを一目で確認できます。横バーをドラッグして日程を調整できます。",
-    icon: "📊",
+    icon: <BarChart3 className="h-6 w-6" />,
     targetAttr: "gantt-chart",
     position: "bottom",
   },
@@ -49,7 +56,7 @@ const TOUR_STEPS: TourStep[] = [
     title: "タスクを追加するには",
     description:
       "「＋追加」ボタンをタップするとタスクを追加できます。工事名・担当業者・日程を入力してください。",
-    icon: "➕",
+    icon: <Plus className="h-6 w-6" />,
     targetAttr: "add-task-btn",
     position: "bottom",
   },
@@ -58,7 +65,7 @@ const TOUR_STEPS: TourStep[] = [
     title: "ドラッグで日数変更",
     description:
       "タスクバーの右端をドラッグすると工期を伸ばせます。バー全体をドラッグすると開始日を動かせます。",
-    icon: "↔️",
+    icon: <MoveHorizontal className="h-6 w-6" />,
     targetAttr: "gantt-task-bar",
     position: "top",
   },
@@ -67,7 +74,7 @@ const TOUR_STEPS: TourStep[] = [
     title: "業者管理はここ",
     description:
       "下のナビ「業者」タブから、工事に関わる業者を登録・管理できます。",
-    icon: "🏢",
+    icon: <Building2 className="h-6 w-6" />,
     targetAttr: "nav-contractors",
     position: "top",
   },
@@ -76,7 +83,7 @@ const TOUR_STEPS: TourStep[] = [
     title: "困ったときはヘルプ",
     description:
       "よくある質問や使い方は「ヘルプ」ページに載っています。右上のメニューからいつでも確認できます。",
-    icon: "❓",
+    icon: <HelpCircle className="h-6 w-6" />,
     targetAttr: "help-link",
     position: "bottom",
   },
@@ -262,7 +269,7 @@ function TourPopover({
     >
       <div className="rounded-2xl bg-white shadow-2xl border border-slate-100 overflow-hidden">
         <div className="bg-brand-500 px-4 py-3 flex items-center gap-2">
-          <span className="text-2xl">{step.icon}</span>
+          <span className="flex items-center">{step.icon}</span>
           <div className="flex-1 min-w-0">
             <p className="font-bold text-white text-sm truncate">{step.title}</p>
             <p className="text-brand-200 text-xs">
