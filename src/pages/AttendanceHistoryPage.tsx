@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ClipboardList } from "lucide-react";
+import { ClipboardList, Download, Building2 } from "lucide-react";
 import {
   calculateManDays,
   exportToCSV,
@@ -123,7 +123,7 @@ export function AttendanceHistoryPage({ projectId }: { projectId: string }) {
           disabled={entries.length === 0}
           className="flex items-center gap-1.5 rounded-lg bg-brand-600 disabled:bg-slate-300 px-3 py-2 text-sm font-semibold text-white hover:bg-brand-700 transition-colors"
         >
-          <span aria-hidden="true">⬇</span>
+          <Download className="h-4 w-4" aria-hidden="true" />
           CSV出力
         </button>
       </header>
@@ -200,9 +200,8 @@ export function AttendanceHistoryPage({ projectId }: { projectId: string }) {
                 {/* Company header */}
                 <div className="flex items-center justify-between bg-brand-50 border-b border-brand-100 px-4 py-2">
                   <div className="flex items-center gap-2">
-                    <span className="text-brand-700 font-bold text-sm">
-                      🏢 {company}
-                    </span>
+                    <Building2 className="h-4 w-4 text-brand-700" aria-hidden="true" />
+                    <span className="text-brand-700 font-bold text-sm">{company}</span>
                     <span className="rounded-full bg-brand-100 px-2 py-0.5 text-[11px] font-bold text-brand-700">
                       {recs.length}名
                     </span>

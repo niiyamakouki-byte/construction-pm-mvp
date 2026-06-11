@@ -5,7 +5,7 @@
  */
 
 import { useEffect, useMemo, useState, type ReactNode } from "react";
-import { CalendarDays, Construction, MessageCircle, FileImage } from "lucide-react";
+import { CalendarDays, Construction, MessageCircle, FileImage, FileText } from "lucide-react";
 import type { Project } from "../domain/types.js";
 import type { Task } from "../domain/types.js";
 import { createProjectRepository } from "../stores/project-store.js";
@@ -175,7 +175,7 @@ function DrawingsReadOnly({ projectId }: { projectId: string }) {
       <ul className="divide-y divide-slate-50">
         {drawings.map((d) => (
           <li key={d.id} className="flex items-center gap-3 px-4 py-3">
-            <span className="text-lg" aria-hidden="true">📄</span>
+            <FileText className="h-5 w-5 text-slate-500" aria-hidden="true" />
             <div className="flex-1 min-w-0">
               <p className="truncate text-sm font-medium text-slate-800">{d.name}</p>
               <p className="text-xs text-slate-400">{d.uploadedAt?.slice(0, 10)}</p>
