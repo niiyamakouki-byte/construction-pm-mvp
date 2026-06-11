@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { navigate } from "../hooks/useHashRouter.js";
 import { ProjectDetailPage } from "./ProjectDetailPage.js";
 
 const mockProjectFindById = vi.fn();
@@ -11,6 +12,8 @@ const mockTaskUpdate = vi.fn();
 const mockTaskDelete = vi.fn();
 const mockCostItemFindAll = vi.fn();
 const mockExpenseFindAll = vi.fn();
+const mockGetEntryLog = vi.fn();
+const mockGetTodayWorkerCount = vi.fn();
 
 vi.mock("../contexts/OrganizationContext.js", () => ({
   useOrganizationContext: () => ({ organizationId: "test-org" }),
@@ -81,8 +84,8 @@ vi.mock("../lib/site-entry-qr.js", () => ({
 }));
 
 vi.mock("../lib/site-entry-log.js", () => ({
-  getEntryLog: () => [],
-  getTodayWorkerCount: () => 0,
+  getEntryLog: (...args: Parameters<typeof mockGetEntryLog>) => mockGetEntryLog(...args),
+  getTodayWorkerCount: (...args: Parameters<typeof mockGetTodayWorkerCount>) => mockGetTodayWorkerCount(...args),
 }));
 
 const baseProject = {
@@ -112,6 +115,8 @@ describe("ProjectDetailPage", () => {
     mockTaskDelete.mockResolvedValue(undefined);
     mockCostItemFindAll.mockResolvedValue([]);
     mockExpenseFindAll.mockResolvedValue([]);
+    mockGetEntryLog.mockReturnValue([]);
+    mockGetTodayWorkerCount.mockReturnValue(0);
   });
 
   afterEach(() => {
@@ -230,5 +235,73 @@ describe("ProjectDetailPage", () => {
     expect(received[0]?.type).toBe("genbahub:assistant-open");
 
     window.removeEventListener("genbahub:assistant-open", handler);
+  });
+
+  it("shows the field-start flow and routes each action", async () => {
+    const user = userEvent.setup();
+    render(<ProjectDetailPage projectId="proj-1" />);
+
+    await screen.findByRole("region", { name: "現場スタート導線" });
+    expect(screen.getByText("まず必須にするもの")).toBeDefined();
+    expect(screen.getByText("開始写真を上げる")).toBeDefined();
+    expect(screen.getByText("終了写真を上げる")).toBeDefined();
+    expect(screen.getByText("中間写真も足せる")).toBeDefined();
+
+    await user.click(screen.getByRole("button", { name: "開始写真を開く" }));
+    await user.click(screen.getByRole("button", { name: "終了写真を開く" }));
+    await user.click(screen.getByRole("button", { name: "キオスクを開く" }));
+    await user.click(screen.getByRole("button", { name: "写真一覧を開く" }));
+
+    expect(navigate).toHaveBeenNthCalledWith(1, "/photos");
+    expect(navigate).toHaveBeenNthCalledWith(2, "/photos");
+    expect(navigate).toHaveBeenNthCalledWith(3, "/entry/proj-1");
+    expect(navigate).toHaveBeenNthCalledWith(4, "/photos");
+  });
+
+  it("shows a role-aware latest workspace and routes each shortcut", async () => {
+    const user = userEvent.setup();
+    mockTaskFindAll.mockResolvedValueOnce([
+      {
+        id: "task-1",
+        projectId: "proj-1",
+        name: "ボード張り",
+        description: "",
+        status: "in_progress",
+        startDate: "2025-01-06",
+        dueDate: "2025-01-08",
+        assigneeId: "内野 善隆",
+        progress: 50,
+        dependencies: [],
+        createdAt: "2025-01-01T00:00:00.000Z",
+        updatedAt: "2025-01-01T00:00:00.000Z",
+      },
+    ]);
+    mockGetEntryLog.mockReturnValueOnce([
+      {
+        id: "entry-1",
+        projectId: "proj-1",
+        workerName: "内野 善隆",
+        company: "内野建装",
+        entryTime: "2025-01-06T08:30:00.000Z",
+      },
+    ]);
+
+    render(<ProjectDetailPage projectId="proj-1" />);
+
+    await screen.findByRole("region", { name: "役割別の最新導線" });
+    expect(screen.getByText("想定業種: 内装")).toBeDefined();
+    expect(screen.getByText("直近: 内野 善隆")).toBeDefined();
+    expect(screen.getAllByText("ボード張り").length).toBeGreaterThan(0);
+    expect(screen.getByText("内装向けの共有ビュー")).toBeDefined();
+
+    await user.click(screen.getByRole("button", { name: "工程表を開く" }));
+    await user.click(screen.getByRole("button", { name: "共有ビューを開く" }));
+    await user.click(screen.getByRole("button", { name: "安全書類を開く" }));
+    await user.click(screen.getByRole("button", { name: "連絡タブを開く" }));
+
+    expect(navigate).toHaveBeenNthCalledWith(1, "/gantt/proj-1");
+    expect(navigate).toHaveBeenNthCalledWith(2, "/portal/proj-1/%E5%86%85%E9%87%8E%E5%BB%BA%E8%A3%85");
+    expect(navigate).toHaveBeenNthCalledWith(3, "/safety");
+    expect(navigate).toHaveBeenNthCalledWith(4, "/project/proj-1/chat");
   });
 });
