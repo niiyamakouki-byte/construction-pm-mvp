@@ -95,15 +95,15 @@ const statusIcon: Record<TaskStatus, string> = {
 };
 
 const statusBg: Record<TaskStatus, string> = {
-  todo: "bg-gray-100 text-gray-500 border-gray-200",
-  in_progress: "bg-emerald-100 text-emerald-800 border-emerald-200",
-  done: "bg-gray-200 text-gray-600 border-gray-300",
+  todo: "bg-[#fdf8f0] text-[#7a7062] border-[#e8dfd3]",
+  in_progress: "bg-[#e8f2eb] text-[#5e8a6c] border-[#c4dcc9]",
+  done: "bg-[#f5f0e8] text-[#a69e93] border-[#e8dfd3]",
 };
 
 const statusButtonStyle: Record<TaskStatus, string> = {
-  done: "bg-emerald-600 text-white active:bg-emerald-700",
-  in_progress: "bg-emerald-600 text-white active:bg-emerald-700",
-  todo: "bg-amber-500 text-white active:bg-amber-600",
+  done: "bg-[#7ba88a] text-white active:bg-[#5e8a6c]",
+  in_progress: "bg-[#7ba88a] text-white active:bg-[#5e8a6c]",
+  todo: "bg-[#d4a853] text-white active:bg-[#b8903f]",
 };
 
 const currencyFormatter = new Intl.NumberFormat("ja-JP", {
@@ -113,17 +113,17 @@ const currencyFormatter = new Intl.NumberFormat("ja-JP", {
 });
 
 const budgetStatusTone = {
-  under_budget: "bg-emerald-50 text-emerald-700 border-emerald-200",
-  on_budget: "bg-blue-50 text-blue-700 border-blue-200",
-  over_budget: "bg-red-50 text-red-700 border-red-200",
+  under_budget: "bg-[#e8f2eb] text-[#5e8a6c] border-[#c4dcc9]",
+  on_budget: "bg-[#fff4d9] text-[#b8903f] border-[#f0d898]",
+  over_budget: "bg-[#fde8e2] text-[#c0614f] border-[#f2bdb3]",
 } as const;
 
 const healthGradeTone = {
-  A: "bg-emerald-100 text-emerald-700 border-emerald-200",
-  B: "bg-lime-100 text-lime-700 border-lime-200",
-  C: "bg-amber-100 text-amber-700 border-amber-200",
-  D: "bg-orange-100 text-orange-700 border-orange-200",
-  F: "bg-red-100 text-red-700 border-red-200",
+  A: "bg-[#e8f2eb] text-[#5e8a6c] border-[#c4dcc9]",
+  B: "bg-[#e8f2eb] text-[#7ba88a] border-[#c4dcc9]",
+  C: "bg-[#fff4d9] text-[#d4a853] border-[#f0d898]",
+  D: "bg-[#fde8e2] text-[#e8836b] border-[#f2bdb3]",
+  F: "bg-[#fde8e2] text-[#c0614f] border-[#f2bdb3]",
 } as const;
 
 const confidenceLabel = {
@@ -847,13 +847,13 @@ function TodayDashboardPageContent() {
   }
 
   return (
-    <div className="mx-auto max-w-lg space-y-4 px-4 pb-8">
+    <div className="mx-auto max-w-lg space-y-5 px-4 pb-10">
       {/* Error banner */}
       {loadError && (
-        <div role="alert" className="flex items-start gap-2 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
+        <div role="alert" className="flex items-start gap-2 rounded-xl border border-[#fde8e2] bg-[#fde8e2] px-4 py-3 text-sm text-[#c0614f]">
           <span className="shrink-0 mt-0.5">!</span>
           <span className="flex-1">{loadError}</span>
-          <button onClick={() => setLoadError(null)} className="shrink-0 text-red-400 hover:text-red-600" aria-label="エラーを閉じる">&times;</button>
+          <button onClick={() => setLoadError(null)} className="shrink-0 text-[#e8836b] hover:text-[#c0614f]" aria-label="エラーを閉じる">&times;</button>
         </div>
       )}
 
@@ -863,7 +863,7 @@ function TodayDashboardPageContent() {
 
       {/* Googleカレンダー個人予定とのダブり警告 (Phase A) */}
       {todayHasConflict && (
-        <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-2 text-sm font-semibold text-amber-800" role="status">
+        <div className="rounded-xl border border-[#f0d898] bg-[#fff4d9] px-4 py-2 text-sm font-semibold text-[#b8903f]" role="status">
           ⚠ 今日は個人予定と現場が重なっています
         </div>
       )}
@@ -892,22 +892,22 @@ function TodayDashboardPageContent() {
         if (actions.length === 0) return null;
         return (
           <section>
-            <h2 className="mb-3 text-base font-semibold text-slate-800">今日のおすすめアクション</h2>
+            <h2 className="mb-3 text-xs font-semibold tracking-[0.18em] uppercase text-[#a69e93]">今日のおすすめアクション</h2>
             <div className="grid gap-2 sm:grid-cols-2">
               {actions.slice(0, 4).map((action) => (
                 <button
                   key={action.label}
                   type="button"
                   onClick={() => navigate(action.path)}
-                  className={`flex items-center gap-3 rounded-xl border px-4 py-3 text-left text-sm font-semibold transition-colors hover:bg-slate-50 ${
+                  className={`flex items-center gap-3 rounded-xl border px-4 py-3 text-left text-sm font-medium transition-colors ${
                     action.highlight
-                      ? "border-red-200 bg-red-50 text-red-800"
-                      : "border-slate-200 bg-white text-slate-700"
+                      ? "border-[#f2bdb3] bg-[#fde8e2] text-[#c0614f] hover:bg-[#f8d5ce]"
+                      : "border-[#e8dfd3] bg-white text-[#3d3529] hover:bg-[#fdf8f0]"
                   }`}
                 >
-                  <span className="text-lg" aria-hidden="true">{action.icon}</span>
+                  <span className="text-base" aria-hidden="true">{action.icon}</span>
                   <span className="flex-1">{action.label}</span>
-                  <span className="text-slate-300" aria-hidden="true">›</span>
+                  <span className="text-[#e8dfd3]" aria-hidden="true">›</span>
                 </button>
               ))}
             </div>
@@ -915,7 +915,7 @@ function TodayDashboardPageContent() {
         );
       })()}
 
-      {/* Dashboard Cards — 6-card grid (仮データ: Supabase接続は別タスク) */}
+      {/* Dashboard Cards — 6-card grid */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
         <DashboardCard
           title="今日の予定"
@@ -968,13 +968,13 @@ function TodayDashboardPageContent() {
       </div>
 
       {/* Date Header */}
-      <div className="rounded-2xl bg-brand-800 px-5 py-5 text-white shadow-sm">
+      <div className="rounded-2xl border border-[#e8dfd3] bg-[#3d3529] px-5 py-5 text-white shadow-sm">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-xs font-semibold tracking-widest text-brand-300 uppercase">
+            <p className="text-xs font-semibold tracking-[0.2em] text-[#a69e93] uppercase">
               本日の概要
             </p>
-            <p className="mt-1 text-xl font-bold">{formatDateJP(today)}</p>
+            <p className="mt-1 text-xl font-bold text-white">{formatDateJP(today)}</p>
           </div>
         </div>
 
@@ -987,36 +987,36 @@ function TodayDashboardPageContent() {
                 key={site.siteId}
                 type="button"
                 onClick={() => navigate("/weather")}
-                className="rounded-xl bg-white/10 px-3 py-3 text-left backdrop-blur-sm transition-colors hover:bg-white/15"
+                className="rounded-xl bg-white/10 px-3 py-3 text-left transition-colors hover:bg-white/15"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <p className="text-2xl leading-tight">
                       {getWeatherEmoji(todayForecast.weather[0]?.icon)}
                     </p>
-                    <p className="mt-1 text-base font-bold">
+                    <p className="mt-1 text-base font-semibold">
                       {Math.round(todayForecast.temp.max)}° / {Math.round(todayForecast.temp.min)}°
                     </p>
                   </div>
                   <span
                     className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${
                       risk.level === "danger"
-                        ? "bg-red-100 text-red-700"
+                        ? "bg-[#fde8e2] text-[#c0614f]"
                         : risk.level === "warning"
-                          ? "bg-amber-100 text-amber-700"
-                          : "bg-emerald-100 text-emerald-700"
+                          ? "bg-[#fff4d9] text-[#b8903f]"
+                          : "bg-[#e8f2eb] text-[#5e8a6c]"
                     }`}
                   >
                     {risk.level === "danger" ? "延期候補" : risk.level === "warning" ? "要注意" : "施工可"}
                   </span>
                 </div>
-                <p className="mt-2 text-[11px] text-brand-200">
+                <p className="mt-2 text-[11px] text-[#a69e93]">
                   降水 {Math.round(todayForecast.pop * 100)}% · 風速 {todayForecast.wind_speed.toFixed(1)}m/s
                 </p>
                 <p className="mt-1.5 truncate text-[11px] font-semibold text-white">
                   {site.siteName}
                 </p>
-                <p className="truncate text-[10px] text-brand-300">
+                <p className="truncate text-[10px] text-[#7a7062]">
                   {site.locationLabel}
                 </p>
               </button>
@@ -1026,7 +1026,7 @@ function TodayDashboardPageContent() {
         <button
           type="button"
           onClick={() => navigate("/weather")}
-          className="mt-3 w-full rounded-xl border border-white/20 bg-white/10 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-white/15"
+          className="mt-3 w-full rounded-xl border border-white/20 bg-white/10 px-4 py-3 text-sm font-medium text-white transition-colors hover:bg-white/15"
         >
           7日間の現場天気を見る
         </button>
@@ -1034,17 +1034,17 @@ function TodayDashboardPageContent() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-        <StatCard label="進行中案件" value={activeProjectsCount} color="text-brand-700" bgColor="bg-brand-50" />
-        <StatCard label="進行中タスク" value={inProgressTasks} color="text-blue-600" bgColor="bg-blue-50" />
-        <StatCard label="完了タスク" value={completedTasks} color="text-emerald-600" bgColor="bg-emerald-50" />
-        <StatCard label="期限超過" value={overdueTasks} color="text-red-600" bgColor={overdueTasks > 0 ? "bg-red-50" : "bg-white"} />
+        <StatCard label="進行中案件" value={activeProjectsCount} color="text-[#5e8a6c]" bgColor="bg-[#e8f2eb]" />
+        <StatCard label="進行中タスク" value={inProgressTasks} color="text-[#7ba88a]" bgColor="bg-[#f0f7f2]" />
+        <StatCard label="完了タスク" value={completedTasks} color="text-[#a69e93]" bgColor="bg-[#f5f0e8]" />
+        <StatCard label="期限超過" value={overdueTasks} color="text-[#c0614f]" bgColor={overdueTasks > 0 ? "bg-[#fde8e2]" : "bg-white"} />
       </div>
 
       {completedMemoProjects.length > 0 && (
-        <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+        <section className="rounded-2xl border border-[#e8dfd3] bg-white p-4 shadow-sm">
           <div className="flex items-center justify-between gap-3">
-            <h2 className="text-base font-semibold text-slate-900">完了済み記録</h2>
-            <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600">
+            <h2 className="text-sm font-semibold text-[#3d3529]">完了済み記録</h2>
+            <span className="rounded-full bg-[#f5f0e8] px-2.5 py-1 text-xs font-semibold text-[#7a7062]">
               {completedMemoProjects.length}件
             </span>
           </div>
@@ -1054,10 +1054,10 @@ function TodayDashboardPageContent() {
                 key={project.id}
                 type="button"
                 onClick={() => navigate(`/project/${project.id}`)}
-                className="flex items-center justify-between gap-3 rounded-xl border border-slate-100 bg-slate-50 px-3 py-2 text-left"
+                className="flex items-center justify-between gap-3 rounded-xl border border-[#e8dfd3] bg-[#fdf8f0] px-3 py-2 text-left hover:bg-[#f5f0e8] transition-colors"
               >
-                <span className="min-w-0 truncate text-sm font-semibold text-slate-800">{project.name}</span>
-                <span className="shrink-0 text-xs font-semibold text-slate-500">記録を開く</span>
+                <span className="min-w-0 truncate text-sm font-medium text-[#3d3529]">{project.name}</span>
+                <span className="shrink-0 text-xs font-medium text-[#7ba88a]">記録を開く</span>
               </button>
             ))}
           </div>
@@ -1072,9 +1072,9 @@ function TodayDashboardPageContent() {
       {/* Cockpit Dashboard */}
       <section>
         <div className="mb-3 flex items-center justify-between gap-3">
-          <h2 className="text-base font-semibold text-slate-800">コックピット</h2>
+          <h2 className="text-xs font-semibold tracking-[0.18em] uppercase text-[#a69e93]">コックピット</h2>
           {insightProject && (
-            <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
+            <span className="rounded-full bg-[#f5f0e8] px-3 py-1 text-xs font-medium text-[#7a7062]">
               {insightProject.name}
             </span>
           )}
@@ -1090,12 +1090,12 @@ function TodayDashboardPageContent() {
 
       <section>
         <div className="mb-3 flex items-center justify-between gap-3">
-          <h2 className="text-base font-semibold text-slate-800">本日の日報</h2>
-          <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
+          <h2 className="text-xs font-semibold tracking-[0.18em] uppercase text-[#a69e93]">本日の日報</h2>
+          <span className="rounded-full bg-[#f5f0e8] px-3 py-1 text-xs font-medium text-[#7a7062]">
             {dailyReportProject?.name ?? "案件なし"}
           </span>
         </div>
-        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+        <div className="rounded-2xl border border-[#e8dfd3] bg-white p-4 shadow-sm">
           <div className="grid gap-3 sm:grid-cols-2">
             <DashboardSummaryCard
               label="進行中作業"
@@ -1127,14 +1127,14 @@ function TodayDashboardPageContent() {
           </div>
 
           {dailyReportStatus && (
-            <p className="mt-4 text-sm text-slate-500">{dailyReportStatus}</p>
+            <p className="mt-4 text-sm text-[#7a7062]">{dailyReportStatus}</p>
           )}
 
           <button
             type="button"
             onClick={handleDailyReportExport}
             disabled={!dailyReportProject || dailyReportExporting}
-            className="mt-4 w-full rounded-xl bg-brand-700 px-4 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-brand-800 disabled:cursor-not-allowed disabled:opacity-60"
+            className="mt-4 w-full rounded-xl bg-[#7ba88a] px-4 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[#5e8a6c] disabled:cursor-not-allowed disabled:opacity-60"
           >
             {dailyReportExporting ? "HTML生成中..." : "HTMLで日報出力"}
           </button>
@@ -1144,15 +1144,15 @@ function TodayDashboardPageContent() {
       {/* Photo Upload */}
       <section>
         <div className="mb-3 flex items-center justify-between gap-3">
-          <h2 className="text-base font-semibold text-slate-800">現場写真アップロード</h2>
-          <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
+          <h2 className="text-xs font-semibold tracking-[0.18em] uppercase text-[#a69e93]">現場写真アップロード</h2>
+          <span className="rounded-full bg-[#f5f0e8] px-3 py-1 text-xs font-medium text-[#7a7062]">
             {dailyReportProject?.name ?? "案件なし"}
           </span>
         </div>
-        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+        <div className="rounded-2xl border border-[#e8dfd3] bg-white p-4 shadow-sm">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
             <div className="flex-1">
-              <label htmlFor="photo-category" className="block text-xs font-semibold text-slate-500 mb-1">カテゴリ</label>
+              <label htmlFor="photo-category" className="block text-xs font-medium text-[#7a7062] mb-1">カテゴリ</label>
               <select
                 id="photo-category"
                 value={photoCategory}
@@ -1160,7 +1160,7 @@ function TodayDashboardPageContent() {
                   setPhotoCategory(e.target.value);
                   setPhotoCategorySuggestion(null);
                 }}
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                className="w-full rounded-lg border border-[#e8dfd3] px-3 py-2 text-sm text-[#3d3529] bg-white focus:outline-none focus:ring-2 focus:ring-[#7ba88a]"
               >
                 {Object.values(PhotoCategory).map((cat) => (
                   <option key={cat} value={cat}>{getCategoryLabel(cat)}</option>
@@ -1168,7 +1168,7 @@ function TodayDashboardPageContent() {
               </select>
             </div>
             <div className="flex-1">
-              <label htmlFor="photo-file" className="block text-xs font-semibold text-slate-500 mb-1">写真ファイル</label>
+              <label htmlFor="photo-file" className="block text-xs font-medium text-[#7a7062] mb-1">写真ファイル</label>
               <input
                 key={photoInputResetKey}
                 id="photo-file"
@@ -1176,19 +1176,19 @@ function TodayDashboardPageContent() {
                 accept="image/jpeg,image/png,image/heic,image/heif"
                 onChange={handlePhotoFileChange}
                 disabled={photoUploading || !dailyReportProject}
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-brand-50 file:px-3 file:py-1 file:text-xs file:font-semibold file:text-brand-700"
+                className="w-full rounded-lg border border-[#e8dfd3] px-3 py-2 text-sm text-[#3d3529] file:mr-3 file:rounded-lg file:border-0 file:bg-[#e8f2eb] file:px-3 file:py-1 file:text-xs file:font-semibold file:text-[#5e8a6c]"
               />
             </div>
           </div>
           {selectedPhotoFile && (
-            <div className="mt-3 flex flex-col gap-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="mt-3 flex flex-col gap-3 rounded-xl border border-[#e8dfd3] bg-[#fdf8f0] px-3 py-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <p className="text-sm font-semibold text-slate-800">{selectedPhotoFile.name}</p>
-                <p className="mt-1 text-xs text-slate-500">
+                <p className="text-sm font-medium text-[#3d3529]">{selectedPhotoFile.name}</p>
+                <p className="mt-1 text-xs text-[#7a7062]">
                   {formatFileSize(selectedPhotoFile.size)} · {getCategoryLabel(photoCategory as import("../lib/photo-upload.js").PhotoCategory)}
                 </p>
                 {photoCategorySuggestion && (
-                  <p className="mt-1 text-xs font-semibold text-emerald-700">
+                  <p className="mt-1 text-xs font-semibold text-[#5e8a6c]">
                     ファイル名から {photoCategorySuggestion.label} に設定済み ({Math.round(photoCategorySuggestion.confidence * 100)}%)
                   </p>
                 )}
@@ -1198,19 +1198,15 @@ function TodayDashboardPageContent() {
                   type="button"
                   onClick={resetPhotoSelection}
                   disabled={photoUploading}
-                  className="rounded-lg border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-600 transition-colors hover:bg-white disabled:cursor-not-allowed disabled:opacity-60"
+                  className="rounded-lg border border-[#e8dfd3] px-3 py-2 text-xs font-medium text-[#7a7062] transition-colors hover:bg-[#f5f0e8] disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   取消
                 </button>
                 <button
                   type="button"
                   onClick={handlePhotoUpload}
-                  disabled={
-                    photoUploading ||
-                    !dailyReportProject ||
-                    !photoValidation?.valid
-                  }
-                  className="rounded-lg bg-brand-700 px-3 py-2 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-brand-800 disabled:cursor-not-allowed disabled:opacity-60"
+                  disabled={photoUploading || !dailyReportProject || !photoValidation?.valid}
+                  className="rounded-lg bg-[#7ba88a] px-3 py-2 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-[#5e8a6c] disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {photoUploading ? "保存中..." : "この写真を保存"}
                 </button>
@@ -1218,41 +1214,41 @@ function TodayDashboardPageContent() {
             </div>
           )}
           {photoValidation && !photoValidation.valid && (
-            <div className="mt-3 rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-xs text-red-700">
+            <div className="mt-3 rounded-lg border border-[#f2bdb3] bg-[#fde8e2] px-3 py-2 text-xs text-[#c0614f]">
               {photoValidation.errors.map((err, i) => <p key={i}>{err}</p>)}
             </div>
           )}
           {photoPreviewUrl && (
-            <div className="mt-3 overflow-hidden rounded-xl border border-slate-200 bg-slate-50">
+            <div className="mt-3 overflow-hidden rounded-xl border border-[#e8dfd3] bg-[#fdf8f0]">
               <img src={photoPreviewUrl} alt="アップロード写真プレビュー" className="max-h-64 w-full object-contain" />
             </div>
           )}
           {photoUploading && (
-            <p className="mt-3 text-xs font-semibold text-slate-600">写真を保存中...</p>
+            <p className="mt-3 text-xs font-medium text-[#7a7062]">写真を保存中...</p>
           )}
           {photoUploadError && (
-            <p className="mt-3 text-xs font-semibold text-red-600">{photoUploadError}</p>
+            <p className="mt-3 text-xs font-semibold text-[#c0614f]">{photoUploadError}</p>
           )}
           {photoUploadStatus && !photoUploadError && (
-            <p className="mt-3 text-xs font-semibold text-emerald-600">{photoUploadStatus}</p>
+            <p className="mt-3 text-xs font-semibold text-[#5e8a6c]">{photoUploadStatus}</p>
           )}
         </div>
       </section>
 
       <section>
         <div className="mb-3 flex items-center justify-between gap-3">
-          <h2 className="text-base font-semibold text-slate-800">GenbaHub Insight</h2>
-          <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
+          <h2 className="text-xs font-semibold tracking-[0.18em] uppercase text-[#a69e93]">GenbaHub Insight</h2>
+          <span className="rounded-full bg-[#f5f0e8] px-3 py-1 text-xs font-medium text-[#7a7062]">
             {insightProject?.name ?? "案件なし"}
           </span>
         </div>
         {insightProject && budgetInsight && timelineInsight && healthInsight ? (
           <div className="grid gap-3 md:grid-cols-3">
-            <article className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+            <article className="rounded-2xl border border-[#e8dfd3] bg-white p-4 shadow-sm">
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <p className="text-xs font-semibold tracking-[0.18em] text-slate-500">予算サマリー</p>
-                  <h3 className="mt-1 text-lg font-bold text-slate-900">見積 vs 実績</h3>
+                  <p className="text-xs font-semibold tracking-[0.18em] text-[#a69e93]">予算サマリー</p>
+                  <h3 className="mt-1 text-base font-bold text-[#3d3529]">見積 vs 実績</h3>
                 </div>
                 <span className={`rounded-full border px-3 py-1 text-xs font-semibold ${budgetStatusTone[budgetInsight.breakdown.status]}`}>
                   {budgetInsight.breakdown.status === "over_budget"
@@ -1262,23 +1258,23 @@ function TodayDashboardPageContent() {
                       : "予算通り"}
                 </span>
               </div>
-              <div className="mt-4 space-y-2 text-sm text-slate-600">
+              <div className="mt-4 space-y-2 text-sm text-[#7a7062]">
                 <div className="flex items-center justify-between gap-3">
                   <span>見積</span>
-                  <span className="font-semibold tabular-nums text-slate-900">
+                  <span className="font-semibold tabular-nums text-[#3d3529]">
                     {formatCurrency(budgetInsight.breakdown.totalEstimated)}
                   </span>
                 </div>
                 <div className="flex items-center justify-between gap-3">
                   <span>実績</span>
-                  <span className="font-semibold tabular-nums text-slate-900">
+                  <span className="font-semibold tabular-nums text-[#3d3529]">
                     {formatCurrency(budgetInsight.breakdown.totalActual)}
                   </span>
                 </div>
-                <div className="flex items-center justify-between gap-3 border-t border-slate-100 pt-2">
+                <div className="flex items-center justify-between gap-3 border-t border-[#e8dfd3] pt-2">
                   <span>差異</span>
                   <span className={`font-semibold tabular-nums ${
-                    budgetInsight.comparison.overallVariance > 0 ? "text-red-600" : "text-emerald-600"
+                    budgetInsight.comparison.overallVariance > 0 ? "text-[#c0614f]" : "text-[#5e8a6c]"
                   }`}>
                     {budgetInsight.comparison.overallVariance > 0 ? "+" : ""}
                     {formatCurrency(budgetInsight.comparison.overallVariance)}
@@ -1287,16 +1283,16 @@ function TodayDashboardPageContent() {
               </div>
             </article>
 
-            <article className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+            <article className="rounded-2xl border border-[#e8dfd3] bg-white p-4 shadow-sm">
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <p className="text-xs font-semibold tracking-[0.18em] text-slate-500">工程予測</p>
-                  <h3 className="mt-1 text-lg font-bold text-slate-900">完了見込み</h3>
+                  <p className="text-xs font-semibold tracking-[0.18em] text-[#a69e93]">工程予測</p>
+                  <h3 className="mt-1 text-base font-bold text-[#3d3529]">完了見込み</h3>
                 </div>
                 <span className={`rounded-full border px-3 py-1 text-xs font-semibold ${
                   timelineInsight.onTrack
-                    ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-                    : "border-amber-200 bg-amber-50 text-amber-700"
+                    ? "border-[#c4dcc9] bg-[#e8f2eb] text-[#5e8a6c]"
+                    : "border-[#f0d898] bg-[#fff4d9] text-[#b8903f]"
                 }`}>
                   信頼度 {confidenceLabel[
                     timelineInsight.progressPct > 70
@@ -1307,18 +1303,18 @@ function TodayDashboardPageContent() {
                   ]}
                 </span>
               </div>
-              <div className="mt-4 space-y-2 text-sm text-slate-600">
+              <div className="mt-4 space-y-2 text-sm text-[#7a7062]">
                 <div className="flex items-center justify-between gap-3">
                   <span>予定完了</span>
-                  <span className="font-semibold tabular-nums text-slate-900">{timelineInsight.originalEndDate}</span>
+                  <span className="font-semibold tabular-nums text-[#3d3529]">{timelineInsight.originalEndDate}</span>
                 </div>
                 <div className="flex items-center justify-between gap-3">
                   <span>予測完了</span>
-                  <span className="font-semibold tabular-nums text-slate-900">{timelineInsight.predictedEndDate}</span>
+                  <span className="font-semibold tabular-nums text-[#3d3529]">{timelineInsight.predictedEndDate}</span>
                 </div>
-                <div className="flex items-center justify-between gap-3 border-t border-slate-100 pt-2">
+                <div className="flex items-center justify-between gap-3 border-t border-[#e8dfd3] pt-2">
                   <span>遅延分析</span>
-                  <span className="font-semibold text-slate-900">
+                  <span className="font-semibold text-[#3d3529]">
                     {timelineInsight.delayAnalysis.totalDelayDays}日 /
                     {" "}
                     {delayCategoryLabel[timelineInsight.delayAnalysis.largestCause]}
@@ -1327,11 +1323,11 @@ function TodayDashboardPageContent() {
               </div>
             </article>
 
-            <article className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+            <article className="rounded-2xl border border-[#e8dfd3] bg-white p-4 shadow-sm">
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <p className="text-xs font-semibold tracking-[0.18em] text-slate-500">案件健全性</p>
-                  <h3 className="mt-1 text-lg font-bold text-slate-900">Health Score</h3>
+                  <p className="text-xs font-semibold tracking-[0.18em] text-[#a69e93]">案件健全性</p>
+                  <h3 className="mt-1 text-base font-bold text-[#3d3529]">Health Score</h3>
                 </div>
                 <span className={`rounded-full border px-3 py-1 text-xs font-bold ${healthGradeTone[healthInsight.grade]}`}>
                   Grade {healthInsight.grade}
@@ -1339,17 +1335,17 @@ function TodayDashboardPageContent() {
               </div>
               <div className="mt-4 flex items-end justify-between gap-3">
                 <div>
-                  <p className="text-3xl font-bold tabular-nums text-slate-900">{healthInsight.overall}</p>
-                  <p className="mt-1 text-xs text-slate-500">schedule / cost / quality / risk</p>
+                  <p className="text-3xl font-bold tabular-nums text-[#3d3529]">{healthInsight.overall}</p>
+                  <p className="mt-1 text-xs text-[#a69e93]">schedule / cost / quality / risk</p>
                 </div>
-                <p className="max-w-[14rem] text-right text-xs leading-5 text-slate-500">
+                <p className="max-w-[14rem] text-right text-xs leading-5 text-[#7a7062]">
                   {healthInsight.recommendations[0]}
                 </p>
               </div>
             </article>
           </div>
         ) : (
-          <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-4 py-6 text-sm text-slate-500 shadow-sm">
+          <div className="rounded-2xl border border-dashed border-[#e8dfd3] bg-white px-4 py-6 text-sm text-[#a69e93] shadow-sm">
             案件データが揃うと、予算・工程・健全性のカードを表示します。
           </div>
         )}
@@ -1358,20 +1354,20 @@ function TodayDashboardPageContent() {
       {/* Upcoming milestones */}
       {upcomingMilestones.length > 0 && (
         <section>
-          <h2 className="mb-3 flex items-center gap-2 text-base font-semibold text-slate-800">
+          <h2 className="mb-3 flex items-center gap-2 text-xs font-semibold tracking-[0.18em] uppercase text-[#a69e93]">
             今後7日間の期限
-            <span className="inline-flex items-center justify-center rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700">
+            <span className="inline-flex items-center justify-center rounded-full bg-[#fff4d9] px-2 py-0.5 text-xs font-semibold text-[#b8903f]">
               {upcomingMilestones.length}件
             </span>
           </h2>
           <ul className="space-y-2">
             {upcomingMilestones.map((t) => (
-              <li key={t.id} className="flex items-center justify-between rounded-xl border border-amber-100 bg-amber-50/60 px-4 py-2.5">
+              <li key={t.id} className="flex items-center justify-between rounded-xl border border-[#f0d898] bg-[#fff4d9]/60 px-4 py-2.5">
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-semibold text-slate-800">{t.name}</p>
-                  <p className="text-xs text-slate-500">{t.projectName}</p>
+                  <p className="truncate text-sm font-medium text-[#3d3529]">{t.name}</p>
+                  <p className="text-xs text-[#7a7062]">{t.projectName}</p>
                 </div>
-                <span className="ml-3 shrink-0 text-xs font-semibold text-amber-700">{t.dueDate}</span>
+                <span className="ml-3 shrink-0 text-xs font-semibold text-[#b8903f]">{t.dueDate}</span>
               </li>
             ))}
           </ul>
@@ -1381,9 +1377,9 @@ function TodayDashboardPageContent() {
       {/* Executive mode: project overview */}
       {persona === "executive" && (
         <section>
-          <h2 className="mb-3 text-base font-semibold text-slate-800">全プロジェクト俯瞰</h2>
+          <h2 className="mb-3 text-xs font-semibold tracking-[0.18em] uppercase text-[#a69e93]">全プロジェクト俯瞰</h2>
           {allProjects.length === 0 ? (
-            <div className="rounded-xl border border-slate-200 bg-white p-4 text-center text-sm text-slate-400">
+            <div className="rounded-xl border border-[#e8dfd3] bg-white p-4 text-center text-sm text-[#a69e93]">
               プロジェクトがありません
             </div>
           ) : (
@@ -1391,26 +1387,26 @@ function TodayDashboardPageContent() {
               {projectStats.map((p) => (
                 <li
                   key={p.id}
-                  className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm cursor-pointer hover:border-brand-300 transition-colors"
+                  className="rounded-xl border border-[#e8dfd3] bg-white p-3 shadow-sm cursor-pointer hover:border-[#7ba88a] transition-colors"
                   onClick={() => navigate(`/project/${p.id}`)}
                 >
                   <div className="flex items-center justify-between mb-1.5">
-                    <span className="text-sm font-semibold text-slate-800 truncate">{p.name}</span>
+                    <span className="text-sm font-medium text-[#3d3529] truncate">{p.name}</span>
                     <span className={`text-xs font-bold tabular-nums ${
-                      p.pct > 80 ? "text-emerald-600" : p.pct > 50 ? "text-blue-600" : "text-slate-500"
+                      p.pct > 80 ? "text-[#5e8a6c]" : p.pct > 50 ? "text-[#7ba88a]" : "text-[#a69e93]"
                     }`}>
                       {p.pct}%
                     </span>
                   </div>
-                  <div className="h-1.5 w-full rounded-full bg-slate-100 overflow-hidden">
+                  <div className="h-1.5 w-full rounded-full bg-[#f5f0e8] overflow-hidden">
                     <div
                       className={`h-full rounded-full transition-all ${
-                        p.pct > 80 ? "bg-emerald-500" : p.pct > 50 ? "bg-blue-500" : "bg-slate-400"
+                        p.pct > 80 ? "bg-[#7ba88a]" : p.pct > 50 ? "bg-[#a8c4af]" : "bg-[#e8dfd3]"
                       }`}
                       style={{ width: `${p.pct}%` }}
                     />
                   </div>
-                  <p className="mt-1 text-xs text-slate-400 tabular-nums">
+                  <p className="mt-1 text-xs text-[#a69e93] tabular-nums">
                     {p.doneCount}/{p.taskCount} タスク完了
                     {p.budget ? ` · 予算 ¥${p.budget.toLocaleString()}` : ""}
                   </p>
@@ -1423,22 +1419,22 @@ function TodayDashboardPageContent() {
 
       {/* Today's Tasks */}
       <section>
-        <h2 className="mb-3 flex items-center gap-2 text-base font-semibold text-slate-800">
+        <h2 className="mb-3 flex items-center gap-2 text-xs font-semibold tracking-[0.18em] uppercase text-[#a69e93]">
           今日のタスク
-          <span className="inline-flex items-center justify-center rounded-full bg-brand-100 px-2 py-0.5 text-xs font-semibold text-brand-700">
+          <span className="inline-flex items-center justify-center rounded-full bg-[#e8f2eb] px-2 py-0.5 text-xs font-semibold text-[#5e8a6c]">
             {tasks.length}件
           </span>
         </h2>
 
         {tasks.length === 0 ? (
-          <div className="rounded-2xl border-2 border-dashed border-slate-200 bg-white p-8 text-center">
-            <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-emerald-50">
+          <div className="rounded-2xl border border-dashed border-[#e8dfd3] bg-white p-8 text-center">
+            <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-[#e8f2eb]">
               <span className="text-2xl">✓</span>
             </div>
-            <p className="text-sm font-semibold text-slate-700">
+            <p className="text-sm font-medium text-[#3d3529]">
               今日のタスクはありません
             </p>
-            <p className="mt-1 text-xs text-slate-400">
+            <p className="mt-1 text-xs text-[#a69e93]">
               お疲れ様です。プロジェクト一覧からタスクを追加できます。
             </p>
           </div>
@@ -1459,12 +1455,12 @@ function TodayDashboardPageContent() {
       {/* Budget & Deadline Alerts */}
       {triggeredAlerts.length > 0 && (
         <section>
-          <h2 className="mb-3 flex items-center gap-2 text-base font-semibold text-slate-800">
-            <span className="text-amber-500">⚠</span> アラート ({triggeredAlerts.length})
+          <h2 className="mb-3 flex items-center gap-2 text-xs font-semibold tracking-[0.18em] uppercase text-[#a69e93]">
+            アラート ({triggeredAlerts.length})
           </h2>
           <ul className="space-y-2">
             {triggeredAlerts.map((alert, i) => (
-              <li key={`${alert.rule.id}-${i}`} className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+              <li key={`${alert.rule.id}-${i}`} className="rounded-xl border border-[#f0d898] bg-[#fff4d9] px-4 py-3 text-sm text-[#7a5c28]">
                 {alert.message}
               </li>
             ))}
@@ -1475,14 +1471,14 @@ function TodayDashboardPageContent() {
       {/* Procurement Alerts */}
       {procurementAlerts.length > 0 && (
         <section>
-          <h2 className="mb-3 flex items-center gap-2 text-base font-semibold text-slate-800">
-            <span>📦</span> 資材発注アラート ({procurementAlerts.length})
+          <h2 className="mb-3 flex items-center gap-2 text-xs font-semibold tracking-[0.18em] uppercase text-[#a69e93]">
+            資材発注アラート ({procurementAlerts.length})
           </h2>
           <ul className="space-y-2">
             {procurementAlerts.slice(0, 5).map((alert) => (
-              <li key={alert.taskId} className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm">
-                <p className="font-semibold text-blue-900">{alert.taskName}</p>
-                <p className="mt-0.5 text-blue-700">
+              <li key={alert.taskId} className="rounded-xl border border-[#e8dfd3] bg-[#fdf8f0] px-4 py-3 text-sm">
+                <p className="font-medium text-[#3d3529]">{alert.taskName}</p>
+                <p className="mt-0.5 text-xs text-[#7a7062]">
                   開始まで {alert.daysRemaining}日 · リードタイム {alert.leadTime}日
                 </p>
               </li>
@@ -1491,11 +1487,11 @@ function TodayDashboardPageContent() {
         </section>
       )}
 
-      {/* Navigation - only on desktop (bottom tab bar handles mobile) */}
+      {/* Navigation - only on desktop */}
       <div className="hidden pt-2 sm:block">
         <button
           onClick={() => navigate("/")}
-          className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3.5 text-sm font-semibold text-slate-600 shadow-sm active:bg-slate-50 transition-colors"
+          className="w-full rounded-xl border border-[#e8dfd3] bg-white px-4 py-3.5 text-sm font-medium text-[#7a7062] shadow-sm hover:bg-[#fdf8f0] transition-colors"
         >
           &larr; プロジェクト一覧に戻る
         </button>
@@ -1526,9 +1522,9 @@ function StatCard({
   bgColor: string;
 }) {
   return (
-    <div className={`rounded-xl ${bgColor} p-3 text-center shadow-sm border border-slate-100`}>
+    <div className={`rounded-xl ${bgColor} p-3 text-center shadow-sm border border-[#e8dfd3]`}>
       <p className={`text-xl font-bold tabular-nums ${color}`}>{value}</p>
-      <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">{label}</p>
+      <p className="text-[10px] font-medium text-[#a69e93] uppercase tracking-wider mt-0.5">{label}</p>
     </div>
   );
 }
@@ -1543,10 +1539,10 @@ function DashboardSummaryCard({
   detail: string;
 }) {
   return (
-    <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-3">
-      <p className="text-xs font-semibold tracking-[0.18em] text-slate-500">{label}</p>
-      <p className="mt-1 text-base font-bold text-slate-900">{value}</p>
-      <p className="mt-2 text-xs leading-5 text-slate-600">{detail}</p>
+    <div className="rounded-xl border border-[#e8dfd3] bg-[#fdf8f0] p-3">
+      <p className="text-xs font-semibold tracking-[0.18em] text-[#a69e93] uppercase">{label}</p>
+      <p className="mt-1 text-base font-bold text-[#3d3529]">{value}</p>
+      <p className="mt-2 text-xs leading-5 text-[#7a7062]">{detail}</p>
     </div>
   );
 }
@@ -1576,19 +1572,19 @@ function TaskCard({
   return (
     <li
       className={`rounded-xl border bg-white p-4 shadow-sm transition-all ${
-        isOverdue ? "border-red-200 bg-red-50/40" : "border-slate-200"
+        isOverdue ? "border-[#f2bdb3] bg-[#fde8e2]/30" : "border-[#e8dfd3]"
       }`}
     >
       {/* Header */}
       <div className="mb-2 flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-bold text-slate-900 leading-tight">
+          <p className="text-sm font-semibold text-[#3d3529] leading-tight">
             {task.name}
           </p>
-          <p className="mt-0.5 text-xs text-slate-500">{task.projectName}</p>
+          <p className="mt-0.5 text-xs text-[#a69e93]">{task.projectName}</p>
         </div>
         <span
-          className={`shrink-0 rounded-full border px-2 py-0.5 text-xs font-semibold ${statusBg[task.status]}`}
+          className={`shrink-0 rounded-full border px-2 py-0.5 text-xs font-medium ${statusBg[task.status]}`}
         >
           {statusIcon[task.status]} {statusLabel[task.status]}
         </span>
@@ -1598,7 +1594,7 @@ function TaskCard({
       {task.dueDate && (
         <p
           className={`mb-3 text-xs ${
-            isOverdue ? "font-bold text-red-600" : "text-slate-500"
+            isOverdue ? "font-semibold text-[#c0614f]" : "text-[#a69e93]"
           }`}
         >
           {isOverdue ? "⚠ 期限超過: " : "期限: "}
@@ -1615,7 +1611,7 @@ function TaskCard({
               key={s}
               disabled={updating}
               onClick={() => handleClick(s)}
-              className={`flex-1 rounded-lg px-3 py-2.5 text-xs font-bold shadow-sm transition-all ${
+              className={`flex-1 rounded-lg px-3 py-2.5 text-xs font-semibold shadow-sm transition-all ${
                 statusButtonStyle[s]
               } ${updating ? "opacity-50" : ""}`}
             >

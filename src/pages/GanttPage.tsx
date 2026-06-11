@@ -68,10 +68,10 @@ const projectStatusLabel: Record<ProjectStatus, string> = {
 };
 
 const projectStatusTone: Record<ProjectStatus, string> = {
-  planning: "bg-gray-100 text-gray-500 ring-gray-200",
-  active: "bg-emerald-50 text-emerald-700 ring-emerald-200",
-  completed: "bg-gray-200 text-gray-600 ring-gray-300",
-  on_hold: "bg-amber-50 text-amber-700 ring-amber-200",
+  planning: "bg-[#fdf8f0] text-[#7a7062] ring-[#e8dfd3]",
+  active: "bg-[#e8f2eb] text-[#5e8a6c] ring-[#c4dcc9]",
+  completed: "bg-[#f5f0e8] text-[#a69e93] ring-[#e8dfd3]",
+  on_hold: "bg-[#fff4d9] text-[#b8903f] ring-[#f0d898]",
 };
 
 // ─── GanttTask → GeneratedSchedule アダプター ─────────────────────────────────
@@ -155,16 +155,16 @@ function RiskPanel({ schedule, highlightedTaskIds, onHighlight }: RiskPanelProps
   const pathColors = ["bg-red-500", "bg-amber-500", "bg-yellow-400"] as const;
 
   return (
-    <div className="rounded-2xl bg-white/90 px-4 py-4 ring-1 ring-slate-200">
+    <div className="rounded-2xl border border-[#e8dfd3] bg-white px-4 py-4">
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div>
-          <h2 className="mt-1 text-sm font-bold text-slate-900">リスク予測（モンテカルロ）</h2>
+          <h2 className="mt-1 text-sm font-semibold text-[#3d3529]">リスク予測（モンテカルロ）</h2>
         </div>
         <button
           type="button"
           onClick={handleRun}
           disabled={running || schedule.tasks.length === 0}
-          className="rounded-2xl bg-brand-600 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-brand-700 disabled:opacity-50 transition-colors"
+          className="rounded-xl bg-[#7ba88a] px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-[#5e8a6c] disabled:opacity-50 transition-colors"
         >
           {running ? "計算中..." : "リスク計算"}
         </button>
@@ -173,9 +173,9 @@ function RiskPanel({ schedule, highlightedTaskIds, onHighlight }: RiskPanelProps
       {result && projectEndP50 && projectEndP80 && projectEndP95 && (
         <div className="mt-3 space-y-3">
           <div className="flex flex-wrap gap-2 text-xs font-semibold">
-            <span className="rounded-full bg-blue-50 px-3 py-1 text-blue-700">P50: {fmtDate(projectEndP50)}</span>
-            <span className="rounded-full bg-amber-50 px-3 py-1 text-amber-700">P80: {fmtDate(projectEndP80)}</span>
-            <span className="rounded-full bg-red-50 px-3 py-1 text-red-700">P95: {fmtDate(projectEndP95)}</span>
+            <span className="rounded-full bg-[#e8f2eb] px-3 py-1 text-[#5e8a6c]">P50: {fmtDate(projectEndP50)}</span>
+            <span className="rounded-full bg-[#fff4d9] px-3 py-1 text-[#b8903f]">P80: {fmtDate(projectEndP80)}</span>
+            <span className="rounded-full bg-[#fde8e2] px-3 py-1 text-[#c0614f]">P95: {fmtDate(projectEndP95)}</span>
           </div>
           <div className="space-y-2">
             {result.map((path, idx) => {
@@ -186,16 +186,16 @@ function RiskPanel({ schedule, highlightedTaskIds, onHighlight }: RiskPanelProps
                   type="button"
                   onClick={() => onHighlight(isHighlighted ? [] : path.taskIds)}
                   className={`w-full rounded-xl px-3 py-2 text-left text-xs transition-colors ${
-                    isHighlighted ? "bg-red-50 ring-2 ring-red-400" : "bg-slate-50 hover:bg-slate-100"
+                    isHighlighted ? "bg-[#fde8e2] ring-2 ring-[#e8836b]" : "bg-[#fdf8f0] hover:bg-[#f5f0e8]"
                   }`}
                 >
                   <div className="flex items-center gap-2 mb-1">
-                    <span className={`inline-block h-2.5 w-2.5 rounded-full ${pathColors[idx] ?? "bg-slate-400"}`} />
-                    <span className="font-semibold text-slate-700">
+                    <span className={`inline-block h-2.5 w-2.5 rounded-full ${pathColors[idx] ?? "bg-[#a69e93]"}`} />
+                    <span className="font-semibold text-[#3d3529]">
                       {Math.round(path.probability * 100)}% クリティカル / 平均 {path.expectedDelay.toFixed(1)}日遅延
                     </span>
                   </div>
-                  <p className="text-slate-500 leading-relaxed">{path.explanation}</p>
+                  <p className="text-[#7a7062] leading-relaxed">{path.explanation}</p>
                 </button>
               );
             })}
@@ -204,7 +204,7 @@ function RiskPanel({ schedule, highlightedTaskIds, onHighlight }: RiskPanelProps
       )}
 
       {!result && !running && (
-        <p className="mt-3 text-sm text-slate-500">「リスク計算」を押すとモンテカルロ1000回でクリティカルパスを分析します。</p>
+        <p className="mt-3 text-sm text-[#a69e93]">「リスク計算」を押すとモンテカルロ1000回でクリティカルパスを分析します。</p>
       )}
     </div>
   );
@@ -261,17 +261,17 @@ function ChatEditorPanel({ schedule, onScheduleChange }: ChatEditorPanelProps) {
   const fmtTime = (d: Date) => `${d.getHours()}:${String(d.getMinutes()).padStart(2, "0")}`;
 
   return (
-    <div className="rounded-2xl bg-white/90 px-4 py-4 ring-1 ring-slate-200">
+    <div className="rounded-2xl border border-[#e8dfd3] bg-white px-4 py-4">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <p className="text-xs font-semibold tracking-[0.18em] text-slate-500">schedule-chat-editor</p>
-          <h2 className="mt-1 text-sm font-bold text-slate-900">自然言語で工程を編集</h2>
+          <p className="text-xs font-semibold tracking-[0.18em] text-[#a69e93] uppercase">schedule-chat-editor</p>
+          <h2 className="mt-1 text-sm font-semibold text-[#3d3529]">自然言語で工程を編集</h2>
         </div>
         {history.length > 0 && (
           <button
             type="button"
             onClick={handleUndo}
-            className="rounded-2xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition-colors"
+            className="rounded-xl border border-[#e8dfd3] bg-white px-3 py-1.5 text-xs font-semibold text-[#7a7062] hover:bg-[#fdf8f0] transition-colors"
           >
             ↩ Undo
           </button>
@@ -285,28 +285,28 @@ function ChatEditorPanel({ schedule, onScheduleChange }: ChatEditorPanelProps) {
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder="例: 塗装を2日後ろ倒し、清掃を前倒し"
-          className="flex-1 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500"
+          className="flex-1 rounded-xl border border-[#e8dfd3] bg-white px-3 py-2 text-sm text-[#3d3529] placeholder:text-[#a69e93] focus:outline-none focus:ring-2 focus:ring-[#7ba88a]"
         />
         <button
           type="submit"
           disabled={!input.trim()}
-          className="rounded-xl bg-brand-600 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-brand-700 disabled:opacity-50 transition-colors"
+          className="rounded-xl bg-[#7ba88a] px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-[#5e8a6c] disabled:opacity-50 transition-colors"
         >
           適用
         </button>
       </form>
 
       {error && (
-        <p className="mt-2 text-xs font-medium text-red-600">{error}</p>
+        <p className="mt-2 text-xs font-medium text-[#c0614f]">{error}</p>
       )}
 
       {history.length > 0 && (
         <div className="mt-3 space-y-1.5 max-h-40 overflow-y-auto">
           {history.map((entry, idx) => (
-            <div key={idx} className="rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-600">
-              <span className="text-slate-400 mr-2">{fmtTime(entry.appliedAt)}</span>
-              <span className="font-medium">{entry.text}</span>
-              <span className="ml-2 text-slate-400">({entry.edits.length}件適用)</span>
+            <div key={idx} className="rounded-lg bg-[#fdf8f0] px-3 py-2 text-xs text-[#7a7062]">
+              <span className="text-[#a69e93] mr-2">{fmtTime(entry.appliedAt)}</span>
+              <span className="font-medium text-[#3d3529]">{entry.text}</span>
+              <span className="ml-2 text-[#a69e93]">({entry.edits.length}件適用)</span>
             </div>
           ))}
         </div>
@@ -1629,34 +1629,34 @@ function GanttPageContent({ initialProjectId = null }: GanttPageProps) {
         </div>
       ) : null}
 
-      <section className="rounded-[28px] bg-[linear-gradient(145deg,#fff8ef_0%,#f7fbff_55%,#eef6ff_100%)] px-4 py-5 shadow-sm ring-1 ring-slate-200 sm:px-6">
+      <section className="rounded-[28px] border border-[#e8dfd3] bg-[#fdf8f0] px-4 py-5 shadow-sm sm:px-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p className="text-[11px] font-semibold tracking-[0.2em] text-slate-500">工程表</p>
-            <h1 className="mt-1 text-2xl font-bold text-slate-900">{selectedProject.name}</h1>
-            <div className="mt-3 flex flex-wrap items-center gap-2 text-sm text-slate-600">
+            <p className="text-[11px] font-semibold tracking-[0.2em] text-[#a69e93] uppercase">工程表</p>
+            <h1 className="mt-1 text-2xl font-bold text-[#3d3529]">{selectedProject.name}</h1>
+            <div className="mt-3 flex flex-wrap items-center gap-2">
               <span className={`rounded-full px-3 py-1 text-xs font-semibold ring-1 ${projectStatusTone[selectedProject.status]}`}>
                 {projectStatusLabel[selectedProject.status]}
               </span>
-              <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-slate-600 ring-1 ring-slate-200">
+              <span className="rounded-full bg-white px-3 py-1 text-xs font-medium text-[#7a7062] ring-1 ring-[#e8dfd3]">
                 {selectedProjectPeriod}
               </span>
-              <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-slate-600 ring-1 ring-slate-200">
+              <span className="rounded-full bg-white px-3 py-1 text-xs font-medium text-[#7a7062] ring-1 ring-[#e8dfd3]">
                 {selectedProjectTasks.length}件
               </span>
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <div className="rounded-2xl bg-white/90 px-4 py-3 text-sm text-slate-600 ring-1 ring-slate-200">
+            <div className="rounded-xl bg-white px-4 py-3 text-sm text-[#7a7062] ring-1 ring-[#e8dfd3]">
               ピンチで拡大縮小 / バーをドラッグして日程変更
             </div>
             <button
               type="button"
               onClick={() => setShowMilestones((current) => !current)}
-              className={`rounded-2xl px-4 py-3 text-sm font-semibold transition-colors ${
+              className={`rounded-xl px-4 py-3 text-sm font-semibold transition-colors ${
                 showMilestones
-                  ? "bg-slate-900 text-white shadow-sm"
-                  : "bg-white text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50"
+                  ? "bg-[#3d3529] text-white shadow-sm"
+                  : "bg-white text-[#7a7062] ring-1 ring-[#e8dfd3] hover:bg-[#f5f0e8]"
               }`}
             >
               Milestones
@@ -1666,10 +1666,10 @@ function GanttPageContent({ initialProjectId = null }: GanttPageProps) {
             <button
               type="button"
               onClick={() => setShowChanges((current) => !current)}
-              className={`rounded-2xl px-4 py-3 text-sm font-semibold transition-colors ${
+              className={`rounded-xl px-4 py-3 text-sm font-semibold transition-colors ${
                 showChanges
-                  ? "bg-amber-500 text-white shadow-sm"
-                  : "bg-white text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50"
+                  ? "bg-[#d4a853] text-white shadow-sm"
+                  : "bg-white text-[#7a7062] ring-1 ring-[#e8dfd3] hover:bg-[#f5f0e8]"
               }`}
             >
               Changes
@@ -1682,7 +1682,7 @@ function GanttPageContent({ initialProjectId = null }: GanttPageProps) {
                 onClick={() => void handleUndo()}
                 disabled={undoing}
                 aria-label="直前の変更を元に戻す"
-                className="flex h-11 w-11 items-center justify-center rounded-full bg-white text-xl text-slate-600 ring-1 ring-slate-200 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+                className="flex h-11 w-11 items-center justify-center rounded-full bg-white text-xl text-[#7a7062] ring-1 ring-[#e8dfd3] transition-colors hover:bg-[#f5f0e8] disabled:cursor-not-allowed disabled:opacity-60"
               >
                 ↩
               </button>
@@ -1690,10 +1690,10 @@ function GanttPageContent({ initialProjectId = null }: GanttPageProps) {
             <button
               type="button"
               onClick={handleToggleConnectMode}
-              className={`rounded-2xl px-4 py-3 text-sm font-semibold transition-colors ${
+              className={`rounded-xl px-4 py-3 text-sm font-semibold transition-colors ${
                 connectMode
-                  ? "bg-violet-600 text-white shadow-sm"
-                  : "bg-white text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50"
+                  ? "bg-[#7a7062] text-white shadow-sm"
+                  : "bg-white text-[#7a7062] ring-1 ring-[#e8dfd3] hover:bg-[#f5f0e8]"
               }`}
             >
               {connectMode
@@ -1705,19 +1705,19 @@ function GanttPageContent({ initialProjectId = null }: GanttPageProps) {
             <button
               type="button"
               onClick={() => setMasterModalOpen(true)}
-              className="rounded-2xl bg-brand-600 px-4 py-3 text-sm font-semibold text-white shadow-sm hover:bg-brand-700 transition-colors"
+              className="rounded-xl bg-[#7ba88a] px-4 py-3 text-sm font-semibold text-white shadow-sm hover:bg-[#5e8a6c] transition-colors"
             >
               マスタから読み込む
             </button>
             <details className="group relative">
-              <summary className="list-none rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50 [&::-webkit-details-marker]:hidden">
+              <summary className="list-none rounded-xl bg-white px-4 py-3 text-sm font-semibold text-[#7a7062] ring-1 ring-[#e8dfd3] hover:bg-[#f5f0e8] [&::-webkit-details-marker]:hidden">
                 その他
               </summary>
-              <div className="absolute right-0 z-30 mt-2 w-48 rounded-2xl border border-slate-200 bg-white p-2 shadow-xl">
+              <div className="absolute right-0 z-30 mt-2 w-48 rounded-xl border border-[#e8dfd3] bg-white p-2 shadow-xl">
                 <button
                   type="button"
                   onClick={() => setWbsModalOpen(true)}
-                  className="block w-full rounded-xl px-3 py-2 text-left text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                  className="block w-full rounded-xl px-3 py-2 text-left text-sm font-medium text-[#3d3529] hover:bg-[#f5f0e8]"
                 >
                   工程テンプレート
                 </button>
@@ -1725,14 +1725,14 @@ function GanttPageContent({ initialProjectId = null }: GanttPageProps) {
                   type="button"
                   disabled={selectedProjectTasks.length === 0}
                   onClick={() => setTemplateSaveOpen(true)}
-                  className="block w-full rounded-xl px-3 py-2 text-left text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                  className="block w-full rounded-xl px-3 py-2 text-left text-sm font-medium text-[#3d3529] hover:bg-[#f5f0e8] disabled:opacity-50"
                 >
                   テンプレ保存
                 </button>
                 <button
                   type="button"
                   onClick={() => { setRainDate(""); setRainAffected(null); setRainDialogOpen(true); }}
-                  className="block w-full rounded-xl px-3 py-2 text-left text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                  className="block w-full rounded-xl px-3 py-2 text-left text-sm font-medium text-[#3d3529] hover:bg-[#f5f0e8]"
                 >
                   雨天中止
                 </button>
@@ -1743,19 +1743,19 @@ function GanttPageContent({ initialProjectId = null }: GanttPageProps) {
                 type="button"
                 disabled={pdfExporting}
                 onClick={() => { setPdfError(null); handlePdfPreview(); }}
-                className="rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50"
+                className="rounded-xl bg-white px-4 py-3 text-sm font-semibold text-[#7a7062] ring-1 ring-[#e8dfd3] hover:bg-[#f5f0e8]"
               >
                 {pdfExporting ? "出力中..." : "PDF出力"}
               </button>
               {pdfError && (
-                <p className="text-xs text-red-600" role="alert">{pdfError}</p>
+                <p className="text-xs text-[#c0614f]" role="alert">{pdfError}</p>
               )}
             </div>
             <button
               type="button"
               disabled={icsExportableCount === 0}
               onClick={handleICSExport}
-              className="rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+              className="rounded-xl bg-white px-4 py-3 text-sm font-semibold text-[#7a7062] ring-1 ring-[#e8dfd3] hover:bg-[#f5f0e8] disabled:cursor-not-allowed disabled:opacity-50"
             >
               カレンダーに出力 (.ics)
             </button>
@@ -1767,10 +1767,10 @@ function GanttPageContent({ initialProjectId = null }: GanttPageProps) {
                   setChatSchedule(ganttTasksToGeneratedSchedule(selectedProjectTasks, selectedProject.id, selectedProject.name));
                 }
               }}
-              className={`rounded-2xl px-4 py-3 text-sm font-semibold transition-colors ${
+              className={`rounded-xl px-4 py-3 text-sm font-semibold transition-colors ${
                 showRiskPanel
-                  ? "bg-red-600 text-white shadow-sm"
-                  : "bg-white text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50"
+                  ? "bg-[#e8836b] text-white shadow-sm"
+                  : "bg-white text-[#7a7062] ring-1 ring-[#e8dfd3] hover:bg-[#f5f0e8]"
               }`}
             >
               リスク予測
@@ -1783,10 +1783,10 @@ function GanttPageContent({ initialProjectId = null }: GanttPageProps) {
                   setChatSchedule(ganttTasksToGeneratedSchedule(selectedProjectTasks, selectedProject.id, selectedProject.name));
                 }
               }}
-              className={`rounded-2xl px-4 py-3 text-sm font-semibold transition-colors ${
+              className={`rounded-xl px-4 py-3 text-sm font-semibold transition-colors ${
                 showChatPanel
-                  ? "bg-violet-600 text-white shadow-sm"
-                  : "bg-white text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50"
+                  ? "bg-[#7a7062] text-white shadow-sm"
+                  : "bg-white text-[#7a7062] ring-1 ring-[#e8dfd3] hover:bg-[#f5f0e8]"
               }`}
             >
               指示で編集
@@ -1796,22 +1796,20 @@ function GanttPageContent({ initialProjectId = null }: GanttPageProps) {
 
         {showMilestones || showChanges ? (
           <div className="mt-4 grid gap-3 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
-            <div className="rounded-2xl bg-white/90 px-4 py-4 ring-1 ring-slate-200">
+            <div className="rounded-xl border border-[#e8dfd3] bg-white px-4 py-4">
               <div className="flex items-center justify-between gap-3">
-                <div>
-                  <h2 className="mt-1 text-sm font-bold text-slate-900">工程上の主要マイルストーン</h2>
-                </div>
+                <h2 className="text-sm font-semibold text-[#3d3529]">工程上の主要マイルストーン</h2>
                 <div className="flex flex-wrap items-center gap-2 text-xs font-semibold">
-                  <span className="rounded-full bg-emerald-50 px-3 py-1 text-emerald-700">
+                  <span className="rounded-full bg-[#e8f2eb] px-3 py-1 text-[#5e8a6c]">
                     完了 {milestoneSummary.completed}
                   </span>
-                  <span className="rounded-full bg-blue-50 px-3 py-1 text-blue-700">
+                  <span className="rounded-full bg-[#fdf8f0] px-3 py-1 text-[#7a7062]">
                     順調 {milestoneSummary["on-track"]}
                   </span>
-                  <span className="rounded-full bg-amber-50 px-3 py-1 text-amber-700">
+                  <span className="rounded-full bg-[#fff4d9] px-3 py-1 text-[#b8903f]">
                     注意 {milestoneSummary["at-risk"]}
                   </span>
-                  <span className="rounded-full bg-red-50 px-3 py-1 text-red-700">
+                  <span className="rounded-full bg-[#fde8e2] px-3 py-1 text-[#c0614f]">
                     遅延 {milestoneSummary.missed}
                   </span>
                 </div>
@@ -1821,55 +1819,51 @@ function GanttPageContent({ initialProjectId = null }: GanttPageProps) {
                   {milestoneIndicators.slice(0, 6).map((milestone) => (
                     <span
                       key={milestone.id}
-                      className={`rounded-full px-3 py-1.5 text-xs font-semibold ${
+                      className={`rounded-full px-3 py-1.5 text-xs font-medium ${
                         milestone.status === "completed"
-                          ? "bg-emerald-50 text-emerald-700"
+                          ? "bg-[#e8f2eb] text-[#5e8a6c]"
                           : milestone.status === "at-risk"
-                            ? "bg-amber-50 text-amber-700"
+                            ? "bg-[#fff4d9] text-[#b8903f]"
                             : milestone.status === "missed"
-                              ? "bg-red-50 text-red-700"
-                              : "bg-blue-50 text-blue-700"
+                              ? "bg-[#fde8e2] text-[#c0614f]"
+                              : "bg-[#fdf8f0] text-[#7a7062]"
                       }`}
                     >
                       {milestone.name}
-                      {" "}
-                      ·
-                      {" "}
+                      {" "}·{" "}
                       {milestone.targetDate}
                     </span>
                   ))}
                 </div>
               ) : (
-                <p className="mt-3 text-sm text-slate-500">依存関係のある工程が増えるとマイルストーンを自動表示します。</p>
+                <p className="mt-3 text-sm text-[#a69e93]">依存関係のある工程が増えるとマイルストーンを自動表示します。</p>
               )}
             </div>
 
-            <div className="rounded-2xl bg-white/90 px-4 py-4 ring-1 ring-slate-200">
+            <div className="rounded-xl border border-[#e8dfd3] bg-white px-4 py-4">
               <div className="flex items-center justify-between gap-3">
-                <div>
-                  <h2 className="mt-1 text-sm font-bold text-slate-900">変更指示サマリー</h2>
-                </div>
-                <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
+                <h2 className="text-sm font-semibold text-[#3d3529]">変更指示サマリー</h2>
+                <span className="rounded-full bg-[#f5f0e8] px-3 py-1 text-xs font-medium text-[#7a7062]">
                   {projectChangeOrders.length}件
                 </span>
               </div>
               {showChanges && changeLog.length > 0 ? (
-                <div className="mt-3 space-y-2 text-sm text-slate-600">
+                <div className="mt-3 space-y-2 text-sm text-[#7a7062]">
                   <div className="flex items-center justify-between gap-3">
                     <span>累計コスト影響</span>
-                    <span className="font-semibold tabular-nums text-slate-900">
+                    <span className="font-semibold tabular-nums text-[#3d3529]">
                       ¥{changeLog.at(-1)?.cumulativeCostDelta.toLocaleString()}
                     </span>
                   </div>
                   <div className="flex items-center justify-between gap-3">
                     <span>累計日程影響</span>
-                    <span className="font-semibold tabular-nums text-slate-900">
+                    <span className="font-semibold tabular-nums text-[#3d3529]">
                       {changeLog.at(-1)?.cumulativeScheduleDelta}日
                     </span>
                   </div>
                 </div>
               ) : (
-                <p className="mt-3 text-sm text-slate-500">登録済みの変更指示はありません。</p>
+                <p className="mt-3 text-sm text-[#a69e93]">登録済みの変更指示はありません。</p>
               )}
             </div>
           </div>
@@ -1886,8 +1880,8 @@ function GanttPageContent({ initialProjectId = null }: GanttPageProps) {
                   onClick={() => handleProjectSelect(project.id)}
                   className={`rounded-full px-4 py-2 text-sm font-semibold transition-colors ${
                     active
-                      ? "bg-slate-900 text-white"
-                      : "bg-white text-slate-600 ring-1 ring-slate-200"
+                      ? "bg-[#3d3529] text-white"
+                      : "bg-white text-[#7a7062] ring-1 ring-[#e8dfd3] hover:bg-[#f5f0e8]"
                   }`}
                 >
                   {project.name}
@@ -1902,14 +1896,14 @@ function GanttPageContent({ initialProjectId = null }: GanttPageProps) {
           <button
             type="button"
             onClick={() => setActiveTrades(new Set(TRADE_CATEGORIES))}
-            className="rounded-full bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50 transition-colors"
+            className="rounded-full bg-white px-3 py-1.5 text-xs font-semibold text-[#7a7062] ring-1 ring-[#e8dfd3] hover:bg-[#f5f0e8] transition-colors"
           >
             全表示
           </button>
           <button
             type="button"
             onClick={() => setActiveTrades(new Set())}
-            className="rounded-full bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50 transition-colors"
+            className="rounded-full bg-white px-3 py-1.5 text-xs font-semibold text-[#7a7062] ring-1 ring-[#e8dfd3] hover:bg-[#f5f0e8] transition-colors"
           >
             全非表示
           </button>
@@ -1930,8 +1924,8 @@ function GanttPageContent({ initialProjectId = null }: GanttPageProps) {
                 }
                 className={`rounded-full px-3 py-1.5 text-xs font-semibold transition-colors ${
                   on
-                    ? "bg-brand-600 text-white shadow-sm"
-                    : "bg-white text-slate-400 ring-1 ring-slate-200"
+                    ? "bg-[#7ba88a] text-white shadow-sm"
+                    : "bg-white text-[#a69e93] ring-1 ring-[#e8dfd3] hover:bg-[#f5f0e8]"
                 }`}
               >
                 {TRADE_CATEGORY_LABELS[cat]}
@@ -1942,12 +1936,12 @@ function GanttPageContent({ initialProjectId = null }: GanttPageProps) {
       </section>
 
       {googleCalendar.needsReconnect && (
-        <div className="mb-3 flex items-center justify-between gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800" role="status">
+        <div className="mb-3 flex items-center justify-between gap-2 rounded-xl border border-[#f0d898] bg-[#fff4d9] px-3 py-2 text-xs text-[#7a5c28]" role="status">
           <span>Google連携の有効期限が切れました</span>
           <button
             type="button"
             onClick={() => { void googleCalendar.reconnect(); }}
-            className="rounded-md bg-amber-600 px-2.5 py-1 text-xs font-semibold text-white hover:bg-amber-700"
+            className="rounded-md bg-[#d4a853] px-2.5 py-1 text-xs font-semibold text-white hover:bg-[#b8903f]"
           >
             再連携
           </button>
@@ -2010,7 +2004,7 @@ function GanttPageContent({ initialProjectId = null }: GanttPageProps) {
       <button
         type="button"
         onClick={() => openQuickAdd(selectedProject.id, selectedProject.name)}
-        className="safe-bottom fixed bottom-20 right-4 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-brand-600 text-3xl text-white shadow-[0_16px_30px_rgba(37,99,235,0.35)] md:bottom-6"
+        className="safe-bottom fixed bottom-20 right-4 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-[#7ba88a] text-3xl text-white shadow-[0_12px_24px_rgba(123,168,138,0.4)] md:bottom-6"
         aria-label="新しいタスクを追加"
       >
         +

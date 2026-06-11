@@ -23,20 +23,37 @@
   --color-sys-gray: #64748B;
   --color-sys-gray-bg: #F2F2F7;
   --color-sys-separator: rgba(60,60,67,0.12);
+
+  /* V2-Cozy palette */
+  --color-cozy-bg: #f5f0e8;
+  --color-cozy-bg-warm: #fdf8f0;
+  --color-cozy-surface: #ffffff;
+  --color-cozy-text: #3d3529;
+  --color-cozy-text-secondary: #7a7062;
+  --color-cozy-text-muted: #a69e93;
+  --color-cozy-border: #e8dfd3;
+  --color-cozy-green: #7ba88a;
+  --color-cozy-green-light: #e8f2eb;
+  --color-cozy-green-dark: #5e8a6c;
+  --color-cozy-amber: #d4a853;
+  --color-cozy-amber-light: #fff4d9;
+  --color-cozy-coral: #e8836b;
+  --color-cozy-coral-light: #fde8e2;
 }
 
 :root,
 :root[data-theme="light"],
 :root[data-theme="system"] {
-  --app-bg: #F2F2F7;
-  --app-text: #0f172a;
-  --app-text-secondary: #475569;
-  --app-text-muted: #64748b;
+  /* V2-Cozy overrides for light theme */
+  --app-bg: #f5f0e8;
+  --app-text: #3d3529;
+  --app-text-secondary: #7a7062;
+  --app-text-muted: #a69e93;
   --app-card: #ffffff;
-  --app-card-muted: #f8fafc;
-  --app-border: #e2e8f0;
+  --app-card-muted: #fdf8f0;
+  --app-border: #e8dfd3;
   --app-input-bg: #ffffff;
-  --app-input-text: #0f172a;
+  --app-input-text: #3d3529;
 
   /* Sidebar & TopBar dimensions */
   --sidebar-width: 260px;
