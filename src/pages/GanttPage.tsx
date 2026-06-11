@@ -330,9 +330,10 @@ function buildProjectPeriod(project: Project, tasks: GanttTask[]) {
 
 type GanttPageProps = {
   initialProjectId?: string | null;
+  openMaster?: boolean;
 };
 
-function GanttPageContent({ initialProjectId = null }: GanttPageProps) {
+function GanttPageContent({ initialProjectId = null, openMaster = false }: GanttPageProps) {
   const { organizationId } = useOrganizationContext();
   const projectRepository = useMemo(() => createProjectRepository(() => organizationId), [organizationId]);
   const taskRepository = useMemo(() => createTaskRepository(() => organizationId), [organizationId]);
@@ -570,6 +571,21 @@ function GanttPageContent({ initialProjectId = null }: GanttPageProps) {
       }
     }
   }, [loading, selectedProjectId, dayWidth]);
+
+  // ?openMaster=1 クエリ付きで遷移してきた場合、データロード完了後にマスターモーダルを自動オープン
+  const openMasterHandledRef = useRef(false);
+  useEffect(() => {
+    if (!loading && openMaster && !openMasterHandledRef.current) {
+      openMasterHandledRef.current = true;
+      setMasterModalOpen(true);
+      // ハッシュからクエリを除去（リロード時は再度開く、戻る/進むで暴れない）
+      const hash = window.location.hash;
+      const cleanHash = hash.replace(/[?&]openMaster=1/, "").replace(/[?]$/, "");
+      if (cleanHash !== hash) {
+        window.location.replace(window.location.pathname + window.location.search + cleanHash);
+      }
+    }
+  }, [loading, openMaster]);
 
   const openQuickAdd = useCallback((projectId: string, projectName: string) => {
     const project = projects.find((item) => item.id === projectId);
@@ -2171,10 +2187,10 @@ function GanttPageContent({ initialProjectId = null }: GanttPageProps) {
   );
 }
 
-export function GanttPage({ initialProjectId = null }: GanttPageProps) {
+export function GanttPage({ initialProjectId = null, openMaster = false }: GanttPageProps) {
   return (
     <GanttPageErrorBoundary>
-      <GanttPageContent initialProjectId={initialProjectId} />
+      <GanttPageContent initialProjectId={initialProjectId} openMaster={openMaster} />
     </GanttPageErrorBoundary>
   );
 }

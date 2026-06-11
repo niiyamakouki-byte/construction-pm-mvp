@@ -754,3 +754,23 @@ describe("GanttPage — マスター適用後トースト", () => {
     expect(screen.getByRole("status").textContent).toMatch(/工程を追加しました/);
   });
 });
+
+// ─── openMaster=1 クエリ自動オープン ────────────────────────────────────────
+
+describe("GanttPage — openMaster=1 でマスターモーダルが自動オープンする", () => {
+  beforeEach(() => {
+    cleanup();
+    mockTaskRepository.findAll.mockReset();
+    mockTaskRepository.create.mockReset();
+    mockProjectRepository.findAll.mockReset();
+    mockContractorRepository.findAll.mockReset();
+  });
+
+  it("openMaster=true でデータロード完了後にマスターモーダルが表示される", async () => {
+    setupProject();
+    render(<GanttPage initialProjectId="p1" openMaster={true} />);
+
+    await screen.findByRole("heading", { name: "南青山ビル改修" });
+    expect(screen.getByRole("dialog", { name: "マスタから読み込む" })).toBeDefined();
+  });
+});

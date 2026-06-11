@@ -398,7 +398,7 @@ function AppShell() {
 
   const legalMatch = route.match(/^\/legal(?:#(.+))?$/);
   const projectDetailMatch = route.match(/^\/project\/([^/]+)(?:\/(.+))?$/);
-  const ganttMatch = route.match(/^\/gantt(?:\/(.+))?$/);
+  const ganttMatch = route.match(/^\/gantt(?:\/([^?]+))?/);
   const entryMatch = route.match(/^\/entry\/(.+)$/);
   const historyMatch = route.match(/^\/attendance-history\/(.+)$/);
   const reportsMatch = route.match(/^\/reports(?:\/(.+))?$/);
@@ -414,6 +414,8 @@ function AppShell() {
     : null;
   const projectSubPath = projectDetailMatch?.[2] ?? null;
   const ganttProjectId = ganttMatch?.[1] ? decodeURIComponent(ganttMatch[1]) : null;
+  // Extract openMaster flag from hash query string: /#/gantt/xxx?openMaster=1
+  const ganttOpenMaster = ganttMatch ? /[?&]openMaster=1/.test(window.location.hash) : false;
   const entryProjectId = entryMatch?.[1] ? decodeURIComponent(entryMatch[1]) : null;
   const historyProjectId = historyMatch?.[1] ? decodeURIComponent(historyMatch[1]) : null;
   const reportsProjectId = reportsMatch?.[1] ? decodeURIComponent(reportsMatch[1]) : undefined;
@@ -682,7 +684,7 @@ function AppShell() {
       );
     }
     if (ganttMatch) {
-      return <GanttPage initialProjectId={ganttProjectId} />;
+      return <GanttPage initialProjectId={ganttProjectId} openMaster={ganttOpenMaster} />;
     }
     if (route === "/tasks") {
       return (

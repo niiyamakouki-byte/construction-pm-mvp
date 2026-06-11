@@ -996,7 +996,7 @@ export function ProjectDetailPage({
                 : "工程表テンプレートを使うと内装・外構・設備の標準工程を一括追加できます。"
             }
             actionLabel="工程表で追加"
-            onAction={() => navigate(`/gantt/${projectId}`)}
+            onAction={() => navigate(`/gantt/${projectId}?openMaster=1`)}
             secondaryActionLabel="1件ずつ追加"
             onSecondaryAction={() => setShowTaskForm(true)}
           />
