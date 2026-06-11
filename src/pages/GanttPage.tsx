@@ -1386,7 +1386,9 @@ function GanttPageContent({ initialProjectId = null }: GanttPageProps) {
                 className="mt-2 w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500"
               >
                 {getMasterCategories().map((cat) => (
-                  <option key={cat.id} value={cat.id}>{cat.name}</option>
+                  <option key={cat.id} value={cat.id}>
+                    {cat.name === "躯体・下地" ? `${cat.name} (推奨)` : cat.name}
+                  </option>
                 ))}
               </select>
             </div>
@@ -1937,9 +1939,11 @@ function GanttPageContent({ initialProjectId = null }: GanttPageProps) {
         <EmptyState
           icon={<BarChart2 size={22} strokeWidth={1.75} />}
           title="この案件に工程がまだありません"
-          description="最初の工程を追加すると、ガントバーで期間と進捗が一目で確認できます。"
-          actionLabel="工程を追加する"
-          onAction={() => openQuickAdd(selectedProject.id, selectedProject.name)}
+          description="テンプレートを選ぶと内装工事の標準工程を一括追加できます。1件ずつ手入力することもできます。"
+          actionLabel="テンプレートから一括追加"
+          onAction={() => setMasterModalOpen(true)}
+          secondaryActionLabel="1件ずつ追加"
+          onSecondaryAction={() => openQuickAdd(selectedProject.id, selectedProject.name)}
         />
       ) : (
         <GanttChart
