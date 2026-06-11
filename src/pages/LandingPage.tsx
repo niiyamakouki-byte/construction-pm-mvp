@@ -204,7 +204,7 @@ export function LandingPage() {
       </header>
 
       {/* Hero */}
-      <section className="bg-gradient-to-br from-brand-700 via-brand-800 to-brand-900 px-4 py-20 text-center sm:py-32">
+      <section className="bg-brand-800 px-4 py-20 text-center sm:py-32">
         <div className="mx-auto max-w-3xl">
           <div className="mb-4 inline-block rounded-full bg-brand-600/40 px-4 py-1.5 text-sm font-medium text-brand-200">
             内装工事特化の現場管理SaaS

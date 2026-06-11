@@ -968,7 +968,7 @@ function TodayDashboardPageContent() {
       </div>
 
       {/* Date Header */}
-      <div className="rounded-2xl bg-gradient-to-br from-brand-700 via-brand-800 to-brand-900 px-5 py-5 text-white shadow-lg">
+      <div className="rounded-2xl bg-brand-800 px-5 py-5 text-white shadow-sm">
         <div className="flex items-center justify-between">
           <div>
             <p className="text-xs font-semibold tracking-widest text-brand-300 uppercase">

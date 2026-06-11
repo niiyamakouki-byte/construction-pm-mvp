@@ -1006,7 +1006,7 @@ function EstimatePageContent() {
         <>
       {/* PDF CTA hero ― ファーストビューに大きなドロップ誘導 */}
       <div
-        className="relative overflow-hidden rounded-2xl border border-brand-200 bg-gradient-to-br from-brand-50 to-slate-50 px-5 py-6 shadow-sm"
+        className="relative overflow-hidden rounded-2xl border border-brand-200 bg-brand-50 px-5 py-6 shadow-sm"
         data-testid="pdf-cta-hero"
       >
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-6">
