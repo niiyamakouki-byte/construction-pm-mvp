@@ -55,7 +55,7 @@ import { savePhaseTemplate } from "../lib/phase-template/storage.js";
 import type { PhaseTemplate, PhaseTemplateTag } from "../lib/phase-template/types.js";
 import { ConfirmDialog } from "../components/common/ConfirmDialog.js";
 import { ACTION_LABELS } from "../lib/action-labels.js";
-import { BarChart2, FolderKanban } from "lucide-react";
+import { BarChart2, Check, FolderKanban } from "lucide-react";
 import { EmptyState } from "../components/EmptyState.js";
 
 const MAX_CHART_DAYS = 240;
@@ -380,6 +380,7 @@ function GanttPageContent({ initialProjectId = null }: GanttPageProps) {
   );
   const [masterApplying, setMasterApplying] = useState(false);
   const [masterConflictPending, setMasterConflictPending] = useState(false);
+  const [masterSuccessToast, setMasterSuccessToast] = useState<{ count: number; totalDays: number } | null>(null);
 
   // ─── テンプレ保存モーダル ──────────────────────────────────────────────────
   const [templateSaveOpen, setTemplateSaveOpen] = useState(false);
@@ -1084,12 +1085,20 @@ function GanttPageContent({ initialProjectId = null }: GanttPageProps) {
 
       setMasterModalOpen(false);
       await loadData();
+      const preview = calcMasterPreview(masterSelectedEntryIds, allEntries);
+      setMasterSuccessToast({ count: preview.count, totalDays: preview.totalDays });
     } catch (err) {
       setError(err instanceof Error ? err.message : "マスタープリセットの適用に失敗しました");
     } finally {
       setMasterApplying(false);
     }
   }, [loadData, masterSelectedCategoryId, masterSelectedEntryIds, selectedProject, taskRepository]);
+
+  useEffect(() => {
+    if (!masterSuccessToast) return;
+    const timer = setTimeout(() => { setMasterSuccessToast(null); }, 3000);
+    return () => { clearTimeout(timer); };
+  }, [masterSuccessToast]);
 
   const handleMasterApply = useCallback(() => {
     if (!selectedProject || !masterSelectedCategoryId) return;
@@ -1556,6 +1565,20 @@ function GanttPageContent({ initialProjectId = null }: GanttPageProps) {
           </div>
         </div>
       ) : null}
+
+      {masterSuccessToast && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-5 py-3 text-sm font-medium text-emerald-800 shadow-sm"
+        >
+          <Check className="h-4 w-4 shrink-0 text-emerald-600" aria-hidden="true" />
+          <span>
+            {masterSuccessToast.count}工程を追加しました
+            {masterSuccessToast.totalDays > 0 ? `（約${masterSuccessToast.totalDays}日）` : ""}
+          </span>
+        </div>
+      )}
 
       {wbsModalOpen ? (
         <div

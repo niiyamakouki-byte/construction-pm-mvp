@@ -702,3 +702,55 @@ describe("GanttPage — 既存タスクあり衝突確認ダイアログ (Sprint
     });
   });
 });
+
+// ─── マスター適用後トースト表示 ────────────────────────────────────────────────
+
+describe("GanttPage — マスター適用後トースト", () => {
+  beforeEach(() => {
+    cleanup();
+    mockTaskRepository.findAll.mockReset();
+    mockTaskRepository.create.mockReset();
+    mockTaskRepository.update.mockReset();
+    mockTaskRepository.delete.mockReset();
+    mockProjectRepository.findAll.mockReset();
+    mockContractorRepository.findAll.mockReset();
+    mockExportGanttToPdf.mockReset();
+  });
+
+  it("マスター適用後に「N工程を追加しました」トーストが表示される", async () => {
+    setupProject();
+    const user = userEvent.setup();
+    render(<GanttPage initialProjectId="p1" />);
+
+    await screen.findByRole("heading", { name: "南青山ビル改修" });
+    await user.click(screen.getByRole("button", { name: "マスタから読み込む" }));
+    await user.click(screen.getByRole("button", { name: /ガントに追加/ }));
+
+    await waitFor(() => {
+      expect(mockTaskRepository.create).toHaveBeenCalled();
+    });
+
+    await screen.findByRole("status");
+    expect(screen.getByRole("status").textContent).toMatch(/工程を追加しました/);
+  });
+
+  it("既存タスクあり→確認ダイアログ→追加するでもトーストが表示される", async () => {
+    setupProjectWithTasks();
+    const user = userEvent.setup();
+    render(<GanttPage initialProjectId="p1" />);
+
+    await screen.findByRole("figure", { name: "ガントチャート: 1タスク" });
+    await user.click(screen.getByRole("button", { name: "マスタから読み込む" }));
+    await user.click(screen.getByRole("button", { name: /ガントに追加/ }));
+
+    await screen.findByRole("dialog", { name: "工程追加の確認" });
+    await user.click(screen.getByRole("button", { name: "追加する" }));
+
+    await waitFor(() => {
+      expect(mockTaskRepository.create).toHaveBeenCalled();
+    });
+
+    await screen.findByRole("status");
+    expect(screen.getByRole("status").textContent).toMatch(/工程を追加しました/);
+  });
+});
