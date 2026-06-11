@@ -10,6 +10,8 @@
     "empty_estimate_only": "Create an estimate first",
     "created_banner_title": "Created \"{{name}}\"",
     "created_banner_cta": "Create an estimate",
+    "created_banner_cta_gantt": "Open schedule",
+    "created_banner_cta_project": "Open project",
     "open_record": "Open record",
     "mode": {
       "memo": "Memo",

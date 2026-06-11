@@ -174,6 +174,27 @@ describe("ProjectListPage", () => {
     expect(vi.mocked(navigate)).toHaveBeenCalledWith("/estimate");
   });
 
+  it("工程表を作る案件を登録すると工程表CTAが表示され /gantt/xxx へ遷移する", async () => {
+    const user = userEvent.setup();
+    render(<ProjectListPage />);
+
+    await screen.findByText("新規プロジェクト");
+    await user.click(screen.getByText("新規プロジェクト"));
+
+    await user.click(screen.getByRole("button", { name: /工程表を作る案件/ }));
+    await user.type(screen.getByPlaceholderText("例: 渋谷オフィスビル内装工事"), "工程テスト案件");
+    await user.click(screen.getByRole("button", { name: "作成" }));
+
+    const cta = await screen.findByRole("button", { name: "工程表を開く" });
+    expect(cta).toBeDefined();
+
+    await user.click(cta);
+
+    const calls = vi.mocked(navigate).mock.calls;
+    const ganttCall = calls.find((c) => c[0].startsWith("/gantt/"));
+    expect(ganttCall).toBeDefined();
+  });
+
   it("空状態に見積だけ先に作る導線が表示され /estimate へ遷移する", async () => {
     const user = userEvent.setup();
     render(<ProjectListPage />);

@@ -28,6 +28,8 @@
     "empty_estimate_only": "見積だけ先に作る",
     "created_banner_title": "「{{name}}」を登録しました",
     "created_banner_cta": "見積を作成する",
+    "created_banner_cta_gantt": "工程表を開く",
+    "created_banner_cta_project": "案件を開く",
     "sample_creating": "作成中...",
     "open_gantt": "工程表を開く",
     "open_record": "記録を開く",

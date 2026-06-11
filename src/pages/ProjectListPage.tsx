@@ -60,6 +60,8 @@ export function ProjectListPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [createdProjectName, setCreatedProjectName] = useState<string | null>(null);
+  const [createdProjectId, setCreatedProjectId] = useState<string | null>(null);
+  const [createdCaptureModeRef, setCreatedCaptureModeRef] = useState<ProjectCaptureMode | null>(null);
   // Sprint 70: 工程テンプレ選択 (大項目名 Set)
   const [selectedTemplateMajors, setSelectedTemplateMajors] = useState<Set<string>>(new Set());
   const templateMajorNames = useMemo(() => getTemplateMajorNames(), []);
@@ -152,6 +154,7 @@ export function ProjectListPage() {
       }
 
       const createdName = name.trim();
+      const savedCaptureMode = captureMode;
       setName("");
       setDescription("");
       setAddress("");
@@ -162,6 +165,8 @@ export function ProjectListPage() {
       setShowForm(false);
       setShowDetails(false);
       setCreatedProjectName(createdName);
+      setCreatedProjectId(projectId);
+      setCreatedCaptureModeRef(savedCaptureMode);
       await loadProjects();
     } catch (err) {
       setError(err instanceof Error ? err.message : t("errors:create_failed"));
@@ -225,20 +230,55 @@ export function ProjectListPage() {
           <p className="font-semibold">
             {t("pages:project_list.created_banner_title", { name: createdProjectName })}
           </p>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            {createdCaptureModeRef === "schedule" && createdProjectId ? (
+              <button
+                type="button"
+                onClick={() => {
+                  const id = createdProjectId;
+                  setCreatedProjectName(null);
+                  setCreatedProjectId(null);
+                  setCreatedCaptureModeRef(null);
+                  navigate(`/gantt/${id}`);
+                }}
+                className="ios-btn-primary px-4 py-2 text-xs"
+              >
+                {t("pages:project_list.created_banner_cta_gantt")}
+              </button>
+            ) : createdProjectId ? (
+              <button
+                type="button"
+                onClick={() => {
+                  const id = createdProjectId;
+                  setCreatedProjectName(null);
+                  setCreatedProjectId(null);
+                  setCreatedCaptureModeRef(null);
+                  navigate(`/project/${id}`);
+                }}
+                className="ios-btn-primary px-4 py-2 text-xs"
+              >
+                {t("pages:project_list.created_banner_cta_project")}
+              </button>
+            ) : null}
             <button
               type="button"
               onClick={() => {
                 setCreatedProjectName(null);
+                setCreatedProjectId(null);
+                setCreatedCaptureModeRef(null);
                 navigate("/estimate");
               }}
-              className="ios-btn-primary px-4 py-2 text-xs"
+              className="rounded-2xl bg-white px-4 py-2 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-200"
             >
               {t("pages:project_list.created_banner_cta")}
             </button>
             <button
               type="button"
-              onClick={() => setCreatedProjectName(null)}
+              onClick={() => {
+                setCreatedProjectName(null);
+                setCreatedProjectId(null);
+                setCreatedCaptureModeRef(null);
+              }}
               aria-label={t("common:actions.close")}
               className="rounded-full bg-white px-2.5 py-1 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-200"
             >
