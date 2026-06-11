@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
+import { Banknote, CheckCircle2, ClipboardList, FileText, Hammer, Handshake, Hash, Home, Ruler } from "lucide-react";
 import {
   STAGE_ORDER,
   getStageLabel,
@@ -15,16 +16,16 @@ type Props = {
   onChecklistToggle?: (stage: ProjectStage, itemId: string) => void;
 };
 
-const STAGE_ICONS: Record<string, string> = {
-  inquiry: "📋",
-  siteVisit: "🏠",
-  specification: "📝",
-  productSelect: "🔢",
-  drawing: "📐",
-  pricing: "💴",
-  contract: "🤝",
-  construction: "🔨",
-  completed: "✅",
+const STAGE_ICONS: Record<string, ReactNode> = {
+  inquiry: <ClipboardList className="h-4 w-4" aria-hidden="true" />,
+  siteVisit: <Home className="h-4 w-4" aria-hidden="true" />,
+  specification: <FileText className="h-4 w-4" aria-hidden="true" />,
+  productSelect: <Hash className="h-4 w-4" aria-hidden="true" />,
+  drawing: <Ruler className="h-4 w-4" aria-hidden="true" />,
+  pricing: <Banknote className="h-4 w-4" aria-hidden="true" />,
+  contract: <Handshake className="h-4 w-4" aria-hidden="true" />,
+  construction: <Hammer className="h-4 w-4" aria-hidden="true" />,
+  completed: <CheckCircle2 className="h-4 w-4" aria-hidden="true" />,
 };
 
 function StageStatusBadge({ status }: { status: StageProgress["status"] }) {

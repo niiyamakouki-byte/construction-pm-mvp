@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { Bell, CalendarDays, Package } from "lucide-react";
 import { buildProcurementAlerts } from "../lib/procurement-alerts.js";
 import type { ProcurementAlert } from "../lib/procurement-alerts.js";
 import type { Task } from "../domain/types.js";
@@ -61,10 +62,10 @@ function buildCalendarDays(year: number, month: number): (string | null)[] {
 
 type Tab = "alerts" | "materials" | "calendar";
 
-const TAB_LABELS: { key: Tab; label: string; icon: string }[] = [
-  { key: "alerts", label: "アラート", icon: "🔔" },
-  { key: "materials", label: "資材一覧", icon: "📦" },
-  { key: "calendar", label: "納期カレンダー", icon: "📅" },
+const TAB_LABELS: { key: Tab; label: string; icon: ReactNode }[] = [
+  { key: "alerts", label: "アラート", icon: <Bell className="h-3.5 w-3.5" aria-hidden="true" /> },
+  { key: "materials", label: "資材一覧", icon: <Package className="h-3.5 w-3.5" aria-hidden="true" /> },
+  { key: "calendar", label: "納期カレンダー", icon: <CalendarDays className="h-3.5 w-3.5" aria-hidden="true" /> },
 ];
 
 // ── Repository (Supabase or InMemory) ────────────────────────────────────────
@@ -204,13 +205,13 @@ export function ProcurementPage({ projectId = "p-1" }: { projectId?: string } = 
             key={key}
             type="button"
             onClick={() => setActiveTab(key)}
-            className={`flex-1 rounded-lg py-2 text-xs font-semibold transition-colors ${
+            className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-semibold transition-colors ${
               activeTab === key
                 ? "bg-white text-slate-900 shadow-sm"
                 : "text-slate-500 hover:text-slate-700"
             }`}
           >
-            <span aria-hidden="true">{icon}</span> {label}
+            {icon} {label}
           </button>
         ))}
       </div>

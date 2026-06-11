@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { ClipboardList } from "lucide-react";
 import {
   calculateManDays,
   exportToCSV,
@@ -185,7 +186,7 @@ export function AttendanceHistoryPage({ projectId }: { projectId: string }) {
       <div className="flex-1 px-4 pb-16 space-y-4">
         {byCompany.size === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-slate-400 gap-2">
-            <span className="text-5xl" aria-hidden="true">📋</span>
+            <ClipboardList className="h-12 w-12 text-slate-300" aria-hidden="true" />
             <p className="text-sm">この日の入退場記録はありません</p>
           </div>
         ) : (

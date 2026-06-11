@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { CalendarDays } from "lucide-react";
 import type { Project, ProjectMode, Task, TaskStatus, CostItem, Expense } from "../domain/types.js";
 import { createProjectRepository } from "../stores/project-store.js";
 import { createTaskRepository } from "../stores/task-store.js";
@@ -583,7 +584,7 @@ export function ProjectDetailPage({
             </span>
           )}
           <span className="flex items-center gap-1 text-white/60 tabular-nums">
-            <span aria-hidden="true">📅</span>
+            <CalendarDays className="h-4 w-4" aria-hidden="true" />
             {project.startDate}
             {project.endDate && ` 〜 ${project.endDate}`}
           </span>

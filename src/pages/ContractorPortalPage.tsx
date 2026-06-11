@@ -4,7 +4,8 @@
  * /portal/:projectId
  */
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { CalendarDays, Construction, MessageCircle, FileImage } from "lucide-react";
 import type { Project } from "../domain/types.js";
 import type { Task } from "../domain/types.js";
 import { createProjectRepository } from "../stores/project-store.js";
@@ -14,11 +15,11 @@ import type { SiteEntryRecord } from "../lib/site-entry-log.js";
 
 type Tab = "gantt" | "chat" | "drawings" | "attendance";
 
-const TAB_DEFS: { key: Tab; label: string; icon: string }[] = [
-  { key: "gantt", label: "工程表", icon: "📅" },
-  { key: "chat", label: "チャット", icon: "💬" },
-  { key: "drawings", label: "図面", icon: "📐" },
-  { key: "attendance", label: "入退場", icon: "🚧" },
+const TAB_DEFS: { key: Tab; label: string; icon: ReactNode }[] = [
+  { key: "gantt", label: "工程表", icon: <CalendarDays className="h-3.5 w-3.5" aria-hidden="true" /> },
+  { key: "chat", label: "チャット", icon: <MessageCircle className="h-3.5 w-3.5" aria-hidden="true" /> },
+  { key: "drawings", label: "図面", icon: <FileImage className="h-3.5 w-3.5" aria-hidden="true" /> },
+  { key: "attendance", label: "入退場", icon: <Construction className="h-3.5 w-3.5" aria-hidden="true" /> },
 ];
 
 // ── Gantt read-only view ──────────────────────────────────────────────────
@@ -353,13 +354,13 @@ export function ContractorPortalPage({ projectId, company = undefined }: Props) 
               key={key}
               type="button"
               onClick={() => setActiveTab(key)}
-              className={`rounded-lg py-2 text-xs font-semibold transition-colors ${
+              className={`flex items-center justify-center gap-1 rounded-lg py-2 text-xs font-semibold transition-colors ${
                 activeTab === key
                   ? "bg-white text-slate-900 shadow-sm"
                   : "text-slate-500 hover:text-slate-700"
               }`}
             >
-              <span aria-hidden="true">{icon}</span>{" "}
+              {icon}
               <span className="hidden sm:inline">{label}</span>
             </button>
           ))}
