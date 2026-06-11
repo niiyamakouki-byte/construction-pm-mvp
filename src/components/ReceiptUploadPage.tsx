@@ -124,7 +124,7 @@ function ResultCard({ receipt, draft }: ResultCardProps) {
 
       <hr className="border-slate-100" />
 
-      <h3 className="text-sm font-semibold text-slate-700">freee 仕訳（案）</h3>
+      <h3 className="text-sm font-semibold text-slate-700">仕訳（案）</h3>
       <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
         <dt className="text-slate-500">勘定科目</dt>
         <dd className="font-medium text-slate-800">{draft.account_item}</dd>
@@ -223,7 +223,7 @@ export function ReceiptUploadPage() {
     <div className="mx-auto max-w-lg space-y-4 px-4 py-8">
       <h1 className="text-xl font-bold text-slate-800">レシート読み込み</h1>
       <p className="text-sm text-slate-500">
-        レシートの内容を貼り付けると、freee 用の仕訳を自動で作成します。
+        レシートの内容を貼り付けると、会計ソフト用の仕訳を自動で作成します。
       </p>
 
       {step === "input" && (

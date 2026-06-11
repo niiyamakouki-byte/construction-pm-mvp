@@ -58,7 +58,7 @@ describe("InvoiceMatchPanel", () => {
         onAutoMatchAll={vi.fn()}
       />,
     );
-    expect(screen.getByText("freee 入金照合")).toBeDefined();
+    expect(screen.getByText("入金照合（会計連携）")).toBeDefined();
   });
 
   it("shows invoice vendor name in invoice list", () => {

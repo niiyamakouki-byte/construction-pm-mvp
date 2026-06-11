@@ -157,10 +157,10 @@ export function ProjectFinancePanel({ projectId }: { projectId: string }) {
       if (!syncRes.ok) {
         throw new Error(body.error ?? `同期失敗 (${syncRes.status})`);
       }
-      setSyncMessage(`freee 同期完了: ${body.updated ?? 0} / ${body.checked ?? 0} 件 更新`);
+      setSyncMessage(`会計同期完了: ${body.updated ?? 0} / ${body.checked ?? 0} 件 更新`);
       await loadData();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "freee 同期に失敗しました");
+      setError(err instanceof Error ? err.message : "会計同期に失敗しました");
     } finally {
       setSyncing(false);
     }
@@ -236,7 +236,7 @@ export function ProjectFinancePanel({ projectId }: { projectId: string }) {
             disabled={syncing}
             className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
           >
-            {syncing ? "freee 同期中..." : "freee 同期"}
+            {syncing ? "会計同期中..." : "会計同期"}
           </button>
         </div>
         <div className="grid grid-cols-3 gap-2 mb-3 text-center">

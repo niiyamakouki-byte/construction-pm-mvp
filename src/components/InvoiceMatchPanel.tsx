@@ -159,7 +159,7 @@ export function InvoiceMatchPanel({ matchResult, onConfirm, onReject, onAutoMatc
     <div className="flex h-full flex-col gap-4">
       {/* ヘッダー */}
       <div className="flex items-center justify-between">
-        <h2 className="text-base font-semibold text-slate-800">freee 入金照合</h2>
+        <h2 className="text-base font-semibold text-slate-800">入金照合（会計連携）</h2>
         {autoCandidates.length > 0 && (
           <button
             type="button"
@@ -202,7 +202,7 @@ export function InvoiceMatchPanel({ matchResult, onConfirm, onReject, onAutoMatc
         {/* 右: 候補取引一覧 */}
         <div className="flex flex-1 flex-col gap-2 overflow-y-auto">
           <p className="text-xs font-medium text-slate-500">
-            freee 候補取引
+            会計ソフトの候補取引
             {selectedInvoiceId && selectedCandidates.length > 0
               ? ` (${selectedCandidates.length}件)`
               : ""}

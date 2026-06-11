@@ -64,7 +64,7 @@ describe("InvoiceReconcilePage", () => {
   it("shows freee 入金照合 panel after load", async () => {
     render(<InvoiceReconcilePage />);
     await waitFor(() => {
-      expect(screen.getByText("freee 入金照合")).toBeDefined();
+      expect(screen.getByText("入金照合（会計連携）")).toBeDefined();
     });
   });
 
@@ -109,7 +109,7 @@ describe("InvoiceReconcilePage", () => {
     vi.stubGlobal("fetch", fetchMock);
 
     render(<InvoiceReconcilePage />);
-    await waitFor(() => expect(screen.getByText("freee 入金照合")).toBeDefined());
+    await waitFor(() => expect(screen.getByText("入金照合（会計連携）")).toBeDefined());
 
     await user.click(screen.getByRole("button", { name: /freee 同期/ }));
 
@@ -130,7 +130,7 @@ describe("InvoiceReconcilePage", () => {
     vi.stubGlobal("fetch", fetchMock);
 
     render(<InvoiceReconcilePage />);
-    await waitFor(() => expect(screen.getByText("freee 入金照合")).toBeDefined());
+    await waitFor(() => expect(screen.getByText("入金照合（会計連携）")).toBeDefined());
 
     await user.click(screen.getByRole("button", { name: /freee 同期/ }));
 
@@ -194,7 +194,7 @@ describe("InvoiceReconcilePage", () => {
     ]);
 
     render(<InvoiceReconcilePage />);
-    await waitFor(() => expect(screen.getByText("freee 入金照合")).toBeDefined());
+    await waitFor(() => expect(screen.getByText("入金照合（会計連携）")).toBeDefined());
 
     const confirmButton = await screen.findByRole("button", { name: /確定/ });
     await user.click(confirmButton);
@@ -241,7 +241,7 @@ describe("InvoiceReconcilePage", () => {
     repoMocks.recordMatch.mockRejectedValue(new Error("DB error"));
 
     render(<InvoiceReconcilePage />);
-    await waitFor(() => expect(screen.getByText("freee 入金照合")).toBeDefined());
+    await waitFor(() => expect(screen.getByText("入金照合（会計連携）")).toBeDefined());
 
     const confirmButton = await screen.findByRole("button", { name: /確定/ });
     await user.click(confirmButton);

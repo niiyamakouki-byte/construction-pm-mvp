@@ -191,7 +191,7 @@ export function FreeeAuthPage({ onConnected, onDisconnected }: FreeeAuthPageProp
 
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-6">
-      <h2 className="text-base font-bold text-slate-900">freee 会計連携</h2>
+      <h2 className="text-base font-bold text-slate-900">会計ソフト連携</h2>
 
       {error ? (
         <div

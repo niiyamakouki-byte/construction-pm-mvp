@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState, type ChangeEvent, type ReactNode } from "react";
-import { AlertTriangle, BarChart3, Bell, Building2, CalendarDays, Camera, FileText, Package } from "lucide-react";
+import { AlertTriangle, BarChart3, Bell, Building2, CalendarDays, Camera, ChevronDown, ChevronUp, FileText, Package } from "lucide-react";
 import { EmptyState } from "../components/EmptyState.js";
 import type { Contractor, CostItem, Expense, Task, TaskStatus, Project } from "../domain/types.js";
 import { createTaskRepository } from "../stores/task-store.js";
@@ -250,6 +250,13 @@ function TodayDashboardPageContent() {
   const photoStore = useMemo(() => createPhotoStore(), []);
   const today = toLocalDateString(new Date());
   const [tasks, setTasks] = useState<TaskWithProject[]>([]);
+  const [actionsCollapsed, setActionsCollapsed] = useState<boolean>(() => {
+    try {
+      return window.localStorage?.getItem("today:actionsCollapsed") === "true";
+    } catch {
+      return false;
+    }
+  });
   const [allProjectTasks, setAllProjectTasks] = useState<Task[]>([]);
   const [allTasks, setAllTasks] = useState<Task[]>([]);
   const [allProjects, setAllProjects] = useState<Project[]>([]);
@@ -895,7 +902,28 @@ function TodayDashboardPageContent() {
         if (actions.length === 0) return null;
         return (
           <section>
-            <h2 className="mb-3 text-base font-semibold text-slate-800">今日のおすすめアクション</h2>
+            <button
+              type="button"
+              onClick={() => {
+                const next = !actionsCollapsed;
+                setActionsCollapsed(next);
+                try {
+                  window.localStorage?.setItem("today:actionsCollapsed", String(next));
+                } catch {
+                  // localStorage が使えない環境では無視
+                }
+              }}
+              aria-expanded={!actionsCollapsed}
+              className="mb-3 flex w-full items-center justify-between text-left"
+            >
+              <h2 className="text-base font-semibold text-slate-800">今日のおすすめアクション</h2>
+              {actionsCollapsed ? (
+                <ChevronDown className="h-4 w-4 text-slate-400" aria-hidden="true" />
+              ) : (
+                <ChevronUp className="h-4 w-4 text-slate-400" aria-hidden="true" />
+              )}
+            </button>
+            {!actionsCollapsed && (
             <div className="grid gap-2 sm:grid-cols-2">
               {actions.slice(0, 4).map((action) => (
                 <button
@@ -914,6 +942,7 @@ function TodayDashboardPageContent() {
                 </button>
               ))}
             </div>
+            )}
           </section>
         );
       })()}
