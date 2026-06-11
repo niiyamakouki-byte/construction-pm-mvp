@@ -1,22 +1,23 @@
+import type { ReactNode } from "react";
 import { motion } from "framer-motion";
 
 type AccentType = "primary" | "warm" | "warning" | "success";
 
 const accentStyles: Record<AccentType, { icon: string; badge: string }> = {
   primary: {
-    icon: "bg-brand-100 text-brand-700",
+    icon: "bg-slate-100 text-slate-500",
     badge: "bg-brand-50 text-brand-700 border-brand-200",
   },
   warm: {
-    icon: "bg-orange-100 text-orange-700",
+    icon: "bg-slate-100 text-slate-500",
     badge: "bg-orange-50 text-orange-700 border-orange-200",
   },
   warning: {
-    icon: "bg-amber-100 text-amber-700",
+    icon: "bg-slate-100 text-slate-500",
     badge: "bg-amber-50 text-amber-700 border-amber-200",
   },
   success: {
-    icon: "bg-emerald-100 text-emerald-700",
+    icon: "bg-emerald-50 text-emerald-600",
     badge: "bg-emerald-50 text-emerald-700 border-emerald-200",
   },
 };
@@ -25,9 +26,11 @@ interface DashboardCardProps {
   title: string;
   value: string;
   subtext?: string;
-  icon?: string;
+  icon?: ReactNode;
   accent?: AccentType;
   onClick?: () => void;
+  /** 値がゼロなど強調不要の場合 true にすると数値を控えめトーンで表示 */
+  muted?: boolean;
 }
 
 export function DashboardCard({
@@ -37,6 +40,7 @@ export function DashboardCard({
   icon,
   accent = "primary",
   onClick,
+  muted = false,
 }: DashboardCardProps) {
   const styles = accentStyles[accent];
 
@@ -52,7 +56,7 @@ export function DashboardCard({
       <div className="flex items-start gap-3">
         {icon && (
           <span
-            className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-lg ${styles.icon}`}
+            className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${styles.icon}`}
             aria-hidden="true"
           >
             {icon}
@@ -62,7 +66,9 @@ export function DashboardCard({
           <p className="text-xs font-semibold uppercase text-brand-600 sm:tracking-widest">
             {title}
           </p>
-          <p className="mt-1 text-xl font-bold text-brand-900 sm:text-2xl">{value}</p>
+          <p className={`mt-1 text-xl font-bold sm:text-2xl ${muted ? "text-slate-400" : "text-brand-900"}`}>
+            {value}
+          </p>
           {subtext && (
             <p className="mt-1 truncate text-xs text-brand-500">{subtext}</p>
           )}

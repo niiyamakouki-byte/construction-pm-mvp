@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState, type ChangeEvent } from "react";
-import { CalendarDays } from "lucide-react";
+import { AlertTriangle, BarChart3, Bell, Building2, CalendarDays, Camera, FileText } from "lucide-react";
 import { EmptyState } from "../components/EmptyState.js";
 import type { Contractor, CostItem, Expense, Task, TaskStatus, Project } from "../domain/types.js";
 import { createTaskRepository } from "../stores/task-store.js";
@@ -923,15 +923,16 @@ function TodayDashboardPageContent() {
           title="今日の予定"
           value={dashboardCardMetrics.todayScheduleValue}
           subtext={dashboardCardMetrics.todayScheduleSubtext}
-          icon="📅"
+          icon={<CalendarDays size={18} strokeWidth={1.75} />}
           accent="primary"
+          muted={dashboardCardMetrics.todayScheduleValue === "0件"}
           onClick={() => navigate("/tasks")}
         />
         <DashboardCard
           title="今週の現場"
           value={dashboardCardMetrics.weeklyActiveProjectsValue}
           subtext={dashboardCardMetrics.weeklyActiveProjectsSubtext}
-          icon="🏗️"
+          icon={<Building2 size={18} strokeWidth={1.75} />}
           accent="primary"
           onClick={() => navigate("/app")}
         />
@@ -939,23 +940,25 @@ function TodayDashboardPageContent() {
           title="未読通知"
           value={dashboardCardMetrics.unreadNotificationsValue}
           subtext={dashboardCardMetrics.unreadNotificationsSubtext}
-          icon="🔔"
+          icon={<Bell size={18} strokeWidth={1.75} />}
           accent="warning"
+          muted={dashboardCardMetrics.unreadNotificationsValue === "0件"}
           onClick={() => navigate("/notifications")}
         />
         <DashboardCard
           title="進行中の見積"
           value={dashboardCardMetrics.planningEstimateValue}
           subtext={dashboardCardMetrics.planningEstimateSubtext}
-          icon="📝"
+          icon={<FileText size={18} strokeWidth={1.75} />}
           accent="warm"
+          muted={dashboardCardMetrics.planningEstimateValue === "0件"}
           onClick={() => navigate("/estimate")}
         />
         <DashboardCard
           title="今月の粗利率"
           value={dashboardCardMetrics.grossMarginValue}
           subtext={dashboardCardMetrics.grossMarginSubtext}
-          icon="📊"
+          icon={<BarChart3 size={18} strokeWidth={1.75} />}
           accent="success"
           onClick={() => navigate("/reports")}
         />
@@ -963,8 +966,9 @@ function TodayDashboardPageContent() {
           title="残課題"
           value={dashboardCardMetrics.openIssuesValue}
           subtext={dashboardCardMetrics.openIssuesSubtext}
-          icon="⚠️"
+          icon={<AlertTriangle size={18} strokeWidth={1.75} />}
           accent="warning"
+          muted={dashboardCardMetrics.openIssuesValue === "0件"}
           onClick={() => navigate("/tasks")}
         />
       </div>
