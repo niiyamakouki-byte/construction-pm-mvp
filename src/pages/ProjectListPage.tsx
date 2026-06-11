@@ -682,7 +682,7 @@ export function ProjectListPage() {
                     {t("pages:project_list.open_record")}
                   </span>
                 ) : (
-                  <span className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-xl bg-indigo-600 px-3 py-2 text-xs font-semibold text-white">
+                  <span className="ios-btn-primary shrink-0 px-3 py-2 text-xs">
                     <CalendarDays size={13} aria-hidden="true" />
                     {t("pages:project_list.open_gantt")}
                   </span>
