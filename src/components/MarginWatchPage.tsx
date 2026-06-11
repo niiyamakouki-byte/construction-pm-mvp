@@ -6,6 +6,7 @@
  */
 
 import { useEffect, useMemo, useState } from "react";
+import { BarChart3 } from "lucide-react";
 import { marginAlertStore, _resetMarginAlertStore as _r } from "../lib/margin-watch/margin-alert-store.js";
 import type { MarginAlert, MarginAlertLevel } from "../lib/margin-watch/types.js";
 
@@ -238,7 +239,10 @@ export function MarginWatchPage() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-xl font-bold text-slate-900">📊 粗利ウォッチ</h1>
+        <h1 className="flex items-center gap-2 text-xl font-bold text-slate-900">
+          <BarChart3 className="h-5 w-5" aria-hidden="true" />
+          粗利ウォッチ
+        </h1>
         <p className="mt-0.5 text-sm text-slate-500">粗利率25%下回りを即警告。原因分類と改善提案を自動生成。</p>
       </div>
 

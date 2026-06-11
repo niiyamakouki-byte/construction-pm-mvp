@@ -7,6 +7,7 @@
  */
 
 import { useState, useCallback } from "react";
+import { Camera, FileText } from "lucide-react";
 import { parseReceiptTextLegacy as parseReceiptText, type ReceiptData } from "../lib/receipt-ocr.js";
 import { mapToJournal, type FreeeJournalDraft } from "../lib/freee-journal-mapper.js";
 import { submitJournal, type SubmitResult } from "../lib/freee-api-client.js";
@@ -20,7 +21,7 @@ type Step = "input" | "confirm" | "done";
 function OcrPlaceholderBanner() {
   return (
     <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-      <span className="mt-0.5 shrink-0 text-base">📷</span>
+      <Camera className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
       <span>
         カメラ自動読み取りは準備中です。
         今は下のテキストボックスにレシートの内容を貼り付けてください。
@@ -67,7 +68,7 @@ function DropZone({ onTextReady }: DropZoneProps) {
           : "border-slate-300 bg-slate-50 text-slate-500",
       ].join(" ")}
     >
-      <span className="text-3xl">📄</span>
+      <FileText className="h-8 w-8" aria-hidden="true" />
       <span>ここに画像・PDFをドラッグ（OCR準備中）</span>
     </div>
   );

@@ -1,4 +1,5 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, type ReactNode } from "react";
+import { BarChart3, Building2, ClipboardList, Home, Leaf, PartyPopper, Settings, SquarePen } from "lucide-react";
 import { navigate } from "../hooks/useHashRouter.js";
 import { createProjectRepository } from "../stores/project-store.js";
 import { createTaskRepository } from "../stores/task-store.js";
@@ -32,7 +33,7 @@ export function useOnboardingDone(): [boolean, () => void] {
 type Template = {
   id: string;
   label: string;
-  icon: string;
+  icon: ReactNode;
   tasks: string[];
 };
 
@@ -40,19 +41,19 @@ const TEMPLATES: Template[] = [
   {
     id: "interior",
     label: "内装工事",
-    icon: "🏠",
+    icon: <Home className="h-8 w-8 text-brand-500" aria-hidden="true" />,
     tasks: ["解体・撤去", "下地工事", "電気・設備工事", "内装仕上げ", "清掃・検査"],
   },
   {
     id: "exterior",
     label: "外構工事",
-    icon: "🌿",
+    icon: <Leaf className="h-8 w-8 text-brand-500" aria-hidden="true" />,
     tasks: ["測量・設計", "土工事", "基礎工事", "舗装・植栽", "仕上げ・検査"],
   },
   {
     id: "equipment",
     label: "設備工事",
-    icon: "⚙️",
+    icon: <Settings className="h-8 w-8 text-brand-500" aria-hidden="true" />,
     tasks: ["既存設備撤去", "配管工事", "機器設置", "試運転・調整", "完成検査"],
   },
 ];
@@ -328,8 +329,8 @@ function Step1({
 }) {
   return (
     <div className="text-center">
-      <div className="mx-auto mb-6 flex h-24 w-24 items-center justify-center rounded-3xl bg-brand-50 text-5xl">
-        🏗️
+      <div className="mx-auto mb-6 flex h-24 w-24 items-center justify-center rounded-3xl bg-brand-50 text-brand-500">
+        <Building2 className="h-12 w-12" aria-hidden="true" />
       </div>
       <h2 className="text-2xl font-bold text-slate-900">
         GenbaHubへようこそ！
@@ -342,9 +343,9 @@ function Step1({
         このアプリ1つで完結します。
       </p>
       <div className="mt-6 grid grid-cols-3 gap-3 text-center">
-        <FeatureBadge icon="📊" label="工程表" />
-        <FeatureBadge icon="🏢" label="業者管理" />
-        <FeatureBadge icon="📋" label="今日の作業" />
+        <FeatureBadge icon={<BarChart3 className="h-6 w-6 text-brand-500" aria-hidden="true" />} label="工程表" />
+        <FeatureBadge icon={<Building2 className="h-6 w-6 text-brand-500" aria-hidden="true" />} label="業者管理" />
+        <FeatureBadge icon={<ClipboardList className="h-6 w-6 text-brand-500" aria-hidden="true" />} label="今日の作業" />
       </div>
       <button
         type="button"
@@ -363,10 +364,10 @@ function Step1({
   );
 }
 
-function FeatureBadge({ icon, label }: { icon: string; label: string }) {
+function FeatureBadge({ icon, label }: { icon: ReactNode; label: string }) {
   return (
     <div className="rounded-xl bg-brand-50 p-3">
-      <div className="text-2xl">{icon}</div>
+      <div className="flex justify-center">{icon}</div>
       <p className="mt-1 text-xs font-semibold text-brand-700">{label}</p>
     </div>
   );
@@ -400,7 +401,7 @@ function Step2({
   return (
     <div>
       <div className="mb-6 flex items-center gap-3">
-        <span className="text-4xl">📝</span>
+        <SquarePen className="h-9 w-9 shrink-0 text-brand-500" aria-hidden="true" />
         <div>
           <h2 className="text-xl font-bold text-slate-900">会社情報と最初のプロジェクト</h2>
           <p className="mt-1 text-sm text-slate-500">
@@ -501,7 +502,7 @@ function Step3({ createError, selectedTemplate, setSelectedTemplate }: Step3Prop
   return (
     <div>
       <div className="mb-6 flex items-center gap-3">
-        <span className="text-4xl">📊</span>
+        <BarChart3 className="h-9 w-9 shrink-0 text-brand-500" aria-hidden="true" />
         <div>
           <h2 className="text-xl font-bold text-slate-900">工程表を作ろう</h2>
           <p className="mt-1 text-sm text-slate-500">
@@ -522,7 +523,7 @@ function Step3({ createError, selectedTemplate, setSelectedTemplate }: Step3Prop
             }`}
           >
             <div className="flex items-center gap-3">
-              <span className="text-3xl">{tpl.icon}</span>
+              <span className="shrink-0">{tpl.icon}</span>
               <div className="flex-1 min-w-0">
                 <p className="font-bold text-slate-900">{tpl.label}</p>
                 <p className="mt-0.5 text-xs text-slate-500 truncate">
@@ -553,8 +554,8 @@ function Step3({ createError, selectedTemplate, setSelectedTemplate }: Step3Prop
 function Step4() {
   return (
     <div className="text-center">
-      <div className="mx-auto mb-6 flex h-24 w-24 items-center justify-center rounded-3xl bg-emerald-50 text-5xl">
-        🎉
+      <div className="mx-auto mb-6 flex h-24 w-24 items-center justify-center rounded-3xl bg-emerald-50 text-emerald-500">
+        <PartyPopper className="h-12 w-12" aria-hidden="true" />
       </div>
       <h2 className="text-2xl font-bold text-slate-900">準備完了！</h2>
       <p className="mt-4 text-base text-slate-600 leading-relaxed">

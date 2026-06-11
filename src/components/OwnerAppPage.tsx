@@ -6,6 +6,7 @@
  */
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { Lock } from "lucide-react";
 import { validateShareTokenDetailed } from "../lib/owner-app/share-token.js";
 import { ownerStore } from "../lib/owner-app/owner-store.js";
 import type {
@@ -609,7 +610,7 @@ export function OwnerAppPage({ projectId, token }: Props) {
     return (
       <div className="flex min-h-screen items-center justify-center p-6">
         <div className="text-center">
-          <p className="text-4xl mb-4">🔒</p>
+          <Lock className="mx-auto mb-4 h-10 w-10 text-slate-400" aria-hidden="true" />
           <h1 className="text-lg font-bold text-slate-800">{message.title}</h1>
           <p className="mt-2 text-sm text-slate-500">
             {message.description}

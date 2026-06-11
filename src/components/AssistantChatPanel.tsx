@@ -9,6 +9,7 @@
  * - 初回起動時の挨拶メッセージ
  */
 import { useCallback, useEffect, useRef, useState } from "react";
+import { Leaf } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { handleInput } from "../lib/assistantCommands.js";
 
@@ -443,10 +444,10 @@ export function AssistantChatPanel({ userId = "demo-user" }: Props) {
               <div className="flex items-center gap-2">
                 {/* アバター */}
                 <div
-                  className="flex h-9 w-9 items-center justify-center rounded-full text-xl"
+                  className="flex h-9 w-9 items-center justify-center rounded-full"
                   style={{ background: "rgba(255,255,255,0.25)" }}
                 >
-                  🌿
+                  <Leaf className="h-5 w-5" aria-hidden="true" />
                 </div>
                 <div>
                   <div className="text-sm font-semibold">ラポルタ秘書</div>
@@ -488,10 +489,10 @@ export function AssistantChatPanel({ userId = "demo-user" }: Props) {
                   {/* 秘書アバター (左) */}
                   {msg.role === "bot" && (
                     <div
-                      className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-base"
+                      className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full"
                       style={{ background: "#E8F2EB" }}
                     >
-                      🌿
+                      <Leaf className="h-4 w-4" style={{ color: "#7BA88A" }} aria-hidden="true" />
                     </div>
                   )}
 
@@ -602,7 +603,7 @@ export function AssistantChatPanel({ userId = "demo-user" }: Props) {
             aria-label={`ラポルタ秘書を開く (${shortcutLabel})`}
             data-testid="assistant-chat-fab"
           >
-            <span className="text-2xl">🌿</span>
+            <Leaf className="h-6 w-6" aria-hidden="true" />
             {unread > 0 && (
               <span
                 className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs font-bold text-white animate-pulse"
