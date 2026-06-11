@@ -892,7 +892,7 @@ function TodayDashboardPageContent() {
         if (actions.length === 0) return null;
         return (
           <section>
-            <h2 className="mb-3 text-base font-bold text-slate-800">今日のおすすめアクション</h2>
+            <h2 className="mb-3 text-base font-semibold text-slate-800">今日のおすすめアクション</h2>
             <div className="grid gap-2 sm:grid-cols-2">
               {actions.slice(0, 4).map((action) => (
                 <button
@@ -1043,7 +1043,7 @@ function TodayDashboardPageContent() {
       {completedMemoProjects.length > 0 && (
         <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
           <div className="flex items-center justify-between gap-3">
-            <h2 className="text-sm font-bold text-slate-900">完了済み記録</h2>
+            <h2 className="text-base font-semibold text-slate-900">完了済み記録</h2>
             <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600">
               {completedMemoProjects.length}件
             </span>
@@ -1072,7 +1072,7 @@ function TodayDashboardPageContent() {
       {/* Cockpit Dashboard */}
       <section>
         <div className="mb-3 flex items-center justify-between gap-3">
-          <h2 className="text-base font-bold text-slate-800">コックピット</h2>
+          <h2 className="text-base font-semibold text-slate-800">コックピット</h2>
           {insightProject && (
             <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
               {insightProject.name}
@@ -1090,7 +1090,7 @@ function TodayDashboardPageContent() {
 
       <section>
         <div className="mb-3 flex items-center justify-between gap-3">
-          <h2 className="text-base font-bold text-slate-800">本日の日報</h2>
+          <h2 className="text-base font-semibold text-slate-800">本日の日報</h2>
           <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
             {dailyReportProject?.name ?? "案件なし"}
           </span>
@@ -1144,7 +1144,7 @@ function TodayDashboardPageContent() {
       {/* Photo Upload */}
       <section>
         <div className="mb-3 flex items-center justify-between gap-3">
-          <h2 className="text-base font-bold text-slate-800">現場写真アップロード</h2>
+          <h2 className="text-base font-semibold text-slate-800">現場写真アップロード</h2>
           <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
             {dailyReportProject?.name ?? "案件なし"}
           </span>
@@ -1241,7 +1241,7 @@ function TodayDashboardPageContent() {
 
       <section>
         <div className="mb-3 flex items-center justify-between gap-3">
-          <h2 className="text-base font-bold text-slate-800">GenbaHub Insight</h2>
+          <h2 className="text-base font-semibold text-slate-800">GenbaHub Insight</h2>
           <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
             {insightProject?.name ?? "案件なし"}
           </span>
@@ -1358,7 +1358,7 @@ function TodayDashboardPageContent() {
       {/* Upcoming milestones */}
       {upcomingMilestones.length > 0 && (
         <section>
-          <h2 className="mb-3 flex items-center gap-2 text-base font-bold text-slate-800">
+          <h2 className="mb-3 flex items-center gap-2 text-base font-semibold text-slate-800">
             今後7日間の期限
             <span className="inline-flex items-center justify-center rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700">
               {upcomingMilestones.length}件
@@ -1381,7 +1381,7 @@ function TodayDashboardPageContent() {
       {/* Executive mode: project overview */}
       {persona === "executive" && (
         <section>
-          <h2 className="mb-3 text-base font-bold text-slate-800">全プロジェクト俯瞰</h2>
+          <h2 className="mb-3 text-base font-semibold text-slate-800">全プロジェクト俯瞰</h2>
           {allProjects.length === 0 ? (
             <div className="rounded-xl border border-slate-200 bg-white p-4 text-center text-sm text-slate-400">
               プロジェクトがありません
@@ -1423,7 +1423,7 @@ function TodayDashboardPageContent() {
 
       {/* Today's Tasks */}
       <section>
-        <h2 className="mb-3 flex items-center gap-2 text-base font-bold text-slate-800">
+        <h2 className="mb-3 flex items-center gap-2 text-base font-semibold text-slate-800">
           今日のタスク
           <span className="inline-flex items-center justify-center rounded-full bg-brand-100 px-2 py-0.5 text-xs font-semibold text-brand-700">
             {tasks.length}件
@@ -1459,7 +1459,7 @@ function TodayDashboardPageContent() {
       {/* Budget & Deadline Alerts */}
       {triggeredAlerts.length > 0 && (
         <section>
-          <h2 className="mb-3 flex items-center gap-2 text-base font-bold text-slate-800">
+          <h2 className="mb-3 flex items-center gap-2 text-base font-semibold text-slate-800">
             <span className="text-amber-500">⚠</span> アラート ({triggeredAlerts.length})
           </h2>
           <ul className="space-y-2">
@@ -1475,7 +1475,7 @@ function TodayDashboardPageContent() {
       {/* Procurement Alerts */}
       {procurementAlerts.length > 0 && (
         <section>
-          <h2 className="mb-3 flex items-center gap-2 text-base font-bold text-slate-800">
+          <h2 className="mb-3 flex items-center gap-2 text-base font-semibold text-slate-800">
             <span>📦</span> 資材発注アラート ({procurementAlerts.length})
           </h2>
           <ul className="space-y-2">

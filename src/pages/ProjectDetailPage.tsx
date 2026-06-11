@@ -136,6 +136,67 @@ const weatherCodes: Record<number, { desc: string; icon: string }> = {
   95: { desc: "雷雨", icon: "⛈" },
 };
 
+function inferWorkType(project: Project, tasks: Task[]): string {
+  const source = [project.description, project.name, ...tasks.map((task) => task.name)]
+    .filter(Boolean)
+    .join(" ");
+  if (source.includes("電気")) return "電気";
+  if (source.includes("設備") || source.includes("配管") || source.includes("空調")) return "設備";
+  if (source.includes("塗装")) return "塗装";
+  if (source.includes("左官")) return "左官";
+  if (source.includes("解体")) return "解体";
+  if (source.includes("外構")) return "外構";
+  if (source.includes("内装") || source.includes("クロス") || source.includes("ボード")) return "内装";
+  return "共通";
+}
+
+function getFieldPersona(tasks: Task[], todayEntryLog: SiteEntryRecord[]): {
+  displayName: string;
+  company?: string;
+} {
+  const latestEntry = [...todayEntryLog].sort((a, b) => b.entryTime.localeCompare(a.entryTime))[0];
+  const activeAssignee = tasks.find((task) => task.status === "in_progress" && task.assigneeId)?.assigneeId;
+  if (activeAssignee) {
+    const matchedEntry = todayEntryLog.find((entry) => entry.workerName === activeAssignee);
+    return {
+      displayName: activeAssignee,
+      company: matchedEntry?.company || latestEntry?.company || undefined,
+    };
+  }
+
+  const latestAssignedTask = [...tasks]
+    .reverse()
+    .find((task) => task.assigneeId)?.assigneeId;
+  if (latestAssignedTask) {
+    const matchedEntry = todayEntryLog.find((entry) => entry.workerName === latestAssignedTask);
+    return {
+      displayName: latestAssignedTask,
+      company: matchedEntry?.company || latestEntry?.company || undefined,
+    };
+  }
+
+  if (latestEntry) {
+    return {
+      displayName: latestEntry.workerName,
+      company: latestEntry.company || undefined,
+    };
+  }
+
+  return { displayName: "未ログイン" };
+}
+
+function getCurrentTask(tasks: Task[]): Task | null {
+  const inProgress = tasks
+    .filter((task) => task.status === "in_progress")
+    .sort((a, b) => (a.startDate ?? "").localeCompare(b.startDate ?? ""));
+  if (inProgress[0]) return inProgress[0];
+
+  const upcoming = tasks
+    .filter((task) => task.status !== "done")
+    .sort((a, b) => (a.startDate ?? a.dueDate ?? "").localeCompare(b.startDate ?? b.dueDate ?? ""));
+  return upcoming[0] ?? null;
+}
+
 async function fetchWeather(
   lat: number,
   lon: number,
@@ -453,6 +514,9 @@ export function ProjectDetailPage({
   const mode = projectMode(project);
   const shouldShowRecordUpgradePrompt = mode === "memo" && project.status === "completed" && tasks.length === 0;
   const deletingTask = tasks.find((task) => task.id === deletingTaskId);
+  const workType = inferWorkType(project, tasks);
+  const fieldPersona = getFieldPersona(tasks, todayEntryLog);
+  const currentTask = getCurrentTask(tasks);
 
   return (
     <div className="mx-auto max-w-2xl space-y-4 px-4 pb-24">
@@ -569,7 +633,7 @@ export function ProjectDetailPage({
       {/* Contract checklist tab */}
       {subPath === "contract" && (
         <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-          <h2 className="mb-4 text-base font-bold text-slate-800">契約チェックリスト</h2>
+          <h2 className="mb-4 text-base font-semibold text-slate-800">契約チェックリスト</h2>
           <ContractChecklistPanel projectId={projectId} />
         </div>
       )}
@@ -720,7 +784,7 @@ export function ProjectDetailPage({
 
       {/* Cash Flow / Finance Section */}
       <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-        <h2 className="mb-3 text-base font-bold text-slate-800">財務</h2>
+        <h2 className="mb-3 text-base font-semibold text-slate-800">財務</h2>
 
         {budget > 0 ? (
           <>
@@ -793,7 +857,7 @@ export function ProjectDetailPage({
       {/* Tasks */}
       <section>
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-base font-bold text-slate-800">タスク一覧</h2>
+          <h2 className="text-base font-semibold text-slate-800">タスク一覧</h2>
           <button
             onClick={() => setShowTaskForm(!showTaskForm)}
             className="inline-flex items-center gap-1 rounded-lg bg-[#007AFF] px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-[#0063d6] active:opacity-85 transition-colors"
@@ -1024,7 +1088,7 @@ export function ProjectDetailPage({
 
       {/* Construction Checklist */}
       <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-        <h2 className="mb-3 text-base font-bold text-slate-800">工事チェックリスト</h2>
+        <h2 className="mb-3 text-base font-semibold text-slate-800">工事チェックリスト</h2>
 
         <div className="mb-3">
           <label htmlFor="phase-select" className="block text-xs font-semibold text-slate-500 mb-1">工事フェーズ選択</label>
@@ -1100,8 +1164,208 @@ export function ProjectDetailPage({
       </section>
 
       {/* QR Code for field access */}
+      <section
+        aria-label="現場スタート導線"
+        className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm"
+      >
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <h2 className="text-base font-semibold text-slate-800">現場スタート導線</h2>
+            <p className="mt-1 text-xs text-slate-500">
+              QRで入場したあと、最低限 `始まり` と `終わり` の2枚を残す運用を基準にします。
+            </p>
+          </div>
+          <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-600">
+            必須2枚で台帳更新
+          </span>
+        </div>
+
+        <div className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3">
+          <p className="text-sm font-semibold text-emerald-900">まず必須にするもの</p>
+          <p className="mt-1 text-xs leading-5 text-emerald-800">
+            着工前の1枚で基準を作り、完了時の1枚で差分を閉じます。中間写真は必要に応じて追加で十分です。
+          </p>
+        </div>
+
+        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+          {[
+            {
+              step: "必須1",
+              title: "開始写真を上げる",
+              body: "工事開始前の状態を先に残して、写真台帳と進捗の基準点にします。",
+              action: "開始写真を開く",
+              onClick: () => navigate("/photos"),
+            },
+            {
+              step: "必須2",
+              title: "終了写真を上げる",
+              body: "作業後の状態を同じ場所に残して、着工前との差分をそのまま完了記録にします。",
+              action: "終了写真を開く",
+              onClick: () => navigate("/photos"),
+            },
+          ].map((item) => (
+            <div
+              key={item.step}
+              className="rounded-xl border border-emerald-200 bg-emerald-50/70 p-3"
+            >
+              <div className="flex items-start gap-3">
+                <span className="inline-flex shrink-0 items-center justify-center rounded-full bg-emerald-700 px-2.5 py-1 text-[11px] font-bold text-white">
+                  {item.step}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-semibold text-slate-800">{item.title}</p>
+                  <p className="mt-1 text-xs leading-5 text-slate-600">{item.body}</p>
+                  <button
+                    type="button"
+                    onClick={item.onClick}
+                    className="mt-3 inline-flex min-h-[36px] items-center rounded-lg border border-emerald-300 bg-white px-3 py-2 text-xs font-semibold text-emerald-800 transition-colors hover:bg-emerald-100"
+                  >
+                    {item.action}
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="mt-3 grid gap-3 sm:grid-cols-2">
+          {[
+            {
+              step: "補助1",
+              title: "入口QRを掲示",
+              body: "現場入口にQRを貼って、職人の入場を最初の記録にします。",
+              action: "キオスクを開く",
+              onClick: () => navigate(`/entry/${projectId}`),
+            },
+            {
+              step: "補助2",
+              title: "中間写真も足せる",
+              body: "工程の節目だけ追加すれば十分です。始まりと終わりが揃っていれば台帳として成立します。",
+              action: "写真一覧を開く",
+              onClick: () => navigate("/photos"),
+            },
+          ].map((item) => (
+            <div
+              key={item.step}
+              className="rounded-xl border border-slate-200 bg-slate-50/80 p-3"
+            >
+              <div className="flex items-start gap-3">
+                <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-slate-800 text-xs font-bold text-white">
+                  {item.step}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-semibold text-slate-800">{item.title}</p>
+                  <p className="mt-1 text-xs leading-5 text-slate-500">{item.body}</p>
+                  <button
+                    type="button"
+                    onClick={item.onClick}
+                    className="mt-3 inline-flex min-h-[36px] items-center rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition-colors hover:bg-slate-100"
+                  >
+                    {item.action}
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section
+        aria-label="役割別の最新導線"
+        className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm"
+      >
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h2 className="text-base font-semibold text-slate-800">役割別の最新導線</h2>
+            <p className="mt-1 text-xs text-slate-500">
+              Chatworkの最新資料が前に見える感覚で、`業種` と `ログイン名` に近い情報から今触るものを絞ります。
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2 text-[11px] font-semibold">
+            <span className="rounded-full bg-sky-100 px-2.5 py-1 text-sky-700">
+              想定業種: {workType}
+            </span>
+            <span className="rounded-full bg-slate-100 px-2.5 py-1 text-slate-700">
+              直近: {fieldPersona.displayName}
+            </span>
+          </div>
+        </div>
+
+        <div className="mt-4 rounded-xl border border-sky-200 bg-sky-50 px-4 py-3">
+          <p className="text-sm font-semibold text-sky-950">
+            {fieldPersona.displayName}
+            {fieldPersona.company ? ` / ${fieldPersona.company}` : ""} が最初に触る想定
+          </p>
+          <p className="mt-1 text-xs leading-5 text-sky-900/80">
+            {currentTask
+              ? `今の基準工程は「${currentTask.name}」です。ここを軸に資料確認 → 開始写真 → 作業 → 終了写真まで閉じます。`
+              : "まだ工程が無いので、まずは工程表か入口導線から始められる状態にしておく想定です。"}
+          </p>
+        </div>
+
+        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+          {[
+            {
+              key: "schedule",
+              eyebrow: "最新工程",
+              title: currentTask ? currentTask.name : "工程表を確認する",
+              body: currentTask
+                ? `${workType}の担当が今日まず見る工程です。開始・完了写真の基準もここに合わせます。`
+                : `${workType}向けの工程を先に整えて、誰が入っても同じ順番で触れる状態にします。`,
+              action: "工程表を開く",
+              onClick: () => navigate(`/gantt/${projectId}`),
+            },
+            {
+              key: "portal",
+              eyebrow: "最新資料",
+              title: `${workType}向けの共有ビュー`,
+              body: "協力会社ポータル側で、現場に必要な段取りと共有事項をすぐ見に行く想定です。",
+              action: "共有ビューを開く",
+              onClick: () => navigate(
+                fieldPersona.company
+                  ? `/portal/${projectId}/${encodeURIComponent(fieldPersona.company)}`
+                  : `/portal/${projectId}`,
+              ),
+            },
+            {
+              key: "safety",
+              eyebrow: "必須書類",
+              title: "KY・安全書類を確認する",
+              body: `${workType}でも共通で必要な注意事項や提出書類を、着工前にここで最新化します。`,
+              action: "安全書類を開く",
+              onClick: () => navigate("/safety"),
+            },
+            {
+              key: "chat",
+              eyebrow: "最新連絡",
+              title: "連絡・更新履歴を見る",
+              body: "Chatworkっぽく最新の段取りや指示を前に出して、口頭依存を減らします。",
+              action: "連絡タブを開く",
+              onClick: () => navigate(`/project/${projectId}/chat`),
+            },
+          ].map((item) => (
+            <div
+              key={item.key}
+              className="rounded-xl border border-slate-200 bg-slate-50/80 p-3"
+            >
+              <p className="text-[11px] font-semibold text-sky-700">{item.eyebrow}</p>
+              <p className="mt-1 text-sm font-semibold text-slate-800">{item.title}</p>
+              <p className="mt-1 text-xs leading-5 text-slate-500">{item.body}</p>
+              <button
+                type="button"
+                onClick={item.onClick}
+                className="mt-3 inline-flex min-h-[36px] items-center rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition-colors hover:bg-slate-100"
+              >
+                {item.action}
+              </button>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* QR Code for field access */}
       <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-        <h2 className="mb-3 text-base font-bold text-slate-800">現場QRコード</h2>
+        <h2 className="mb-3 text-base font-semibold text-slate-800">現場QRコード</h2>
         <div className="flex flex-col items-center gap-3 sm:flex-row sm:items-start">
           <img
             src={generateProjectQR(projectId)}
@@ -1125,7 +1389,7 @@ export function ProjectDetailPage({
       {/* Site Entry QR — print and today's log */}
       <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-base font-bold text-slate-800">入退場QRコード</h2>
+          <h2 className="text-base font-semibold text-slate-800">入退場QRコード</h2>
           <button
             type="button"
             onClick={() => {

@@ -252,7 +252,7 @@ export function ProjectListPage() {
         <section className="rounded-[28px] bg-white p-5 shadow-sm ring-1 ring-slate-200 sm:p-6">
           <div className="mb-5 flex items-center gap-2">
             <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-[#007AFF]/10 text-[#007AFF]">+</span>
-            <h2 className="text-lg font-bold text-slate-900">{t("pages:project_list.create_title")}</h2>
+            <h2 className="text-base font-semibold text-slate-900">{t("pages:project_list.create_title")}</h2>
           </div>
 
           {error ? (
@@ -495,7 +495,7 @@ export function ProjectListPage() {
                 FIRST PROJECT
               </div>
               <div className="max-w-2xl">
-                <h2 className="text-2xl font-bold tracking-tight text-white sm:text-[2rem]">
+                <h2 className="text-xl font-bold tracking-tight text-white sm:text-2xl">
                   {t("pages:project_list.empty_title")}
                 </h2>
                 <p className="mt-3 max-w-xl text-sm leading-7 text-slate-200 sm:text-[15px]">
@@ -540,7 +540,7 @@ export function ProjectListPage() {
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <p className="text-xs font-semibold tracking-[0.18em] text-slate-400">START GUIDE</p>
-                  <h3 className="mt-2 text-xl font-bold text-slate-900">最初の1件を迷わず作る</h3>
+                  <h3 className="mt-2 text-base font-semibold text-slate-900">最初の1件を迷わず作る</h3>
                 </div>
                 <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#007AFF]/10 text-2xl" aria-hidden="true">
                   🏗️
