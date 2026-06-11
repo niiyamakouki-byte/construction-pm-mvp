@@ -7,6 +7,7 @@ import { createAppRepository } from "../infra/create-app-repository.js";
 import { navigate } from "../hooks/useHashRouter.js";
 import { useOrganizationContext } from "../contexts/OrganizationContext.js";
 import { filterScheduleTasks } from "../lib/cost-management.js";
+import { EmptyState } from "../components/EmptyState.js";
 import { ProjectDetailTabs } from "../components/ProjectDetailTabs.js";
 import { ProjectMapEmbed } from "../components/ProjectMapEmbed.js";
 import { ProjectFlowWidget } from "../components/ProjectFlowWidget.js";
@@ -987,13 +988,18 @@ export function ProjectDetailPage({
         )}
 
         {tasks.length === 0 ? (
-          <div className="rounded-xl border-2 border-dashed border-slate-200 bg-white p-6 text-center">
-            <p className="text-sm text-slate-500">
-              {mode === "memo"
-                ? "メモ案件なので工程表なしでも保存済みです。必要になったらタスク追加かテンプレート適用で通常案件として育てられます。"
-                : "タスクがまだありません。上のボタンからタスクを追加してください。"}
-            </p>
-          </div>
+          <EmptyState
+            title={mode === "memo" ? "工程表はまだありません" : "タスクがまだありません"}
+            description={
+              mode === "memo"
+                ? "メモ案件として保存済みです。工程表を作るなら Gantt で一括追加できます。"
+                : "工程表テンプレートを使うと内装・外構・設備の標準工程を一括追加できます。"
+            }
+            actionLabel="工程表で追加"
+            onAction={() => navigate(`/gantt/${projectId}`)}
+            secondaryActionLabel="1件ずつ追加"
+            onSecondaryAction={() => setShowTaskForm(true)}
+          />
         ) : (
           <ul className="space-y-2">
             {tasks

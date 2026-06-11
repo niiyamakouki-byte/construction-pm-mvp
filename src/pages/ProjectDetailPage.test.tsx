@@ -177,7 +177,7 @@ describe("ProjectDetailPage", () => {
     render(<ProjectDetailPage projectId="proj-1" />);
 
     expect(await screen.findByText("メモ案件")).toBeDefined();
-    expect(screen.getByText(/メモ案件なので工程表なしでも保存済みです/)).toBeDefined();
+    expect(screen.getByText(/工程表はまだありません/)).toBeDefined();
     expect(screen.queryByRole("alert")).toBeNull();
   });
 
