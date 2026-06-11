@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { BookOpen, CalendarDays } from "lucide-react";
 import type { Project, ProjectMode, ProjectStatus, Task } from "../domain/types.js";
 import { createProjectRepository } from "../stores/project-store.js";
 import { createTaskRepository } from "../stores/task-store.js";
@@ -675,9 +676,17 @@ export function ProjectListPage() {
                     <p className="mt-2 line-clamp-2 text-sm text-slate-500">{project.description}</p>
                   ) : null}
                 </div>
-                <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
-                  {projectMode(project) === "memo" ? t("pages:project_list.open_record") : t("pages:project_list.open_gantt")}
-                </span>
+                {projectMode(project) === "memo" ? (
+                  <span className="ios-btn-primary shrink-0 px-3 py-2 text-xs">
+                    <BookOpen size={13} aria-hidden="true" />
+                    {t("pages:project_list.open_record")}
+                  </span>
+                ) : (
+                  <span className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-xl bg-indigo-600 px-3 py-2 text-xs font-semibold text-white">
+                    <CalendarDays size={13} aria-hidden="true" />
+                    {t("pages:project_list.open_gantt")}
+                  </span>
+                )}
               </div>
               <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-slate-400">
                 <span>{project.address ?? t("common:labels.unset")}</span>
