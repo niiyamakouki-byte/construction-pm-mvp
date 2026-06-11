@@ -50,6 +50,7 @@ import { getCategories } from "../lib/task-categories.js";
 import { expandWBSToPhases } from "../lib/work-breakdown/expansion.js";
 import { getMasterCategories, getMasterEntries } from "../lib/work-schedule-master.js";
 import { readMasterPresetHistory, writeMasterPresetHistory } from "../lib/gantt-master-preset.js";
+import { calcMasterPreview } from "../lib/master-preview.js";
 import { savePhaseTemplate } from "../lib/phase-template/storage.js";
 import type { PhaseTemplate, PhaseTemplateTag } from "../lib/phase-template/types.js";
 import { ConfirmDialog } from "../components/common/ConfirmDialog.js";
@@ -1492,7 +1493,18 @@ function GanttPageContent({ initialProjectId = null }: GanttPageProps) {
               );
             })()}
 
-            <div className="mt-5 flex justify-end gap-3">
+            {(() => {
+              const _preview = masterSelectedEntryIds.size > 0
+                ? calcMasterPreview(masterSelectedEntryIds, getMasterEntries(masterSelectedCategoryId))
+                : null;
+              return _preview ? (
+                <p className="mt-4 text-right text-sm text-slate-500 tabular-nums">
+                  合計 {_preview.count} 工程{_preview.totalDays > 0 ? ` / 約 ${_preview.totalDays} 日` : ""}
+                </p>
+              ) : null;
+            })()}
+
+            <div className="mt-3 flex justify-end gap-3">
               <button
                 type="button"
                 onClick={() => setMasterModalOpen(false)}
