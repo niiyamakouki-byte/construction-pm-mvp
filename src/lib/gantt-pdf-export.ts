@@ -73,6 +73,54 @@ function toLocalDateString(date: Date): string {
   return `${y}-${m}-${d}`;
 }
 
+// 全角文字（CJK・かな・全角記号）は2カラム、それ以外は1カラムとして表示幅を測る。
+// 半角カナ(FF61-FF9F)は狭いので除外する。
+function isFullWidthChar(codePoint: number): boolean {
+  return (
+    (codePoint >= 0x1100 && codePoint <= 0x115f) || // Hangul Jamo
+    (codePoint >= 0x2e80 && codePoint <= 0xa4cf) || // CJK部首〜ハングル前: かな・漢字含む
+    (codePoint >= 0xac00 && codePoint <= 0xd7a3) || // ハングル音節
+    (codePoint >= 0xf900 && codePoint <= 0xfaff) || // CJK互換漢字
+    (codePoint >= 0xff00 && codePoint <= 0xff60) || // 全角英数記号
+    (codePoint >= 0xffe0 && codePoint <= 0xffe6) // 全角記号
+  );
+}
+
+export function measureLabelWidth(text: string): number {
+  let width = 0;
+  for (const ch of text) {
+    width += isFullWidthChar(ch.codePointAt(0) ?? 0) ? 2 : 1;
+  }
+  return width;
+}
+
+// 表示幅(カラム)が maxColumns を超える場合のみ末尾を「…」で省略する。
+// CSS ellipsis のフォント依存を補い、印刷時のフォント代替でも溢れない一貫ルール。
+export function truncateLabel(text: string, maxColumns: number): string {
+  if (maxColumns <= 0) return "";
+  if (measureLabelWidth(text) <= maxColumns) return text;
+  let width = 0;
+  let result = "";
+  for (const ch of text) {
+    const charWidth = isFullWidthChar(ch.codePointAt(0) ?? 0) ? 2 : 1;
+    if (width + charWidth > maxColumns - 1) break; // 末尾「…」分の1カラムを確保
+    width += charWidth;
+    result += ch;
+  }
+  return `${result}…`;
+}
+
+// 印刷ページ幅にチャート全体を収める縮小率。収まる場合は1（拡大しない）。
+export function computePrintScale(contentWidth: number, pageWidth: number): number {
+  if (contentWidth <= 0 || pageWidth <= 0) return 1;
+  return contentWidth > pageWidth ? pageWidth / contentWidth : 1;
+}
+
+// ラベル列(180px)内に収まる表示幅カラム数の目安。
+const LABEL_MAX_COLUMNS = 28;
+// A4横の印刷可能幅の目安(px @96dpi, 余白考慮)。これを超える幅は縮小して1ページに収める。
+const PRINT_PAGE_WIDTH = 1040;
+
 export function buildGanttPdfHtml(
   project: Project,
   tasks: ExportTask[],
@@ -104,6 +152,8 @@ export function buildGanttPdfHtml(
   const dayWidth = 20;
   const labelWidth = 180;
   const chartWidth = visibleDays * dayWidth;
+  const contentWidth = labelWidth + chartWidth;
+  const printScale = computePrintScale(contentWidth, PRINT_PAGE_WIDTH);
   const todayStr = toLocalDateString(new Date());
 
   // Build day column metadata
@@ -368,9 +418,17 @@ export function buildGanttPdfHtml(
       }
 
       @media print {
-        body { padding: 12px; }
+        @page { size: A4 landscape; margin: 8mm; }
+        body { padding: 0; }
         .gantt-container { overflow: visible; border: none; }
-        .gantt-inner { min-width: auto; }
+        /* 横長のチャートを1ページ幅に収める。収まる場合は scale(1) で等倍。 */
+        .gantt-scale {
+          transform: scale(${printScale});
+          transform-origin: top left;
+          width: ${contentWidth}px;
+        }
+        .gantt-inner { min-width: ${contentWidth}px; }
+        .legend, .dep-section { page-break-inside: avoid; }
       }
     </style>
   </head>
@@ -408,7 +466,7 @@ export function buildGanttPdfHtml(
     </header>
 
     ${sortedTasks.length > 0
-      ? `<div class="gantt-container">
+      ? `<div class="gantt-scale"><div class="gantt-container">
         <div class="gantt-inner">
           <!-- Month header -->
           <div class="month-row">
@@ -445,7 +503,7 @@ export function buildGanttPdfHtml(
 
             return `<div class="task-row">
               <div class="task-label" title="${escapeHtml(task.name)}">
-                <span class="task-name">${escapeHtml(task.name)}</span>
+                <span class="task-name">${escapeHtml(truncateLabel(task.name, LABEL_MAX_COLUMNS))}</span>
                 <span class="task-dates">${escapeHtml(startStr)}〜${escapeHtml(endStr)}</span>
               </div>
               <div class="task-chart">
@@ -456,7 +514,7 @@ export function buildGanttPdfHtml(
             </div>`;
           }).join("")}
         </div>
-      </div>
+      </div></div>
 
       <div class="legend">
         <div class="legend-item"><span class="legend-swatch" style="background:${barColors.todo.bg}"></span>未着手</div>
