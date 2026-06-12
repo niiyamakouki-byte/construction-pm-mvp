@@ -1,0 +1,3 @@
+# Supabase publishable (anon) key — フロントバンドルに含まれる公開前提のキー（漏洩ではない）
+.github/workflows/supabase-keepalive.yml:generic-api-key:22
+.github/workflows/supabase-keepalive.yml:curl-auth-header:20

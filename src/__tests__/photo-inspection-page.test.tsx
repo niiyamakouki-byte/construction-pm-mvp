@@ -207,7 +207,7 @@ describe("PhotoInspectionPage — ステータス操作", () => {
     await act(async () => { fireEvent.click(reworkBtn); });
     // ヘッダーの "要手直し 1件" が表示される
     await waitFor(() => {
-      expect(screen.getByText(/⚠ 要手直し 1件/)).toBeDefined();
+      expect(screen.getByText(/要手直し 1件/)).toBeDefined();
     });
   });
 
