@@ -1,0 +1,7 @@
+title = "GenbaHub gitleaks config"
+
+[allowlist]
+description = "Supabase publishable (anon) key はフロントバンドルに含まれる公開前提のキー"
+paths = [
+  ".github/workflows/supabase-keepalive.yml",
+]
