@@ -31,7 +31,7 @@ test.describe("390px mobile responsive routes", () => {
   test("/today keeps primary dashboard content readable", async ({ page }) => {
     await page.goto("/#/today");
     await page.waitForLoadState("networkidle");
-    await expect(page.getByText("今日の予定")).toBeVisible();
+    await expect(page.getByText("今日の予定").first()).toBeVisible();
 
     await expectNoHorizontalCollapse(page);
 

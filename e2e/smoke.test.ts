@@ -10,6 +10,8 @@ test("トップページにアクセスできる", async ({ page }) => {
 
 test("ログインフォームが表示される（AuthGuard）", async ({ page }) => {
   await page.goto("/#/login");
+  // Google認証メインUIのため、メールフォームは開示ボタンの裏にある
+  await page.getByRole("button", { name: "メールアドレスとパスワードでログイン" }).click();
   // メールアドレス入力欄（#email で一意に特定）
   await expect(page.locator("#email")).toBeVisible();
   // パスワード入力欄

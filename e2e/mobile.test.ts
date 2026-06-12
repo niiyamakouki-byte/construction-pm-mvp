@@ -14,6 +14,8 @@ test.describe("iPhone 14 モバイルビュー", () => {
 
   test("ログインページがモバイルで表示される", async ({ page }) => {
     await page.goto("/#/login");
+    // Google認証メインUIのため、メールフォームは開示ボタンの裏にある
+    await page.getByRole("button", { name: "メールアドレスとパスワードでログイン" }).click();
     // #email で一意に特定（ページ内にemail inputが2つあるため）
     await expect(page.locator("#email")).toBeVisible();
     await expect(page.locator('input[type="password"]')).toBeVisible();
@@ -52,6 +54,9 @@ test.describe("iPhone 14 モバイルビュー", () => {
 
     // ログインページが表示される（GenbaHub ロゴ）
     await expect(page.locator("body")).toContainText("GenbaHub");
+
+    // Google認証メインUIのため、メールフォームは開示ボタンの裏にある
+    await page.getByRole("button", { name: "メールアドレスとパスワードでログイン" }).click();
 
     // ログインフォームが表示される
     await expect(page.locator("#email")).toBeVisible();
