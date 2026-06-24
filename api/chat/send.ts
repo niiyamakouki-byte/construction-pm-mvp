@@ -30,7 +30,7 @@ const BOT_TOKEN = process.env.DISCORD_BOT_TOKEN ?? "";
 const WEBHOOK_URL = process.env.DISCORD_CHAT_WEBHOOK_URL ?? "";
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Origin", process.env.APP_BASE_URL || "https://construction-pm-mvp.vercel.app");
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 
