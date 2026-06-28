@@ -220,9 +220,11 @@ export function InvoicePage() {
       </div>
 
       {error && (
-        <div className="flex items-start gap-2 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
+        <div role="alert" className="flex items-start gap-2 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
           <span className="flex-1">{error}</span>
-          <button onClick={() => setError(null)} className="text-red-400 hover:text-red-600">&times;</button>
+          <button type="button" onClick={() => setError(null)} className="text-red-400 hover:text-red-600" aria-label="エラーを閉じる">
+            &times;
+          </button>
         </div>
       )}
 
