@@ -3,7 +3,7 @@
  * /share-tokens
  */
 
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import {
   generateShareToken,
   listShareTokens,
@@ -119,6 +119,7 @@ function IssueForm({
 }) {
   const [days, setDays] = useState(30);
   const [password, setPassword] = useState("");
+  const passwordInputId = useId();
 
   return (
     <div className="mt-3 rounded-lg border border-slate-100 bg-slate-50 p-3 text-xs">
@@ -131,6 +132,7 @@ function IssueForm({
               key={opt.days}
               type="button"
               onClick={() => setDays(opt.days)}
+              aria-pressed={days === opt.days}
               className="rounded-full px-3 py-1 text-[11px] font-medium transition-colors"
               style={
                 days === opt.days
@@ -144,8 +146,9 @@ function IssueForm({
         </div>
       </div>
       <div className="mb-3">
-        <p className="mb-1 text-slate-500">パスワード（任意）</p>
+        <label htmlFor={passwordInputId} className="mb-1 block text-slate-500">パスワード（任意）</label>
         <input
+          id={passwordInputId}
           type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}

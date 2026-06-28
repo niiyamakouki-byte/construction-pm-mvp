@@ -70,6 +70,29 @@ describe("OwnerShareTokenPanel", () => {
     expect(screen.getByText("発行する")).toBeDefined();
   });
 
+  it("associates the optional password label with the password field", async () => {
+    const { findAllByText } = render(<OwnerShareTokenPanel />);
+    const buttons = await findAllByText("共有リンクを発行", {}, { timeout: 3000 });
+    fireEvent.click(buttons[0]);
+
+    const passwordInput = screen.getByLabelText("パスワード（任意）") as HTMLInputElement;
+    expect(passwordInput.type).toBe("password");
+  });
+
+  it("exposes the selected expiry option with aria-pressed", async () => {
+    const { findAllByText } = render(<OwnerShareTokenPanel />);
+    const buttons = await findAllByText("共有リンクを発行", {}, { timeout: 3000 });
+    fireEvent.click(buttons[0]);
+
+    const sevenDays = screen.getByRole("button", { name: "7日間" });
+    const thirtyDays = screen.getByRole("button", { name: "30日間" });
+    expect(thirtyDays.getAttribute("aria-pressed")).toBe("true");
+
+    fireEvent.click(sevenDays);
+    expect(sevenDays.getAttribute("aria-pressed")).toBe("true");
+    expect(thirtyDays.getAttribute("aria-pressed")).toBe("false");
+  });
+
   it("shows existing tokens on mount", async () => {
     generateShareToken("proj-alpha", 30);
     const { findByText } = render(<OwnerShareTokenPanel />);
