@@ -74,4 +74,23 @@ describe("PhotoGrid", () => {
     expect(imgElems.length).toBe(2);
     expect(imgElems[0]?.getAttribute("alt")).toBe("基礎工事前");
   });
+
+  it("uses a date fallback alt when photo description is blank", () => {
+    render(
+      <PhotoGrid
+        photos={[
+          {
+            id: "p4",
+            url: "https://example.com/photo4.jpg",
+            capturedAt: "2025-04-10T09:00:00",
+            projectId: "proj1",
+            description: "   ",
+            tags: [],
+          },
+        ]}
+      />,
+    );
+
+    expect(screen.getByRole("img", { name: "現場写真 2025-04-10" })).toBeDefined();
+  });
 });

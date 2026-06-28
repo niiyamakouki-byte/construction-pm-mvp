@@ -15,6 +15,10 @@ function getCategoryColor(tag: string): string {
   return CATEGORY_COLORS[tag] ?? "bg-slate-100 text-slate-600";
 }
 
+function getPhotoAlt(photo: PhotoMetadata): string {
+  return photo.description.trim() || `現場写真 ${photo.capturedAt.slice(0, 10)}`;
+}
+
 const SCENE_LABELS: Record<SceneTag, string> = {
   外観: "外観",
   内装: "内装",
@@ -64,7 +68,7 @@ function PhotoCard({ photo }: PhotoCardProps) {
         {photo.url ? (
           <img
             src={photo.url}
-            alt={photo.description}
+            alt={getPhotoAlt(photo)}
             className="h-full w-full object-cover"
             loading="lazy"
           />
