@@ -210,4 +210,16 @@ describe("ProgressReviewPage", () => {
     expect(screen.getByText("案件を選ぶ")).toBeDefined();
     expect(screen.getByText("写真をアップロード")).toBeDefined();
   });
+
+  it("shows a dismissible error alert when initial project load fails", async () => {
+    mockProjectFindAll.mockRejectedValueOnce(new Error("ネットワークエラー"));
+
+    render(<ProgressReviewPage />);
+
+    const alert = await screen.findByRole("alert");
+    expect(alert.textContent).toContain("ネットワークエラー");
+    fireEvent.click(screen.getByRole("button", { name: "エラーを閉じる" }));
+    expect(screen.queryByRole("alert")).toBeNull();
+    expect(screen.getByText("進捗レビューは、案件選択と写真選択を先に行います")).toBeDefined();
+  });
 });

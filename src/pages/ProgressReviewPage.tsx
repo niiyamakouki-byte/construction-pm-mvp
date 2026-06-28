@@ -77,6 +77,17 @@ const TRADE_OPTIONS: { value: WorkCategory; label: string }[] = [
   { value: "other", label: "その他" },
 ];
 
+function ErrorAlert({ message, onClose }: { message: string; onClose: () => void }) {
+  return (
+    <div role="alert" className="flex items-center gap-2 rounded-2xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
+      <span className="flex-1">{message}</span>
+      <button type="button" onClick={onClose} className="text-red-400 hover:text-red-600" aria-label="エラーを閉じる">
+        &times;
+      </button>
+    </div>
+  );
+}
+
 // ─── ProgressReviewPage ───────────────────────────────────────────────────────
 
 export function ProgressReviewPage() {
@@ -191,7 +202,8 @@ export function ProgressReviewPage() {
 
   if (projects.length === 0 || !selectedProjectId) {
     return (
-      <div className="mx-auto max-w-[1100px] px-4 pb-24">
+      <div className="mx-auto max-w-[1100px] space-y-4 px-4 pb-24">
+        {error && <ErrorAlert message={error} onClose={() => setError(null)} />}
         <div className="rounded-xl border border-dashed border-slate-300 bg-white px-5 py-8 text-center shadow-sm">
           <p className="text-sm font-semibold text-slate-800">進捗レビューは、案件選択と写真選択を先に行います</p>
           <p className="mx-auto mt-2 max-w-md text-sm text-slate-500">
@@ -226,10 +238,7 @@ export function ProgressReviewPage() {
       </div>
 
       {error && (
-        <div className="flex items-center gap-2 rounded-2xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
-          <span className="flex-1">{error}</span>
-          <button onClick={() => setError(null)} className="text-red-400 hover:text-red-600">&times;</button>
-        </div>
+        <ErrorAlert message={error} onClose={() => setError(null)} />
       )}
 
       {/* プロジェクト選択 */}
