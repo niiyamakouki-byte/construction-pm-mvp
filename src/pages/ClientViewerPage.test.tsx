@@ -134,6 +134,17 @@ describe("ClientViewerPage", () => {
     expect(screen.getByText("50%")).toBeDefined();
   });
 
+  it("exposes progress value as a progressbar for assistive technology", async () => {
+    mockFindAll.mockResolvedValue(doneTasks);
+    render(<ClientViewerPage projectId="proj-1" />);
+    await screen.findByText("南青山リノベーション");
+
+    const progressbar = screen.getByRole("progressbar", { name: "工事進捗" });
+    expect(progressbar.getAttribute("aria-valuenow")).toBe("50");
+    expect(progressbar.getAttribute("aria-valuemin")).toBe("0");
+    expect(progressbar.getAttribute("aria-valuemax")).toBe("100");
+  });
+
   it("shows 0% progress when no tasks", async () => {
     render(<ClientViewerPage projectId="proj-1" />);
     await screen.findByText("南青山リノベーション");

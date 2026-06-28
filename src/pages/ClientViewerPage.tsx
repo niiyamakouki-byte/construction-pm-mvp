@@ -54,6 +54,11 @@ function ProgressBar({ value }: { value: number }) {
       </div>
       <div className="h-4 w-full overflow-hidden rounded-full bg-slate-100">
         <div
+          role="progressbar"
+          aria-label="工事進捗"
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={value}
           className="h-full rounded-full bg-blue-500 transition-all duration-700"
           style={{ width: `${value}%` }}
         />
