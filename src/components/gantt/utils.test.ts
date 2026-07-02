@@ -4,8 +4,11 @@ import {
   addDaysSkipWeekends,
   compareGanttRows,
   computeReorder,
+  formatScheduleDate,
+  getAlertLevel,
   hasCycle,
 } from "./utils.js";
+import type { GanttTask } from "./types.js";
 
 describe("gantt utils", () => {
   it("task-level includeWeekends overrides the project setting", () => {
@@ -116,5 +119,60 @@ describe("hasCycle", () => {
     const tasks = [{ id: "a", dependencies: [] }];
     // self-loop is caught by caller (fromId === toId), hasCycle still returns true
     expect(hasCycle(tasks, "a", "a")).toBe(true);
+  });
+});
+
+// ── null-guard tests (Supabase may return null for optional date fields) ──────
+
+describe("formatScheduleDate null guard", () => {
+  it("returns 未設定 for empty string (null coerced at DB boundary)", () => {
+    // pin.dueDate and task dates arrive as "" when Supabase returns null and
+    // callers coerce null→"". formatScheduleDate must not crash.
+    expect(formatScheduleDate("")).toBe("未設定");
+  });
+
+  it("returns 未設定 when called with null cast as string", () => {
+    // Defensive: verify the falsy branch covers null coerced to empty-ish value.
+    expect(formatScheduleDate(null as unknown as string)).toBe("未設定");
+  });
+
+  it("returns a formatted date string for a valid ISO date", () => {
+    expect(formatScheduleDate("2025-04-01")).toBe("2025/4/1");
+  });
+});
+
+describe("getAlertLevel with GanttTask (endDate always resolved to string)", () => {
+  // GanttPage maps null Task.dueDate to a fallback string before building GanttTask.
+  // These tests confirm getAlertLevel does not crash when endDate is a valid string.
+  function makeTask(overrides: Partial<GanttTask>): GanttTask {
+    return {
+      id: "test-id",
+      projectId: "proj-id",
+      name: "Test Task",
+      description: "",
+      status: "todo",
+      progress: 0,
+      dependencies: [],
+      startDate: "2025-01-01",
+      endDate: "2025-01-10",
+      projectName: "Test Project",
+      isDateEstimated: false,
+      isMilestone: false,
+      projectIncludesWeekends: false,
+      createdAt: "2025-01-01",
+      updatedAt: "2025-01-01",
+      ...overrides,
+    };
+  }
+
+  it("returns overdue when endDate (resolved from null dueDate) is in the past", () => {
+    // Simulates: Task had dueDate=null → GanttPage resolved endDate to a past date
+    const task = makeTask({ endDate: "2024-12-31", isDateEstimated: true });
+    expect(getAlertLevel(task, "2025-01-10")).toBe("overdue");
+  });
+
+  it("returns null for a done task regardless of endDate", () => {
+    const task = makeTask({ status: "done", endDate: "2024-01-01", isDateEstimated: true });
+    expect(getAlertLevel(task, "2025-01-10")).toBeNull();
   });
 });
