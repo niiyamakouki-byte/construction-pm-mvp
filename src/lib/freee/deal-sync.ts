@@ -30,7 +30,7 @@ function projectToDealInput(project: Project): DealInput {
 
   return {
     issue_date: project.startDate,
-    due_date: project.endDate,
+    due_date: project.endDate ?? undefined,
     amount,
     type: "income",
     ref_number: project.id,

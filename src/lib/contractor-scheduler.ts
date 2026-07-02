@@ -21,7 +21,7 @@ export type OverallocationWarning = {
   taskIds: string[];
 };
 
-function getTaskEndDate(task: Task): string | undefined {
+function getTaskEndDate(task: Task): string | null | undefined {
   return task.dueDate ?? task.startDate;
 }
 

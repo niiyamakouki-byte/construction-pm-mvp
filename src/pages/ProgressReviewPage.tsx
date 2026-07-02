@@ -19,8 +19,8 @@ function buildGeneratedSchedule(
   tasks: Array<{
     id: string;
     name: string;
-    startDate?: string;
-    dueDate?: string;
+    startDate?: string | null;
+    dueDate?: string | null;
     dependencies: string[];
     progress: number;
   }>,

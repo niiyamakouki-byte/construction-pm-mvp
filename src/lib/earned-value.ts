@@ -37,7 +37,7 @@ function clampPercentage(value: number): number {
   return Math.max(0, Math.min(100, value));
 }
 
-function getTaskEndDate(task: ProgressTask): string | undefined {
+function getTaskEndDate(task: ProgressTask): string | null | undefined {
   return task.dueDate ?? task.startDate;
 }
 

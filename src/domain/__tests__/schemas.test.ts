@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import {
   ProjectSchema,
   ProjectModeSchema,
@@ -10,6 +10,7 @@ import {
   PhotoSchema,
   SchemaValidationError,
   parseOrThrow,
+  parseOrWarn,
 } from "../schemas.js";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -365,5 +366,82 @@ describe("PhotoSchema", () => {
   it("edge: rejects invalid takenAt format", () => {
     const result = PhotoSchema.safeParse({ ...validPhoto, takenAt: "01/04/2025" });
     expect(result.success).toBe(false);
+  });
+});
+
+// ── Null-value DB compatibility (parseOrWarn path) ────────────────────────────
+// DB returns null for nullable columns; schemas must accept null without warning.
+
+describe("DB null values — no schema validation warnings", () => {
+  it("ProjectSchema accepts null for all nullable DB columns", () => {
+    const spy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const data = {
+      ...base(),
+      name: "南青山工事",
+      description: "",
+      status: "active" as const,
+      startDate: DATE,
+      includeWeekends: true,
+      // Supabase returns null for nullable columns
+      endDate: null,
+      address: null,
+      latitude: null,
+      longitude: null,
+      budget: null,
+    };
+    parseOrWarn(ProjectSchema, "Project", data);
+    expect(spy).not.toHaveBeenCalled();
+    spy.mockRestore();
+  });
+
+  it("TaskSchema accepts null for all nullable DB columns", () => {
+    const spy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const data = {
+      ...base(),
+      projectId: UUID,
+      name: "LGS工事",
+      description: "",
+      status: "todo" as const,
+      progress: 0,
+      dependencies: [],
+      // Supabase returns null for nullable columns
+      includeWeekends: null,
+      assigneeId: null,
+      startDate: null,
+      dueDate: null,
+      dependencyType: null,
+      contractorId: null,
+      materials: null,
+      lead_time: null,
+      leadTimeDays: null,
+      canvasX: null,
+      canvasY: null,
+      majorCategory: null,
+      middleCategory: null,
+      minorCategory: null,
+      sortIndex: null,
+    };
+    parseOrWarn(TaskSchema, "Task", data);
+    expect(spy).not.toHaveBeenCalled();
+    spy.mockRestore();
+  });
+
+  it("CostItemSchema accepts null for all nullable DB columns", () => {
+    const spy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const data = {
+      ...base(),
+      projectId: UUID,
+      description: "材料費",
+      amount: 50000,
+      category: "材料",
+      // Supabase returns null for nullable columns
+      taskId: null,
+      costDate: null,
+      paymentStatus: null,
+      breakdownType: null,
+    };
+    parseOrWarn(CostItemSchema, "CostItem", data);
+    expect(spy).not.toHaveBeenCalled();
+    spy.mockRestore();
   });
 });

@@ -74,7 +74,7 @@ export function mapProjectToDeal(
   const type: DealType = options.type ?? "income";
   const amount = project.budget ?? 0;
   const issueDate = options.issueDate ?? project.startDate;
-  const dueDate = options.dueDate ?? project.endDate;
+  const dueDate = options.dueDate ?? project.endDate ?? undefined;
 
   const { accountItemId, taxCode } = resolveAccountItem(type, project.name);
 

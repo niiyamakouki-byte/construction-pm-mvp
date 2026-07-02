@@ -14,14 +14,14 @@ function toDate(dateStr: string): Date {
   return new Date(`${dateStr}T00:00:00`);
 }
 
-type GanttRowOrder = { sortIndex?: number; startDate: string; endDate: string };
+type GanttRowOrder = { sortIndex?: number | null; startDate: string; endDate: string };
 
 /**
  * 工程表の行ソート順。両方に sortIndex があれば手動並び順を優先し、
  * それ以外は従来通り startDate → endDate の昇順で比較する。
  */
 export function compareGanttRows(left: GanttRowOrder, right: GanttRowOrder): number {
-  if (left.sortIndex !== undefined && right.sortIndex !== undefined) {
+  if (left.sortIndex != null && right.sortIndex != null) {
     return left.sortIndex - right.sortIndex;
   }
   const byStart = left.startDate.localeCompare(right.startDate);
@@ -76,7 +76,7 @@ function isNonWorkingDay(date: Date): boolean {
 
 export function resolveIncludeWeekends(
   projectIncludeWeekends: boolean,
-  taskIncludeWeekends?: boolean,
+  taskIncludeWeekends?: boolean | null,
 ): boolean {
   return taskIncludeWeekends ?? projectIncludeWeekends;
 }
@@ -86,7 +86,7 @@ export function addDaysSkipWeekends(
   dateStr: string,
   days: number,
   projectIncludeWeekends = false,
-  taskIncludeWeekends?: boolean,
+  taskIncludeWeekends?: boolean | null,
 ): string {
   const includeWeekends = resolveIncludeWeekends(projectIncludeWeekends, taskIncludeWeekends);
   if (includeWeekends) return addDays(dateStr, days);
@@ -106,7 +106,7 @@ export function addDaysBySchedule(
   dateStr: string,
   days: number,
   projectIncludeWeekends = false,
-  taskIncludeWeekends?: boolean,
+  taskIncludeWeekends?: boolean | null,
 ): string {
   const includeWeekends = resolveIncludeWeekends(projectIncludeWeekends, taskIncludeWeekends);
   if (includeWeekends) return addDays(dateStr, days);

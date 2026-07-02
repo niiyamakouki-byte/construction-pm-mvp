@@ -49,7 +49,7 @@ export type ScheduleOptimizationSuggestion = {
   message: string;
 };
 
-function getTaskEndDate(task: Task): string | undefined {
+function getTaskEndDate(task: Task): string | null | undefined {
   return task.dueDate ?? task.startDate;
 }
 

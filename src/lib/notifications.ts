@@ -134,7 +134,7 @@ export function buildNotifications({
         path: "/tasks",
         projectId: task.projectId,
         taskId: task.id,
-        sortDate: task.dueDate,
+        sortDate: task.dueDate ?? undefined,
       };
     });
 

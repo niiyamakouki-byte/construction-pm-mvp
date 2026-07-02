@@ -99,11 +99,12 @@ export const ProjectSchema = BaseEntitySchema.extend({
   status: ProjectStatusSchema,
   mode: ProjectModeSchema.default("normal"),
   startDate: isoDateString,
-  endDate: isoDateString.optional(),
-  address: z.string().optional(),
-  latitude: z.number().finite().optional(),
-  longitude: z.number().finite().optional(),
-  budget: z.number().finite().optional(),
+  // DB columns are nullable (no NOT NULL) — .nullish() accepts null from Supabase
+  endDate: isoDateString.nullish(),
+  address: z.string().nullish(),
+  latitude: z.number().finite().nullish(),
+  longitude: z.number().finite().nullish(),
+  budget: z.number().finite().nullish(),
   includeWeekends: z.boolean(),
 });
 
@@ -124,25 +125,26 @@ export const TaskSchema = BaseEntitySchema.extend({
   name: z.string(),
   description: z.string(),
   status: TaskStatusSchema,
-  includeWeekends: z.boolean().optional(),
-  assigneeId: z.string().optional(),
-  startDate: isoDateString.optional(),
-  dueDate: isoDateString.optional(),
+  // Nullable in DB — .nullish() accepts null from Supabase
+  includeWeekends: z.boolean().nullish(),
+  assigneeId: z.string().nullish(),
+  startDate: isoDateString.nullish(),
+  dueDate: isoDateString.nullish(),
   progress: z.number().finite(),
   dependencies: z.array(z.string()),
   /** Dependency relationship type; defaults to 'FS' when not set */
-  dependencyType: DependencyTypeSchema.optional(),
-  contractorId: z.string().optional(),
-  materials: z.array(z.string()).optional(),
-  lead_time: z.number().optional(),
-  leadTimeDays: z.number().optional(),
-  canvasX: z.number().optional(),
-  canvasY: z.number().optional(),
-  majorCategory: z.string().optional(),
-  middleCategory: z.string().optional(),
-  minorCategory: z.string().optional(),
+  dependencyType: DependencyTypeSchema.nullish(),
+  contractorId: z.string().nullish(),
+  materials: z.array(z.string()).nullish(),
+  lead_time: z.number().nullish(),
+  leadTimeDays: z.number().nullish(),
+  canvasX: z.number().nullish(),
+  canvasY: z.number().nullish(),
+  majorCategory: z.string().nullish(),
+  middleCategory: z.string().nullish(),
+  minorCategory: z.string().nullish(),
   /** Manual row order in the Gantt view; undefined falls back to date sorting */
-  sortIndex: z.number().optional(),
+  sortIndex: z.number().nullish(),
 });
 
 export type Task = z.infer<typeof TaskSchema>;
@@ -162,14 +164,15 @@ export const CostBreakdownTypeSchema = z.enum([
 
 export const CostItemSchema = BaseEntitySchema.extend({
   projectId: z.string().uuid(),
-  taskId: z.string().optional(),
+  // Nullable in DB — .nullish() accepts null from Supabase
+  taskId: z.string().nullish(),
   description: z.string(),
   // Negative numbers allowed (returns / discounts). NaN/Infinity rejected.
   amount: z.number().finite(),
   category: z.string(),
-  costDate: isoDateString.optional(),
-  paymentStatus: CostPaymentStatusSchema.optional(),
-  breakdownType: CostBreakdownTypeSchema.optional(),
+  costDate: isoDateString.nullish(),
+  paymentStatus: CostPaymentStatusSchema.nullish(),
+  breakdownType: CostBreakdownTypeSchema.nullish(),
 });
 
 export type CostItem = z.infer<typeof CostItemSchema>;

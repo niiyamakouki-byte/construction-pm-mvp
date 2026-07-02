@@ -771,7 +771,7 @@ function TodayDashboardPageContent() {
         : 0;
       return evaluateAlerts(
         [createBudgetAlert(p.id, 80), createDeadlineAlert(p.id, 7)],
-        { projectId: p.id, budget: p.budget ?? 0, spent, endDate: p.endDate },
+        { projectId: p.id, budget: p.budget ?? 0, spent, endDate: p.endDate ?? undefined },
       );
     });
   }, [allProjects, insightProject, insightCostRows]);

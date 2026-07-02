@@ -37,7 +37,7 @@ function hasKeyword(value: string, patterns: RegExp[]): boolean {
   return patterns.some((pattern) => pattern.test(value));
 }
 
-function normalizeDate(value: string | undefined, fallback: string): string {
+function normalizeDate(value: string | null | undefined, fallback: string): string {
   if (!value) return fallback;
   return /^\d{4}-\d{2}-\d{2}$/.test(value) ? value : value.slice(0, 10);
 }
@@ -116,7 +116,7 @@ function toCostItemRow(costItem: CostItem): CostRow {
     category: normalizeCategory(costItem.category, costItem.description, breakdownType),
     breakdownType,
     source: "cost_item",
-    taskId: costItem.taskId,
+    taskId: costItem.taskId ?? undefined,
   };
 }
 

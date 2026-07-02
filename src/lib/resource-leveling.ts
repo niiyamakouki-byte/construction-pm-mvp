@@ -51,7 +51,7 @@ function daysBetween(a: string, b: string): number {
   return Math.round((db.getTime() - da.getTime()) / (1000 * 60 * 60 * 24));
 }
 
-function getTaskEndDate(task: Task): string | undefined {
+function getTaskEndDate(task: Task): string | null | undefined {
   return task.dueDate ?? task.startDate;
 }
 

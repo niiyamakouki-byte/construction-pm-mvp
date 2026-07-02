@@ -44,11 +44,11 @@ const barColors: Record<TaskStatus, { bg: string; fill: string }> = {
 };
 
 
-function formatOptionalDate(value: string | undefined): string {
+function formatOptionalDate(value: string | null | undefined): string {
   return value ? formatScheduleDate(value) : "未設定";
 }
 
-function getTaskEndDate(task: ExportTask): string | undefined {
+function getTaskEndDate(task: ExportTask): string | null | undefined {
   return task.dueDate ?? task.endDate;
 }
 
@@ -143,7 +143,7 @@ export function buildGanttPdfHtml(
   const pageWidth = PRINT_PAGE_WIDTHS[paperSize];
   const pageSizeLabel = PAGE_SIZE_LABELS[paperSize];
   const sortedTasks = [...tasks].sort((left, right) => {
-    if (left.sortIndex !== undefined && right.sortIndex !== undefined) {
+    if (left.sortIndex != null && right.sortIndex != null) {
       return left.sortIndex - right.sortIndex;
     }
     const leftDate = left.startDate ?? getTaskEndDate(left) ?? "";

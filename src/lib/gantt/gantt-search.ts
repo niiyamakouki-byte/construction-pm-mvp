@@ -38,7 +38,7 @@ function buildHighlights(
   query: string,
 ): MatchHighlight[] {
   const highlights: MatchHighlight[] = [];
-  const fields: Array<{ field: MatchHighlight["field"]; value: string | undefined }> = [
+  const fields: Array<{ field: MatchHighlight["field"]; value: string | null | undefined }> = [
     { field: "name", value: task.name },
     { field: "projectName", value: task.projectName },
     { field: "assigneeId", value: task.assigneeId },

@@ -71,7 +71,7 @@ function resolveTaskKind(task: Task): string {
 }
 
 /** YYYY-MM-DD から月を取得 */
-function monthFromDate(iso?: string): number {
+function monthFromDate(iso?: string | null): number {
   if (!iso) return new Date().getMonth() + 1;
   const m = parseInt(iso.slice(5, 7), 10);
   return isNaN(m) ? new Date().getMonth() + 1 : m;
