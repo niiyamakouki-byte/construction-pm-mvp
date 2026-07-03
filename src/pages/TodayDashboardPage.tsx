@@ -911,7 +911,7 @@ function TodayDashboardPageContent() {
     return <TodayDashboardSkeleton />;
   }
 
-  if (allProjects.length === 0) {
+  if (allProjects.length === 0 && !loadError) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center px-4">
         <div className="w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-8 shadow-sm text-center">

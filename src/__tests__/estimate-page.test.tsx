@@ -36,6 +36,9 @@ vi.mock("../contexts/OrganizationContext.js", () => ({
 async function renderEstimatePage() {
   const { EstimatePage } = await import("../pages/EstimatePage.js");
   render(<EstimatePage />);
+  // UX刷新(20260704): 着地は選択カード2枚。手動フローへ進んでから品目カタログが表示される
+  const manualBtn = await screen.findByRole("button", { name: /手動で作成/ });
+  manualBtn.click();
   await screen.findByText("品目カタログ");
 }
 
@@ -193,6 +196,9 @@ describe("EstimatePage", () => {
     const user = userEvent.setup();
 
     render(<EstimatePage />);
+    // UX刷新(20260704): 手動フローへ進んでから品目カタログが表示される
+    const manualBtn = await screen.findByRole("button", { name: /手動で作成/ });
+    manualBtn.click();
     await screen.findByText("品目カタログ");
 
     await user.type(screen.getByLabelText(/物件名/), "テスト物件");
@@ -205,15 +211,13 @@ describe("EstimatePage", () => {
   });
 
   it("見積作成タブのファーストビューにPDF CTAヒーローが表示される", async () => {
-    await renderEstimatePage();
-
-    const hero = screen.getByTestId("pdf-cta-hero");
-    expect(hero).toBeDefined();
-    expect(hero.textContent).toContain("図面 PDF をドロップするだけで概算見積を自動作成");
-
-    const ctaButton = screen.getByTestId("pdf-cta-button");
-    expect(ctaButton).toBeDefined();
-    expect(ctaButton.textContent).toContain("PDF で見積作成");
+    // UX刷新(20260704): 着地は選択カード2枚。PDFカードと手動カードが表示される
+    const { EstimatePage } = await import("../pages/EstimatePage.js");
+    render(<EstimatePage />);
+    const pdfCard = await screen.findByRole("button", { name: /PDFから作成/ });
+    expect(pdfCard).toBeDefined();
+    expect(pdfCard.textContent).toContain("PDFから作成");
+    expect(screen.getByRole("button", { name: /手動で作成/ })).toBeDefined();
   });
 
   it("入力内容から見積を生成して結果画面を表示する", async () => {

@@ -177,11 +177,13 @@ describe("TodayDashboardPage", () => {
   });
 
   it("ページタイトル「今日のタスク」が表示される", async () => {
+    mockProjects = [makeProject()];
     render(<TodayDashboardPage />);
     await waitFor(() => expect(screen.getByText("今日のタスク")).toBeDefined());
   });
 
   it("データ読み込み後にタスク件数バッジが表示される", async () => {
+    mockProjects = [makeProject()];
     mockTasks = [makeTask({ name: "タスクA" })];
     render(<TodayDashboardPage />);
     await waitFor(() => {
@@ -203,6 +205,7 @@ describe("TodayDashboardPage", () => {
   });
 
   it("空状態メッセージ「今日の予定タスクはありません」が表示される", async () => {
+    mockProjects = [makeProject()];
     render(<TodayDashboardPage />);
     await waitFor(() =>
       expect(screen.getByText("今日の予定タスクはありません")).toBeDefined(),
@@ -211,6 +214,7 @@ describe("TodayDashboardPage", () => {
 
   it("期限が今日のタスクが表示される", async () => {
     const today = localDateStr();
+    mockProjects = [makeProject()];
     mockTasks = [makeTask({ name: "今日締切タスク", dueDate: today, status: "todo" })];
     render(<TodayDashboardPage />);
     await waitFor(() => expect(screen.getByText("今日締切タスク")).toBeDefined());
@@ -218,6 +222,7 @@ describe("TodayDashboardPage", () => {
 
   it("完了済みタスクはフィルタリングされて表示されない", async () => {
     const today = localDateStr();
+    mockProjects = [makeProject()];
     mockTasks = [
       makeTask({ name: "完了済みのタスク名", dueDate: today, status: "done" }),
       makeTask({ id: "t-2", name: "未着手タスク", dueDate: today, status: "todo" }),
@@ -228,6 +233,7 @@ describe("TodayDashboardPage", () => {
   });
 
   it("データ読み込みエラー時にエラーバナーが表示される", async () => {
+    mockProjects = [makeProject()];
     mockTaskFindAll.mockRejectedValueOnce(new Error("読み込みエラー発生"));
     render(<TodayDashboardPage />);
     await waitFor(() => {
@@ -237,6 +243,7 @@ describe("TodayDashboardPage", () => {
   });
 
   it("stat カード（進行中案件・進行中タスク・完了タスク・期限超過）が表示される", async () => {
+    mockProjects = [makeProject()];
     mockTasks = [
       makeTask({ status: "in_progress", dueDate: undefined }),
       makeTask({ id: "t-2", status: "done" }),
@@ -325,11 +332,13 @@ describe("TodayDashboardPage", () => {
   });
 
   it("「本日の概要」ヘッダーが表示される", async () => {
+    mockProjects = [makeProject()];
     render(<TodayDashboardPage />);
     await waitFor(() => expect(screen.getByText("本日の概要")).toBeDefined());
   });
 
   it("「本日の日報」セクションとHTML出力ボタンが表示される", async () => {
+    mockProjects = [makeProject()];
     render(<TodayDashboardPage />);
     await waitFor(() => expect(screen.getByText("本日の日報")).toBeDefined());
     expect(screen.getByRole("button", { name: "HTMLで日報出力" })).toBeDefined();
@@ -362,6 +371,7 @@ describe("TodayDashboardPage", () => {
   });
 
   it("weather pageへの導線が表示される", async () => {
+    mockProjects = [makeProject()];
     render(<TodayDashboardPage />);
     await waitFor(() =>
       expect(screen.getByRole("button", { name: "7日間の現場天気を見る" })).toBeDefined(),

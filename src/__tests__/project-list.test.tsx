@@ -28,7 +28,7 @@ describe("ProjectListPage", () => {
   it("空状態でオンボーディングメッセージが表示される", async () => {
     render(<ProjectListPage />);
     expect(
-      await screen.findByText("最初の案件を作成しましょう"),
+      await screen.findByText("まず案件を作りましょう"),
     ).toBeDefined();
   });
 
@@ -145,8 +145,9 @@ describe("ProjectListPage", () => {
     );
     await user.click(screen.getByRole("button", { name: "作成" }));
 
+    // 初回案件作成時は isFirstProject=true となり専用メッセージが表示される
     expect(
-      await screen.findByText("「CTAテスト案件」を登録しました"),
+      await screen.findByText("最初の案件を作成しました！次はタスクを追加してみましょう"),
     ).toBeDefined();
     expect(
       screen.getByRole("button", { name: "見積を作成する" }),
@@ -195,7 +196,9 @@ describe("ProjectListPage", () => {
     expect(ganttCall).toBeDefined();
   });
 
-  it("空状態に見積だけ先に作る導線が表示され /estimate へ遷移する", async () => {
+  // UX刷新(20260704)でEmpty Stateを「まず案件を作りましょう」カードに統一。
+  // 「見積だけ先に作る」導線は新UIでは廃止されたためskip。
+  it.skip("空状態に見積だけ先に作る導線が表示され /estimate へ遷移する", async () => {
     const user = userEvent.setup();
     render(<ProjectListPage />);
 

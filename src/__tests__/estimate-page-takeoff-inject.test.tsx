@@ -53,6 +53,9 @@ vi.mock("../contexts/OrganizationContext.js", () => ({
 async function renderEstimatePage() {
   const { EstimatePage } = await import("../pages/EstimatePage.js");
   render(<EstimatePage />);
+  // UX刷新(20260704): 着地は選択カード2枚。手動フローへ進んでから品目カタログが表示される
+  const manualBtn = await screen.findByRole("button", { name: /手動で作成/ });
+  manualBtn.click();
   await screen.findByText("品目カタログ");
 }
 

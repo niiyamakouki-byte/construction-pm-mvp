@@ -115,7 +115,7 @@ describe("CostManagementPage", () => {
 
     render(<CostManagementPage />);
 
-    expect(await screen.findByRole("heading", { name: "コスト管理" })).toBeDefined();
+    expect(await screen.findByRole("heading", { name: "原価集計" })).toBeDefined();
     expect(screen.getAllByText("南青山ビル改修").length).toBeGreaterThan(0);
     expect(screen.getAllByText("￥1,000,000").length).toBeGreaterThan(0);
     expect(screen.getAllByText(/石膏ボード/).length).toBeGreaterThan(0);
@@ -240,7 +240,7 @@ describe("CostManagementPage", () => {
 
     render(<CostManagementPage />);
 
-    expect(await screen.findByText("案件を登録してコスト管理を始める")).toBeDefined();
+    expect(await screen.findByText("案件を登録して原価集計を始める")).toBeDefined();
     expect(screen.getByText("案件を登録する")).toBeDefined();
   });
 
