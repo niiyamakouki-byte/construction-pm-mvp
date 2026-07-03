@@ -601,7 +601,17 @@ function MatsubamebushiTab() {
   );
 }
 
+type EstimateMode = null | "pdf" | "manual";
+
 function EstimatePageContent() {
+  const [estimateMode, setEstimateMode] = useState<EstimateMode>(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const mode = params.get("mode");
+      if (mode === "pdf" || mode === "manual") return mode;
+    }
+    return null;
+  });
   const [activeTab, setActiveTab] = useState<PageTab>("estimate");
   const [propertyName, setPropertyName] = useState("");
   const [clientName, setClientName] = useState("");
@@ -924,6 +934,66 @@ function EstimatePageContent() {
     );
   }
 
+  // Mode selector — shown when no mode selected
+  if (estimateMode === null) {
+    return (
+      <div className="mx-auto max-w-2xl px-4 pb-24">
+        <h1 className="mb-2 text-2xl font-bold text-slate-900">見積</h1>
+        <p className="mb-8 text-sm text-slate-500">作成方法を選んでください</p>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <button
+            type="button"
+            onClick={() => setEstimateMode("pdf")}
+            className="relative flex flex-col items-start gap-4 rounded-2xl border-2 border-brand-200 bg-brand-50/40 p-6 text-left transition-colors hover:border-brand-400 hover:bg-brand-50"
+          >
+            <span className="absolute right-4 top-4 rounded-full bg-brand-600 px-2 py-0.5 text-[10px] font-bold text-white">推奨</span>
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-brand-100 text-2xl">
+              📄
+            </div>
+            <div>
+              <p className="text-base font-bold text-slate-900">PDFから作成</p>
+              <p className="mt-1 text-sm text-slate-500">
+                協力会社の見積PDFを読み込んで自動でドラフト化
+              </p>
+            </div>
+          </button>
+          <button
+            type="button"
+            onClick={() => setEstimateMode("manual")}
+            className="flex flex-col items-start gap-4 rounded-2xl border-2 border-slate-200 bg-white p-6 text-left transition-colors hover:border-slate-400 hover:bg-slate-50"
+          >
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-slate-100 text-2xl">
+              ✏️
+            </div>
+            <div>
+              <p className="text-base font-bold text-slate-900">手動で作成</p>
+              <p className="mt-1 text-sm text-slate-500">
+                品目カタログから選んで組み立てる
+              </p>
+            </div>
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // PDF flow
+  if (estimateMode === "pdf") {
+    return (
+      <div className="mx-auto max-w-2xl space-y-4 px-4 pb-24">
+        <button
+          type="button"
+          onClick={() => setEstimateMode(null)}
+          className="flex items-center gap-1 text-sm text-slate-500 hover:text-brand-600 transition-colors"
+        >
+          <span aria-hidden="true">&larr;</span>
+          作成方法を選び直す
+        </button>
+        <PDFDraftTab costMaster={PDF_COST_MASTER} />
+      </div>
+    );
+  }
+
   // Input form view
   return (
     <div className="mx-auto max-w-2xl space-y-4 px-4 pb-24">
@@ -943,8 +1013,18 @@ function EstimatePageContent() {
         }}
         onCancel={() => setDeleteTarget(null)}
       />
+      {/* Back link */}
+      <button
+        type="button"
+        onClick={() => setEstimateMode(null)}
+        className="flex items-center gap-1 text-sm text-slate-500 hover:text-brand-600 transition-colors"
+      >
+        <span aria-hidden="true">&larr;</span>
+        作成方法を選び直す
+      </button>
+
       {/* Page heading */}
-      <h1 className="text-2xl font-bold text-slate-900">見積</h1>
+      <h1 className="text-2xl font-bold text-slate-900">見積（手動作成）</h1>
 
       {/* Tab switcher */}
       <div className="rounded-lg border border-slate-200 bg-slate-50 p-1">
@@ -1003,43 +1083,6 @@ function EstimatePageContent() {
       )}
       {activeTab === "estimate" && (
         <>
-      {/* PDF CTA hero ― ファーストビューに大きなドロップ誘導 */}
-      <div
-        className="relative overflow-hidden rounded-2xl border border-brand-200 bg-brand-50 px-5 py-6 shadow-sm"
-        data-testid="pdf-cta-hero"
-      >
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-6">
-          {/* Icon */}
-          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-brand-100">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-brand-600">
-              <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
-              <polyline points="14 2 14 8 20 8" />
-              <line x1="12" y1="18" x2="12" y2="12" />
-              <line x1="9" y1="15" x2="15" y2="15" />
-            </svg>
-          </div>
-          {/* Copy */}
-          <div className="flex-1 space-y-1">
-            <p className="text-base font-bold text-slate-900">
-              図面 PDF をドロップするだけで概算見積を自動作成
-            </p>
-            <p className="text-sm text-slate-500">
-              内装要素を AI が自動検出 → 数量算出 → 単価マスタ照合まで一気通貫。
-              まず PDF を試してみてください。
-            </p>
-          </div>
-          {/* CTA button */}
-          <button
-            type="button"
-            onClick={() => setActiveTab("pdf_draft")}
-            className="shrink-0 rounded-xl bg-brand-600 px-5 py-3 text-sm font-bold text-white shadow-sm hover:bg-brand-700 active:bg-brand-800 transition-colors"
-            data-testid="pdf-cta-button"
-          >
-            PDF で見積作成 →
-          </button>
-        </div>
-      </div>
-
       <h2 className="text-base font-semibold text-slate-900">品目から手動で作成</h2>
 
       {error && (
