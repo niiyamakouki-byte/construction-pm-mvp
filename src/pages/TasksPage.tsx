@@ -152,7 +152,7 @@ export function TasksPage() {
             {!selectedProjectId && (
               <button
                 type="button"
-                onClick={() => navigate("/projects")}
+                onClick={() => navigate("/app")}
                 className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50"
               >
                 案件を選ぶ

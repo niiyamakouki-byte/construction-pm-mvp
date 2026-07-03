@@ -85,7 +85,7 @@ describe("TasksPage", () => {
     const btn = await screen.findByText("案件を選ぶ");
     btn.click();
 
-    expect(vi.mocked(navigate)).toHaveBeenCalledWith("/projects");
+    expect(vi.mocked(navigate)).toHaveBeenCalledWith("/app");
   });
 
   it("「最初のタスクを作成」クリックで /gantt/:projectId に遷移する", async () => {
