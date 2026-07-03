@@ -361,7 +361,7 @@ export function LoginPage() {
 
           <p className="mt-2 text-center text-sm text-slate-500">
             <button
-              onClick={() => navigate("/")}
+              onClick={() => navigate("/landing")}
               className="font-medium text-slate-400 hover:text-slate-600"
             >
               ランディングページへ
