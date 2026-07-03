@@ -155,37 +155,42 @@ export function DependencyArrows({ tasks, chartStart, dayWidth, totalDays, visib
   if (arrows.length === 0) return null;
 
   const chartWidth = (totalDays + 1) * dayWidth;
+  const clipId = "dep-arrows-clip";
 
   return (
     <svg
       className="pointer-events-none absolute inset-0 z-10"
       style={{ width: chartWidth, height: "100%" }}
-      overflow="visible"
     >
       <defs>
+        <clipPath id={clipId}>
+          <rect x="0" y="0" width={chartWidth} height="100%" />
+        </clipPath>
         {(Object.entries(DEP_STYLE) as Array<[DependencyType, typeof DEP_STYLE[DependencyType]]>).map(
           ([type, style]) => (
             <ArrowheadMarker key={type} id={style.markerId} color={style.stroke} />
           ),
         )}
       </defs>
-      {arrows.map(({ key, x1, y1, x2, y2, depType }) => {
-        const style = DEP_STYLE[depType];
-        const cx = (x1 + x2) / 2;
-        const d = `M ${x1} ${y1} C ${cx} ${y1} ${cx} ${y2} ${x2} ${y2}`;
-        return (
-          <path
-            key={key}
-            d={d}
-            fill="none"
-            stroke={style.stroke}
-            strokeWidth="1.5"
-            strokeOpacity="0.85"
-            strokeDasharray={style.dasharray}
-            markerEnd={`url(#${style.markerId})`}
-          />
-        );
-      })}
+      <g clipPath={`url(#${clipId})`}>
+        {arrows.map(({ key, x1, y1, x2, y2, depType }) => {
+          const style = DEP_STYLE[depType];
+          const cx = (x1 + x2) / 2;
+          const d = `M ${x1} ${y1} C ${cx} ${y1} ${cx} ${y2} ${x2} ${y2}`;
+          return (
+            <path
+              key={key}
+              d={d}
+              fill="none"
+              stroke={style.stroke}
+              strokeWidth="1.5"
+              strokeOpacity="0.85"
+              strokeDasharray={style.dasharray}
+              markerEnd={`url(#${style.markerId})`}
+            />
+          );
+        })}
+      </g>
     </svg>
   );
 }

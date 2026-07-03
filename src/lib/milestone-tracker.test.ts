@@ -43,7 +43,7 @@ function makeMilestone(overrides?: Partial<Milestone>): Milestone {
   return {
     id: "ms-proj-1-1",
     projectId: "proj-1",
-    name: "Foundation complete",
+    name: "Foundation完了",
     targetDate: "2025-07-15",
     status: "on-track",
     ...overrides,
@@ -62,9 +62,9 @@ describe("milestone-tracker", () => {
       expect(milestones.length).toBeGreaterThanOrEqual(2);
       const names = milestones.map((m) => m.name);
       // t1 is depended upon, t2 has deps and is depended upon, t3 has deps
-      expect(names).toContain("Foundation complete");
-      expect(names).toContain("Framing complete");
-      expect(names).toContain("Roofing complete");
+      expect(names).toContain("Foundation完了");
+      expect(names).toContain("Framing完了");
+      expect(names).toContain("Roofing完了");
     });
 
     it("includes the last task as project completion milestone", () => {
@@ -74,7 +74,7 @@ describe("milestone-tracker", () => {
       ];
       const milestones = createMilestones(makeProject(), tasks);
       const names = milestones.map((m) => m.name);
-      expect(names).toContain("Final Inspection complete");
+      expect(names).toContain("Final Inspection完了");
     });
 
     it("returns empty array when no tasks", () => {
@@ -277,7 +277,7 @@ describe("milestone-tracker", () => {
       ];
       const milestones = createMilestones(makeProject(), tasks);
       expect(milestones.length).toBe(1);
-      expect(milestones[0].name).toBe("Only Task complete");
+      expect(milestones[0].name).toBe("Only Task完了");
     });
 
     it("does not duplicate task that is both critical and latest", () => {
@@ -286,7 +286,7 @@ describe("milestone-tracker", () => {
         makeTask({ id: "t2", name: "Last", dueDate: "2025-12-31", dependencies: ["t1"] }),
       ];
       const milestones = createMilestones(makeProject(), tasks);
-      const lastCount = milestones.filter((m) => m.name === "Last complete").length;
+      const lastCount = milestones.filter((m) => m.name === "Last完了").length;
       expect(lastCount).toBe(1);
     });
 

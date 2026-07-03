@@ -71,7 +71,7 @@ export function createMilestones(project: Project, tasks: Task[]): Milestone[] {
       return {
         id: `ms-${project.id}-${index + 1}`,
         projectId: project.id,
-        name: `${task.name} complete`,
+        name: `${task.name}完了`,
         targetDate,
         actualDate: task.status === "done" ? targetDate : undefined,
         status: "on-track" as MilestoneStatus,

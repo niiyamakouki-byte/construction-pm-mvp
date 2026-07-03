@@ -292,6 +292,34 @@ export function ResourceAnalysisPage() {
         </div>
       )}
 
+      {/* 担当者別稼働時間バーチャート */}
+      {resources.length > 0 && (() => {
+        const maxHours = Math.max(...resources.map((r) => r.hours), 1);
+        return (
+          <div className="overflow-hidden rounded-2xl bg-white ring-1 ring-slate-200">
+            <div className="border-b border-slate-100 bg-slate-50/80 px-4 py-3">
+              <p className="text-xs font-semibold tracking-[0.1em] text-slate-500">担当者別稼働時間</p>
+            </div>
+            <div className="divide-y divide-slate-100">
+              {resources.map((row) => (
+                <div key={row.name} className="flex items-center gap-3 px-4 py-3">
+                  <span className="w-28 shrink-0 truncate text-sm font-medium text-slate-700">{row.name}</span>
+                  <div className="flex-1 rounded-full bg-slate-100" style={{ height: "10px" }}>
+                    <div
+                      className={`h-full rounded-full ${row.utilizationPct > 100 ? "bg-red-500" : "bg-brand-500"}`}
+                      style={{ width: `${(row.hours / maxHours) * 100}%` }}
+                    />
+                  </div>
+                  <span className="w-16 shrink-0 text-right tabular-nums text-sm text-slate-600">
+                    {row.hours.toFixed(1)} h
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      })()}
+
       <p className="text-xs text-slate-400">* 稼働率 = 期間内タスクの延べ稼働時間 ÷ キャパシティ（稼働日数 × 8h）。100%超は赤字表示。</p>
     </div>
   );
