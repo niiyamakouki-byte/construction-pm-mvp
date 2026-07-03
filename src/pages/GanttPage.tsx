@@ -623,7 +623,7 @@ function GanttPageContent({ initialProjectId = null, openMaster = false }: Gantt
       }
     }
     return rows;
-  }, [phaseGroups, collapsedPhases, filteredProjectTasks]);
+  }, [phaseGroups, collapsedPhases, filteredProjectTasks, selectedProjectId, selectedProject]);
 
   const handleMoveTask = useCallback(
     async (task: GanttTask, direction: "up" | "down") => {
