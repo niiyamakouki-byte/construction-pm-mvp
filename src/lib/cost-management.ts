@@ -43,9 +43,11 @@ function normalizeDate(value: string | null | undefined, fallback: string): stri
 }
 
 function parseAmount(text: string): number {
-  const match = text.match(/[¥￥]?\s*([\d,]+)(?:円)?/);
+  // Require ¥/￥ prefix or 円 suffix to avoid matching bare numbers in task names
+  const match = text.match(/[¥￥]\s*([\d,]+)|(\d[\d,]*)\s*円/);
   if (!match) return 0;
-  const amount = Number(match[1].replaceAll(",", ""));
+  const raw = match[1] ?? match[2];
+  const amount = Number(raw.replaceAll(",", ""));
   return Number.isFinite(amount) ? amount : 0;
 }
 
