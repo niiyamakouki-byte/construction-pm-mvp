@@ -650,7 +650,7 @@ export function ProjectListPage() {
             </button>
           ))}
         </div>
-      )}
+      ) : null}
     </div>
   );
 }
