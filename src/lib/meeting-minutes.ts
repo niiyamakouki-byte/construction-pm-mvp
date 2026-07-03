@@ -182,7 +182,7 @@ export function generateMinutesReport(meetingId: string): string {
 </tr>`,
         )
         .join("")
-    : '<tr><td colspan="4">No action items recorded.</td></tr>';
+    : '<tr><td colspan="4">アクション項目はありません。</td></tr>';
 
-  return `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8" /><title>Meeting Minutes - ${escapeHtml(meeting.meetingType)}</title></head><body><h1>Meeting Minutes</h1><p><strong>Project ID:</strong> ${escapeHtml(meeting.projectId)}</p><p><strong>Meeting Type:</strong> ${escapeHtml(meeting.meetingType)}</p><p><strong>Date:</strong> ${escapeHtml(meeting.meetingDate)}</p><p><strong>Facilitator:</strong> ${escapeHtml(meeting.facilitator)}</p><p><strong>Location:</strong> ${escapeHtml(meeting.location ?? "")}</p><h2>Attendees</h2><ul>${attendeeList}</ul><h2>Discussion Points</h2><ul>${discussionList}</ul><h2>Action Items</h2><table><thead><tr><th>Description</th><th>Owner</th><th>Due Date</th><th>Status</th></tr></thead><tbody>${actionRows}</tbody></table></body></html>`;
+  return `<!DOCTYPE html><html lang="ja"><head><meta charset="UTF-8" /><title>議事録 - ${escapeHtml(meeting.meetingType)}</title></head><body><h1>議事録</h1><p><strong>案件ID:</strong> ${escapeHtml(meeting.projectId)}</p><p><strong>会議種別:</strong> ${escapeHtml(meeting.meetingType)}</p><p><strong>日付:</strong> ${escapeHtml(meeting.meetingDate)}</p><p><strong>進行者:</strong> ${escapeHtml(meeting.facilitator)}</p><p><strong>場所:</strong> ${escapeHtml(meeting.location ?? "")}</p><h2>参加者</h2><ul>${attendeeList}</ul><h2>議題</h2><ul>${discussionList}</ul><h2>アクション項目</h2><table><thead><tr><th>内容</th><th>担当者</th><th>期限</th><th>ステータス</th></tr></thead><tbody>${actionRows}</tbody></table></body></html>`;
 }

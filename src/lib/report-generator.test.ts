@@ -242,7 +242,7 @@ describe("buildInspectionReportHtml", () => {
     const checklist = makeChecklist();
     const html = buildInspectionReportHtml({ checklist });
     expect(html).toContain("<!DOCTYPE html>");
-    expect(html).toContain("Safety Inspection Report");
+    expect(html).toContain("安全点検レポート");
   });
 
   it("includes corrective actions section when provided", () => {

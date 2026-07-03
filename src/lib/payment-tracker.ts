@@ -72,11 +72,11 @@ export function generatePaymentReport(projectId: string): string {
     .join("\n");
 
   return `<!DOCTYPE html>
-<html><head><title>Payment Report - ${projectId}</title></head>
+<html lang="ja"><head><meta charset="UTF-8" /><title>支払レポート - ${projectId}</title></head>
 <body>
-<h1>Payment Report: ${projectId}</h1>
-<p>Total: ¥${total.toLocaleString("ja-JP")} | Paid: ¥${paid.toLocaleString("ja-JP")} | Outstanding: ¥${outstanding.toLocaleString("ja-JP")}</p>
-<table><thead><tr><th>Date</th><th>Vendor</th><th>Amount</th><th>Status</th></tr></thead>
+<h1>支払レポート: ${projectId}</h1>
+<p>合計: ¥${total.toLocaleString("ja-JP")} | 支払済: ¥${paid.toLocaleString("ja-JP")} | 未払: ¥${outstanding.toLocaleString("ja-JP")}</p>
+<table><thead><tr><th>日付</th><th>業者</th><th>金額</th><th>ステータス</th></tr></thead>
 <tbody>${rows}</tbody></table>
 </body></html>`;
 }

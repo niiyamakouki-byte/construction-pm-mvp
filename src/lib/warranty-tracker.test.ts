@@ -94,10 +94,10 @@ describe("warranty-tracker", () => {
     const report = generateWarrantyReport("proj-1", "2025-02-20");
 
     expect(getWarrantyItems("proj-1")).toHaveLength(1);
-    expect(report).toContain("Warranty Report");
+    expect(report).toContain("保証レポート");
     expect(report).toContain("&lt;A&gt;");
     expect(report).toContain("Lift Co");
-    expect(report).toContain("Claims");
+    expect(report).toContain("クレーム");
   });
 
   it("throws on unknown warranty item ids", () => {

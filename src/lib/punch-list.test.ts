@@ -160,9 +160,9 @@ describe("punch-list", () => {
 
     const report = generatePunchListReport("proj-1");
 
-    expect(report).toContain("Punch List Report");
-    expect(report).toContain("Total Items: 2");
-    expect(report).toContain("Resolved / Verified: 0 / 1");
+    expect(report).toContain("パンチリストレポート");
+    expect(report).toContain("合計件数: 2");
+    expect(report).toContain("解決済 / 確認済: 0 / 1");
     expect(report).toContain("&lt;sealant&gt;");
     expect(report).toContain("Envelope Co");
     expect(report.indexOf("Fix &lt;sealant&gt;")).toBeLessThan(

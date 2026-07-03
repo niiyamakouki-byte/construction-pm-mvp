@@ -460,14 +460,14 @@ describe("Integration: export pipeline", () => {
     });
 
     expect(html).toContain("<!DOCTYPE html>");
-    expect(html).toContain("Project Health Report");
+    expect(html).toContain("案件ヘルスレポート");
     expect(html).toContain("Integration Test Project");
-    expect(html).toContain("Grade:");
+    expect(html).toContain("評価:");
     expect(html).toContain("SCHEDULE");
     expect(html).toContain("COST");
     expect(html).toContain("QUALITY");
     expect(html).toContain("RISK");
-    expect(html).toContain("Recommendations");
+    expect(html).toContain("改善提案");
   });
 
   it("full export pipeline produces consistent data", () => {

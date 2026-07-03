@@ -304,18 +304,18 @@ export function generatePunchListReport(projectId: string): string {
   <td>${escapeHtml(item.trade)}</td>
   <td>${escapeHtml(item.priority)}</td>
   <td>${escapeHtml(item.status)}</td>
-  <td>${escapeHtml(item.assignedContractorName ?? "Unassigned")}</td>
+  <td>${escapeHtml(item.assignedContractorName ?? "未割当")}</td>
   <td>${escapeHtml(item.resolutionNotes ?? "")}</td>
 </tr>`,
         )
         .join("\n")
-    : '<tr><td colspan="8">No punch list items recorded.</td></tr>';
+    : '<tr><td colspan="8">パンチリストの項目がありません。</td></tr>';
 
   return `<!DOCTYPE html>
-<html lang="en">
+<html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <title>Punch List Report - ${escapeHtml(projectId)}</title>
+  <title>パンチリストレポート - ${escapeHtml(projectId)}</title>
   <style>
     body { font-family: Arial, sans-serif; margin: 24px; color: #1f2937; }
     table { width: 100%; border-collapse: collapse; margin-top: 16px; }
@@ -327,24 +327,24 @@ export function generatePunchListReport(projectId: string): string {
   </style>
 </head>
 <body>
-  <h1>Punch List Report</h1>
-  <p>Project ID: <strong>${escapeHtml(projectId)}</strong></p>
+  <h1>パンチリストレポート</h1>
+  <p>案件ID: <strong>${escapeHtml(projectId)}</strong></p>
   <div class="summary">
-    <div class="card">Total Items: ${totals.total}</div>
-    <div class="card">Open / Assigned / In Progress: ${totals.open} / ${totals.assigned} / ${totals.inProgress}</div>
-    <div class="card">Resolved / Verified: ${totals.resolved} / ${totals.verified}</div>
+    <div class="card">合計件数: ${totals.total}</div>
+    <div class="card">未対応 / 担当済 / 対応中: ${totals.open} / ${totals.assigned} / ${totals.inProgress}</div>
+    <div class="card">解決済 / 確認済: ${totals.resolved} / ${totals.verified}</div>
   </div>
   <table>
     <thead>
       <tr>
         <th>ID</th>
-        <th>Title</th>
-        <th>Location</th>
-        <th>Trade</th>
-        <th>Priority</th>
-        <th>Status</th>
-        <th>Assigned Contractor</th>
-        <th>Resolution Notes</th>
+        <th>タイトル</th>
+        <th>場所</th>
+        <th>工種</th>
+        <th>優先度</th>
+        <th>ステータス</th>
+        <th>担当業者</th>
+        <th>解決メモ</th>
       </tr>
     </thead>
     <tbody>

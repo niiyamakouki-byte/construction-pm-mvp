@@ -448,7 +448,7 @@ ${
     })
     .join("");
 
-  return `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8" /><title>Markup Report - ${escapeHtml(config.drawingName)}</title></head><body><h1>Markup Report</h1><p><strong>Project:</strong> ${escapeHtml(config.projectName)}</p><p><strong>Drawing:</strong> ${escapeHtml(config.drawingName)}</p>${sections}</body></html>`;
+  return `<!DOCTYPE html><html lang="ja"><head><meta charset="UTF-8" /><title>マークアップレポート - ${escapeHtml(config.drawingName)}</title></head><body><h1>マークアップレポート</h1><p><strong>案件:</strong> ${escapeHtml(config.projectName)}</p><p><strong>図面:</strong> ${escapeHtml(config.drawingName)}</p>${sections}</body></html>`;
 }
 
 // ---- Session Merge --------------------------------------------------------

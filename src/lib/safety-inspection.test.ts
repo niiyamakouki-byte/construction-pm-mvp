@@ -192,7 +192,7 @@ describe("safety-inspection", () => {
         ],
       });
       const html = generateInspectionReport(checklist);
-      expect(html).toContain("Critical Failures");
+      expect(html).toContain("重大な不備");
       expect(html).toContain("Missing guardrail");
     });
 
@@ -209,7 +209,7 @@ describe("safety-inspection", () => {
     it("includes GenbaHub footer", () => {
       const checklist = makeChecklist({ items: [makeItem()] });
       const html = generateInspectionReport(checklist);
-      expect(html).toContain("GenbaHub Safety Inspection Module");
+      expect(html).toContain("GenbaHub 安全点検モジュールにより生成");
     });
   });
 });

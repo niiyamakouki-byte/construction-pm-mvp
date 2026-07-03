@@ -262,14 +262,14 @@ describe("project-health", () => {
 
       const html = generateHealthReport(input);
       expect(html).toContain("<!DOCTYPE html>");
-      expect(html).toContain("Project Health Report");
+      expect(html).toContain("案件ヘルスレポート");
       expect(html).toContain("Test Project");
-      expect(html).toContain("Grade:");
+      expect(html).toContain("評価:");
       expect(html).toContain("SCHEDULE");
       expect(html).toContain("COST");
       expect(html).toContain("QUALITY");
       expect(html).toContain("RISK");
-      expect(html).toContain("Recommendations");
+      expect(html).toContain("改善提案");
     });
 
     it("includes score and grade", () => {
@@ -280,7 +280,7 @@ describe("project-health", () => {
       });
 
       expect(html).toMatch(/\d+\/100/);
-      expect(html).toMatch(/Grade: [A-F]/);
+      expect(html).toMatch(/評価: [A-F]/);
     });
   });
 });

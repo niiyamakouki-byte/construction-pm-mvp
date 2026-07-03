@@ -142,9 +142,9 @@ export function generateWarrantyReport(projectId: string, referenceDate = getTod
         .join("")
     : '<tr><td colspan="5">No warranty items registered.</td></tr>';
 
-  const alertList = alerts.length > 0 ? alerts.map((alert) => `<li>${escapeHtml(alert.assetName)} - ${escapeHtml(alert.expiryDate)} (${alert.daysUntilExpiry} days)</li>`).join("") : "<li>No upcoming expiry alerts.</li>";
+  const alertList = alerts.length > 0 ? alerts.map((alert) => `<li>${escapeHtml(alert.assetName)} - ${escapeHtml(alert.expiryDate)} (残${alert.daysUntilExpiry}日)</li>`).join("") : "<li>期限が近い保証はありません。</li>";
 
-  return `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8" /><title>Warranty Report - ${escapeHtml(projectId)}</title></head><body><h1>Warranty Report</h1><p><strong>Project ID:</strong> ${escapeHtml(projectId)}</p><p><strong>Reference Date:</strong> ${escapeHtml(referenceDate)}</p><h2>Expiry Alerts</h2><ul>${alertList}</ul><h2>Registered Warranty Items</h2><table><thead><tr><th>Asset</th><th>Category</th><th>Vendor</th><th>Expiry Date</th><th>Claims</th></tr></thead><tbody>${rows}</tbody></table></body></html>`;
+  return `<!DOCTYPE html><html lang="ja"><head><meta charset="UTF-8" /><title>保証レポート - ${escapeHtml(projectId)}</title></head><body><h1>保証レポート</h1><p><strong>案件ID:</strong> ${escapeHtml(projectId)}</p><p><strong>基準日:</strong> ${escapeHtml(referenceDate)}</p><h2>期限アラート</h2><ul>${alertList}</ul><h2>保証登録一覧</h2><table><thead><tr><th>資産</th><th>カテゴリ</th><th>業者</th><th>期限日</th><th>クレーム</th></tr></thead><tbody>${rows}</tbody></table></body></html>`;
 }
 
 export function clearWarrantyItems(): void {

@@ -59,11 +59,11 @@ export function createProgressReport(
     .join("\n");
 
   return `<!DOCTYPE html>
-<html><head><title>Progress Report - ${project}</title></head>
+<html lang="ja"><head><meta charset="UTF-8" /><title>進捗レポート - ${project}</title></head>
 <body>
-<h1>Progress Report: ${project}</h1>
-<p>Completion: ${pct}% (${completed}/${milestones.length})</p>
-<table><thead><tr><th>Milestone</th><th>Status</th><th>Date</th></tr></thead>
+<h1>進捗レポート: ${project}</h1>
+<p>完了率: ${pct}% (${completed}/${milestones.length})</p>
+<table><thead><tr><th>マイルストーン</th><th>ステータス</th><th>日付</th></tr></thead>
 <tbody>${rows}</tbody></table>
 </body></html>`;
 }
@@ -83,12 +83,12 @@ export function createChangeOrder(
     .join("\n");
 
   return `<!DOCTYPE html>
-<html><head><title>Change Order - ${project}</title></head>
+<html lang="ja"><head><meta charset="UTF-8" /><title>変更指示書 - ${project}</title></head>
 <body>
 <h1>変更指示書: ${project}</h1>
-<table><thead><tr><th>Change</th><th>Cost</th></tr></thead>
+<table><thead><tr><th>変更内容</th><th>金額</th></tr></thead>
 <tbody>${rows}</tbody></table>
-<p><strong>Total Additional Cost: ¥${totalCost.toLocaleString("ja-JP")}</strong></p>
+<p><strong>追加費用合計: ¥${totalCost.toLocaleString("ja-JP")}</strong></p>
 </body></html>`;
 }
 

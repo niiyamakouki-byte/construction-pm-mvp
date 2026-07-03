@@ -45,7 +45,7 @@ describe("payment-tracker", () => {
     recordPayment("proj-1", 100000, "Vendor A", "2026-04-01");
     recordPayment("proj-1", 50000, "Vendor B", "2026-05-01", "pending");
     const html = generatePaymentReport("proj-1");
-    expect(html).toContain("Payment Report");
+    expect(html).toContain("支払レポート");
     expect(html).toContain("proj-1");
     expect(html).toContain("Vendor A");
     expect(html).toContain("<table>");

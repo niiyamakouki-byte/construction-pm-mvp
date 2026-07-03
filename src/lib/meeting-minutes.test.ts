@@ -79,7 +79,7 @@ describe("meeting-minutes", () => {
     const report = generateMinutesReport(meeting.id);
 
     expect(getMeetingMinutes("proj-1")).toHaveLength(1);
-    expect(report).toContain("Meeting Minutes");
+    expect(report).toContain("議事録");
     expect(report).toContain("Ken Sato");
     expect(report).toContain("&lt;A&gt;");
     expect(report).toContain("Issue revised finish schedule");

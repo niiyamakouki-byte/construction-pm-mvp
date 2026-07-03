@@ -31,7 +31,7 @@ describe("document-templates", () => {
         { name: "Foundation", completed: true, date: "2026-01-15" },
         { name: "Framing", completed: false },
       ]);
-      expect(html).toContain("Progress Report");
+      expect(html).toContain("進捗レポート");
       expect(html).toContain("50%");
       expect(html).toContain("Foundation");
     });
