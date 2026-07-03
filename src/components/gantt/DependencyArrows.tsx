@@ -3,11 +3,17 @@ import type { GanttTask } from "./types.js";
 import { daysBetween } from "./utils.js";
 import { gantt } from "../../theme/index.js";
 
+type VisibleRow =
+  | { type: "phase"; group: { projectId: string; tasks: GanttTask[]; collapsed: boolean } }
+  | { type: "task"; task: GanttTask };
+
 type Props = {
   tasks: GanttTask[];
   chartStart: string;
   dayWidth: number;
   totalDays: number;
+  /** P2.5: visibleRows でフェーズ行を考慮した正確な Y 座標計算に使用 */
+  visibleRows?: VisibleRow[];
 };
 
 type ArrowSpec = {
@@ -45,9 +51,42 @@ function ArrowheadMarker({ id, color }: { id: string; color: string }) {
 }
 
 /** SVG overlay that draws dependency arrows between task bars, styled by type. */
-export function DependencyArrows({ tasks, chartStart, dayWidth, totalDays }: Props) {
-  const { rowHeight, headerHeight } = gantt;
-  const taskMap = new Map(tasks.map((t, i) => [t.id, { task: t, index: i }]));
+export function DependencyArrows({ tasks, chartStart, dayWidth, totalDays, visibleRows }: Props) {
+  const { rowHeight, headerHeight, phaseRowHeight } = gantt;
+
+  // P2.5: visibleRows があればフェーズ行を考慮した row index を使用
+  const taskMap = new Map<string, { task: GanttTask; index: number }>();
+  if (visibleRows && visibleRows.length > 0) {
+    let taskRowIndex = 0;
+    for (const row of visibleRows) {
+      if (row.type === "phase") {
+        // phaseRowHeight 分だけ Y オフセットを加算するため専用カウンタは不要
+        // task index の代わりに pixel Y を直接計算する方式に切り替える
+        // → 後段の index 計算を Y ピクセル方式に変える
+      } else {
+        taskMap.set(row.task.id, { task: row.task, index: taskRowIndex });
+        taskRowIndex += 1;
+      }
+    }
+  } else {
+    for (const [i, t] of tasks.entries()) {
+      taskMap.set(t.id, { task: t, index: i });
+    }
+  }
+
+  // P2.5: visibleRows からタスクの Y ピクセル中心を正確に求める
+  const taskYMap = new Map<string, number>();
+  if (visibleRows && visibleRows.length > 0) {
+    let y = headerHeight;
+    for (const row of visibleRows) {
+      if (row.type === "phase") {
+        y += phaseRowHeight;
+      } else {
+        taskYMap.set(row.task.id, y + rowHeight / 2);
+        y += rowHeight;
+      }
+    }
+  }
 
   const arrows: ArrowSpec[] = [];
 
@@ -73,8 +112,9 @@ export function DependencyArrows({ tasks, chartStart, dayWidth, totalDays }: Pro
       const succStart = daysBetween(chartStart, successor.startDate);
       const succEnd = daysBetween(chartStart, successor.endDate);
 
-      const predRowY = headerHeight + predecessorIndex * rowHeight + rowHeight / 2;
-      const succRowY = headerHeight + successorIndex * rowHeight + rowHeight / 2;
+      // P2.5: visibleRows 有りの場合は正確な Y 座標、なければ旧方式
+      const predRowY = taskYMap.get(predecessorId) ?? (headerHeight + predecessorIndex * rowHeight + rowHeight / 2);
+      const succRowY = taskYMap.get(successor.id) ?? (headerHeight + successorIndex * rowHeight + rowHeight / 2);
 
       switch (depType) {
         case "FF":

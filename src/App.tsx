@@ -40,6 +40,7 @@ const ReportsPage = lazy(() => import("./pages/ReportsPage.js").then((m) => ({ d
 const OrderManagementPage = lazy(() => import("./pages/OrderManagementPage.js").then((m) => ({ default: m.OrderManagementPage })));
 const InvoiceManagementPage = lazy(() => import("./pages/InvoiceManagementPage.js").then((m) => ({ default: m.InvoiceManagementPage })));
 const CrossProjectGanttPage = lazy(() => import("./pages/CrossProjectGanttPage.js").then((m) => ({ default: m.CrossProjectGanttPage })));
+const ResourceAnalysisPage = lazy(() => import("./pages/ResourceAnalysisPage.js").then((m) => ({ default: m.ResourceAnalysisPage })));
 const ProgressReviewPage = lazy(() => import("./pages/ProgressReviewPage.js").then((m) => ({ default: m.ProgressReviewPage })));
 const PhotoPage = lazy(() => import("./pages/PhotoPage.js").then((m) => ({ default: m.PhotoPage })));
 const FreeePage = lazy(() => import("./pages/FreeePage.js").then((m) => ({ default: m.FreeePage })));
@@ -686,6 +687,9 @@ function AppShell() {
     }
     if (ganttMatch) {
       return <GanttPage initialProjectId={ganttProjectId} openMaster={ganttOpenMaster} />;
+    }
+    if (route === "/resource-analysis") {
+      return <ResourceAnalysisPage />;
     }
     if (route === "/tasks") {
       return (
