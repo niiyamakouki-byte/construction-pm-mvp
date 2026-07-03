@@ -17,6 +17,8 @@ export type GanttTask = Task & {
 /** A group of tasks under a project/phase heading */
 export type PhaseGroup = {
   projectId: string;
+  /** 工種/フェーズの表示名。折りたたみ・進捗ロールアップのキーとしても使う */
+  phaseName: string;
   projectName: string;
   tasks: GanttTask[];
   collapsed: boolean;

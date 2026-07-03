@@ -15,7 +15,7 @@ import { GanttTaskBar, GanttTaskLabel } from "./GanttTaskBar.js";
 import { DependencyArrows } from "./DependencyArrows.js";
 
 type VisibleRow =
-  | { type: "phase"; group: { projectId: string; projectName: string; tasks: GanttTask[]; collapsed: boolean } }
+  | { type: "phase"; group: { projectId: string; phaseName: string; projectName: string; tasks: GanttTask[]; collapsed: boolean } }
   | { type: "task"; task: GanttTask };
 
 /** バーの接続ハンドルからのドラッグ状態（チャート内座標） */
@@ -221,28 +221,28 @@ export function GanttChart({
 
           {visibleRows.map((row) => {
             if (row.type === "phase") {
-              const progress = phaseProgress?.get(row.group.projectId) ?? 0;
+              const progress = phaseProgress?.get(row.group.phaseName) ?? 0;
               const collapsed = row.group.collapsed;
               return (
                 <div
-                  key={`phase-${row.group.projectId}`}
+                  key={`phase-${row.group.phaseName}`}
                   className="flex items-center gap-2 border-b border-slate-200 bg-slate-100/80 px-3"
                   style={{ height: phaseRowHeight }}
                 >
                   <button
                     type="button"
                     aria-expanded={!collapsed}
-                    aria-label={`${row.group.projectName} ${collapsed ? "展開" : "折りたたむ"}`}
+                    aria-label={`${row.group.phaseName} ${collapsed ? "展開" : "折りたたむ"}`}
                     className="flex h-5 w-5 shrink-0 items-center justify-center rounded text-slate-400 hover:bg-slate-200 hover:text-slate-600 transition-colors"
-                    onClick={() => onTogglePhase(row.group.projectId)}
+                    onClick={() => onTogglePhase(row.group.phaseName)}
                   >
                     <span className="text-[10px] font-bold">{collapsed ? "▶" : "▼"}</span>
                   </button>
                   <div
                     className="min-w-0 flex-1 cursor-pointer"
-                    onClick={() => onTogglePhase(row.group.projectId)}
+                    onClick={() => onTogglePhase(row.group.phaseName)}
                   >
-                    <p className="truncate text-sm font-semibold text-slate-700">{row.group.projectName}</p>
+                    <p className="truncate text-sm font-semibold text-slate-700">{row.group.phaseName}</p>
                     <div className="mt-1 flex items-center gap-2">
                       <div className="h-1.5 flex-1 rounded-full bg-slate-300">
                         <div
@@ -256,7 +256,7 @@ export function GanttChart({
                   </div>
                   <button
                     type="button"
-                    aria-label={`${row.group.projectName}に工程を追加`}
+                    aria-label={`${row.group.phaseName}に工程を追加`}
                     className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white text-brand-600 hover:bg-brand-50 transition-colors text-sm font-bold"
                     onClick={() => onOpenQuickAdd(row.group.projectId, row.group.projectName)}
                   >
@@ -410,10 +410,10 @@ export function GanttChart({
                   phaseBarLeft = startOff * dayWidth;
                   phaseBarWidth = Math.max((endOff - startOff + 1) * dayWidth, dayWidth);
                 }
-                const phaseProgressVal = phaseProgress?.get(row.group.projectId) ?? 0;
+                const phaseProgressVal = phaseProgress?.get(row.group.phaseName) ?? 0;
                 return (
                   <div
-                    key={`phase-chart-${row.group.projectId}`}
+                    key={`phase-chart-${row.group.phaseName}`}
                     className="relative border-b border-slate-200 bg-slate-100/60"
                     style={{ height: phaseRowHeight }}
                   >

@@ -602,14 +602,16 @@ function GanttPageContent({ initialProjectId = null, openMaster = false }: Gantt
     if (phaseGroups.size === 0) {
       return filteredProjectTasks.map((task) => ({ type: "task" as const, task }));
     }
-    const rows: Array<{ type: "task"; task: GanttTask } | { type: "phase"; group: { projectId: string; projectName: string; tasks: GanttTask[]; collapsed: boolean } }> = [];
+    const rows: Array<{ type: "task"; task: GanttTask } | { type: "phase"; group: { projectId: string; phaseName: string; projectName: string; tasks: GanttTask[]; collapsed: boolean } }> = [];
     for (const [key, tasks] of phaseGroups) {
       const collapsed = collapsedPhases.has(key);
       rows.push({
         type: "phase",
         group: {
-          projectId: key, // phaseKey として工種名を使用
-          projectName: key,
+          // P1 fix: 実際の projectId を使用（旧: 工種名を誤って projectId に設定していた）
+          projectId: selectedProjectId ?? "",
+          phaseName: key,                               // 工種名: 折りたたみキー・表示用
+          projectName: selectedProject?.name ?? key,    // 案件名: QuickAdd フォームの表示用
           tasks,
           collapsed,
         },
