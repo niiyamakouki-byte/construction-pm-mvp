@@ -1415,8 +1415,8 @@ export function ProjectDetailPage({
           <h2 className="text-base font-semibold text-slate-800">入退場QRコード</h2>
           <button
             type="button"
-            onClick={() => {
-              const html = generateSiteEntryPrintHtml(
+            onClick={() => void (async () => {
+              const html = await generateSiteEntryPrintHtml(
                 projectId,
                 project.name,
                 "https://app.genbahub.com",
@@ -1424,7 +1424,7 @@ export function ProjectDetailPage({
               const blob = new Blob([html], { type: "text/html" });
               const url = URL.createObjectURL(blob);
               window.open(url, "_blank");
-            }}
+            })()}
             className="inline-flex items-center gap-1.5 rounded-lg bg-slate-800 px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-slate-700 active:bg-slate-900 transition-colors"
           >
             <Printer className="h-3.5 w-3.5" aria-hidden="true" />

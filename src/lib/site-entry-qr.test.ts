@@ -28,45 +28,50 @@ describe("site-entry-qr", () => {
   });
 
   describe("generateSiteEntryQR", () => {
-    it("returns an SVG string", () => {
-      const svg = generateSiteEntryQR("proj-123", "テスト現場");
+    it("returns an SVG string", async () => {
+      const svg = await generateSiteEntryQR("proj-123", "テスト現場");
       expect(svg).toMatch(/^<svg /);
-      expect(svg).toMatch(/<\/svg>$/);
+      expect(svg.trim()).toMatch(/<\/svg>$/);
     });
 
-    it("embeds the entry URL in metadata", () => {
-      const svg = generateSiteEntryQR("proj-123", "テスト現場", "https://example.com");
+    it("embeds the entry URL in metadata", async () => {
+      const svg = await generateSiteEntryQR("proj-123", "テスト現場", "https://example.com");
       expect(svg).toContain("https://example.com/entry/proj-123");
     });
 
-    it("includes the project name in the title", () => {
-      const svg = generateSiteEntryQR("proj-123", "南青山現場");
+    it("includes the project name in the title", async () => {
+      const svg = await generateSiteEntryQR("proj-123", "南青山現場");
       expect(svg).toContain("南青山現場");
     });
 
-    it("throws if projectId is empty", () => {
-      expect(() => generateSiteEntryQR("", "name")).toThrow("projectId is required");
+    it("throws if projectId is empty", async () => {
+      await expect(generateSiteEntryQR("", "name")).rejects.toThrow("projectId is required");
+    });
+
+    it("contains real QR path elements (not placeholder)", async () => {
+      const svg = await generateSiteEntryQR("proj-123", "テスト現場");
+      expect(svg).toMatch(/<path /);
     });
   });
 
   describe("generateSiteEntryPrintHtml", () => {
-    it("returns an HTML string containing the project name", () => {
-      const html = generateSiteEntryPrintHtml("proj-1", "南青山リノベ");
+    it("returns an HTML string containing the project name", async () => {
+      const html = await generateSiteEntryPrintHtml("proj-1", "南青山リノベ");
       expect(html).toContain("南青山リノベ");
     });
 
-    it("includes the entry URL", () => {
-      const html = generateSiteEntryPrintHtml("proj-1", "現場A", "https://app.genbahub.com");
+    it("includes the entry URL", async () => {
+      const html = await generateSiteEntryPrintHtml("proj-1", "現場A", "https://app.genbahub.com");
       expect(html).toContain("https://app.genbahub.com/entry/proj-1");
     });
 
-    it("includes print CSS with A4 page size", () => {
-      const html = generateSiteEntryPrintHtml("proj-1", "現場A");
+    it("includes print CSS with A4 page size", async () => {
+      const html = await generateSiteEntryPrintHtml("proj-1", "現場A");
       expect(html).toContain("A4");
     });
 
-    it("throws if projectId is empty", () => {
-      expect(() => generateSiteEntryPrintHtml("", "name")).toThrow("projectId is required");
+    it("throws if projectId is empty", async () => {
+      await expect(generateSiteEntryPrintHtml("", "name")).rejects.toThrow("projectId is required");
     });
   });
 });

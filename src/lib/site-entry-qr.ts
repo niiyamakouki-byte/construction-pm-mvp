@@ -3,6 +3,8 @@
  * Generates QR codes for site entry pages and A4 print-ready HTML layouts.
  */
 
+import QRCode from "qrcode";
+
 const ENTRY_PATH = "/entry";
 
 /**
@@ -17,45 +19,19 @@ export function generateSiteEntryUrl(projectId: string, baseUrl = ""): string {
  * Generate a QR code SVG string for site entry.
  * Returns a raw SVG string (not a data URL) for embedding in print layouts.
  */
-export function generateSiteEntryQR(
+export async function generateSiteEntryQR(
   projectId: string,
   projectName: string,
   baseUrl = "https://app.genbahub.com",
-): string {
+): Promise<string> {
   if (!projectId) throw new Error("projectId is required");
 
   const url = generateSiteEntryUrl(projectId, baseUrl);
-  const encoded = encodeURIComponent(url);
+  const rawSvg = await QRCode.toString(url, { type: "svg" });
 
-  // SVG-based QR placeholder (same pattern as qr-code.ts)
-  const svg = [
-    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">',
-    '<rect width="200" height="200" fill="white"/>',
-    // top-left finder pattern
-    '<rect x="10" y="10" width="60" height="60" fill="black"/>',
-    '<rect x="20" y="20" width="40" height="40" fill="white"/>',
-    '<rect x="30" y="30" width="20" height="20" fill="black"/>',
-    // top-right finder pattern
-    '<rect x="130" y="10" width="60" height="60" fill="black"/>',
-    '<rect x="140" y="20" width="40" height="40" fill="white"/>',
-    '<rect x="150" y="30" width="20" height="20" fill="black"/>',
-    // bottom-left finder pattern
-    '<rect x="10" y="130" width="60" height="60" fill="black"/>',
-    '<rect x="20" y="140" width="40" height="40" fill="white"/>',
-    '<rect x="30" y="150" width="20" height="20" fill="black"/>',
-    // data modules (simplified pattern)
-    '<rect x="80" y="80" width="10" height="10" fill="black"/>',
-    '<rect x="100" y="80" width="10" height="10" fill="black"/>',
-    '<rect x="120" y="80" width="10" height="10" fill="black"/>',
-    '<rect x="80" y="100" width="10" height="10" fill="black"/>',
-    '<rect x="120" y="100" width="10" height="10" fill="black"/>',
-    '<rect x="80" y="120" width="10" height="10" fill="black"/>',
-    '<rect x="100" y="120" width="10" height="10" fill="black"/>',
-    `<text x="100" y="115" text-anchor="middle" font-size="7" fill="black">${encoded.slice(0, 30)}</text>`,
-    `<metadata>${url}</metadata>`,
-    `<title>${projectName} 入退場QR</title>`,
-    "</svg>",
-  ].join("");
+  // Inject title and metadata for print layout identification
+  const svg = rawSvg
+    .replace("</svg>", `<title>${projectName} 入退場QR</title><metadata>${url}</metadata></svg>`);
 
   return svg;
 }
@@ -64,15 +40,15 @@ export function generateSiteEntryQR(
  * Generate an A4-layout HTML string for printing site entry QR codes.
  * Open this in a new browser tab and use browser print (Ctrl+P / Cmd+P).
  */
-export function generateSiteEntryPrintHtml(
+export async function generateSiteEntryPrintHtml(
   projectId: string,
   projectName: string,
   baseUrl = "https://app.genbahub.com",
-): string {
+): Promise<string> {
   if (!projectId) throw new Error("projectId is required");
 
   const url = generateSiteEntryUrl(projectId, baseUrl);
-  const qrSvg = generateSiteEntryQR(projectId, projectName, baseUrl);
+  const qrSvg = await generateSiteEntryQR(projectId, projectName, baseUrl);
 
   return `<!DOCTYPE html>
 <html lang="ja">

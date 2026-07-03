@@ -14,6 +14,10 @@ export type SiteEntryRecord = {
   company: string;
   entryTime: string;
   exitTime?: string;
+  jobType?: string;
+  startPhotoId?: string;
+  endPhotoId?: string;
+  taskId?: string;
 };
 
 type SiteEntryRow = {
@@ -23,6 +27,10 @@ type SiteEntryRow = {
   company: string;
   entry_time: string;
   exit_time: string | null;
+  job_type: string | null;
+  start_photo_id: string | null;
+  end_photo_id: string | null;
+  task_id: string | null;
 };
 
 function rowToRecord(row: SiteEntryRow): SiteEntryRecord {
@@ -34,6 +42,10 @@ function rowToRecord(row: SiteEntryRow): SiteEntryRecord {
     entryTime: row.entry_time,
   };
   if (row.exit_time) r.exitTime = row.exit_time;
+  if (row.job_type) r.jobType = row.job_type;
+  if (row.start_photo_id) r.startPhotoId = row.start_photo_id;
+  if (row.end_photo_id) r.endPhotoId = row.end_photo_id;
+  if (row.task_id) r.taskId = row.task_id;
   return r;
 }
 
@@ -45,6 +57,10 @@ function recordToRow(r: SiteEntryRecord): SiteEntryRow {
     company: r.company,
     entry_time: r.entryTime,
     exit_time: r.exitTime ?? null,
+    job_type: r.jobType ?? null,
+    start_photo_id: r.startPhotoId ?? null,
+    end_photo_id: r.endPhotoId ?? null,
+    task_id: r.taskId ?? null,
   };
 }
 

@@ -75,4 +75,29 @@ describe('SiteEntryRepository async (InMemory mode)', () => {
     expect(await repo.deleteAsync('entry-1')).toBe(true);
     expect(await repo.deleteAsync('entry-1')).toBe(false);
   });
+
+  it('新フィールド jobType / startPhotoId / endPhotoId / taskId の往復', async () => {
+    await repo.saveAsync(
+      makeRecord({
+        jobType: '電気',
+        startPhotoId: 'photo-start-1',
+        endPhotoId: 'photo-end-1',
+        taskId: 'task-1',
+      }),
+    );
+    const found = await repo.getAsync('entry-1');
+    expect(found?.jobType).toBe('電気');
+    expect(found?.startPhotoId).toBe('photo-start-1');
+    expect(found?.endPhotoId).toBe('photo-end-1');
+    expect(found?.taskId).toBe('task-1');
+  });
+
+  it('新フィールドが undefined の場合は省略される', async () => {
+    await repo.saveAsync(makeRecord());
+    const found = await repo.getAsync('entry-1');
+    expect(found?.jobType).toBeUndefined();
+    expect(found?.startPhotoId).toBeUndefined();
+    expect(found?.endPhotoId).toBeUndefined();
+    expect(found?.taskId).toBeUndefined();
+  });
 });
