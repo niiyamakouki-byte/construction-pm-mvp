@@ -229,7 +229,7 @@ export function EstimateAssistantPage() {
         )}
 
         <div className="px-4 py-3 border-t border-stone-200 text-[11px] text-slate-400">
-          📍 世田谷区標準価格。現地調査後に±20%変動します。
+          現地調査後に±20%変動します。
         </div>
       </div>
     </div>

@@ -250,9 +250,7 @@ describe("EstimatePage", () => {
     // 概算注記が表示される
     const disclaimer = screen.getByTestId("estimate-disclaimer");
     expect(disclaimer).toBeDefined();
-    expect(disclaimer.textContent).toContain("世田谷区標準価格");
     expect(disclaimer.textContent).toContain("±20%");
-    expect(disclaimer.textContent).toContain("03-6876-7749");
   });
 
   it("案件を選ぶセレクトで案件を選択すると物件名が自動入力される", async () => {

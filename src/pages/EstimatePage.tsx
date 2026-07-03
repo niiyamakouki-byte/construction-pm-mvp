@@ -917,8 +917,7 @@ function EstimatePageContent() {
             data-testid="estimate-disclaimer"
           >
             <p className="font-semibold">概算見積についての注記</p>
-            <p>本見積は世田谷区標準価格をもとに算出した概算です。現地調査の結果により実際の金額は±20%程度変動する場合があります。</p>
-            <p>詳細見積・現地調査のご依頼は <span className="font-semibold">03-6876-7749</span> までお問い合わせください。</p>
+            <p>本見積は概算です。現地調査の結果により実際の金額は±20%程度変動する場合があります。</p>
           </div>
         </div>
       </div>
