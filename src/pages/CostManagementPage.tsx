@@ -720,7 +720,7 @@ export function CostManagementPage() {
     return (
       <EmptyState
         icon={<TrendingUp size={22} strokeWidth={1.75} />}
-        title="案件を登録してコスト管理を始める"
+        title="案件を登録して原価集計を始める"
         description="案件を作成すると、見積・予算・実費をこの画面でまとめて追跡できます。"
         actionLabel="案件を登録する"
         onAction={() => navigate("/app")}
@@ -733,8 +733,8 @@ export function CostManagementPage() {
       <section className="rounded-[28px] bg-[linear-gradient(145deg,#f8fbff_0%,#fffaf2_55%,#f3f9f7_100%)] px-4 py-5 shadow-sm ring-1 ring-slate-200 sm:px-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p className="text-[11px] font-semibold tracking-[0.2em] text-slate-500">コスト</p>
-            <h1 className="mt-1 text-2xl font-bold text-slate-900">コスト管理</h1>
+            <p className="text-[11px] font-semibold tracking-[0.2em] text-slate-500">原価集計</p>
+            <h1 className="mt-1 text-2xl font-bold text-slate-900">原価集計</h1>
             <p className="mt-2 text-sm text-slate-500">案件ごとの予算、支払状況、カテゴリ別コストを一覧で確認できます。</p>
           </div>
           <div className="flex flex-col gap-3 sm:w-auto sm:items-end">
@@ -761,7 +761,7 @@ export function CostManagementPage() {
                 onClick={() => setActiveTab("cost")}
                 className={`rounded-xl px-4 py-1.5 transition-colors ${activeTab === "cost" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700"}`}
               >
-                コスト管理
+                原価集計
               </button>
               <button
                 type="button"
