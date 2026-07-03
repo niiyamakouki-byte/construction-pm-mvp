@@ -23,7 +23,7 @@ export function createInvoiceTemplate(
   const rows = items
     .map(
       (i) =>
-        `<tr><td>${i.description}</td><td>${i.quantity}</td><td>¥${i.unitPrice.toLocaleString()}</td><td>¥${(i.quantity * i.unitPrice).toLocaleString()}</td></tr>`,
+        `<tr><td>${i.description}</td><td>${i.quantity}</td><td>¥${i.unitPrice.toLocaleString("ja-JP")}</td><td>¥${(i.quantity * i.unitPrice).toLocaleString("ja-JP")}</td></tr>`,
     )
     .join("\n");
   const total = items.reduce((s, i) => s + i.quantity * i.unitPrice, 0);
@@ -35,7 +35,7 @@ export function createInvoiceTemplate(
 <p>Project: ${project} | Vendor: ${vendor}</p>
 <table><thead><tr><th>Description</th><th>Qty</th><th>Unit Price</th><th>Total</th></tr></thead>
 <tbody>${rows}</tbody></table>
-<p><strong>Total: ¥${total.toLocaleString()}</strong></p>
+<p><strong>Total: ¥${total.toLocaleString("ja-JP")}</strong></p>
 </body></html>`;
 }
 
@@ -79,7 +79,7 @@ export function createChangeOrder(
   totalCost: number,
 ): string {
   const rows = changes
-    .map((c) => `<tr><td>${c.description}</td><td>¥${c.cost.toLocaleString()}</td></tr>`)
+    .map((c) => `<tr><td>${c.description}</td><td>¥${c.cost.toLocaleString("ja-JP")}</td></tr>`)
     .join("\n");
 
   return `<!DOCTYPE html>
@@ -88,7 +88,7 @@ export function createChangeOrder(
 <h1>変更指示書: ${project}</h1>
 <table><thead><tr><th>Change</th><th>Cost</th></tr></thead>
 <tbody>${rows}</tbody></table>
-<p><strong>Total Additional Cost: ¥${totalCost.toLocaleString()}</strong></p>
+<p><strong>Total Additional Cost: ¥${totalCost.toLocaleString("ja-JP")}</strong></p>
 </body></html>`;
 }
 

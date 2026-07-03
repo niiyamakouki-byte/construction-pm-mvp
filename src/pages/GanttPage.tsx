@@ -2057,7 +2057,7 @@ function GanttPageContent({ initialProjectId = null, openMaster = false }: Gantt
                   <div className="flex items-center justify-between gap-3">
                     <span>累計コスト影響</span>
                     <span className="font-semibold tabular-nums text-slate-900">
-                      ¥{changeLog.at(-1)?.cumulativeCostDelta.toLocaleString()}
+                      ¥{changeLog.at(-1)?.cumulativeCostDelta.toLocaleString("ja-JP")}
                     </span>
                   </div>
                   <div className="flex items-center justify-between gap-3">

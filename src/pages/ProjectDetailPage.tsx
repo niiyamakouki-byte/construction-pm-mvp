@@ -792,7 +792,7 @@ export function ProjectDetailPage({
         </div>
         <div className="rounded-xl bg-white p-4 shadow-sm border border-slate-100 text-center">
           <p className="text-lg font-bold text-slate-900 tabular-nums">
-            {totalCost > 0 ? `¥${totalCost.toLocaleString()}` : "-"}
+            {totalCost > 0 ? `¥${totalCost.toLocaleString("ja-JP")}` : "-"}
           </p>
           <p className="mt-2 text-[10px] font-semibold text-slate-500 uppercase tracking-wider">
             コスト合計
@@ -823,8 +823,8 @@ export function ProjectDetailPage({
                 />
               </div>
               <div className="flex justify-between mt-1 text-xs text-slate-400 tabular-nums">
-                <span>支出: ¥{totalExpenses.toLocaleString()}</span>
-                <span>予算: ¥{budget.toLocaleString()}</span>
+                <span>支出: ¥{totalExpenses.toLocaleString("ja-JP")}</span>
+                <span>予算: ¥{budget.toLocaleString("ja-JP")}</span>
               </div>
             </div>
 
@@ -867,7 +867,7 @@ export function ProjectDetailPage({
         ) : (
           <p className="text-xs text-slate-400">
             プロジェクトに予算を設定するとキャッシュフローが表示されます。
-            {totalExpenses > 0 && ` 現在の支出: ¥${totalExpenses.toLocaleString()}`}
+            {totalExpenses > 0 && ` 現在の支出: ¥${totalExpenses.toLocaleString("ja-JP")}`}
           </p>
         )}
       </section>

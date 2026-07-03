@@ -235,7 +235,7 @@ export function recommendScenario(
       return {
         grade,
         scenario,
-        reason: `予算${budget.toLocaleString()}円以内：${GRADE_LABELS[grade]}を推薦`,
+        reason: `予算${budget.toLocaleString("ja-JP")}円以内：${GRADE_LABELS[grade]}を推薦`,
       };
     }
   }
@@ -273,7 +273,7 @@ export function buildComparisonTableHtml(result: MultiScenarioResult): string {
         .map((g) => {
           const val = cmp[g];
           if (!val) return `<td style="padding:8px;text-align:right;color:#999">—</td>`;
-          return `<td style="padding:8px;text-align:right">${val.amount.toLocaleString()}円<br><small>${val.unitPrice.toLocaleString()}円/単位</small></td>`;
+          return `<td style="padding:8px;text-align:right">${val.amount.toLocaleString("ja-JP")}円<br><small>${val.unitPrice.toLocaleString("ja-JP")}円/単位</small></td>`;
         })
         .join("");
       return `<tr><td style="padding:8px">${escapeHtml(cmp.itemName)}</td>${cells}</tr>`;
@@ -284,7 +284,7 @@ export function buildComparisonTableHtml(result: MultiScenarioResult): string {
     .map((g) => {
       const scenario = scenarios.find((s) => s.grade === g);
       if (!scenario) return `<td style="padding:8px;text-align:right">—</td>`;
-      return `<td style="padding:8px;text-align:right;font-weight:bold">${scenario.totalWithTax.toLocaleString()}円<br><small>（税込）</small></td>`;
+      return `<td style="padding:8px;text-align:right;font-weight:bold">${scenario.totalWithTax.toLocaleString("ja-JP")}円<br><small>（税込）</small></td>`;
     })
     .join("");
 
@@ -320,9 +320,9 @@ export function buildScenarioDetailHtml(scenario: Scenario): string {
         `<tr>
       <td style="padding:6px">${escapeHtml(item.name)}</td>
       <td style="padding:6px;text-align:center">${escapeHtml(item.unit)}</td>
-      <td style="padding:6px;text-align:right">${item.quantity.toLocaleString()}</td>
-      <td style="padding:6px;text-align:right">${item.unitPrice.toLocaleString()}円</td>
-      <td style="padding:6px;text-align:right">${item.amount.toLocaleString()}円</td>
+      <td style="padding:6px;text-align:right">${item.quantity.toLocaleString("ja-JP")}</td>
+      <td style="padding:6px;text-align:right">${item.unitPrice.toLocaleString("ja-JP")}円</td>
+      <td style="padding:6px;text-align:right">${item.amount.toLocaleString("ja-JP")}円</td>
       <td style="padding:6px">${escapeHtml(item.note ?? "")}</td>
     </tr>`,
     )
@@ -352,10 +352,10 @@ ${scenario.description ? `<p>${escapeHtml(scenario.description)}</p>` : ""}
 ${itemRows}
   </tbody>
   <tfoot>
-    <tr><td colspan="4" style="padding:6px;text-align:right;font-weight:bold">小計</td><td style="padding:6px;text-align:right">${scenario.subtotal.toLocaleString()}円</td><td></td></tr>
-    <tr><td colspan="4" style="padding:6px;text-align:right">諸経費</td><td style="padding:6px;text-align:right">${scenario.overhead.toLocaleString()}円</td><td></td></tr>
-    <tr><td colspan="4" style="padding:6px;text-align:right;font-weight:bold">合計（税抜）</td><td style="padding:6px;text-align:right">${scenario.total.toLocaleString()}円</td><td></td></tr>
-    <tr style="background:#f5f5f5"><td colspan="4" style="padding:6px;text-align:right;font-weight:bold">税込合計</td><td style="padding:6px;text-align:right;font-weight:bold">${scenario.totalWithTax.toLocaleString()}円</td><td></td></tr>
+    <tr><td colspan="4" style="padding:6px;text-align:right;font-weight:bold">小計</td><td style="padding:6px;text-align:right">${scenario.subtotal.toLocaleString("ja-JP")}円</td><td></td></tr>
+    <tr><td colspan="4" style="padding:6px;text-align:right">諸経費</td><td style="padding:6px;text-align:right">${scenario.overhead.toLocaleString("ja-JP")}円</td><td></td></tr>
+    <tr><td colspan="4" style="padding:6px;text-align:right;font-weight:bold">合計（税抜）</td><td style="padding:6px;text-align:right">${scenario.total.toLocaleString("ja-JP")}円</td><td></td></tr>
+    <tr style="background:#f5f5f5"><td colspan="4" style="padding:6px;text-align:right;font-weight:bold">税込合計</td><td style="padding:6px;text-align:right;font-weight:bold">${scenario.totalWithTax.toLocaleString("ja-JP")}円</td><td></td></tr>
   </tfoot>
 </table>
 </body>

@@ -147,9 +147,9 @@ function MaterialCard({
       {/* 単価 */}
       <p className="mt-2 text-sm font-bold text-slate-800">
         {selectedOpt
-          ? `¥${selectedOpt.unitPrice.toLocaleString()}`
+          ? `¥${selectedOpt.unitPrice.toLocaleString("ja-JP")}`
           : item.options[0]
-          ? `¥${item.options[0].unitPrice.toLocaleString()}〜`
+          ? `¥${item.options[0].unitPrice.toLocaleString("ja-JP")}〜`
           : "—"}
         <span className="ml-1 text-xs font-normal text-slate-400">/㎡</span>
       </p>
@@ -353,7 +353,7 @@ export function SelectionBoardPage({ projectId }: { projectId: string }) {
             data-testid="approved-total"
             className="font-bold text-slate-800"
           >
-            ¥{approvedTotal.toLocaleString()}
+            ¥{approvedTotal.toLocaleString("ja-JP")}
           </span>
         </div>
       </footer>

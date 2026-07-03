@@ -67,7 +67,7 @@ export function generatePaymentReport(projectId: string): string {
   const rows = list
     .map(
       (p) =>
-        `<tr><td>${p.date}</td><td>${p.vendor}</td><td>¥${p.amount.toLocaleString()}</td><td>${p.status}</td></tr>`,
+        `<tr><td>${p.date}</td><td>${p.vendor}</td><td>¥${p.amount.toLocaleString("ja-JP")}</td><td>${p.status}</td></tr>`,
     )
     .join("\n");
 
@@ -75,7 +75,7 @@ export function generatePaymentReport(projectId: string): string {
 <html><head><title>Payment Report - ${projectId}</title></head>
 <body>
 <h1>Payment Report: ${projectId}</h1>
-<p>Total: ¥${total.toLocaleString()} | Paid: ¥${paid.toLocaleString()} | Outstanding: ¥${outstanding.toLocaleString()}</p>
+<p>Total: ¥${total.toLocaleString("ja-JP")} | Paid: ¥${paid.toLocaleString("ja-JP")} | Outstanding: ¥${outstanding.toLocaleString("ja-JP")}</p>
 <table><thead><tr><th>Date</th><th>Vendor</th><th>Amount</th><th>Status</th></tr></thead>
 <tbody>${rows}</tbody></table>
 </body></html>`;

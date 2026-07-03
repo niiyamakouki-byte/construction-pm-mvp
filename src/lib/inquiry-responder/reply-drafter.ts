@@ -47,7 +47,7 @@ function formatJpy(yen: number): string {
   if (yen >= 10_000) {
     return `${Math.round(yen / 10_000)}万円`;
   }
-  return `${yen.toLocaleString()}円`;
+  return `${yen.toLocaleString("ja-JP")}円`;
 }
 
 function formatSlot(slot: MeetingSlotProposal, index: number): string {

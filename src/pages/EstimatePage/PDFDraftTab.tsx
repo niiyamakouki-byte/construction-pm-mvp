@@ -405,11 +405,11 @@ export function PDFDraftTab({ costMaster, onSave }: Props) {
                           aria-label={`${line.name} 単価`}
                         />
                       ) : (
-                        `¥${line.unitPrice.toLocaleString()}`
+                        `¥${line.unitPrice.toLocaleString("ja-JP")}`
                       )}
                     </td>
                     <td className="py-1.5 px-2 text-right tabular-nums font-semibold">
-                      ¥{line.amount.toLocaleString()}
+                      ¥{line.amount.toLocaleString("ja-JP")}
                     </td>
                     <td className="py-1.5 px-2 text-center">
                       <span
@@ -438,17 +438,17 @@ export function PDFDraftTab({ costMaster, onSave }: Props) {
           <div className="flex justify-between text-slate-600">
             <span>小計（税抜）</span>
             <span className="tabular-nums font-semibold" data-testid="total-excl-tax">
-              ¥{effectiveTotal.toLocaleString()}
+              ¥{effectiveTotal.toLocaleString("ja-JP")}
             </span>
           </div>
           <div className="flex justify-between text-slate-500">
             <span>消費税（10%）</span>
-            <span className="tabular-nums">¥{effectiveTax.toLocaleString()}</span>
+            <span className="tabular-nums">¥{effectiveTax.toLocaleString("ja-JP")}</span>
           </div>
           <div className="flex justify-between pt-1.5 border-t border-slate-200 font-bold text-slate-900">
             <span>合計（税込）</span>
             <span className="tabular-nums text-brand-700" data-testid="total-incl-tax">
-              ¥{(effectiveTotal + effectiveTax).toLocaleString()}
+              ¥{(effectiveTotal + effectiveTax).toLocaleString("ja-JP")}
             </span>
           </div>
         </div>

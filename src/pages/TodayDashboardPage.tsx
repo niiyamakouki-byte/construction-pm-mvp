@@ -1449,7 +1449,7 @@ function TodayDashboardPageContent() {
                   </div>
                   <p className="mt-1 text-xs text-slate-400 tabular-nums">
                     {p.doneCount}/{p.taskCount} タスク完了
-                    {p.budget ? ` · 予算 ¥${p.budget.toLocaleString()}` : ""}
+                    {p.budget ? ` · 予算 ¥${p.budget.toLocaleString("ja-JP")}` : ""}
                   </p>
                 </li>
               ))}

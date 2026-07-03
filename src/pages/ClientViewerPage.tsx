@@ -204,7 +204,7 @@ function ChangeOrderSection({ projectId }: { projectId: string }) {
             <p className="mb-1 text-sm font-medium text-slate-800">{req.description}</p>
             <p className="mb-2 text-xs text-slate-500">{req.impactDescription}</p>
             <p className="mb-3 text-sm font-semibold text-amber-700">
-              追加費用: ¥{req.costDifference.toLocaleString()}
+              追加費用: ¥{req.costDifference.toLocaleString("ja-JP")}
             </p>
             <div className="flex gap-2">
               <button

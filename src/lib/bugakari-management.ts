@@ -256,9 +256,9 @@ export function buildBugakariReportHtml(
           <td style="text-align:right">${r.plannedManDays.toFixed(1)}</td>
           <td style="text-align:right">${r.actualManDays !== null ? r.actualManDays.toFixed(1) : "—"}</td>
           <td style="text-align:right;font-weight:700;color:${varColor}">${varCell}</td>
-          <td style="text-align:right">¥${r.unitPrice.toLocaleString()}</td>
-          <td style="text-align:right">¥${r.plannedCost.toLocaleString()}</td>
-          <td style="text-align:right">${r.actualCost !== null ? "¥" + r.actualCost.toLocaleString() : "—"}</td>
+          <td style="text-align:right">¥${r.unitPrice.toLocaleString("ja-JP")}</td>
+          <td style="text-align:right">¥${r.plannedCost.toLocaleString("ja-JP")}</td>
+          <td style="text-align:right">${r.actualCost !== null ? "¥" + r.actualCost.toLocaleString("ja-JP") : "—"}</td>
           <td>${escapeHtml(r.workers.join(", "))}</td>
         </tr>`;
       })
@@ -313,8 +313,8 @@ export function buildBugakariReportHtml(
     <div class="meta-item"><span class="label">現場名: </span><span class="value">${escapeHtml(projectName)}</span></div>
     <div class="meta-item"><span class="label">計画人工合計: </span><span class="value">${summary.totalPlannedManDays.toFixed(1)}人工</span></div>
     <div class="meta-item"><span class="label">実績人工合計: </span><span class="value">${summary.totalActualManDays.toFixed(1)}人工</span></div>
-    <div class="meta-item"><span class="label">計画原価合計: </span><span class="value">¥${summary.totalPlannedCost.toLocaleString()}</span></div>
-    <div class="meta-item"><span class="label">実績原価合計: </span><span class="value">¥${summary.totalActualCost.toLocaleString()}</span></div>
+    <div class="meta-item"><span class="label">計画原価合計: </span><span class="value">¥${summary.totalPlannedCost.toLocaleString("ja-JP")}</span></div>
+    <div class="meta-item"><span class="label">実績原価合計: </span><span class="value">¥${summary.totalActualCost.toLocaleString("ja-JP")}</span></div>
     <div class="meta-item"><span class="label">差異率: </span><span class="value">${summary.overallVarianceRate >= 0 ? "+" : ""}${summary.overallVarianceRate}%</span></div>
     <div class="meta-item"><span class="label">出力日: </span><span class="value">${generatedAt}</span></div>
   </div>

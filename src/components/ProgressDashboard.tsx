@@ -109,7 +109,7 @@ export function ProgressDashboard({
           <div
             className="mt-4 h-3 overflow-hidden rounded-full bg-slate-200"
             role="progressbar"
-            aria-label="Overall project progress"
+            aria-label="全体進捗"
             aria-valuemin={0}
             aria-valuemax={100}
             aria-valuenow={Math.round(overallProgress)}

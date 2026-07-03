@@ -18,8 +18,8 @@
       "name": "解体・撤去",
       "prefix": "DM",
       "items": [
-        { "item_id": "DM-001", "name": "内装解体（木造）", "unit": "㎡", "unit_price": 3500, "price_range_low": 2500, "price_range_high": 5000, "subcategory": "解体", "notes": "壁・天井・床の撤去。築年数・仕上げ材により変動" },
-        { "item_id": "DM-002", "name": "内装解体（RC造）", "unit": "㎡", "unit_price": 4500, "price_range_low": 3500, "price_range_high": 6500, "subcategory": "解体", "notes": "コンクリート壁含む。はつり作業が必要な場合は割増" },
+        { "item_id": "DM-001", "name": "内装解体（木造）", "unit": "㎡", "unit_price": 4000, "price_range_low": 3000, "price_range_high": 5500, "subcategory": "解体", "notes": "壁・天井・床の撤去。築年数・仕上げ材により変動" },
+        { "item_id": "DM-002", "name": "内装解体（RC造）", "unit": "㎡", "unit_price": 5000, "price_range_low": 4000, "price_range_high": 7000, "subcategory": "解体", "notes": "コンクリート壁含む。はつり作業が必要な場合は割増" },
         { "item_id": "DM-003", "name": "間仕切り撤去（LGS）", "unit": "㎡", "unit_price": 2800, "price_range_low": 2000, "price_range_high": 3500, "subcategory": "撤去", "notes": "ボード+スタッド。配線・配管の有無で変動" },
         { "item_id": "DM-004", "name": "間仕切り撤去（木造）", "unit": "㎡", "unit_price": 2200, "price_range_low": 1500, "price_range_high": 3000, "subcategory": "撤去", "notes": "" },
         { "item_id": "DM-005", "name": "床材撤去（タイルカーペット）", "unit": "㎡", "unit_price": 800, "price_range_low": 500, "price_range_high": 1200, "subcategory": "撤去", "notes": "接着剤の種類により剥がし難易度変動" },
@@ -63,8 +63,7 @@
         { "item_id": "IN-021", "name": "漆喰塗り", "unit": "㎡", "unit_price": 6000, "price_range_low": 4500, "price_range_high": 8000, "subcategory": "壁仕上げ", "notes": "材工共。パターン仕上げ" },
         { "item_id": "IN-022", "name": "珪藻土塗り", "unit": "㎡", "unit_price": 5500, "price_range_low": 4000, "price_range_high": 7500, "subcategory": "壁仕上げ", "notes": "材工共。調湿効果あり" },
         { "item_id": "IN-023", "name": "OAフロア（置敷）", "unit": "㎡", "unit_price": 8000, "price_range_low": 6000, "price_range_high": 12000, "subcategory": "床", "notes": "H=50-100mm。支柱調整式" },
-        { "item_id": "IN-024", "name": "廻り縁", "unit": "m", "unit_price": 1200, "price_range_low": 800, "price_range_high": 2000, "subcategory": "天井", "notes": "木製・樹脂製" },
-        { "item_id": "IN-025", "name": "木質パネル（腰壁）", "unit": "㎡", "unit_price": 12000, "price_range_low": 8000, "price_range_high": 20000, "subcategory": "壁仕上げ", "notes": "突板貼り。見付け框込み" }
+        { "item_id": "IN-024", "name": "廻り縁", "unit": "m", "unit_price": 1200, "price_range_low": 800, "price_range_high": 2000, "subcategory": "天井", "notes": "木製・樹脂製" }
       ]
     },
     {
@@ -106,7 +105,7 @@
       "items": [
         { "item_id": "PL-001", "name": "給水管配管（架橋ポリ）", "unit": "m", "unit_price": 6000, "price_range_low": 4000, "price_range_high": 8000, "subcategory": "給水", "notes": "13A。ヘッダー方式" },
         { "item_id": "PL-002", "name": "排水管配管（VP）", "unit": "m", "unit_price": 8000, "price_range_low": 5000, "price_range_high": 12000, "subcategory": "排水", "notes": "50A。勾配確保必須" },
-        { "item_id": "PL-003", "name": "洋式便器（一般）", "unit": "台", "unit_price": 150000, "price_range_low": 100000, "price_range_high": 200000, "subcategory": "衛生器具", "notes": "ウォシュレット付き。TOTO/LIXIL標準" },
+        { "item_id": "PL-003", "name": "洋式便器（一般）", "unit": "台", "unit_price": 180000, "price_range_low": 130000, "price_range_high": 250000, "subcategory": "衛生器具", "notes": "新品材工共。ウォシュレット付き。TOTO/LIXIL標準" },
         { "item_id": "PL-004", "name": "洋式便器（タンクレス）", "unit": "台", "unit_price": 280000, "price_range_low": 200000, "price_range_high": 400000, "subcategory": "衛生器具", "notes": "TOTO NJ/LIXIL サティス等" },
         { "item_id": "PL-005", "name": "洗面化粧台（W750）", "unit": "台", "unit_price": 120000, "price_range_low": 80000, "price_range_high": 180000, "subcategory": "衛生器具", "notes": "材工共。三面鏡・シャワー水栓" },
         { "item_id": "PL-006", "name": "洗面化粧台（W900）", "unit": "台", "unit_price": 180000, "price_range_low": 130000, "price_range_high": 280000, "subcategory": "衛生器具", "notes": "材工共。上位グレード" },
@@ -261,7 +260,9 @@
         { "item_id": "RN-027", "name": "コンクリート補修（欠損部）", "unit": "箇所", "unit_price": 15000, "price_range_low": 8000, "price_range_high": 30000, "subcategory": "構造", "notes": "ポリマーセメントモルタル充填" },
         { "item_id": "RN-028", "name": "フルリノベーション（マンション）", "unit": "㎡", "unit_price": 150000, "price_range_low": 100000, "price_range_high": 250000, "subcategory": "パッケージ", "notes": "スケルトンからの全面改修。設備含む" },
         { "item_id": "RN-029", "name": "フルリノベーション（戸建）", "unit": "㎡", "unit_price": 180000, "price_range_low": 120000, "price_range_high": 300000, "subcategory": "パッケージ", "notes": "構造体残しの全面改修。外装含む" },
-        { "item_id": "RN-030", "name": "バリアフリー改修（手すり設置）", "unit": "m", "unit_price": 8000, "price_range_low": 5000, "price_range_high": 12000, "subcategory": "バリアフリー", "notes": "木製/SUS。下地補強込み。介護保険補助対象" }
+        { "item_id": "RN-030", "name": "バリアフリー改修（手すり設置）", "unit": "m", "unit_price": 8000, "price_range_low": 5000, "price_range_high": 12000, "subcategory": "バリアフリー", "notes": "木製/SUS。下地補強込み。介護保険補助対象" },
+        { "item_id": "RN-031", "name": "鉄部ケレン・研磨下地調整", "unit": "㎡", "unit_price": 3200, "price_range_low": 2200, "price_range_high": 4500, "subcategory": "塗装下地", "notes": "3種ケレン相当。脆弱塗膜除去・目荒らしを丁寧施工" },
+        { "item_id": "RN-032", "name": "鉄部錆止め下塗り", "unit": "㎡", "unit_price": 1800, "price_range_low": 1200, "price_range_high": 2800, "subcategory": "塗装下地", "notes": "エポキシ系錆止め1回。鉄部・鋼製下地向け" }
       ]
     },
     {

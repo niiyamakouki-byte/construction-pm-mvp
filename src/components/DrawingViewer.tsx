@@ -1792,7 +1792,7 @@ function PickupSidebar({
             <p className="text-xs font-semibold text-slate-700">数量集計</p>
             {totalCost > 0 && (
               <p className="text-xs font-bold text-emerald-700">
-                合計 ¥{totalCost.toLocaleString()}
+                合計 ¥{totalCost.toLocaleString("ja-JP")}
               </p>
             )}
           </div>
@@ -1829,7 +1829,7 @@ function PickupSidebar({
                     </span>
                     {row.totalCost > 0 && (
                       <span className="text-[10px] text-emerald-600 font-semibold">
-                        ¥{row.totalCost.toLocaleString()}
+                        ¥{row.totalCost.toLocaleString("ja-JP")}
                       </span>
                     )}
                   </div>
@@ -1895,8 +1895,8 @@ function PickupSidebar({
                           >
                             <span className="truncate">{s.name}</span>
                             <span className="ml-2 shrink-0">
-                              ¥{s.unitPrice.toLocaleString()}/{s.unit} →
-                              ¥{s.amount.toLocaleString()}
+                              ¥{s.unitPrice.toLocaleString("ja-JP")}/{s.unit} →
+                              ¥{s.amount.toLocaleString("ja-JP")}
                             </span>
                           </button>
                         ))}

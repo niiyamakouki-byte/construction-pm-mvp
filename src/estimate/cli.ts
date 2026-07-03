@@ -47,7 +47,7 @@ if (args.includes("--list")) {
     const items = listItemsByCategory(catId);
     console.log(`\n■ ${catId} の品目一覧:\n`);
     for (const item of items) {
-      console.log(`  ${item.code}  ${item.name.padEnd(24)} ${item.unit.padEnd(4)} ¥${item.unitPrice.toLocaleString()}`);
+      console.log(`  ${item.code}  ${item.name.padEnd(24)} ${item.unit.padEnd(4)} ¥${item.unitPrice.toLocaleString("ja-JP")}`);
     }
   } else {
     const cats = listCategories();
@@ -58,7 +58,7 @@ if (args.includes("--list")) {
     console.log("\n■ 全品目一覧:\n");
     const items = listAllItems();
     for (const item of items) {
-      console.log(`  ${item.code}  ${item.name.padEnd(24)} ${item.unit.padEnd(4)} ¥${item.unitPrice.toLocaleString()}  [${item.categoryName}]`);
+      console.log(`  ${item.code}  ${item.name.padEnd(24)} ${item.unit.padEnd(4)} ¥${item.unitPrice.toLocaleString("ja-JP")}  [${item.categoryName}]`);
     }
   }
   process.exit(0);

@@ -264,12 +264,12 @@ function ComparisonTab() {
                             isBest ? "text-emerald-700 bg-emerald-50" : "text-slate-600"
                           }`}
                         >
-                          {priceEntry ? `¥${priceEntry.unitPrice.toLocaleString()}` : "—"}
+                          {priceEntry ? `¥${priceEntry.unitPrice.toLocaleString("ja-JP")}` : "—"}
                         </td>
                       );
                     })}
                     <td className="py-2 px-3 text-right tabular-nums text-slate-400">
-                      ¥{ic.avgUnitPrice.toLocaleString()}
+                      ¥{ic.avgUnitPrice.toLocaleString("ja-JP")}
                     </td>
                   </tr>
                 ))}
@@ -286,7 +286,7 @@ function ComparisonTab() {
                           isBest ? "text-emerald-700" : "text-slate-700"
                         }`}
                       >
-                        ¥{tc.totalAmount.toLocaleString()}
+                        ¥{tc.totalAmount.toLocaleString("ja-JP")}
                       </td>
                     );
                   })}
@@ -319,10 +319,10 @@ function ComparisonTab() {
                   <tr key={sel.itemName} className="border-b border-emerald-100">
                     <td className="py-1.5 text-slate-700 font-medium">{sel.itemName}</td>
                     <td className="py-1.5 text-emerald-700 font-semibold">{sel.bestContractorName}</td>
-                    <td className="py-1.5 text-right tabular-nums">¥{sel.unitPrice.toLocaleString()}</td>
+                    <td className="py-1.5 text-right tabular-nums">¥{sel.unitPrice.toLocaleString("ja-JP")}</td>
                     <td className="py-1.5 text-right tabular-nums">{sel.quantity}</td>
                     <td className="py-1.5 text-right tabular-nums font-bold text-emerald-700">
-                      ¥{sel.amount.toLocaleString()}
+                      ¥{sel.amount.toLocaleString("ja-JP")}
                     </td>
                   </tr>
                 ))}
@@ -331,7 +331,7 @@ function ComparisonTab() {
                 <tr className="border-t-2 border-emerald-200">
                   <td colSpan={4} className="py-1.5 text-right font-semibold text-slate-500">合計</td>
                   <td className="py-1.5 text-right font-bold text-emerald-700 tabular-nums">
-                    ¥{selectedBest.reduce((s, sel) => s + sel.amount, 0).toLocaleString()}
+                    ¥{selectedBest.reduce((s, sel) => s + sel.amount, 0).toLocaleString("ja-JP")}
                   </td>
                 </tr>
               </tfoot>
@@ -467,10 +467,10 @@ function MatsubamebushiTab() {
               {pr?.result ? (
                 <>
                   <p className="text-sm font-bold tabular-nums mt-1">
-                    ¥{pr.result.estimatePrice.toLocaleString()}
+                    ¥{pr.result.estimatePrice.toLocaleString("ja-JP")}
                   </p>
                   <p className="text-[10px] text-emerald-600 tabular-nums">
-                    粗利 ¥{pr.result.grossProfit.toLocaleString()}
+                    粗利 ¥{pr.result.grossProfit.toLocaleString("ja-JP")}
                   </p>
                 </>
               ) : (
@@ -545,7 +545,7 @@ function MatsubamebushiTab() {
                   ))}
                   {PATTERN_LABELS.map((_, pidx) => (
                     <td key={`amt-${pidx}`} className="py-1.5 px-2 text-right tabular-nums text-slate-600">
-                      ¥{(item.unitPrices[pidx] * item.quantity).toLocaleString()}
+                      ¥{(item.unitPrices[pidx] * item.quantity).toLocaleString("ja-JP")}
                     </td>
                   ))}
                   <td className="py-1.5 px-2">
@@ -578,7 +578,7 @@ function MatsubamebushiTab() {
                       key={`total-amt-${pidx}`}
                       className={`py-2 px-2 text-right tabular-nums font-bold ${PATTERN_HEADER_COLORS[pidx]}`}
                     >
-                      ¥{total.toLocaleString()}
+                      ¥{total.toLocaleString("ja-JP")}
                     </td>
                   );
                 })}
@@ -707,7 +707,7 @@ function EstimatePageContent() {
         propertyName: propertyName.trim(),
         clientName: clientName.trim() || "お客様",
         items: selectedItems.map((i) => ({ code: i.code, quantity: i.quantity })),
-        notes: [`目標粗利率 ${targetMargin}% で算出（粗利額: ¥${marginResult.grossProfit.toLocaleString()}）`],
+        notes: [`目標粗利率 ${targetMargin}% で算出（粗利額: ¥${marginResult.grossProfit.toLocaleString("ja-JP")}）`],
       });
       setEstimate(est);
     } catch (e) {
@@ -858,10 +858,10 @@ function EstimatePageContent() {
                         <td className="py-1.5 text-right tabular-nums">{line.quantity}</td>
                         <td className="py-1.5 text-right text-slate-400">{line.unit}</td>
                         <td className="py-1.5 text-right tabular-nums">
-                          ¥{line.unitPrice.toLocaleString()}
+                          ¥{line.unitPrice.toLocaleString("ja-JP")}
                         </td>
                         <td className="py-1.5 text-right font-semibold tabular-nums">
-                          ¥{line.amount.toLocaleString()}
+                          ¥{line.amount.toLocaleString("ja-JP")}
                         </td>
                       </tr>
                     ))}
@@ -872,7 +872,7 @@ function EstimatePageContent() {
                         小計
                       </td>
                       <td className="py-1.5 text-right font-bold tabular-nums">
-                        ¥{section.subtotal.toLocaleString()}
+                        ¥{section.subtotal.toLocaleString("ja-JP")}
                       </td>
                     </tr>
                   </tfoot>
@@ -885,28 +885,28 @@ function EstimatePageContent() {
           <div className="border-t-2 border-slate-200 pt-3 mt-4 space-y-1 text-sm">
             <div className="flex justify-between text-slate-600">
               <span>直接工事費</span>
-              <span className="tabular-nums">¥{estimate.directCost.toLocaleString()}</span>
+              <span className="tabular-nums">¥{estimate.directCost.toLocaleString("ja-JP")}</span>
             </div>
             <div className="flex justify-between text-slate-600">
               <span>現場管理費 ({(estimate.managementFeeRate * 100).toFixed(0)}%)</span>
-              <span className="tabular-nums">¥{estimate.managementFee.toLocaleString()}</span>
+              <span className="tabular-nums">¥{estimate.managementFee.toLocaleString("ja-JP")}</span>
             </div>
             <div className="flex justify-between text-slate-600">
               <span>一般管理費 ({(estimate.generalExpenseRate * 100).toFixed(0)}%)</span>
-              <span className="tabular-nums">¥{estimate.generalExpense.toLocaleString()}</span>
+              <span className="tabular-nums">¥{estimate.generalExpense.toLocaleString("ja-JP")}</span>
             </div>
             <div className="flex justify-between text-slate-600">
               <span>小計</span>
-              <span className="tabular-nums">¥{estimate.subtotal.toLocaleString()}</span>
+              <span className="tabular-nums">¥{estimate.subtotal.toLocaleString("ja-JP")}</span>
             </div>
             <div className="flex justify-between text-slate-600">
               <span>消費税 ({(estimate.taxRate * 100).toFixed(0)}%)</span>
-              <span className="tabular-nums">¥{estimate.tax.toLocaleString()}</span>
+              <span className="tabular-nums">¥{estimate.tax.toLocaleString("ja-JP")}</span>
             </div>
             <div className="flex justify-between pt-2 border-t border-slate-200 text-lg font-bold text-slate-900">
               <span>合計</span>
               <span className="tabular-nums text-brand-700">
-                ¥{estimate.total.toLocaleString()}
+                ¥{estimate.total.toLocaleString("ja-JP")}
               </span>
             </div>
           </div>
@@ -1148,7 +1148,7 @@ function EstimatePageContent() {
                     {item.name}
                   </p>
                   <p className="text-[10px] text-slate-400">
-                    ¥{item.unitPrice.toLocaleString()} / {item.unit}
+                    ¥{item.unitPrice.toLocaleString("ja-JP")} / {item.unit}
                   </p>
                 </div>
                 <div className="estimate-quantity-controls flex items-center gap-1.5">
@@ -1221,9 +1221,9 @@ function EstimatePageContent() {
               <span className="text-xs text-slate-500">%</span>
               {marginResult && (
                 <span className="text-xs text-emerald-700 font-semibold tabular-nums">
-                  → ¥{marginResult.estimatePrice.toLocaleString()}
+                  → ¥{marginResult.estimatePrice.toLocaleString("ja-JP")}
                   <span className="ml-1 font-normal text-slate-400">
-                    (粗利 ¥{marginResult.grossProfit.toLocaleString()})
+                    (粗利 ¥{marginResult.grossProfit.toLocaleString("ja-JP")})
                   </span>
                 </span>
               )}
@@ -1247,10 +1247,10 @@ function EstimatePageContent() {
                       <p className="text-xs font-bold text-slate-700">{p.label}</p>
                       <p className="text-[10px] text-slate-400">{p.marginPercent}%</p>
                       <p className="text-xs font-semibold tabular-nums text-brand-700">
-                        ¥{p.estimatePrice.toLocaleString()}
+                        ¥{p.estimatePrice.toLocaleString("ja-JP")}
                       </p>
                       <p className="text-[10px] text-emerald-600 tabular-nums">
-                        粗利 ¥{p.grossProfit.toLocaleString()}
+                        粗利 ¥{p.grossProfit.toLocaleString("ja-JP")}
                       </p>
                     </div>
                   ))}
@@ -1261,7 +1261,7 @@ function EstimatePageContent() {
 
           <div className="responsive-form-actions mt-3 flex items-center justify-between gap-3 border-t border-brand-100 pt-3">
             <span className="text-xs text-slate-500">
-              仮計: ¥{selectedItems.reduce((s, i) => s + i.unitPrice * i.quantity, 0).toLocaleString()}
+              仮計: ¥{selectedItems.reduce((s, i) => s + i.unitPrice * i.quantity, 0).toLocaleString("ja-JP")}
             </span>
             <div className="flex gap-2">
               {marginResult && (
@@ -1337,7 +1337,7 @@ function EstimatePageContent() {
                           </p>
                         </div>
                         <span className="shrink-0 text-xs font-semibold text-slate-600 tabular-nums">
-                          ¥{item.unitPrice.toLocaleString()}
+                          ¥{item.unitPrice.toLocaleString("ja-JP")}
                         </span>
                       </button>
                     );

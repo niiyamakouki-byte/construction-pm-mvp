@@ -1,6 +1,6 @@
 {
   "version": "3.2.0",
-  "updatedAt": "2026-05-07",
+  "updatedAt": "2026-06-09",
   "currency": "JPY",
   "taxRate": 0.1,
   "categories": [
@@ -12,14 +12,14 @@
           "code": "DM-001",
           "name": "内装解体（木造）",
           "unit": "㎡",
-          "unitPrice": 3500,
+          "unitPrice": 4000,
           "note": "壁・天井・床の撤去。築年数・仕上げ材により変動"
         },
         {
           "code": "DM-002",
           "name": "内装解体（RC造）",
           "unit": "㎡",
-          "unitPrice": 4500,
+          "unitPrice": 5000,
           "note": "コンクリート壁含む。はつり作業が必要な場合は割増"
         },
         {
@@ -321,13 +321,6 @@
           "unit": "m",
           "unitPrice": 1200,
           "note": "木製・樹脂製"
-        },
-        {
-          "code": "IN-025",
-          "name": "木質パネル（腰壁）",
-          "unit": "㎡",
-          "unitPrice": 12000,
-          "note": "突板貼り。見付け框込み"
         },
         {
           "code": "IN-026",
@@ -2536,8 +2529,8 @@
           "code": "PL-003",
           "name": "洋式便器（一般）",
           "unit": "台",
-          "unitPrice": 150000,
-          "note": "ウォシュレット付き。TOTO/LIXIL標準"
+          "unitPrice": 180000,
+          "note": "新品材工共。ウォシュレット付き。TOTO/LIXIL標準"
         },
         {
           "code": "PL-004",

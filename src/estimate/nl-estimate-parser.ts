@@ -251,6 +251,8 @@ const KEYWORD_RULES: KeywordRule[] = [
   { keywords: ["間仕切り", "パーティション新設"], code: "IN-002", areaType: "wall" },
   { keywords: ["クロス", "壁紙", "壁紙張替"], code: "IN-005", areaType: "wall", lossRate: 0.12 },
   { keywords: ["1000番", "高級クロス", "アクセントクロス"], code: "IN-006", areaType: "wall", lossRate: 0.10 },
+  { keywords: ["外壁フッ素塗装", "フッ素外壁塗装"], code: "RN-015", areaType: "wall", excludes: ["IN-007", "RN-014"], lossRate: 0.07 },
+  { keywords: ["外壁塗装", "外部塗装"], code: "RN-014", areaType: "wall", excludes: ["IN-007"], lossRate: 0.07 },
   { keywords: ["塗装", "ペンキ", "EP塗装"], code: "IN-007", areaType: "wall", lossRate: 0.07 },
   { keywords: ["タイルカーペット"], code: "IN-008", areaType: "floor", lossRate: 0.05 },
   { keywords: ["フローリング", "床張替", "床張り替え"], code: "IN-009", areaType: "floor", lossRate: 0.10 },
@@ -666,7 +668,7 @@ export function formatParseResult(result: ParseResult): string {
       const unitPrice = mi?.unitPrice ?? 0;
       const amount = unitPrice * item.quantity;
       lines.push(
-        `  ${item.code} ${item.itemName}  ${item.quantity}${mi?.unit ?? ""}  @${unitPrice.toLocaleString()}  = ${amount.toLocaleString()}円`,
+        `  ${item.code} ${item.itemName}  ${item.quantity}${mi?.unit ?? ""}  @${unitPrice.toLocaleString("ja-JP")}  = ${amount.toLocaleString("ja-JP")}円`,
       );
       lines.push(`         根拠: ${item.quantityBasis} [キーワード: "${item.matchedKeyword}"]`);
     }

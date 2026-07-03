@@ -85,6 +85,28 @@ describe("discordEstimate", () => {
     expect(result.message).toContain("夜間施工に切替時の目安調整: +140,000 程度");
     expect(result.estimate!.notes).toContain("日中工事想定");
   });
+
+  it("高め精査の塗装見積では値上がり・鉄部工程・足場を加味する", () => {
+    const standard = discordEstimate("20㎡の外壁塗装");
+    const detailed = discordEstimate("20㎡の外壁塗装、塗料値上がり考慮、鉄部も含めて研磨と錆止めをかなり丁寧に");
+
+    expect(detailed.message).toContain("前提: 塗料・副資材の値上がりを見込み");
+    expect(detailed.message).toContain("鉄部ケレン・研磨下地調整");
+    expect(detailed.message).toContain("鉄部錆止め下塗り");
+    expect(detailed.message).toContain("足場設置");
+    expect(detailed.estimate!.managementFeeRate).toBe(0.12);
+    expect(detailed.estimate!.generalExpenseRate).toBe(0.08);
+    expect(detailed.estimate!.total).toBeGreaterThan(standard.estimate!.total);
+  });
+
+  it("人件費と日当指定が入ると職人日当3.5万円前提の原価補正を明示する", () => {
+    const standard = discordEstimate("20㎡の外壁塗装、塗料値上がり考慮、鉄部も含めて研磨と錆止めをかなり丁寧に");
+    const laborHeavy = discordEstimate("20㎡の外壁塗装、塗料値上がり考慮、鉄部も含めて研磨と錆止めをかなり丁寧に。工数は人件費は日当三万五千くらいかかる想定で原価考えて");
+
+    expect(laborHeavy.message).toContain("職人日当 ¥35,000 想定");
+    expect(laborHeavy.estimate!.notes).toContain("高め精査: 原価側の職人日当を ¥35,000 想定で材工単価へ反映");
+    expect(laborHeavy.estimate!.total).toBeGreaterThan(standard.estimate!.total);
+  });
 });
 
 describe("discordEstimate realistic scenarios", () => {

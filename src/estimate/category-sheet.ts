@@ -49,7 +49,7 @@ export function formatCategorySheetMarkdown(categoryId: string): string {
     "| コード | 品目 | 細目 | 単位 | 標準単価 | 価格帯 | 備考 |",
     "|---|---|---|---|---:|---|---|",
     ...category.items.map((item) =>
-      `| ${item.item_id} | ${item.name} | ${item.subcategory} | ${item.unit} | ${item.unit_price.toLocaleString()} | ${item.price_range_low.toLocaleString()}~${item.price_range_high.toLocaleString()} | ${item.notes} |`,
+      `| ${item.item_id} | ${item.name} | ${item.subcategory} | ${item.unit} | ${item.unit_price.toLocaleString("ja-JP")} | ${item.price_range_low.toLocaleString("ja-JP")}~${item.price_range_high.toLocaleString("ja-JP")} | ${item.notes} |`,
     ),
   ];
   return lines.join("\n");

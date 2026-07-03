@@ -163,7 +163,7 @@ export function getRecommendedPlan(
 
 /** プランのラベル表示用ヘルパー */
 export function formatPlanPrice(plan: InsurancePlan): string {
-  return `¥${plan.monthlyPriceJpy.toLocaleString()}/月`;
+  return `¥${plan.monthlyPriceJpy.toLocaleString("ja-JP")}/月`;
 }
 
 /** 全プラン一覧を月額昇順で返す */

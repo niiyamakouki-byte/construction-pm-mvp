@@ -206,7 +206,7 @@ export function OwnerAmbassadorPage() {
       <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 32 }}>
         <KpiCard label="アクティブアンバサダー" value={kpiTotal} />
         <KpiCard label="未処理問合せ" value={kpiPending} />
-        <KpiCard label="今月報酬支払予定 (JPY)" value={`¥${kpiPayout.toLocaleString()}`} />
+        <KpiCard label="今月報酬支払予定 (JPY)" value={`¥${kpiPayout.toLocaleString("ja-JP")}`} />
         <KpiCard label="最多紹介者" value={kpiTop ?? "—"} />
       </div>
 
@@ -260,8 +260,8 @@ export function OwnerAmbassadorPage() {
                   <td style={{ padding: "8px 12px", color: "#6b7280" }}>{amb.completedProjectId}</td>
                   <td style={{ padding: "8px 12px" }}><TierBadge tier={amb.tier} /></td>
                   <td style={{ padding: "8px 12px", textAlign: "center" }}>{amb.contractedReferralCount}</td>
-                  <td style={{ padding: "8px 12px" }}>¥{amb.totalContractedAmountJpy.toLocaleString()}</td>
-                  <td style={{ padding: "8px 12px", color: SAGE, fontWeight: 600 }}>¥{amb.totalRewardAmountJpy.toLocaleString()}</td>
+                  <td style={{ padding: "8px 12px" }}>¥{amb.totalContractedAmountJpy.toLocaleString("ja-JP")}</td>
+                  <td style={{ padding: "8px 12px", color: SAGE, fontWeight: 600 }}>¥{amb.totalRewardAmountJpy.toLocaleString("ja-JP")}</td>
                 </tr>
               ))}
             </tbody>
@@ -400,7 +400,7 @@ export function OwnerAmbassadorPage() {
                     <span style={{ fontSize: 11, color: "#6b7280" }}>紹介者: {amb?.ownerName ?? "—"}</span>
                     {inq.contractAmountJpy && (
                       <span style={{ fontSize: 12, color: SAGE, fontWeight: 600 }}>
-                        ¥{inq.contractAmountJpy.toLocaleString()}
+                        ¥{inq.contractAmountJpy.toLocaleString("ja-JP")}
                       </span>
                     )}
                   </div>
@@ -455,7 +455,7 @@ export function OwnerAmbassadorPage() {
                   <tr key={r.id} style={{ borderBottom: "1px solid #f3f4f6" }}>
                     <td style={{ padding: "8px 12px" }}>{amb?.ownerName ?? "—"}</td>
                     <td style={{ padding: "8px 12px" }}>{REWARD_KIND_LABELS[r.kind]}</td>
-                    <td style={{ padding: "8px 12px", fontWeight: 600, color: SAGE }}>¥{r.amountJpy.toLocaleString()}</td>
+                    <td style={{ padding: "8px 12px", fontWeight: 600, color: SAGE }}>¥{r.amountJpy.toLocaleString("ja-JP")}</td>
                     <td style={{ padding: "8px 12px" }}>{(r.rewardRate * 100).toFixed(0)}%</td>
                     <td style={{ padding: "8px 12px" }}>
                       <span style={{ color: r.isPaid ? "#059669" : DANGER, fontSize: 12 }}>

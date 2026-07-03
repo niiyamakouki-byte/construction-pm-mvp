@@ -190,7 +190,7 @@ export function assessDroneImages(
 
   const pointCloudSummary = generatePointCloudSummary(photos, coverageAreaM2);
   notes.push(
-    `点群推定: ${pointCloudSummary.estimatedPointCount.toLocaleString()}点 ` +
+    `点群推定: ${pointCloudSummary.estimatedPointCount.toLocaleString("ja-JP")}点 ` +
       `(${pointCloudSummary.pointDensity}pts/m²)`
   );
 
@@ -203,7 +203,7 @@ export function assessDroneImages(
   );
 
   const estimatedDamageJpy = Math.floor(totalDamageAreaM2 * damageUnitCostPerM2);
-  notes.push(`被害金額推定: ¥${estimatedDamageJpy.toLocaleString()}`);
+  notes.push(`被害金額推定: ¥${estimatedDamageJpy.toLocaleString("ja-JP")}`);
 
   // 信頼度: 写真枚数 + GPS有無 + GSD有無
   const hasGps = photos.some((p) => p.gps !== undefined);

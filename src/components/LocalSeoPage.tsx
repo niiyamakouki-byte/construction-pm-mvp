@@ -166,7 +166,7 @@ function KeywordRow({ kw }: { kw: KeywordTarget }) {
       <td style={{ padding: "8px 12px", fontSize: 12 }}>{regionScopeLabelJa[kw.region]}</td>
       <td style={{ padding: "8px 12px", fontSize: 12 }}>{keywordIntentLabelJa[kw.intent]}</td>
       <td style={{ padding: "8px 12px", fontSize: 13, textAlign: "right" }}>
-        {kw.monthlySearchVolume.toLocaleString()}
+        {kw.monthlySearchVolume.toLocaleString("ja-JP")}
       </td>
       <td style={{ padding: "8px 12px", fontSize: 13, textAlign: "right" }}>
         {kw.competitionScore}
@@ -417,7 +417,7 @@ export function LocalSeoPage() {
         <KpiCard label="TOP10獲得KW" value={kpis.top10Kw} unit="件" color="#3b82f6" />
         <KpiCard
           label="月間流入推定"
-          value={kpis.impressions.toLocaleString()}
+          value={kpis.impressions.toLocaleString("ja-JP")}
           unit="PV"
           color={kpis.impressions > 100 ? SAGE : "#9ca3af"}
         />

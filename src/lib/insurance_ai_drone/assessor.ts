@@ -95,18 +95,18 @@ export function assessDamage(input: AssessmentInput): AssessmentResult {
     if (constructionCostJpy !== undefined && constructionCostJpy > 0) {
     // 構造物コストベース
     const damageRate = DEFAULT_DAMAGE_RATE[damageType];
-    notes.push(`構造物原価 ¥${constructionCostJpy.toLocaleString()} × 損害率${(damageRate * 100).toFixed(0)}%`);
+    notes.push(`構造物原価 ¥${constructionCostJpy.toLocaleString("ja-JP")} × 損害率${(damageRate * 100).toFixed(0)}%`);
       return constructionCostJpy * damageRate;
     }
     if (estimatedAreaM2 !== undefined && estimatedAreaM2 > 0) {
     // 面積ベース
     const unitCost = DAMAGE_UNIT_COST_PER_M2[damageType];
-    notes.push(`被害面積 ${estimatedAreaM2}m² × 単価 ¥${unitCost.toLocaleString()}/m²`);
+    notes.push(`被害面積 ${estimatedAreaM2}m² × 単価 ¥${unitCost.toLocaleString("ja-JP")}/m²`);
       return estimatedAreaM2 * unitCost;
     }
     // 写真のみから最低限推定 (50万円固定ベース × 損害率)
     const baseEstimate = 500_000;
-    notes.push(`写真のみ査定: 基準額 ¥${baseEstimate.toLocaleString()} × 損害率 ${(DEFAULT_DAMAGE_RATE[damageType] * 100).toFixed(0)}%`);
+    notes.push(`写真のみ査定: 基準額 ¥${baseEstimate.toLocaleString("ja-JP")} × 損害率 ${(DEFAULT_DAMAGE_RATE[damageType] * 100).toFixed(0)}%`);
     confidence = Math.min(confidence, 0.45);
     return baseEstimate * DEFAULT_DAMAGE_RATE[damageType];
   })();
@@ -124,7 +124,7 @@ export function assessDamage(input: AssessmentInput): AssessmentResult {
   const coverageRatio = getPrimaryCoverageRatio(damageType);
   const estimatedPayoutJpy = Math.floor(estimatedDamageJpy * coverageRatio * (1 - deductibleRate));
 
-  notes.push(`補償率 ${(coverageRatio * 100).toFixed(0)}% → 支払見込 ¥${estimatedPayoutJpy.toLocaleString()}`);
+  notes.push(`補償率 ${(coverageRatio * 100).toFixed(0)}% → 支払見込 ¥${estimatedPayoutJpy.toLocaleString("ja-JP")}`);
 
   return {
     estimatedDamageJpy: Math.floor(estimatedDamageJpy),

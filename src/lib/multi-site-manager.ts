@@ -330,7 +330,7 @@ export function getMultiSiteDashboard(
     // Over budget
     if (summary.totalCost > summary.budget) {
       alerts.push(
-        `予算超過: ${summary.siteName} (予算 ${summary.budget.toLocaleString()}円 / 実績 ${summary.totalCost.toLocaleString()}円)`,
+        `予算超過: ${summary.siteName} (予算 ${summary.budget.toLocaleString("ja-JP")}円 / 実績 ${summary.totalCost.toLocaleString("ja-JP")}円)`,
       );
     } else if (
       summary.budget > 0 &&
@@ -535,14 +535,14 @@ export function buildProfitReportHtml(dashboard: MultiSiteDashboard): string {
       const colorClass = marginColorClass(s.grossMargin);
       return `    <tr class="margin-${colorClass}">
       <td>${escapeHtml(s.siteName)}</td>
-      <td class="num">${s.budget.toLocaleString()}</td>
-      <td class="num">${s.laborCost.toLocaleString()}</td>
-      <td class="num">${s.materialCost.toLocaleString()}</td>
-      <td class="num">${s.totalCost.toLocaleString()}</td>
-      <td class="num">${s.grossProfit.toLocaleString()}</td>
+      <td class="num">${s.budget.toLocaleString("ja-JP")}</td>
+      <td class="num">${s.laborCost.toLocaleString("ja-JP")}</td>
+      <td class="num">${s.materialCost.toLocaleString("ja-JP")}</td>
+      <td class="num">${s.totalCost.toLocaleString("ja-JP")}</td>
+      <td class="num">${s.grossProfit.toLocaleString("ja-JP")}</td>
       <td class="num margin-label">${s.grossMargin.toFixed(1)}%</td>
-      <td class="num">${s.projectedFinalCost.toLocaleString()}</td>
-      <td class="num">${s.projectedProfit.toLocaleString()}</td>
+      <td class="num">${s.projectedFinalCost.toLocaleString("ja-JP")}</td>
+      <td class="num">${s.projectedProfit.toLocaleString("ja-JP")}</td>
     </tr>`;
     })
     .join("\n");
@@ -583,9 +583,9 @@ export function buildProfitReportHtml(dashboard: MultiSiteDashboard): string {
   <div class="summary">
     <div>総現場数: <span>${escapeHtml(dashboard.totalSites)}</span></div>
     <div>稼働中: <span>${escapeHtml(dashboard.activeSites)}</span></div>
-    <div>総予算: <span>${dashboard.totalBudget.toLocaleString()}円</span></div>
-    <div>総実績原価: <span>${dashboard.totalActualCost.toLocaleString()}円</span></div>
-    <div>総粗利: <span>${dashboard.totalGrossProfit.toLocaleString()}円</span></div>
+    <div>総予算: <span>${dashboard.totalBudget.toLocaleString("ja-JP")}円</span></div>
+    <div>総実績原価: <span>${dashboard.totalActualCost.toLocaleString("ja-JP")}円</span></div>
+    <div>総粗利: <span>${dashboard.totalGrossProfit.toLocaleString("ja-JP")}円</span></div>
     <div>平均粗利率: <span>${dashboard.avgGrossMargin.toFixed(1)}%</span></div>
   </div>
 

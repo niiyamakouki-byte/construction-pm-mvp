@@ -10,10 +10,11 @@
 
 import { parseNaturalLanguage } from "./nl-estimate-parser";
 import { generateEstimate } from "./estimate-generator";
-import type { Estimate, EstimateInput } from "./types";
+import type { CostMaster, Estimate, EstimateInput } from "./types";
 import type { ParseResult } from "./nl-estimate-parser";
 import { calculateConfidence, scoreToStars } from "../lib/confidence-scorer";
 import { detectAnomalies } from "../lib/anomaly-detector";
+import costMasterData from "./cost-master.json";
 
 /** Discord出力結果 */
 export type DiscordEstimateResult = {
@@ -32,6 +33,22 @@ type WorkTimingAdjustment = {
 };
 
 const DAY_NIGHT_DELTA_YEN = 140000;
+const PAINT_PRICE_INFLATION_FACTOR = 1.22;
+const HEAVY_PREP_FACTOR = 1.12;
+const STEEL_AREA_RATIO = 0.35;
+const LABOR_DAY_RATE_YEN = 35000;
+const LABOR_COST_FACTOR = 1.1;
+const PAINTING_CODES = new Set(["IN-007", "IN-020", "RN-014", "RN-015", "PL2-012"]);
+const EXTERIOR_PAINTING_CODES = new Set(["RN-014", "RN-015"]);
+const costMaster: CostMaster = costMasterData as CostMaster;
+
+type PricingAdjustment = {
+  items: EstimateInput[];
+  managementFeeRate: number;
+  generalExpenseRate: number;
+  notes: string[];
+  assumptionLines: string[];
+};
 
 function detectWorkTimingAdjustment(text: string): WorkTimingAdjustment | null {
   const normalized = text.replace(/\s+/g, "");
@@ -64,6 +81,106 @@ function sanitizeUnmatched(unmatched: string[]): string[] {
   });
 }
 
+function detectHighScrutinyPricing(text: string): boolean {
+  return /(高い精査|高め精査|精査|値上がり|副資材|塗料|研磨|ケレン|錆止め|さび止め|鉄部|手間|丁寧|工数|人件費|日当|原価)/.test(text);
+}
+
+function detectSteelScope(text: string): boolean {
+  return /(鉄部|手すり|門扉|階段|シャッター|鉄骨|鋼製|架台)/.test(text);
+}
+
+function detectLaborCostPressure(text: string): boolean {
+  return /(工数|人件費|日当|人工|原価|職人)/.test(text);
+}
+
+function findUnitPrice(code: string): number {
+  for (const category of costMaster.categories) {
+    const item = category.items.find((candidate) => candidate.code === code);
+    if (item) return item.unitPrice;
+  }
+  throw new Error(`品目コード ${code} が見つかりません`);
+}
+
+function buildPricingAdjustment(parseResult: ParseResult): PricingAdjustment {
+  const baseItems: EstimateInput[] = parseResult.items.map(({ code, quantity }) => ({
+    code,
+    quantity,
+  }));
+
+  if (!detectHighScrutinyPricing(parseResult.originalText)) {
+    return {
+      items: baseItems,
+      managementFeeRate: 0.1,
+      generalExpenseRate: 0.05,
+      notes: [],
+      assumptionLines: [],
+    };
+  }
+
+  const paintBaseQty = Math.max(
+    0,
+    ...parseResult.items
+      .filter((item) => PAINTING_CODES.has(item.code))
+      .map((item) => item.quantity),
+  );
+
+  const items: EstimateInput[] = baseItems.map((item) => {
+    let factor = 1;
+    if (PAINTING_CODES.has(item.code)) {
+      factor = item.code === "RN-015"
+        ? PAINT_PRICE_INFLATION_FACTOR
+        : PAINT_PRICE_INFLATION_FACTOR * HEAVY_PREP_FACTOR;
+    }
+    if (detectLaborCostPressure(parseResult.originalText)) {
+      factor *= LABOR_COST_FACTOR;
+    }
+    if (factor === 1) return item;
+    return {
+      ...item,
+      unitPriceOverride: Math.round(findUnitPrice(item.code) * factor / 10) * 10,
+    };
+  });
+
+  const notes = [
+    "高め精査: 塗料・副資材の直近値上がりと手間増を反映",
+    "高め精査: 現場管理費12%・一般管理費8%で仮計上",
+  ];
+  const assumptionLines = [
+    "前提: 塗料・副資材の値上がりを見込み、塗装系単価を上振れ補正",
+    "前提: 手間重視の下地調整を想定し、管理費率も標準より上げて仮計上",
+  ];
+
+  if (detectLaborCostPressure(parseResult.originalText)) {
+    notes.push(`高め精査: 原価側の職人日当を ${formatYen(LABOR_DAY_RATE_YEN)} 想定で材工単価へ反映`);
+    assumptionLines.push(`前提: 工数は原価側の職人日当 ${formatYen(LABOR_DAY_RATE_YEN)} 想定で材工単価を約${Math.round((LABOR_COST_FACTOR - 1) * 100)}%上振れ`);
+  }
+
+  if (paintBaseQty > 0 && detectSteelScope(parseResult.originalText)) {
+    const steelQty = Math.max(1, Math.ceil(paintBaseQty * STEEL_AREA_RATIO));
+    items.push({ code: "RN-031", quantity: steelQty });
+    items.push({ code: "RN-032", quantity: steelQty });
+    notes.push(`高め精査: 鉄部は塗装対象の${Math.round(STEEL_AREA_RATIO * 100)}%相当でケレン・錆止めを追加`);
+    assumptionLines.push(`前提: 鉄部は塗装対象面積の${Math.round(STEEL_AREA_RATIO * 100)}%相当でケレン・錆止めを別計上`);
+  }
+
+  const hasExteriorPainting = items.some((item) => EXTERIOR_PAINTING_CODES.has(item.code));
+  if (hasExteriorPainting && !items.some((item) => item.code === "RN-016")) {
+    items.push({ code: "RN-016", quantity: paintBaseQty || 1 });
+    items.push({ code: "SC-006", quantity: 1 });
+    items.push({ code: "SC-007", quantity: 1 });
+    notes.push("高め精査: 外部塗装の足場・組立解体・運搬を追加");
+    assumptionLines.push("前提: 外部塗装は足場別途扱いのため、足場・組立解体・運搬を追加");
+  }
+
+  return {
+    items,
+    managementFeeRate: 0.12,
+    generalExpenseRate: 0.08,
+    notes,
+    assumptionLines,
+  };
+}
+
 /** 金額を3桁カンマ区切りで表示 */
 function formatYen(n: number): string {
   return `¥${n.toLocaleString("ja-JP")}`;
@@ -86,7 +203,11 @@ function formatDetectionLine(result: ParseResult): string {
 /**
  * 見積をDiscord Markdown形式にフォーマット
  */
-export function formatEstimateForDiscord(estimate: Estimate, parseResult: ParseResult): string {
+export function formatEstimateForDiscord(
+  estimate: Estimate,
+  parseResult: ParseResult,
+  assumptionLines: string[] = [],
+): string {
   const lines: string[] = [];
   const workTiming = detectWorkTimingAdjustment(parseResult.originalText);
 
@@ -96,6 +217,9 @@ export function formatEstimateForDiscord(estimate: Estimate, parseResult: ParseR
   lines.push(`> 検出: ${formatDetectionLine(parseResult)}`);
   if (workTiming) {
     lines.push(`> 条件: ${workTiming.assumptionLabel}`);
+  }
+  for (const assumption of assumptionLines) {
+    lines.push(`> ${assumption}`);
   }
   lines.push("");
 
@@ -262,27 +386,27 @@ export function discordEstimate(
     };
   }
 
-  // 2. EstimateInput[] に変換
-  const items: EstimateInput[] = parseResult.items.map(({ code, quantity }) => ({
-    code,
-    quantity,
-  }));
+  // 2. 高め精査条件があれば単価・諸経費・追加工程を補正
+  const pricing = buildPricingAdjustment(parseResult);
 
   // 3. 見積生成
   const estimate = generateEstimate({
     propertyName: propertyName ?? `概算: ${text.slice(0, 30)}`,
     clientName: "Discord見積",
-    items,
+    items: pricing.items,
+    managementFeeRate: pricing.managementFeeRate,
+    generalExpenseRate: pricing.generalExpenseRate,
     notes: workTiming
       ? [
           `${workTiming.assumptionLabel}`,
           `${workTiming.comparisonLabel}: ${workTiming.comparisonDeltaYen > 0 ? "+" : "-"}${formatYen(Math.abs(workTiming.comparisonDeltaYen)).slice(1)} 程度`,
+          ...pricing.notes,
         ]
-      : [],
+      : pricing.notes,
   });
 
   // 4. Discord Markdown にフォーマット
-  const message = formatEstimateForDiscord(estimate, parseResult);
+  const message = formatEstimateForDiscord(estimate, parseResult, pricing.assumptionLines);
 
   return { message, estimate, parseResult };
 }

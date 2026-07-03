@@ -14,7 +14,7 @@ describe("estimate-generator", () => {
       propertyName: "南青山テストビル 3F",
       clientName: "テスト株式会社",
       items: [
-        { code: "DM-001", quantity: 50 },  // 内装解体 50㎡ × 3500 = 175,000
+        { code: "DM-001", quantity: 50 },  // 内装解体 50㎡ × 4000 = 200,000
         { code: "IN-005", quantity: 120 }, // クロス張り 120㎡ × 1200 = 144,000
         { code: "IN-008", quantity: 50 },  // タイルカーペット 50㎡ × 4500 = 225,000
         { code: "EL-005", quantity: 10 },  // ダウンライト 10台 × 12000 = 120,000
@@ -26,18 +26,18 @@ describe("estimate-generator", () => {
     expect(est.propertyName).toBe("南青山テストビル 3F");
     expect(est.clientName).toBe("テスト株式会社");
 
-    // 直接工事費: 175000 + 144000 + 225000 + 120000 = 664,000
-    expect(est.directCost).toBe(664000);
-    // 管理費: 664000 × 0.1 = 66,400
-    expect(est.managementFee).toBe(66400);
-    // 一般管理費: (664000 + 66400) × 0.05 = 36,520
-    expect(est.generalExpense).toBe(36520);
-    // 税抜: 664000 + 66400 + 36520 = 766,920
-    expect(est.subtotal).toBe(766920);
-    // 税: 766920 × 0.1 = 76,692
-    expect(est.tax).toBe(76692);
-    // 税込: 766920 + 76692 = 843,612
-    expect(est.total).toBe(843612);
+    // 直接工事費: 200000 + 144000 + 225000 + 120000 = 689,000
+    expect(est.directCost).toBe(689000);
+    // 管理費: 689000 × 0.1 = 68,900
+    expect(est.managementFee).toBe(68900);
+    // 一般管理費: (689000 + 68900) × 0.05 = 37,895
+    expect(est.generalExpense).toBe(37895);
+    // 税抜: 689000 + 68900 + 37895 = 795,795
+    expect(est.subtotal).toBe(795795);
+    // 税: 795795 × 0.1 = 79,580
+    expect(est.tax).toBe(79580);
+    // 税込: 795795 + 79580 = 875,375
+    expect(est.total).toBe(875375);
 
     expect(est.sections).toHaveLength(3); // demolition, interior, electrical
   });
@@ -55,15 +55,15 @@ describe("estimate-generator", () => {
   });
 
   it("rounds amount to integer — prevents float noise from accumulating in subtotals", () => {
-    // DM-001 unitPrice=3500, quantity=33.3 → raw=116549.99999999999, rounded=116550
+    // DM-001 unitPrice=4000, quantity=33.333 → raw=133332, rounded=133332
     const est = generateEstimate({
       propertyName: "端数テスト",
       clientName: "テスト",
-      items: [{ code: "DM-001", quantity: 33.3 }],
+      items: [{ code: "DM-001", quantity: 33.333 }],
     });
     const line = est.sections[0].lines[0];
     expect(Number.isInteger(line.amount)).toBe(true);
-    expect(line.amount).toBe(116550);
+    expect(line.amount).toBe(133332);
     expect(Number.isInteger(est.directCost)).toBe(true);
     expect(Number.isInteger(est.subtotal)).toBe(true);
     expect(Number.isInteger(est.tax)).toBe(true);
@@ -144,9 +144,9 @@ describe("estimate-generator", () => {
     ]);
   });
 
-  it("lists all items (246 total)", () => {
+  it("lists all items (247 total)", () => {
     const items = listAllItems();
-    expect(items.length).toBe(246);
+    expect(items.length).toBe(247);
   });
 
   it("lists items by category", () => {

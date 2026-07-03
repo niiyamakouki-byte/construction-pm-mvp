@@ -525,5 +525,11 @@ describe("nl-estimate-parser", () => {
       expect(paint).toBeDefined();
       expect(paint!.lossRate).toBe(0.07);
     });
+
+    it("外壁塗装は汎用塗装ではなく RN-014 に入る", () => {
+      const result = parseNaturalLanguage("20㎡の外壁塗装");
+      expect(result.items.find((i) => i.code === "RN-014")).toBeDefined();
+      expect(result.items.find((i) => i.code === "IN-007")).toBeUndefined();
+    });
   });
 });

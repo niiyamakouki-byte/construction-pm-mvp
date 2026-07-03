@@ -295,12 +295,12 @@ function PaymentSchedule({
           <div className="mb-3 grid grid-cols-2 gap-2 text-xs">
             <div className="rounded-lg bg-slate-50 px-3 py-2">
               <p className="text-slate-500">予定合計</p>
-              <p className="font-bold text-slate-700">¥{total.toLocaleString()}</p>
+              <p className="font-bold text-slate-700">¥{total.toLocaleString("ja-JP")}</p>
             </div>
             <div className="rounded-lg bg-slate-50 px-3 py-2">
               <p className="text-slate-500">入金済</p>
               <p className="font-bold" style={{ color: "#6B8E5A" }}>
-                ¥{paid.toLocaleString()}
+                ¥{paid.toLocaleString("ja-JP")}
               </p>
             </div>
           </div>
@@ -323,7 +323,7 @@ function PaymentSchedule({
                   <div className="mt-1 flex items-center justify-between text-slate-500">
                     <span>{m.scheduledDate}</span>
                     <span className="font-mono">
-                      ¥{m.scheduledAmount.toLocaleString()}
+                      ¥{m.scheduledAmount.toLocaleString("ja-JP")}
                     </span>
                   </div>
                   {m.actualPaidDate && (
@@ -455,7 +455,7 @@ function ChangeRequestList({
               )}
               {r.estimated_cost !== undefined && (
                 <p className="mt-1 text-slate-500">
-                  概算: ¥{r.estimated_cost.toLocaleString()}
+                  概算: ¥{r.estimated_cost.toLocaleString("ja-JP")}
                 </p>
               )}
               <p className="mt-1 text-slate-400">{formatTs(r.ts)}</p>

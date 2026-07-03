@@ -33,7 +33,7 @@ function generateRewardId(): string {
 
 function buildTaxNote(amountJpy: number, tier: AmbassadorTier): string {
   const tierLabel = { bronze: "ブロンズ", silver: "シルバー", gold: "ゴールド", platinum: "プラチナ" }[tier];
-  const cappedNote = amountJpy >= MAX_REWARD_JPY ? `（上限 ¥${MAX_REWARD_JPY.toLocaleString()} 適用）` : "";
+  const cappedNote = amountJpy >= MAX_REWARD_JPY ? `（上限 ¥${MAX_REWARD_JPY.toLocaleString("ja-JP")} 適用）` : "";
   if (amountJpy >= WITHHOLDING_THRESHOLD_JPY) {
     return `${tierLabel}ティア紹介報酬${cappedNote}。¥200,000超のため源泉徴収(10.21%)の対象。税理士確認のこと。`;
   }

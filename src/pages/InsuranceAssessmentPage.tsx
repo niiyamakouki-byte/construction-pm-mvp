@@ -162,13 +162,13 @@ function AssessmentTab() {
             <div className="rounded-lg bg-slate-50 p-3">
               <p className="text-xs text-slate-500">推定損害額</p>
               <p className="text-lg font-bold text-slate-900">
-                ¥{result.estimatedDamageJpy.toLocaleString()}
+                ¥{result.estimatedDamageJpy.toLocaleString("ja-JP")}
               </p>
             </div>
             <div className="rounded-lg bg-blue-50 p-3">
               <p className="text-xs text-slate-500">支払見込額</p>
               <p className="text-lg font-bold text-blue-700">
-                ¥{result.estimatedPayoutJpy.toLocaleString()}
+                ¥{result.estimatedPayoutJpy.toLocaleString("ja-JP")}
               </p>
             </div>
           </div>
@@ -306,7 +306,7 @@ function DroneTab() {
             <div className="rounded-lg bg-slate-50 p-3">
               <p className="text-xs text-slate-500">推定損害額</p>
               <p className="text-lg font-bold text-slate-900">
-                ¥{result.estimatedDamageJpy.toLocaleString()}
+                ¥{result.estimatedDamageJpy.toLocaleString("ja-JP")}
               </p>
             </div>
             <div className="rounded-lg bg-blue-50 p-3">
@@ -320,13 +320,13 @@ function DroneTab() {
           <div className="rounded-lg bg-slate-50 p-3 space-y-1">
             <p className="text-xs font-semibold text-slate-600">3D点群サマリ</p>
             <p className="text-xs text-slate-700">
-              推定点群数: {result.pointCloudSummary.estimatedPointCount.toLocaleString()}点
+              推定点群数: {result.pointCloudSummary.estimatedPointCount.toLocaleString("ja-JP")}点
             </p>
             <p className="text-xs text-slate-700">
-              撮影面積: {result.pointCloudSummary.estimatedAreaM2.toLocaleString()}m²
+              撮影面積: {result.pointCloudSummary.estimatedAreaM2.toLocaleString("ja-JP")}m²
             </p>
             <p className="text-xs text-slate-700">
-              推定体積: {result.pointCloudSummary.estimatedVolumeM3.toLocaleString()}m³
+              推定体積: {result.pointCloudSummary.estimatedVolumeM3.toLocaleString("ja-JP")}m³
             </p>
             <p className="text-xs text-slate-700">
               バウンディングボックス: {result.pointCloudSummary.boundingBox.widthM}×
@@ -555,7 +555,7 @@ function PricingTab() {
         <p className="text-sm font-bold text-slate-800">{plan.name}</p>
         <p className="text-xl font-bold text-blue-600 mt-1">{formatPlanPrice(plan)}</p>
         <p className="text-xs text-slate-500 mt-0.5">
-          年払い ¥{Math.floor(plan.annualPriceJpy).toLocaleString()}/年
+          年払い ¥{Math.floor(plan.annualPriceJpy).toLocaleString("ja-JP")}/年
         </p>
         <ul className="mt-3 space-y-1">
           {plan.features.map((f, i) => (

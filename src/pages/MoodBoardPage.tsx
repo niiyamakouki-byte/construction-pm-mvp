@@ -295,7 +295,7 @@ function CanvasItem({
             <p className="truncate text-xs font-semibold text-slate-800">{item.title}</p>
             <p className="truncate text-[10px] text-slate-500">{item.description}</p>
             {item.price !== undefined && (
-              <p className="text-[10px] font-bold text-blue-600">¥{item.price.toLocaleString()}</p>
+              <p className="text-[10px] font-bold text-blue-600">¥{item.price.toLocaleString("ja-JP")}</p>
             )}
           </div>
           <div className="flex shrink-0 flex-col items-end gap-0.5">
@@ -333,7 +333,7 @@ function exportToPdf(board: MoodBoard, total: number) {
             <p style="margin:0;font-size:14px;font-weight:600;color:#1e293b">${escapeHtml(item.title)}</p>
             <p style="margin:2px 0;font-size:12px;color:#64748b">${escapeHtml(item.category)}${item.supplier ? ` / ${escapeHtml(item.supplier)}` : ""}</p>
             <p style="margin:2px 0;font-size:12px;color:#64748b">${escapeHtml(item.description)}</p>
-            ${item.price !== undefined ? `<p style="margin:4px 0 0;font-size:13px;font-weight:700;color:#2563eb">¥${item.price.toLocaleString()}</p>` : ""}
+            ${item.price !== undefined ? `<p style="margin:4px 0 0;font-size:13px;font-weight:700;color:#2563eb">¥${item.price.toLocaleString("ja-JP")}</p>` : ""}
           </div>
         </div>`,
     )
@@ -356,7 +356,7 @@ function exportToPdf(board: MoodBoard, total: number) {
   <h1>ムードボード：${escapeHtml(board.title)}</h1>
   <div class="meta">作成日：${new Date(board.createdAt).toLocaleDateString("ja-JP")} アイテム数：${board.items.length}点</div>
   ${items}
-  <div class="total">合計概算：¥${total.toLocaleString()}</div>
+  <div class="total">合計概算：¥${total.toLocaleString("ja-JP")}</div>
   <button onclick="window.print()" style="margin-top:20px;padding:10px 24px;background:#2563eb;color:#fff;border:none;border-radius:6px;font-size:14px;cursor:pointer">印刷 / PDF保存</button>
 </body>
 </html>`);
@@ -454,7 +454,7 @@ export function MoodBoardPage({ projectId }: { projectId: string }) {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-xl font-bold text-slate-900">{board.title}</h1>
-          <p className="text-sm text-slate-500">{board.items.length}点 合計概算：¥{total.toLocaleString()}</p>
+          <p className="text-sm text-slate-500">{board.items.length}点 合計概算：¥{total.toLocaleString("ja-JP")}</p>
         </div>
         <div className="flex gap-2">
           <button
@@ -536,14 +536,14 @@ export function MoodBoardPage({ projectId }: { projectId: string }) {
               return (
                 <div key={cat} className={`rounded-lg border-l-4 p-3 ${CATEGORY_COLOR[cat]}`}>
                   <p className="text-xs font-medium text-slate-600">{cat}</p>
-                  <p className="mt-0.5 text-sm font-bold text-slate-900">¥{catTotal.toLocaleString()}</p>
+                  <p className="mt-0.5 text-sm font-bold text-slate-900">¥{catTotal.toLocaleString("ja-JP")}</p>
                   <p className="text-[10px] text-slate-500">{items.length}点</p>
                 </div>
               );
             })}
           </div>
           <div className="mt-3 border-t border-slate-200 pt-3 text-right">
-            <span className="text-sm font-bold text-blue-700">合計概算：¥{total.toLocaleString()}</span>
+            <span className="text-sm font-bold text-blue-700">合計概算：¥{total.toLocaleString("ja-JP")}</span>
           </div>
         </div>
       )}

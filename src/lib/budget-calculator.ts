@@ -123,7 +123,7 @@ export function generateBudgetReport(breakdown: BudgetBreakdown): string {
   const rows = breakdown.categories
     .map(
       (c) =>
-        `<tr><td>${c.name}</td><td>¥${c.estimatedAmount.toLocaleString()}</td><td>¥${c.actualAmount.toLocaleString()}</td><td>¥${(c.actualAmount - c.estimatedAmount).toLocaleString()}</td></tr>`,
+        `<tr><td>${c.name}</td><td>¥${c.estimatedAmount.toLocaleString("ja-JP")}</td><td>¥${c.actualAmount.toLocaleString("ja-JP")}</td><td>¥${(c.actualAmount - c.estimatedAmount).toLocaleString("ja-JP")}</td></tr>`,
     )
     .join("\n");
 
@@ -147,7 +147,7 @@ td:first-child,th:first-child{text-align:left}
 ${rows}
 </tbody>
 <tfoot>
-<tr><th>合計</th><th>¥${breakdown.totalEstimated.toLocaleString()}</th><th>¥${breakdown.totalActual.toLocaleString()}</th><th>¥${breakdown.variance.toLocaleString()}</th></tr>
+<tr><th>合計</th><th>¥${breakdown.totalEstimated.toLocaleString("ja-JP")}</th><th>¥${breakdown.totalActual.toLocaleString("ja-JP")}</th><th>¥${breakdown.variance.toLocaleString("ja-JP")}</th></tr>
 </tfoot>
 </table>
 <p>差異率: ${breakdown.variancePct}%</p>

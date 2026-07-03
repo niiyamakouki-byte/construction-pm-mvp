@@ -285,12 +285,12 @@ h2{border-bottom:2px solid #e5e7eb;padding-bottom:.5rem}
 <body>
 <h1>経営ダッシュボード</h1>
 <div class="kpi-grid">
-  <div class="kpi-card"><h3>売上合計</h3><p>¥${dashboard.totalRevenue.toLocaleString()}</p></div>
-  <div class="kpi-card"><h3>粗利合計</h3><p>¥${dashboard.totalGrossProfit.toLocaleString()}</p></div>
+  <div class="kpi-card"><h3>売上合計</h3><p>¥${dashboard.totalRevenue.toLocaleString("ja-JP")}</p></div>
+  <div class="kpi-card"><h3>粗利合計</h3><p>¥${dashboard.totalGrossProfit.toLocaleString("ja-JP")}</p></div>
   <div class="kpi-card"><h3>平均粗利率</h3><p>${dashboard.averageGrossProfitRate}%</p></div>
   <div class="kpi-card"><h3>案件数</h3><p>${dashboard.projectCount}件</p></div>
   <div class="kpi-card"><h3>進行中</h3><p>${dashboard.activeProjectCount}件</p></div>
-  <div class="kpi-card"><h3>原価合計</h3><p>¥${dashboard.totalCost.toLocaleString()}</p></div>
+  <div class="kpi-card"><h3>原価合計</h3><p>¥${dashboard.totalCost.toLocaleString("ja-JP")}</p></div>
 </div>
 <h2>粗利率ランキング TOP${rankings.length}</h2>
 <table>
