@@ -271,7 +271,7 @@ export function LandingPage() {
               <thead>
                 <tr className="border-b border-slate-200 bg-slate-50">
                   <th className="py-3 pl-5 pr-4 text-left font-semibold text-slate-600">消える面倒</th>
-                  <th className="py-3 px-5 text-right font-semibold text-slate-600 w-28">削減時間</th>
+                  <th className="py-3 px-4 text-right font-semibold text-slate-600 whitespace-nowrap w-px">削減時間</th>
                 </tr>
               </thead>
               <tbody>
@@ -284,14 +284,14 @@ export function LandingPage() {
                 ].map(([label, hours], i) => (
                   <tr key={label} className={`border-b border-slate-100 ${i % 2 === 0 ? "bg-white" : "bg-slate-50/50"}`}>
                     <td className="py-3 pl-5 pr-4 text-slate-700">{label}</td>
-                    <td className="py-3 px-5 text-right font-semibold text-brand-700">{hours}</td>
+                    <td className="py-3 px-4 text-right font-semibold text-brand-700 whitespace-nowrap">{hours}</td>
                   </tr>
                 ))}
               </tbody>
               <tfoot>
                 <tr className="border-t-2 border-slate-200 bg-brand-50">
                   <td className="py-3 pl-5 pr-4 font-bold text-slate-900">合計</td>
-                  <td className="py-3 px-5 text-right font-extrabold text-brand-700">月15時間</td>
+                  <td className="py-3 px-4 text-right font-extrabold text-brand-700 whitespace-nowrap">月15時間</td>
                 </tr>
               </tfoot>
             </table>
@@ -405,13 +405,13 @@ export function LandingPage() {
                 GenbaHubは、AIを使いこなす能力が要らないAIです。
               </p>
             </div>
-            <div className="grid gap-6 sm:grid-cols-3">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 sm:gap-6">
               {[
                 ["要る能力が違う", "汎用AIは指示の上手さがそのまま成果の差になる。GenbaHubは写真を送る・喋るだけ。現場仕事をそのまま続けるだけでいい。"],
                 ["残るものが違う", "チャットの返答は流れて消える。GenbaHubは工程表・日報・請求書という会社の資産として構造化されて残る。"],
                 ["効く範囲が違う", "汎用AIは使った本人だけが楽になる。GenbaHubは全員が同じ画面を見る、会社の仕組みとして効く。"],
               ].map(([title, desc]) => (
-                <div key={title} className="rounded-2xl border border-slate-200 bg-slate-50 p-6">
+                <div key={title} className="rounded-2xl border border-slate-200 bg-slate-50 p-4 sm:p-6">
                   <h4 className="mb-2 text-base font-bold text-slate-900">{title}</h4>
                   <p className="text-sm leading-relaxed text-slate-500">{desc}</p>
                 </div>
@@ -474,7 +474,7 @@ export function LandingPage() {
                   {plan.name}
                 </p>
                 <div className="mt-2 flex items-end gap-1">
-                  <span className={`text-4xl font-extrabold ${plan.highlight ? "text-white" : "text-slate-900"}`}>
+                  <span className={`text-3xl sm:text-4xl font-extrabold ${plan.highlight ? "text-white" : "text-slate-900"}`}>
                     {plan.price}
                   </span>
                   <span className={`mb-1 text-sm ${plan.highlight ? "text-brand-300" : "text-slate-400"}`}>
