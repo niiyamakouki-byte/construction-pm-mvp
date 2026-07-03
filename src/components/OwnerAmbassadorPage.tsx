@@ -206,7 +206,7 @@ export function OwnerAmbassadorPage() {
       <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 32 }}>
         <KpiCard label="アクティブアンバサダー" value={kpiTotal} />
         <KpiCard label="未処理問合せ" value={kpiPending} />
-        <KpiCard label="今月報酬支払予定 (JPY)" value={`¥${kpiPayout.toLocaleString("ja-JP")}`} />
+        <KpiCard label="今月報酬支払予定（円）" value={`¥${kpiPayout.toLocaleString("ja-JP")}`} />
         <KpiCard label="最多紹介者" value={kpiTop ?? "—"} />
       </div>
 
