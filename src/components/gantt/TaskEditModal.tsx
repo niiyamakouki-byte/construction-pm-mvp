@@ -1,7 +1,7 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import type { Contractor, DependencyType } from "../../domain/types.js";
-import type { TaskDetailState } from "./types.js";
-import { addDays, resolveIncludeWeekends, statusLabel } from "./utils.js";
+import type { GanttTask, TaskDetailState } from "./types.js";
+import { addDays, hasCycle, resolveIncludeWeekends, statusLabel } from "./utils.js";
 
 const DEP_TYPE_OPTIONS: Array<{ value: DependencyType; label: string; description: string }> = [
   { value: "FS", label: "FS", description: "前タスク完了→開始" },
@@ -14,24 +14,57 @@ const DEP_TYPE_OPTIONS: Array<{ value: DependencyType; label: string; descriptio
 type Props = {
   taskDetail: TaskDetailState;
   contractors: Contractor[];
+  /** P2.5: 同一案件内の全タスク（先行タスク追加/削除UIで使用） */
+  allProjectTasks?: GanttTask[];
   onClose: () => void;
   onSubmit: (e: React.FormEvent) => void;
   onChange: (updater: (d: TaskDetailState) => TaskDetailState) => void;
   onDelete?: (taskId: string) => void;
+  /** P2.5: 先行タスクを追加する（循環チェック済み） */
+  onAddDependency?: (predecessorId: string) => void;
+  /** P2.5: 先行タスクを削除する */
+  onRemoveDependency?: (predecessorId: string) => void;
 };
 
 export function TaskEditModal({
   taskDetail,
   contractors,
+  allProjectTasks,
   onClose,
   onSubmit,
   onChange,
   onDelete,
+  onAddDependency,
+  onRemoveDependency,
 }: Props) {
   const effectiveIncludeWeekends = resolveIncludeWeekends(
     taskDetail.task.projectIncludesWeekends,
     taskDetail.editIncludeWeekendsOverride ? taskDetail.editIncludeWeekends : undefined,
   );
+
+  // P2.5: 先行タスク追加用の選択状態
+  const [selectedPredId, setSelectedPredId] = useState("");
+  const [depError, setDepError] = useState<string | null>(null);
+
+  const currentDeps = taskDetail.task.dependencies ?? [];
+  // 選択可能な先行タスク候補（自分自身・既存依存・後続になるものは除外）
+  const predCandidates = (allProjectTasks ?? []).filter(
+    (t) =>
+      t.id !== taskDetail.task.id &&
+      !currentDeps.includes(t.id) &&
+      !hasCycle(allProjectTasks ?? [], t.id, taskDetail.task.id),
+  );
+
+  const handleAddDep = () => {
+    setDepError(null);
+    if (!selectedPredId) return;
+    if (hasCycle(allProjectTasks ?? [], selectedPredId, taskDetail.task.id)) {
+      setDepError("循環依存になるため追加できません");
+      return;
+    }
+    onAddDependency?.(selectedPredId);
+    setSelectedPredId("");
+  };
 
   useEffect(() => {
     const handler = (event: KeyboardEvent) => {
@@ -180,6 +213,65 @@ export function TaskEditModal({
                     </span>
                   ))}
               </div>
+            </div>
+          )}
+
+          {/* P2.5: 先行タスク管理 */}
+          {allProjectTasks && allProjectTasks.length > 0 && (
+            <div className="flex flex-col gap-2">
+              <span className="text-sm font-medium text-slate-600">先行タスク</span>
+              {currentDeps.length > 0 ? (
+                <ul className="space-y-1">
+                  {currentDeps.map((depId) => {
+                    const pred = allProjectTasks.find((t) => t.id === depId);
+                    return (
+                      <li
+                        key={depId}
+                        className="flex items-center justify-between gap-2 rounded-xl bg-slate-50 px-3 py-2 text-sm"
+                      >
+                        <span className="min-w-0 truncate text-slate-700">{pred?.name ?? depId}</span>
+                        {onRemoveDependency && (
+                          <button
+                            type="button"
+                            aria-label={`先行タスク「${pred?.name ?? depId}」を削除`}
+                            onClick={() => onRemoveDependency(depId)}
+                            className="shrink-0 rounded-full p-1 text-slate-400 hover:bg-red-50 hover:text-red-500 transition-colors"
+                          >
+                            <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor" aria-hidden="true">
+                              <path d="M1 1l10 10M11 1L1 11" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                            </svg>
+                          </button>
+                        )}
+                      </li>
+                    );
+                  })}
+                </ul>
+              ) : (
+                <p className="text-xs text-slate-400">先行タスクなし</p>
+              )}
+              {onAddDependency && predCandidates.length > 0 && (
+                <div className="flex gap-2">
+                  <select
+                    value={selectedPredId}
+                    onChange={(e) => { setSelectedPredId(e.target.value); setDepError(null); }}
+                    className="flex-1 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20"
+                  >
+                    <option value="">先行タスクを選択...</option>
+                    {predCandidates.map((t) => (
+                      <option key={t.id} value={t.id}>{t.name}</option>
+                    ))}
+                  </select>
+                  <button
+                    type="button"
+                    disabled={!selectedPredId}
+                    onClick={handleAddDep}
+                    className="shrink-0 rounded-xl bg-brand-600 px-3 py-2 text-xs font-semibold text-white hover:bg-brand-700 disabled:opacity-40 transition-colors"
+                  >
+                    追加
+                  </button>
+                </div>
+              )}
+              {depError && <p className="text-xs font-medium text-red-600">{depError}</p>}
             </div>
           )}
 
