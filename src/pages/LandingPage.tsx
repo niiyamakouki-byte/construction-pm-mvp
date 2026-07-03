@@ -203,51 +203,96 @@ export function LandingPage() {
         </div>
       </header>
 
-      {/* Hero */}
-      <section className="bg-brand-800 px-4 py-20 text-center sm:py-32">
-        <div className="mx-auto max-w-3xl">
-          <div className="mb-4 inline-block rounded-full bg-brand-600/40 px-4 py-1.5 text-sm font-medium text-brand-200">
-            内装工事特化の現場管理SaaS
-          </div>
+      {/* Hero — 統一コピー+副文+主CTA1本 */}
+      <section className="bg-brand-800 px-4 py-20 text-center sm:py-28">
+        <div className="mx-auto max-w-2xl">
           <h1 className="text-4xl font-extrabold leading-tight tracking-tight text-white sm:text-5xl">
             現場の面倒が、
             <br />
             <span className="text-accent-400">消えていく。</span>
           </h1>
-          <p className="mx-auto mt-6 max-w-xl text-lg text-brand-200">
-            1日30分の事務が消えると、月15時間＝人工0.5人分。内装工事会社のために設計された現場管理SaaSです。
+          <p className="mx-auto mt-6 max-w-lg text-lg text-brand-200">
+            内装工事会社のための現場管理SaaS。工程・見積・写真を1画面に集約。
           </p>
-          <ul className="mx-auto mt-8 max-w-xl space-y-3 text-left">
-            {[
-              ["夜の事務作業が消える", "現場写真を送るだけで、日報も写真整理も勝手に終わる"],
-              ["「あれどうなってる？」の電話が消える", "工程も担当も進捗も、全員が同じ1画面を見る"],
-              ["請求漏れ・転記ミスが消える", "見積→発注→請求がひとつながり。手打ちの転記がない"],
-              ["覚える操作が消える", "「基礎を2日後ろに」と入力すれば工程表が動く"],
-            ].map(([title, desc]) => (
-              <li key={title} className="flex items-start gap-3 rounded-xl bg-brand-700/50 px-4 py-3">
-                <span className="mt-0.5 text-accent-400">✓</span>
-                <span>
-                  <span className="block font-bold text-white">{title}</span>
-                  <span className="block text-sm text-brand-200">{desc}</span>
-                </span>
-              </li>
-            ))}
-          </ul>
-          <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
+          <div className="mt-8 flex justify-center">
             <button
               onClick={() => navigate("/signup")}
-              className="w-full rounded-xl bg-accent-400 px-8 py-3.5 text-base font-bold text-brand-900 shadow-lg hover:bg-accent-500 sm:w-auto"
+              className="rounded-xl bg-accent-400 px-10 py-4 text-base font-bold text-brand-900 shadow-lg hover:bg-accent-500"
             >
               14日間 無料で始める
             </button>
-            <button
-              onClick={() => navigate("/login")}
-              className="w-full rounded-xl border border-brand-500 px-8 py-3.5 text-base font-semibold text-white hover:bg-brand-700 sm:w-auto"
-            >
-              ログインする
-            </button>
           </div>
           <p className="mt-4 text-sm text-brand-400">クレジットカード不要 · 14日間無料 · 即日利用開始</p>
+        </div>
+      </section>
+
+      {/* 実画面スクショ挿入枠 */}
+      <section className="bg-slate-50 px-4 py-12 sm:px-6">
+        <div className="mx-auto max-w-4xl">
+          <p className="mb-8 text-center text-sm font-semibold tracking-[0.2em] text-slate-400 uppercase">実際の画面</p>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+              <div className="flex h-52 items-center justify-center bg-slate-100 text-slate-300 text-sm">
+                今日のダッシュボード（実機キャプチャ）
+              </div>
+              <div className="px-4 py-3">
+                <p className="text-sm font-semibold text-slate-700">今日のダッシュボード</p>
+                <p className="mt-0.5 text-xs text-slate-400">進行中案件・タスク・天気をひと目で確認</p>
+              </div>
+            </div>
+            <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+              <div className="flex h-52 items-center justify-center bg-slate-100 text-slate-300 text-sm">
+                PDF見積ドラフト（実機キャプチャ）
+              </div>
+              <div className="px-4 py-3">
+                <p className="text-sm font-semibold text-slate-700">PDF見積→自動積算</p>
+                <p className="mt-0.5 text-xs text-slate-400">業者PDFをドロップするだけで金額を自動集計</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 月15時間が消える根拠 */}
+      <section className="bg-white px-4 py-16 sm:px-6">
+        <div className="mx-auto max-w-2xl">
+          <div className="mb-8 text-center">
+            <h2 className="text-2xl font-bold text-slate-900">月15時間が消える</h2>
+            <p className="mt-2 text-slate-500">1日30分の事務 × 20日 ＝ 人工0.5人分</p>
+          </div>
+          <div className="overflow-hidden rounded-2xl border border-slate-200 shadow-sm">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-slate-200 bg-slate-50">
+                  <th className="py-3 pl-5 pr-4 text-left font-semibold text-slate-600">消える面倒</th>
+                  <th className="py-3 px-5 text-right font-semibold text-slate-600 w-28">削減時間</th>
+                </tr>
+              </thead>
+              <tbody>
+                {[
+                  ["協力会社見積PDFの転記・集計", "月4時間"],
+                  ["現場写真の整理・共有", "月3時間"],
+                  ["工程表の更新・関係者への連絡", "月3時間"],
+                  ["進捗確認の電話・LINEの往復", "月3時間"],
+                  ["請求書の照合・原価入力", "月2時間"],
+                ].map(([label, hours], i) => (
+                  <tr key={label} className={`border-b border-slate-100 ${i % 2 === 0 ? "bg-white" : "bg-slate-50/50"}`}>
+                    <td className="py-3 pl-5 pr-4 text-slate-700">{label}</td>
+                    <td className="py-3 px-5 text-right font-semibold text-brand-700">{hours}</td>
+                  </tr>
+                ))}
+              </tbody>
+              <tfoot>
+                <tr className="border-t-2 border-slate-200 bg-brand-50">
+                  <td className="py-3 pl-5 pr-4 font-bold text-slate-900">合計</td>
+                  <td className="py-3 px-5 text-right font-extrabold text-brand-700">月15時間</td>
+                </tr>
+              </tfoot>
+            </table>
+            <p className="px-5 py-3 text-xs text-slate-400 bg-slate-50/80 border-t border-slate-100">
+              ※内装工事業を営む自社（株式会社ラポルタ）の運用実測に基づく目安です
+            </p>
+          </div>
         </div>
       </section>
 
