@@ -74,7 +74,8 @@ export function GanttTaskBar({
   const duration = Math.max(1, daysBetween(displayStartDate, displayEndDate));
   const barLeft = startOffset * dayWidth;
   const barWidth = Math.max(duration * dayWidth, dayWidth);
-  const color = statusColor[task.status];
+  // P2: 完了タスクはグレー系で視覚的に区別
+  const color = task.status === "done" ? "#94a3b8" : statusColor[task.status];
   const labelVisible = barWidth >= 96;
 
   // Cascade ghost bar geometry
@@ -179,7 +180,9 @@ export function GanttTaskBar({
             {labelVisible ? <p className="truncate text-[12px] font-semibold">{task.name}</p> : null}
             {barWidth >= 144 ? (
               <p className="truncate text-[10px] text-white/80">
-                {formatScheduleDate(displayStartDate)} - {formatScheduleDate(displayEndDate)}
+                {task.contractorName
+                  ? task.contractorName
+                  : `${formatScheduleDate(displayStartDate)} - ${formatScheduleDate(displayEndDate)}`}
               </p>
             ) : null}
           </div>
