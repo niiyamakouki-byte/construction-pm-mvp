@@ -1496,19 +1496,19 @@ function TodayDashboardPageContent() {
             <AlertTriangle className="h-4 w-4 text-amber-500" aria-hidden="true" /> アラート ({triggeredAlerts.length})
           </h2>
           <ul className="space-y-2">
-            {(alertsExpanded ? triggeredAlerts : triggeredAlerts.slice(0, 5)).map((alert, i) => (
+            {(alertsExpanded ? triggeredAlerts : triggeredAlerts.slice(0, 3)).map((alert, i) => (
               <li key={`${alert.rule.id}-${i}`} className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
                 {alert.message}
               </li>
             ))}
           </ul>
-          {triggeredAlerts.length > 5 && (
+          {triggeredAlerts.length > 3 && (
             <button
               type="button"
               onClick={() => setAlertsExpanded((v) => !v)}
               className="mt-2 text-sm text-amber-700 underline"
             >
-              {alertsExpanded ? "折りたたむ" : `他${triggeredAlerts.length - 5}件を表示`}
+              {alertsExpanded ? "折りたたむ" : `他${triggeredAlerts.length - 3}件を表示`}
             </button>
           )}
         </section>
