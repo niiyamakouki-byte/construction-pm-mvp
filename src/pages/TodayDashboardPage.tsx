@@ -598,10 +598,12 @@ function TodayDashboardPageContent() {
           id: crypto.randomUUID(),
           projectId,
           name: t.name,
+          description: "",
           status: "todo",
           startDate,
           dueDate: t.dueDate,
           progress: 0,
+          dependencies: [],
           createdAt: nowIso,
           updatedAt: nowIso,
         });
