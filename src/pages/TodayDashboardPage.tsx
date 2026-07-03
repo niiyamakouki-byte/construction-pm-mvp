@@ -1418,10 +1418,10 @@ function TodayDashboardPageContent() {
       {/* Executive mode: project overview */}
       {persona === "executive" && (
         <section>
-          <h2 className="mb-3 text-base font-semibold text-slate-800">全プロジェクト俯瞰</h2>
+          <h2 className="mb-3 text-base font-semibold text-slate-800">全案件俯瞰</h2>
           {allProjects.length === 0 ? (
             <div className="rounded-xl border border-slate-200 bg-white p-4 text-center text-sm text-slate-400">
-              プロジェクトがありません
+              案件がありません
             </div>
           ) : (
             <ul className="space-y-2">
@@ -1539,7 +1539,7 @@ function TodayDashboardPageContent() {
           onClick={() => navigate("/")}
           className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3.5 text-sm font-semibold text-slate-600 shadow-sm active:bg-slate-50 transition-colors"
         >
-          &larr; プロジェクト一覧に戻る
+          &larr; 案件一覧に戻る
         </button>
       </div>
     </div>

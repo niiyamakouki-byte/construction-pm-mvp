@@ -143,7 +143,7 @@ export function SignupPage() {
               </li>
               <li className="flex items-start gap-2">
                 <span className="mt-0.5 text-brand-500">✓</span>
-                サンプルプロジェクトで機能を体験
+                サンプル案件で機能を体験
               </li>
             </ul>
           </div>
@@ -168,7 +168,7 @@ export function SignupPage() {
             className="inline-flex flex-col items-center gap-1 hover:opacity-90"
           >
             <span className="text-3xl font-bold text-white tracking-tight">GenbaHub</span>
-            <span className="text-sm text-brand-300">現場ハブ — 建設プロジェクト管理</span>
+            <span className="text-sm text-brand-300">現場の面倒が、消えていく。</span>
           </button>
         </div>
 
