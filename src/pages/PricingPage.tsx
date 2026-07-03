@@ -51,10 +51,10 @@ function StripeNotReadyModal({ onClose }: { onClose: () => void }) {
         <p className="mt-3 text-sm text-slate-500">
           ご質問は{" "}
           <a
-            href="mailto:niiyama@laporta.co.jp"
+            href="mailto:info@laporta.co.jp"
             className="text-brand-600 hover:underline"
           >
-            niiyama@laporta.co.jp
+            info@laporta.co.jp
           </a>{" "}
           までお問い合わせください。
         </p>
@@ -246,10 +246,10 @@ export function PricingPage() {
       <p className="mt-8 text-center text-sm text-slate-400">
         プランのアップグレードは Stripe 決済で処理されます。ご質問は{" "}
         <a
-          href="mailto:niiyama@laporta.co.jp"
+          href="mailto:info@laporta.co.jp"
           className="text-brand-600 hover:underline"
         >
-          niiyama@laporta.co.jp
+          info@laporta.co.jp
         </a>{" "}
         までお問い合わせください。
       </p>

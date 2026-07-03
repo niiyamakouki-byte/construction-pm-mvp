@@ -426,7 +426,7 @@ export function LandingPage() {
           </div>
           <p className="mt-6 text-center text-sm text-slate-400">
             大規模プロジェクト・エンタープライズのご相談は{" "}
-            <a href="mailto:niiyama@laporta.co.jp" className="text-brand-500 hover:underline">
+            <a href="mailto:info@laporta.co.jp" className="text-brand-500 hover:underline">
               お問い合わせ
             </a>
             ください。
@@ -486,7 +486,7 @@ export function LandingPage() {
                 利用規約
               </button>
               <a
-                href="mailto:niiyama@laporta.co.jp"
+                href="mailto:info@laporta.co.jp"
                 className="text-brand-400 hover:text-white"
               >
                 お問い合わせ

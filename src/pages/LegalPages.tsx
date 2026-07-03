@@ -139,7 +139,7 @@ function Privacy() {
           <h2 className="mb-2 text-base font-bold text-slate-900">7. 開示・訂正・削除</h2>
           <p>
             お客様は、ご自身の個人情報の開示・訂正・削除を求める権利があります。
-            お申し出は niiyama@laporta.co.jp までご連絡ください。
+            お申し出は info@laporta.co.jp までご連絡ください。
           </p>
         </section>
 
@@ -153,7 +153,7 @@ function Privacy() {
         <section>
           <h2 className="mb-2 text-base font-bold text-slate-900">9. お問い合わせ</h2>
           <p>
-            個人情報に関するお問い合わせ: <a href="mailto:niiyama@laporta.co.jp" className="text-brand-600 hover:underline">niiyama@laporta.co.jp</a>
+            個人情報に関するお問い合わせ: <a href="mailto:info@laporta.co.jp" className="text-brand-600 hover:underline">info@laporta.co.jp</a>
           </p>
         </section>
       </div>
@@ -242,8 +242,8 @@ function Tos() {
           <h2 className="mb-2 text-base font-bold text-slate-900">第9条（お問い合わせ）</h2>
           <p>
             本規約に関するお問い合わせ:{" "}
-            <a href="mailto:niiyama@laporta.co.jp" className="text-brand-600 hover:underline">
-              niiyama@laporta.co.jp
+            <a href="mailto:info@laporta.co.jp" className="text-brand-600 hover:underline">
+              info@laporta.co.jp
             </a>
           </p>
         </section>
