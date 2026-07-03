@@ -209,7 +209,7 @@ function _baseContentJa(kind: HandoverDocumentKind): string {
     case "as_built_drawing":
       return "施工後の実測に基づく竣工図面です。";
     case "aftercare_contact":
-      return "工事担当者: 株式会社ラポルタ\n電話: 03-XXXX-XXXX\nメール: info@laporta.co.jp";
+      return "工事担当者: 株式会社ラポルタ\n電話: 03-6876-7749\nメール: info@laporta.co.jp";
     case "maintenance_schedule":
       return "別途メンテナンススケジュール表をご参照ください。";
     default:

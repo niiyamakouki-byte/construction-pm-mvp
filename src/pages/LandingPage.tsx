@@ -462,7 +462,7 @@ export function LandingPage() {
               <p className="mt-1 text-sm text-brand-400">内装工事に特化した現場管理SaaS。</p>
               <p className="mt-2 text-xs text-brand-500">
                 提供: 株式会社ラポルタ<br />
-                〒107-0062 東京都港区南青山3丁目<br />
+                〒156-0051 東京都世田谷区給田5-12-12<br />
                 代表: 新山光輝
               </p>
             </div>
