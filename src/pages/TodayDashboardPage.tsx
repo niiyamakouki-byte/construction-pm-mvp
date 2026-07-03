@@ -1367,16 +1367,16 @@ function TodayDashboardPageContent() {
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <p className="text-xs font-semibold tracking-[0.18em] text-slate-500">案件健全性</p>
-                  <h3 className="mt-1 text-lg font-bold text-slate-900">Health Score</h3>
+                  <h3 className="mt-1 text-lg font-bold text-slate-900">健全性スコア</h3>
                 </div>
                 <span className={`rounded-full border px-3 py-1 text-xs font-bold ${healthGradeTone[healthInsight.grade]}`}>
-                  Grade {healthInsight.grade}
+                  評価 {healthInsight.grade}
                 </span>
               </div>
               <div className="mt-4 flex items-end justify-between gap-3">
                 <div>
                   <p className="text-3xl font-bold tabular-nums text-slate-900">{healthInsight.overall}</p>
-                  <p className="mt-1 text-xs text-slate-500">schedule / cost / quality / risk</p>
+                  <p className="mt-1 text-xs text-slate-500">工程 / コスト / 品質 / リスク</p>
                 </div>
                 <p className="max-w-[14rem] text-right text-xs leading-5 text-slate-500">
                   {healthInsight.recommendations[0]}

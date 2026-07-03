@@ -172,7 +172,7 @@ describe("project-health", () => {
       const riskCategory = result.categories.find((c) => c.category === "risk");
       expect(riskCategory).toBeDefined();
       expect(riskCategory!.score).toBeLessThan(100);
-      expect(riskCategory!.detail).toContain("overdue");
+      expect(riskCategory!.detail).toContain("遅延");
     });
 
     it("penalizes circular dependencies", () => {
@@ -202,7 +202,7 @@ describe("project-health", () => {
       });
 
       const riskCategory = result.categories.find((c) => c.category === "risk");
-      expect(riskCategory!.detail).toContain("cycle");
+      expect(riskCategory!.detail).toContain("循環依存");
     });
 
     it("uses inspection pass rate for quality", () => {

@@ -43,11 +43,11 @@ function gradeFromScore(score: number): "A" | "B" | "C" | "D" | "F" {
 }
 
 function labelFromScore(score: number): string {
-  if (score >= 90) return "Excellent";
-  if (score >= 75) return "Good";
-  if (score >= 60) return "Fair";
-  if (score >= 40) return "Poor";
-  return "Critical";
+  if (score >= 90) return "優良";
+  if (score >= 75) return "良好";
+  if (score >= 60) return "普通";
+  if (score >= 40) return "要注意";
+  return "危険";
 }
 
 /**
@@ -60,7 +60,7 @@ function scoreSchedule(
   asOfDate: string,
 ): CategoryRating {
   if (tasks.length === 0) {
-    return { category: "schedule", score: 100, label: "Excellent", detail: "No tasks to evaluate" };
+    return { category: "schedule", score: 100, label: "優良", detail: "評価対象タスクなし" };
   }
 
   const spi = schedulePerformanceIndex(tasks, budget, asOfDate);
@@ -82,7 +82,7 @@ function scoreCost(
   asOfDate: string,
 ): CategoryRating {
   if (tasks.length === 0 && costRows.length === 0) {
-    return { category: "cost", score: 100, label: "Excellent", detail: "No cost data" };
+    return { category: "cost", score: 100, label: "優良", detail: "コストデータなし" };
   }
 
   const totalActual = costRows.length > 0
@@ -102,11 +102,11 @@ function scoreCost(
  */
 function scoreQuality(inspectionPassRate?: number): CategoryRating {
   if (inspectionPassRate == null) {
-    return { category: "quality", score: 80, label: "Good", detail: "No inspection data (default)" };
+    return { category: "quality", score: 80, label: "良好", detail: "検査データなし（デフォルト）" };
   }
 
   const score = clamp(Math.round(inspectionPassRate * 100), 0, 100);
-  const detail = `Inspection pass rate: ${(inspectionPassRate * 100).toFixed(1)}%`;
+  const detail = `検査合格率: ${(inspectionPassRate * 100).toFixed(1)}%`;
   return { category: "quality", score, label: labelFromScore(score), detail };
 }
 
@@ -115,7 +115,7 @@ function scoreQuality(inspectionPassRate?: number): CategoryRating {
  */
 function scoreRisk(tasks: Task[], asOfDate: string): CategoryRating {
   if (tasks.length === 0) {
-    return { category: "risk", score: 100, label: "Excellent", detail: "No tasks to evaluate" };
+    return { category: "risk", score: 100, label: "優良", detail: "評価対象タスクなし" };
   }
 
   let riskPenalty = 0;
@@ -140,11 +140,11 @@ function scoreRisk(tasks: Task[], asOfDate: string): CategoryRating {
 
   const score = clamp(100 - riskPenalty, 0, 100);
   const details: string[] = [];
-  if (overdueTasks.length > 0) details.push(`${overdueTasks.length} overdue`);
-  if (gaps.length > 0) details.push(`${gaps.length} gaps`);
-  if (validation.cycles.length > 0) details.push(`${validation.cycles.length} cycle(s)`);
+  if (overdueTasks.length > 0) details.push(`遅延${overdueTasks.length}件`);
+  if (gaps.length > 0) details.push(`空白${gaps.length}件`);
+  if (validation.cycles.length > 0) details.push(`循環依存${validation.cycles.length}件`);
 
-  const detail = details.length > 0 ? details.join(", ") : "No risks detected";
+  const detail = details.length > 0 ? details.join("、") : "リスクなし";
   return { category: "risk", score, label: labelFromScore(score), detail };
 }
 
@@ -185,19 +185,19 @@ export function assessProjectHealth(input: HealthAssessmentInput): HealthScore {
 
   const recommendations: string[] = [];
   if (schedule.score < 60) {
-    recommendations.push("Schedule is behind - consider adding resources or adjusting deadlines.");
+    recommendations.push("工程が遅れています。人員追加か工期調整を検討してください。");
   }
   if (cost.score < 60) {
-    recommendations.push("Cost overrun detected - review change orders and procurement costs.");
+    recommendations.push("コスト超過が検出されました。変更注文と調達コストを確認してください。");
   }
   if (quality.score < 60) {
-    recommendations.push("Quality issues detected - increase inspection frequency.");
+    recommendations.push("品質に問題があります。検査頻度を増やしてください。");
   }
   if (risk.score < 60) {
-    recommendations.push("High risk level - address overdue tasks and resolve dependency issues.");
+    recommendations.push("リスクレベルが高い状態です。遅延タスクの解消と依存関係の確認を行ってください。");
   }
   if (recommendations.length === 0) {
-    recommendations.push("Project is on track. Continue monitoring.");
+    recommendations.push("工程は順調です。引き続き監視を続けてください。");
   }
 
   return {
