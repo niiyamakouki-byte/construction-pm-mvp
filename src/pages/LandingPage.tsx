@@ -232,18 +232,24 @@ export function LandingPage() {
           <p className="mb-8 text-center text-sm font-semibold tracking-[0.2em] text-slate-400 uppercase">実際の画面</p>
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-              <div className="flex h-52 items-center justify-center bg-slate-100 text-slate-300 text-sm">
-                今日のダッシュボード（実機キャプチャ）
-              </div>
+              <img
+                src="/lp/screen-dashboard.png"
+                alt="GenbaHub 今日のダッシュボード画面"
+                loading="lazy"
+                className="h-52 w-full object-cover object-top"
+              />
               <div className="px-4 py-3">
                 <p className="text-sm font-semibold text-slate-700">今日のダッシュボード</p>
                 <p className="mt-0.5 text-xs text-slate-400">進行中案件・タスク・天気をひと目で確認</p>
               </div>
             </div>
             <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-              <div className="flex h-52 items-center justify-center bg-slate-100 text-slate-300 text-sm">
-                PDF見積ドラフト（実機キャプチャ）
-              </div>
+              <img
+                src="/lp/screen-estimate.png"
+                alt="GenbaHub 見積作成画面（PDFから作成/手動で作成）"
+                loading="lazy"
+                className="h-52 w-full object-cover object-top"
+              />
               <div className="px-4 py-3">
                 <p className="text-sm font-semibold text-slate-700">PDF見積→自動積算</p>
                 <p className="mt-0.5 text-xs text-slate-400">業者PDFをドロップするだけで金額を自動集計</p>
