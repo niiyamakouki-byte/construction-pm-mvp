@@ -251,6 +251,8 @@ function TodayDashboardPageContent() {
   const today = toLocalDateString(new Date());
   const [tasks, setTasks] = useState<TaskWithProject[]>([]);
   const [alertsExpanded, setAlertsExpanded] = useState(false);
+  const [demoCreating, setDemoCreating] = useState(false);
+  const [demoError, setDemoError] = useState<string | null>(null);
   const [actionsCollapsed, setActionsCollapsed] = useState<boolean>(() => {
     try {
       return window.localStorage?.getItem("today:actionsCollapsed") === "true";
@@ -562,6 +564,57 @@ function TodayDashboardPageContent() {
     return [...dailyWeatherSummary.issues, ...overdueIssues];
   }, [dailyReportTasks, dailyWeatherSummary.issues, today]);
 
+  const handleCreateDemo = useCallback(async () => {
+    setDemoCreating(true);
+    setDemoError(null);
+    try {
+      const now = new Date();
+      const projectId = crypto.randomUUID();
+      const startDate = toLocalDateString(now);
+      const addDays = (n: number) => {
+        const d = new Date(now);
+        d.setDate(d.getDate() + n);
+        return toLocalDateString(d);
+      };
+      await projectRepository.create({
+        id: projectId,
+        name: "【デモ】南青山オフィス内装工事",
+        description: "デモ用案件。自由に削除できます。",
+        status: "active",
+        mode: "normal",
+        startDate,
+        includeWeekends: true,
+        createdAt: now.toISOString(),
+        updatedAt: now.toISOString(),
+      });
+      const nowIso = now.toISOString();
+      const demoTasks = [
+        { name: "解体工事", dueDate: addDays(3) },
+        { name: "造作工事", dueDate: addDays(7) },
+        { name: "仕上げ工事", dueDate: addDays(14) },
+      ];
+      for (const t of demoTasks) {
+        await taskRepository.create({
+          id: crypto.randomUUID(),
+          projectId,
+          name: t.name,
+          status: "todo",
+          startDate,
+          dueDate: t.dueDate,
+          progress: 0,
+          createdAt: nowIso,
+          updatedAt: nowIso,
+        });
+      }
+      await loadData();
+      navigate(`/gantt/${projectId}`);
+    } catch (err) {
+      setDemoError(err instanceof Error ? err.message : "デモ案件の作成に失敗しました");
+    } finally {
+      setDemoCreating(false);
+    }
+  }, [loadData, projectRepository, taskRepository]);
+
   const handleDailyReportExport = useCallback(() => {
     if (!dailyReportProject) {
       setDailyReportStatus("日報出力対象の案件がありません");
@@ -854,6 +907,38 @@ function TodayDashboardPageContent() {
   // ── Render ───────────────────────────────────────────
   if (loading) {
     return <TodayDashboardSkeleton />;
+  }
+
+  if (allProjects.length === 0) {
+    return (
+      <div className="flex min-h-[60vh] items-center justify-center px-4">
+        <div className="w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-8 shadow-sm text-center">
+          <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-50 mx-auto">
+            <Building2 className="h-7 w-7 text-brand-600" aria-hidden="true" />
+          </div>
+          <h2 className="text-xl font-bold text-slate-900">まず案件を作りましょう</h2>
+          <p className="mt-2 text-sm text-slate-500">2分で最初の現場が登録できます</p>
+          {demoError && (
+            <p className="mt-3 text-xs text-red-600">{demoError}</p>
+          )}
+          <button
+            type="button"
+            onClick={() => navigate("/app")}
+            className="mt-6 w-full rounded-xl bg-brand-600 px-4 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-brand-700"
+          >
+            案件を作成する
+          </button>
+          <button
+            type="button"
+            onClick={() => void handleCreateDemo()}
+            disabled={demoCreating}
+            className="mt-3 w-full text-sm font-semibold text-brand-600 hover:text-brand-700 disabled:opacity-60"
+          >
+            {demoCreating ? "作成中..." : "デモデータで試す"}
+          </button>
+        </div>
+      </div>
+    );
   }
 
   return (
