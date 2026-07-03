@@ -285,7 +285,12 @@ export function TaskEditModal({
               <button
                 key={status}
                 type="button"
-                onClick={() => onChange((detail) => ({ ...detail, editStatus: status }))}
+                onClick={() => onChange((detail) => ({
+                  ...detail,
+                  editStatus: status,
+                  // Sync progress when status changes: done→100, todo→0, in_progress unchanged
+                  editProgress: status === "done" ? 100 : status === "todo" ? 0 : detail.editProgress,
+                }))}
                 className={`rounded-2xl border px-3 py-3 text-sm font-semibold transition-colors ${
                   taskDetail.editStatus === status
                     ? "border-brand-500 bg-brand-50 text-brand-700"
