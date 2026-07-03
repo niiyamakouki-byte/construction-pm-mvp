@@ -264,7 +264,11 @@ function CommentForm({ projectId }: { projectId: string }) {
         </ul>
       )}
       <form onSubmit={handleSubmit} className="flex flex-col gap-2">
+        <label htmlFor="client-comment" className="sr-only">
+          現場への質問・ご要望
+        </label>
         <textarea
+          id="client-comment"
           value={comment}
           onChange={(e) => setComment(e.target.value)}
           placeholder="現場への質問・ご要望をどうぞ"

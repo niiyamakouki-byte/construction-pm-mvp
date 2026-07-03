@@ -185,6 +185,14 @@ describe("ClientViewerPage", () => {
     expect(screen.getByText(/壁の色を変えたい/)).toBeDefined();
   });
 
+  it("comment textarea has an accessible label associated via htmlFor", async () => {
+    render(<ClientViewerPage projectId="proj-1" />);
+    await screen.findByText("南青山リノベーション");
+    const textarea = screen.getByRole("textbox", { name: "現場への質問・ご要望" });
+    expect(textarea).toBeDefined();
+    expect((textarea as HTMLTextAreaElement).id).toBe("client-comment");
+  });
+
   it("shows 今後1週間の工程予定 section", async () => {
     render(<ClientViewerPage projectId="proj-1" />);
     await screen.findByText("南青山リノベーション");

@@ -800,6 +800,7 @@ export function SafetyInspectionPage() {
                           value={item.notes}
                           onChange={(e) => handleItemNotesChange(index, e.target.value)}
                           placeholder="備考"
+                          aria-label={`${item.description} — 備考`}
                           className="mt-2 w-full rounded-lg border border-slate-200 bg-white/80 px-3 py-1.5 text-xs text-slate-700 placeholder:text-slate-400 focus:border-brand-500 focus:outline-none"
                         />
                       </li>

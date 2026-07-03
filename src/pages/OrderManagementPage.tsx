@@ -101,6 +101,8 @@ function ItemRow({
     }
   };
 
+  const rowLabel = item.name || `品目${idx + 1}`;
+
   return (
     <div className="grid grid-cols-12 gap-2 items-end">
       <div className="col-span-4">
@@ -108,6 +110,7 @@ function ItemRow({
         <select
           value={item.code}
           onChange={handleSelect}
+          aria-label={`${rowLabel} — 品目選択`}
           className="w-full rounded border border-slate-200 bg-white px-2 py-1.5 text-sm"
         >
           <option value="">-- 品目を選択 --</option>
@@ -128,6 +131,7 @@ function ItemRow({
           value={item.name}
           onChange={(e) => onChange(idx, "name", e.target.value)}
           placeholder="品目名"
+          aria-label={`${rowLabel} — 品目名`}
           className="w-full rounded border border-slate-200 px-2 py-1.5 text-sm"
         />
       </div>
@@ -137,6 +141,7 @@ function ItemRow({
           value={item.unit}
           onChange={(e) => onChange(idx, "unit", e.target.value)}
           placeholder="単位"
+          aria-label={`${rowLabel} — 単位`}
           className="w-full rounded border border-slate-200 px-2 py-1.5 text-sm"
         />
       </div>
@@ -147,6 +152,7 @@ function ItemRow({
           min="0"
           value={item.quantity}
           onChange={(e) => onChange(idx, "quantity", e.target.value)}
+          aria-label={`${rowLabel} — 数量`}
           className="w-full rounded border border-slate-200 px-2 py-1.5 text-sm"
         />
       </div>
@@ -157,6 +163,7 @@ function ItemRow({
           min="0"
           value={item.unitPrice}
           onChange={(e) => onChange(idx, "unitPrice", e.target.value)}
+          aria-label={`${rowLabel} — 単価(円)`}
           className="w-full rounded border border-slate-200 px-2 py-1.5 text-sm"
         />
       </div>
