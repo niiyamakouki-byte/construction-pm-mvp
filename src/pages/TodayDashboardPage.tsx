@@ -250,6 +250,7 @@ function TodayDashboardPageContent() {
   const photoStore = useMemo(() => createPhotoStore(), []);
   const today = toLocalDateString(new Date());
   const [tasks, setTasks] = useState<TaskWithProject[]>([]);
+  const [alertsExpanded, setAlertsExpanded] = useState(false);
   const [actionsCollapsed, setActionsCollapsed] = useState<boolean>(() => {
     try {
       return window.localStorage?.getItem("today:actionsCollapsed") === "true";
@@ -1495,12 +1496,21 @@ function TodayDashboardPageContent() {
             <AlertTriangle className="h-4 w-4 text-amber-500" aria-hidden="true" /> アラート ({triggeredAlerts.length})
           </h2>
           <ul className="space-y-2">
-            {triggeredAlerts.map((alert, i) => (
+            {(alertsExpanded ? triggeredAlerts : triggeredAlerts.slice(0, 5)).map((alert, i) => (
               <li key={`${alert.rule.id}-${i}`} className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
                 {alert.message}
               </li>
             ))}
           </ul>
+          {triggeredAlerts.length > 5 && (
+            <button
+              type="button"
+              onClick={() => setAlertsExpanded((v) => !v)}
+              className="mt-2 text-sm text-amber-700 underline"
+            >
+              {alertsExpanded ? "折りたたむ" : `他${triggeredAlerts.length - 5}件を表示`}
+            </button>
+          )}
         </section>
       )}
 
