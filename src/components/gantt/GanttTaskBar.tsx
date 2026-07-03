@@ -231,6 +231,8 @@ type GanttTaskLabelProps = {
   task: GanttTask;
   today: string;
   connectMode: boolean;
+  /** P2.5: 同一案件内の全タスク（依存警告判定用） */
+  allTasks?: GanttTask[];
   onOpenTaskDetail: (task: GanttTask) => void;
   onMoveTask?: (task: GanttTask, direction: "up" | "down") => void;
   isFirst?: boolean;
@@ -239,6 +241,8 @@ type GanttTaskLabelProps = {
 
 export function GanttTaskLabel({
   task,
+  today,
+  allTasks,
   connectMode,
   onOpenTaskDetail,
   onMoveTask,
@@ -246,6 +250,17 @@ export function GanttTaskLabel({
   isLast = false,
 }: GanttTaskLabelProps) {
   const { rowHeight } = gantt;
+
+  // P2.5: 先行タスクが未完了なのに後続の開始日を超過している場合に警告
+  const hasDependencyWarning = (() => {
+    if (!allTasks || !task.dependencies?.length) return false;
+    if (task.startDate > today) return false; // まだ開始前なら警告不要
+    for (const depId of task.dependencies) {
+      const pred = allTasks.find((t) => t.id === depId);
+      if (pred && pred.status !== "done" && task.startDate >= today) return true;
+    }
+    return false;
+  })();
 
   return (
     <div
@@ -268,7 +283,19 @@ export function GanttTaskLabel({
               {task.majorCategory}
             </span>
           )}
-          <p className="truncate text-sm font-semibold text-slate-900">{task.name}</p>
+          {/* P2.5: 先行未完了警告 */}
+          {hasDependencyWarning && (
+            <span
+              title="先行タスクが未完了です"
+              className="shrink-0 rounded-full bg-amber-100 px-1.5 py-0.5 text-[9px] font-bold text-amber-700"
+            >
+              先行待
+            </span>
+          )}
+          {/* P2: 完了タスクは名前をグレー化 */}
+          <p className={`truncate text-sm font-semibold ${task.status === "done" ? "text-slate-400 line-through" : "text-slate-900"}`}>
+            {task.name}
+          </p>
         </div>
         <p className="mt-1 truncate text-xs text-slate-500">{task.contractorName ?? "協力会社未設定"}</p>
         <div className="mt-2 flex items-center gap-2">

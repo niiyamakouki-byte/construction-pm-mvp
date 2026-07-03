@@ -42,6 +42,8 @@ type Props = {
   showMilestones?: boolean;
   today: string;
   scrollRef: RefObject<HTMLDivElement | null>;
+  /** P1: フェーズ別進捗（日数加重平均）。key=工種名 */
+  phaseProgress?: Map<string, number>;
   onTaskDragStart: (task: GanttTask, event: ReactPointerEvent<HTMLDivElement>) => void;
   onTaskResizeStart: (task: GanttTask, event: ReactPointerEvent<HTMLDivElement>) => void;
   onOpenTaskDetail: (task: GanttTask) => void;
@@ -75,6 +77,7 @@ export function GanttChart({
   showMilestones = true,
   today,
   scrollRef,
+  phaseProgress,
   onTaskDragStart,
   onTaskResizeStart,
   onOpenTaskDetail,
@@ -218,22 +221,43 @@ export function GanttChart({
 
           {visibleRows.map((row) => {
             if (row.type === "phase") {
+              const progress = phaseProgress?.get(row.group.projectId) ?? 0;
+              const collapsed = row.group.collapsed;
               return (
                 <div
                   key={`phase-${row.group.projectId}`}
-                  className="flex items-center border-b border-slate-200 bg-slate-100/80 px-3"
+                  className="flex items-center gap-2 border-b border-slate-200 bg-slate-100/80 px-3"
                   style={{ height: phaseRowHeight }}
                 >
                   <button
                     type="button"
-                    className="min-w-0 flex-1 text-left text-sm font-semibold text-slate-700"
+                    aria-expanded={!collapsed}
+                    aria-label={`${row.group.projectName} ${collapsed ? "展開" : "折りたたむ"}`}
+                    className="flex h-5 w-5 shrink-0 items-center justify-center rounded text-slate-400 hover:bg-slate-200 hover:text-slate-600 transition-colors"
                     onClick={() => onTogglePhase(row.group.projectId)}
                   >
-                    {row.group.projectName}
+                    <span className="text-[10px] font-bold">{collapsed ? "▶" : "▼"}</span>
                   </button>
+                  <div
+                    className="min-w-0 flex-1 cursor-pointer"
+                    onClick={() => onTogglePhase(row.group.projectId)}
+                  >
+                    <p className="truncate text-sm font-semibold text-slate-700">{row.group.projectName}</p>
+                    <div className="mt-1 flex items-center gap-2">
+                      <div className="h-1.5 flex-1 rounded-full bg-slate-300">
+                        <div
+                          className="h-full rounded-full bg-brand-500"
+                          style={{ width: `${progress}%` }}
+                        />
+                      </div>
+                      <span className="shrink-0 text-[10px] font-semibold tabular-nums text-slate-500">{progress}%</span>
+                      <span className="shrink-0 text-[10px] text-slate-400">{row.group.tasks.length}工程</span>
+                    </div>
+                  </div>
                   <button
                     type="button"
-                    className="flex h-9 w-9 items-center justify-center rounded-full bg-white text-brand-600"
+                    aria-label={`${row.group.projectName}に工程を追加`}
+                    className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white text-brand-600 hover:bg-brand-50 transition-colors text-sm font-bold"
                     onClick={() => onOpenQuickAdd(row.group.projectId, row.group.projectName)}
                   >
                     +
@@ -248,6 +272,7 @@ export function GanttChart({
                 key={row.task.id}
                 task={row.task}
                 today={today}
+                allTasks={ganttTasks}
                 connectMode={connectMode}
                 onOpenTaskDetail={onOpenTaskDetail}
                 onMoveTask={onMoveTask}
@@ -373,12 +398,42 @@ export function GanttChart({
 
             {visibleRows.map((row) => {
               if (row.type === "phase") {
+                // P1: フェーズ期間サマリーバー（配下タスクの最小開始〜最大終了）
+                const phaseTasks = row.group.tasks;
+                let phaseBarLeft: number | null = null;
+                let phaseBarWidth: number | null = null;
+                if (phaseTasks.length > 0) {
+                  const minStart = phaseTasks.reduce((min, t) => t.startDate < min ? t.startDate : min, phaseTasks[0].startDate);
+                  const maxEnd = phaseTasks.reduce((max, t) => t.endDate > max ? t.endDate : max, phaseTasks[0].endDate);
+                  const startOff = daysBetween(chartStart, minStart);
+                  const endOff = daysBetween(chartStart, maxEnd);
+                  phaseBarLeft = startOff * dayWidth;
+                  phaseBarWidth = Math.max((endOff - startOff + 1) * dayWidth, dayWidth);
+                }
+                const phaseProgressVal = phaseProgress?.get(row.group.projectId) ?? 0;
                 return (
                   <div
                     key={`phase-chart-${row.group.projectId}`}
                     className="relative border-b border-slate-200 bg-slate-100/60"
                     style={{ height: phaseRowHeight }}
-                  />
+                  >
+                    {phaseBarLeft !== null && phaseBarWidth !== null && (
+                      <div
+                        className="absolute rounded-sm bg-slate-300/60"
+                        style={{
+                          left: phaseBarLeft + 4,
+                          top: phaseRowHeight / 2 - 5,
+                          width: phaseBarWidth - 8,
+                          height: 10,
+                        }}
+                      >
+                        <div
+                          className="h-full rounded-sm bg-brand-400/70"
+                          style={{ width: `${phaseProgressVal}%` }}
+                        />
+                      </div>
+                    )}
+                  </div>
                 );
               }
 
@@ -410,6 +465,7 @@ export function GanttChart({
               chartStart={chartStart}
               dayWidth={dayWidth}
               totalDays={totalDays}
+              visibleRows={visibleRows}
             />
 
             {connectDrag ? (

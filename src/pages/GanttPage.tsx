@@ -539,10 +539,88 @@ function GanttPageContent({ initialProjectId = null, openMaster = false }: Gantt
     return "other";
   }, []);
 
-  const filteredProjectTasks = useMemo(
-    () => selectedProjectTasks.filter((task) => activeTrades.has(resolveTradeCategory(task))),
-    [selectedProjectTasks, activeTrades, resolveTradeCategory],
-  );
+  // ─── P3: 検索 ──────────────────────────────────────────────────────────────
+  const [taskSearchQuery, setTaskSearchQuery] = useState("");
+
+  const filteredProjectTasks = useMemo(() => {
+    const tradePassed = selectedProjectTasks.filter((task) => activeTrades.has(resolveTradeCategory(task)));
+    if (!taskSearchQuery.trim()) return tradePassed;
+    const q = taskSearchQuery.trim().toLowerCase();
+    return tradePassed.filter(
+      (task) =>
+        task.name.toLowerCase().includes(q) ||
+        (task.contractorName ?? "").toLowerCase().includes(q) ||
+        task.projectName.toLowerCase().includes(q),
+    );
+  }, [selectedProjectTasks, activeTrades, resolveTradeCategory, taskSearchQuery]);
+
+  // ─── P1: フェーズグルーピング ──────────────────────────────────────────────
+  // 工種(majorCategory)でタスクをグループ化し、折りたたみ状態を管理する
+  const [collapsedPhases, setCollapsedPhases] = useState<Set<string>>(new Set());
+
+  const phaseGroups = useMemo(() => {
+    const groups = new Map<string, GanttTask[]>();
+    for (const task of filteredProjectTasks) {
+      const key = task.majorCategory ?? "その他";
+      const existing = groups.get(key) ?? [];
+      existing.push(task);
+      groups.set(key, existing);
+    }
+    return groups;
+  }, [filteredProjectTasks]);
+
+  // フェーズ進捗ロールアップ（日数加重平均）
+  const phaseProgress = useMemo(() => {
+    const result = new Map<string, number>();
+    for (const [key, tasks] of phaseGroups) {
+      let totalDays = 0;
+      let weightedProgress = 0;
+      for (const task of tasks) {
+        const start = new Date(`${task.startDate}T00:00:00`);
+        const end = new Date(`${task.endDate}T00:00:00`);
+        const days = Math.max(1, Math.round((end.getTime() - start.getTime()) / 86400000) + 1);
+        totalDays += days;
+        weightedProgress += task.progress * days;
+      }
+      result.set(key, totalDays > 0 ? Math.round(weightedProgress / totalDays) : 0);
+    }
+    return result;
+  }, [phaseGroups]);
+
+  const handleTogglePhase = useCallback((phaseKey: string) => {
+    setCollapsedPhases((prev) => {
+      const next = new Set(prev);
+      if (next.has(phaseKey)) next.delete(phaseKey);
+      else next.add(phaseKey);
+      return next;
+    });
+  }, []);
+
+  // P1: visibleRows にフェーズヘッダー行 + タスク行を構築
+  const ganttVisibleRows = useMemo(() => {
+    if (phaseGroups.size === 0) {
+      return filteredProjectTasks.map((task) => ({ type: "task" as const, task }));
+    }
+    const rows: Array<{ type: "task"; task: GanttTask } | { type: "phase"; group: { projectId: string; projectName: string; tasks: GanttTask[]; collapsed: boolean } }> = [];
+    for (const [key, tasks] of phaseGroups) {
+      const collapsed = collapsedPhases.has(key);
+      rows.push({
+        type: "phase",
+        group: {
+          projectId: key, // phaseKey として工種名を使用
+          projectName: key,
+          tasks,
+          collapsed,
+        },
+      });
+      if (!collapsed) {
+        for (const task of tasks) {
+          rows.push({ type: "task", task });
+        }
+      }
+    }
+    return rows;
+  }, [phaseGroups, collapsedPhases, filteredProjectTasks]);
 
   const handleMoveTask = useCallback(
     async (task: GanttTask, direction: "up" | "down") => {
@@ -1346,10 +1424,31 @@ function GanttPageContent({ initialProjectId = null, openMaster = false }: Gantt
         <TaskEditModal
           taskDetail={taskDetail}
           contractors={contractors}
+          allProjectTasks={selectedProjectTasks}
           onClose={() => setTaskDetail(null)}
           onSubmit={(event) => void handleTaskDetailSave(event)}
           onChange={(updater) => setTaskDetail((current) => (current ? updater(current) : current))}
           onDelete={(taskId) => setDeleteTarget(ganttTasks.find((task) => task.id === taskId) ?? taskDetail.task)}
+          onAddDependency={async (predecessorId) => {
+            const toTask = taskDetail.task;
+            const updated = [...(toTask.dependencies ?? []), predecessorId];
+            try {
+              await taskRepository.update(toTask.id, { dependencies: updated, updatedAt: new Date().toISOString() });
+              await loadData();
+            } catch (err) {
+              setError(err instanceof Error ? err.message : "先行タスクの追加に失敗しました");
+            }
+          }}
+          onRemoveDependency={async (predecessorId) => {
+            const toTask = taskDetail.task;
+            const updated = (toTask.dependencies ?? []).filter((id) => id !== predecessorId);
+            try {
+              await taskRepository.update(toTask.id, { dependencies: updated, updatedAt: new Date().toISOString() });
+              await loadData();
+            } catch (err) {
+              setError(err instanceof Error ? err.message : "先行タスクの削除に失敗しました");
+            }
+          }}
         />
       ) : null}
 
@@ -1884,6 +1983,13 @@ function GanttPageContent({ initialProjectId = null, openMaster = false }: Gantt
             >
               指示で編集
             </button>
+            <button
+              type="button"
+              onClick={() => navigate("/resource-analysis")}
+              className="rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50 transition-colors"
+            >
+              リソース分析
+            </button>
           </div>
         </div>
 
@@ -1990,8 +2096,29 @@ function GanttPageContent({ initialProjectId = null, openMaster = false }: Gantt
           </div>
         </div>
 
-        {/* 工種フィルタ */}
-        <div className="mt-3 flex flex-wrap items-center gap-2" aria-label="工種フィルタ">
+        {/* P3: 検索ボックス */}
+        <div className="mt-3 flex items-center gap-2">
+          <div className="relative flex-1">
+            <input
+              type="search"
+              value={taskSearchQuery}
+              onChange={(e) => setTaskSearchQuery(e.target.value)}
+              placeholder="工程名・協力会社・案件名で検索"
+              className="w-full rounded-full border border-slate-200 bg-white py-1.5 pl-8 pr-4 text-sm text-slate-700 placeholder:text-slate-400 focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20"
+            />
+            <svg className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
+            </svg>
+          </div>
+          {/* P3: 件数表示 */}
+          <span className="shrink-0 text-xs text-slate-500">
+            {filteredProjectTasks.length}件
+            {taskSearchQuery.trim() && "が条件に一致"}
+          </span>
+        </div>
+
+        {/* 工種フィルタ + P1: 一括開閉 */}
+        <div className="mt-2 flex flex-wrap items-center gap-2" aria-label="工種フィルタ">
           <button
             type="button"
             onClick={() => setActiveTrades(new Set(TRADE_CATEGORIES))}
@@ -2031,6 +2158,23 @@ function GanttPageContent({ initialProjectId = null, openMaster = false }: Gantt
               </button>
             );
           })}
+          {/* P1: 一括開閉ボタン */}
+          <div className="ml-auto flex gap-1">
+            <button
+              type="button"
+              onClick={() => setCollapsedPhases(new Set(phaseGroups.keys()))}
+              className="rounded-full bg-white px-3 py-1.5 text-xs font-semibold text-slate-500 ring-1 ring-slate-200 hover:bg-slate-50 transition-colors"
+            >
+              全折
+            </button>
+            <button
+              type="button"
+              onClick={() => setCollapsedPhases(new Set())}
+              className="rounded-full bg-white px-3 py-1.5 text-xs font-semibold text-slate-500 ring-1 ring-slate-200 hover:bg-slate-50 transition-colors"
+            >
+              全展
+            </button>
+          </div>
         </div>
       </section>
 
@@ -2060,7 +2204,7 @@ function GanttPageContent({ initialProjectId = null, openMaster = false }: Gantt
       ) : (
         <GanttChart
           ganttTasks={filteredProjectTasks}
-          visibleRows={filteredProjectTasks.map((task) => ({ type: "task" as const, task }))}
+          visibleRows={ganttVisibleRows}
           chartLayout={chartLayout}
           dragState={dragState}
           dragRef={dragRef}
@@ -2071,12 +2215,13 @@ function GanttPageContent({ initialProjectId = null, openMaster = false }: Gantt
           showMilestones={showMilestones}
           today={today}
           scrollRef={scrollRef}
+          phaseProgress={phaseProgress}
           onTaskDragStart={startTaskDrag}
           onTaskResizeStart={startTaskResize}
           onOpenTaskDetail={openTaskDetail}
           onMoveTask={(task, direction) => void handleMoveTask(task, direction)}
           onOpenQuickAdd={openQuickAdd}
-          onTogglePhase={() => undefined}
+          onTogglePhase={handleTogglePhase}
           onSetConnectState={setConnectState}
           onConnectTask={(toTaskId) => void handleConnectTask(toTaskId)}
           onConnectTasks={(fromTaskId, toTaskId) => void connectTasks(fromTaskId, toTaskId)}
