@@ -19,7 +19,7 @@ type ProgressDashboardProps = {
 
 function formatNumber(value: number, maximumFractionDigits = 2): string {
   if (!Number.isFinite(value)) return "N/A";
-  return value.toLocaleString("en-US", {
+  return value.toLocaleString("ja-JP", {
     minimumFractionDigits: 0,
     maximumFractionDigits,
   });
@@ -30,30 +30,30 @@ function formatPercent(value: number): string {
 }
 
 function getScheduleHealth(spi: number): {
-  label: "ahead" | "on track" | "behind";
+  label: "順調" | "計画通り" | "遅延";
   tone: string;
   description: string;
 } {
   if (spi > 1.05) {
     return {
-      label: "ahead",
+      label: "順調",
       tone: "bg-emerald-50 text-emerald-700 ring-emerald-200",
-      description: "Work is earning value faster than planned.",
+      description: "計画より速いペースで工事が進んでいます。",
     };
   }
 
   if (spi < 0.95) {
     return {
-      label: "behind",
+      label: "遅延",
       tone: "bg-rose-50 text-rose-700 ring-rose-200",
-      description: "The current plan is slipping against the baseline.",
+      description: "計画に対して遅れが生じています。",
     };
   }
 
   return {
-    label: "on track",
+    label: "計画通り",
     tone: "bg-blue-50 text-blue-700 ring-blue-200",
-    description: "Actual progress is aligned with the planned pace.",
+    description: "計画通りのペースで進捗しています。",
   };
 }
 
@@ -76,31 +76,31 @@ export function ProgressDashboard({
   );
 
   return (
-    <section className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm" aria-label="Project progress dashboard">
+    <section className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm" aria-label="案件進捗ダッシュボード">
       <div className="bg-[linear-gradient(135deg,#fffaf0_0%,#f8fafc_45%,#eff6ff_100%)] px-5 py-5">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Project controls</p>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">案件管理</p>
             <h2 className="mt-2 text-2xl font-bold text-slate-900">{project.name}</h2>
             <p className="mt-2 text-sm text-slate-600">
-              Progress, earned value, and critical-path health in one view.
+              進捗・アーンドバリュー・クリティカルパスを一画面で確認。
             </p>
           </div>
           <div className={`rounded-full px-3 py-1 text-sm font-semibold ring-1 ${health.tone}`}>
-            Schedule health: {health.label}
+            スケジュール: {health.label}
           </div>
         </div>
 
         <div className="mt-5 rounded-2xl border border-white/70 bg-white/90 p-4 shadow-sm">
           <div className="flex flex-wrap items-end justify-between gap-3">
             <div>
-              <p className="text-xs text-slate-500">Overall progress</p>
+              <p className="text-xs text-slate-500">全体進捗</p>
               <p className="mt-1 text-4xl font-bold tabular-nums text-slate-900">
                 {formatPercent(overallProgress)}
               </p>
             </div>
             <div className="text-right">
-              <p className="text-xs text-slate-500">Planned progress</p>
+              <p className="text-xs text-slate-500">計画進捗</p>
               <p className="mt-1 text-lg font-semibold tabular-nums text-slate-700">
                 {formatPercent(evm.plannedPercentComplete)}
               </p>
@@ -129,27 +129,27 @@ export function ProgressDashboard({
             <article className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
               <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">SPI</p>
               <p className="mt-2 text-3xl font-bold tabular-nums text-slate-900">{formatNumber(spi)}</p>
-              <p className="mt-1 text-sm text-slate-500">EV / PV</p>
+              <p className="mt-1 text-sm text-slate-500">EV ÷ PV</p>
             </article>
 
             <article className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
               <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">CPI</p>
               <p className="mt-2 text-3xl font-bold tabular-nums text-slate-900">{formatNumber(cpi)}</p>
-              <p className="mt-1 text-sm text-slate-500">EV / AC</p>
+              <p className="mt-1 text-sm text-slate-500">EV ÷ AC</p>
             </article>
 
             <article className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
               <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">EAC</p>
               <p className="mt-2 text-3xl font-bold tabular-nums text-slate-900">{formatNumber(eac, 0)}</p>
-              <p className="mt-1 text-sm text-slate-500">Budget / CPI</p>
+              <p className="mt-1 text-sm text-slate-500">予算 ÷ CPI</p>
             </article>
           </div>
 
           <div className="rounded-2xl border border-slate-200 bg-white p-4">
             <div className="flex items-center justify-between gap-3">
               <div>
-                <p className="text-sm font-semibold text-slate-900">Earned value</p>
-                <p className="text-xs text-slate-500">Budget-weighted schedule and cost tracking.</p>
+                <p className="text-sm font-semibold text-slate-900">アーンドバリュー</p>
+                <p className="text-xs text-slate-500">予算加重によるスケジュール・コスト管理。</p>
               </div>
               <div className="text-right text-xs text-slate-500">
                 BAC {formatNumber(evm.bac, 0)}
@@ -176,16 +176,16 @@ export function ProgressDashboard({
         <aside className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <p className="text-sm font-semibold text-slate-900">Critical path</p>
-              <p className="text-xs text-slate-500">Longest dependency chain driving completion.</p>
+              <p className="text-sm font-semibold text-slate-900">クリティカルパス</p>
+              <p className="text-xs text-slate-500">完工日を左右する最長の依存関係チェーン。</p>
             </div>
             <span className="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-800">
-              {critical.totalDuration} days
+              {critical.totalDuration}日
             </span>
           </div>
 
           {criticalTaskNames.length > 0 ? (
-            <div className="mt-4 flex flex-wrap gap-2" aria-label="Critical path tasks">
+            <div className="mt-4 flex flex-wrap gap-2" aria-label="クリティカルパスのタスク">
               {criticalTaskNames.map((taskName, index) => (
                 <span
                   key={`${taskName}-${index}`}
@@ -196,7 +196,7 @@ export function ProgressDashboard({
               ))}
             </div>
           ) : (
-            <p className="mt-4 text-sm text-slate-500">No critical path is available until dependencies are valid.</p>
+            <p className="mt-4 text-sm text-slate-500">依存関係が設定されるとクリティカルパスが表示されます。</p>
           )}
 
           {critical.issues.length > 0 && (

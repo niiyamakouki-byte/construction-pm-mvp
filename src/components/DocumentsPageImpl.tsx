@@ -306,7 +306,7 @@ export function DocumentsPage({ projectId }: { projectId: string }) {
       <section className="rounded-3xl bg-brand-800 p-6 text-white shadow-sm">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div className="space-y-2">
-            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-brand-200">Project Documents</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-brand-200">案件ドキュメント</p>
             <div>
               <h1 className="text-2xl font-bold">{project.name}</h1>
               <p className="mt-1 text-sm text-brand-200">図面、契約、写真、請求書を案件単位で整理します。</p>

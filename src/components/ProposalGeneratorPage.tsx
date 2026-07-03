@@ -57,7 +57,7 @@ function formatJpy(amount: number): string {
   if (amount >= 10_000) {
     return `${Math.round(amount / 10_000)}万円`;
   }
-  return `${amount.toLocaleString()}円`;
+  return `${amount.toLocaleString("ja-JP")}円`;
 }
 
 function formatDateJa(iso: string): string {

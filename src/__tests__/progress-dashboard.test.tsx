@@ -64,7 +64,7 @@ describe("ProgressDashboard", () => {
     ];
     render(<ProgressDashboard project={baseProject} tasks={tasks} asOfDate="2025-01-05" />);
     // ahead of schedule since 100% at midpoint
-    expect(screen.getAllByText(/Schedule health:/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/スケジュール:/).length).toBeGreaterThan(0);
   });
 
   it("displays critical path tasks", () => {
@@ -87,6 +87,6 @@ describe("ProgressDashboard", () => {
       makeTask({ id: "a", name: "A", startDate: "2025-01-01", dueDate: "2025-01-20", progress: 10, status: "in_progress" }),
     ];
     render(<ProgressDashboard project={baseProject} tasks={tasks} asOfDate="2025-01-15" />);
-    expect(screen.getAllByText(/behind/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/遅延/).length).toBeGreaterThan(0);
   });
 });
