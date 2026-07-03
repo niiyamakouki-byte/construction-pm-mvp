@@ -324,7 +324,7 @@ function AppShell() {
     { key: "crm", label: t("common:nav.crm"), icon: "crm", path: "/crm", matchRoute: (currentRoute) => currentRoute === "/crm" },
     {
       key: "invoice",
-      label: t("common:nav.invoice"),
+      label: t("common:nav.invoices_nav"),
       icon: "invoice",
       path: "/invoice",
       matchRoute: (currentRoute) => currentRoute === "/invoice",
