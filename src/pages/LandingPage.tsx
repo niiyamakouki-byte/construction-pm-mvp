@@ -210,13 +210,29 @@ export function LandingPage() {
             内装工事特化の現場管理SaaS
           </div>
           <h1 className="text-4xl font-extrabold leading-tight tracking-tight text-white sm:text-5xl">
-            内装工事の現場管理を、
+            現場の面倒が、
             <br />
-            <span className="text-accent-400">もっとシンプルに。</span>
+            <span className="text-accent-400">消えていく。</span>
           </h1>
           <p className="mx-auto mt-6 max-w-xl text-lg text-brand-200">
-            LGS・ボード・塗装・OA床など内装特化の工程テンプレ、PDF見積の自動積算、AI写真日報。内装工事会社のために設計されたプロジェクト管理ツール。
+            1日30分の事務が消えると、月15時間＝人工0.5人分。内装工事会社のために設計された現場管理SaaSです。
           </p>
+          <ul className="mx-auto mt-8 max-w-xl space-y-3 text-left">
+            {[
+              ["夜の事務作業が消える", "現場写真を送るだけで、日報も写真整理も勝手に終わる"],
+              ["「あれどうなってる？」の電話が消える", "工程も担当も進捗も、全員が同じ1画面を見る"],
+              ["請求漏れ・転記ミスが消える", "見積→発注→請求がひとつながり。手打ちの転記がない"],
+              ["覚える操作が消える", "「基礎を2日後ろに」と入力すれば工程表が動く"],
+            ].map(([title, desc]) => (
+              <li key={title} className="flex items-start gap-3 rounded-xl bg-brand-700/50 px-4 py-3">
+                <span className="mt-0.5 text-accent-400">✓</span>
+                <span>
+                  <span className="block font-bold text-white">{title}</span>
+                  <span className="block text-sm text-brand-200">{desc}</span>
+                </span>
+              </li>
+            ))}
+          </ul>
           <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
             <button
               onClick={() => navigate("/signup")}
@@ -328,6 +344,28 @@ export function LandingPage() {
             <p className="text-xs text-slate-400 px-1">
               ※ 汎用ツールの月額は各社公開情報の概算です。詳細は各社サイトでご確認ください。
             </p>
+          </div>
+          {/* Generic AI comparison */}
+          <div className="mt-14">
+            <div className="mb-8 text-center">
+              <h3 className="text-2xl font-bold text-slate-900">ChatGPT等の汎用AIとの違い</h3>
+              <p className="mt-3 text-slate-500">
+                汎用AIは何でもできる代わりに、何をさせるかを言葉にできる人しか使いこなせません。
+                GenbaHubは、AIを使いこなす能力が要らないAIです。
+              </p>
+            </div>
+            <div className="grid gap-6 sm:grid-cols-3">
+              {[
+                ["要る能力が違う", "汎用AIは指示の上手さがそのまま成果の差になる。GenbaHubは写真を送る・喋るだけ。現場仕事をそのまま続けるだけでいい。"],
+                ["残るものが違う", "チャットの返答は流れて消える。GenbaHubは工程表・日報・請求書という会社の資産として構造化されて残る。"],
+                ["効く範囲が違う", "汎用AIは使った本人だけが楽になる。GenbaHubは全員が同じ画面を見る、会社の仕組みとして効く。"],
+              ].map(([title, desc]) => (
+                <div key={title} className="rounded-2xl border border-slate-200 bg-slate-50 p-6">
+                  <h4 className="mb-2 text-base font-bold text-slate-900">{title}</h4>
+                  <p className="text-sm leading-relaxed text-slate-500">{desc}</p>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </section>
