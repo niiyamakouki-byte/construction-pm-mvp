@@ -569,7 +569,7 @@ export function ProjectListPage() {
             <div className="space-y-5">
               <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-semibold tracking-[0.18em] text-slate-100">
                 <span className="inline-flex h-2 w-2 rounded-full bg-emerald-300" aria-hidden="true" />
-                FIRST PROJECT
+                はじめての案件
               </div>
               <div className="max-w-2xl">
                 <h2 className="text-xl font-bold tracking-tight text-white sm:text-2xl">
