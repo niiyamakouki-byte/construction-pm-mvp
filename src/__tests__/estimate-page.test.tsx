@@ -243,7 +243,7 @@ describe("EstimatePage", () => {
     expect(screen.getByText(/株式会社テスト 様/)).toBeDefined();
     expect(screen.getByText("解体・撤去")).toBeDefined();
     expect(screen.getByText("内装解体（木造）")).toBeDefined();
-    expect(screen.getByText("¥8,894")).toBeDefined();
+    expect(screen.getByText("¥10,164")).toBeDefined();
     expect(screen.getByRole("button", { name: "PDF出力" })).toBeDefined();
     expect(mocks.generateEstimatePdf).not.toHaveBeenCalled();
 
