@@ -37,8 +37,9 @@ describe('SafetyRepository — Supabase routing', () => {
   it('useSupabase=true の getKyAsync が ky_activities テーブルを参照する', async () => {
     const row = {
       id: 'ky-1',
+      project_id: null,
       organization_id: null,
-      date: '2026-05-13',
+      activity_date: '2026-05-13',
       participants: ['山田'],
       hazards: ['転落'],
       countermeasures: ['手すり'],
@@ -55,12 +56,13 @@ describe('SafetyRepository — Supabase routing', () => {
   it('useSupabase=true の getNearMissAsync が near_miss_reports テーブルを参照する', async () => {
     const row = {
       id: 'nm-1',
+      project_id: null,
       organization_id: null,
-      datetime: '2026-05-13T10:30:00.000Z',
+      occurred_at: '2026-05-13T10:30:00.000Z',
       location: '3階',
       description: '工具落下',
       severity: 'medium',
-      cause_analysis: '養生不足',
+      cause: '養生不足',
       countermeasure: '養生強化',
       created_at: '2026-05-13T10:30:00.000Z',
     };

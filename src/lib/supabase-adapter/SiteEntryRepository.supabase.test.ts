@@ -39,9 +39,9 @@ describe('SiteEntryRepository — Supabase routing', () => {
       id: 'e-1',
       project_id: 'p-1',
       worker_name: '山田',
-      company: 'ラポルタ',
-      entry_time: '2026-05-13T09:00:00.000Z',
-      exit_time: '2026-05-13T18:00:00.000Z',
+      company_name: 'ラポルタ',
+      entry_at: '2026-05-13T09:00:00.000Z',
+      exit_at: '2026-05-13T18:00:00.000Z',
     };
     mockFrom.mockReturnValue(makeBuilder({ data: row, error: null }));
 
@@ -52,14 +52,14 @@ describe('SiteEntryRepository — Supabase routing', () => {
     expect(result?.exitTime).toBe('2026-05-13T18:00:00.000Z');
   });
 
-  it('exit_time=null が exitTime undefined に変換される', async () => {
+  it('exit_at=null が exitTime undefined に変換される', async () => {
     const row = {
       id: 'e-1',
       project_id: 'p-1',
       worker_name: '山田',
-      company: 'ラポルタ',
-      entry_time: '2026-05-13T09:00:00.000Z',
-      exit_time: null,
+      company_name: 'ラポルタ',
+      entry_at: '2026-05-13T09:00:00.000Z',
+      exit_at: null,
     };
     mockFrom.mockReturnValue(makeBuilder({ data: row, error: null }));
 

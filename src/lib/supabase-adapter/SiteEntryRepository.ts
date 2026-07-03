@@ -20,13 +20,15 @@ export type SiteEntryRecord = {
   taskId?: string;
 };
 
+// DB実スキーマ: id, project_id, organization_id, worker_name, company_name, entry_at, exit_at, entry_type, notes, created_at, updated_at
+// job_type/start_photo_id/end_photo_id/task_id は draft_2026_07_04_site_entry_photos.sql で追加予定
 type SiteEntryRow = {
   id: string;
   project_id: string;
   worker_name: string;
-  company: string;
-  entry_time: string;
-  exit_time: string | null;
+  company_name: string;
+  entry_at: string;
+  exit_at: string | null;
   job_type: string | null;
   start_photo_id: string | null;
   end_photo_id: string | null;
@@ -38,10 +40,10 @@ function rowToRecord(row: SiteEntryRow): SiteEntryRecord {
     id: row.id,
     projectId: row.project_id,
     workerName: row.worker_name,
-    company: row.company,
-    entryTime: row.entry_time,
+    company: row.company_name,
+    entryTime: row.entry_at,
   };
-  if (row.exit_time) r.exitTime = row.exit_time;
+  if (row.exit_at) r.exitTime = row.exit_at;
   if (row.job_type) r.jobType = row.job_type;
   if (row.start_photo_id) r.startPhotoId = row.start_photo_id;
   if (row.end_photo_id) r.endPhotoId = row.end_photo_id;
@@ -54,9 +56,9 @@ function recordToRow(r: SiteEntryRecord): SiteEntryRow {
     id: r.id,
     project_id: r.projectId,
     worker_name: r.workerName,
-    company: r.company,
-    entry_time: r.entryTime,
-    exit_time: r.exitTime ?? null,
+    company_name: r.company,
+    entry_at: r.entryTime,
+    exit_at: r.exitTime ?? null,
     job_type: r.jobType ?? null,
     start_photo_id: r.startPhotoId ?? null,
     end_photo_id: r.endPhotoId ?? null,

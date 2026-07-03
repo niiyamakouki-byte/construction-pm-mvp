@@ -54,10 +54,15 @@ describe('InvoiceRepository Phase B — Supabase routing', () => {
     const row = {
       id: 'inv-1',
       project_id: 'p-1',
-      amount: 100000,
-      issued_date: '2025-04-17',
-      paid_date: null,
+      invoice_number: 'INV-001',
+      customer_id: null,
       status: '未確認',
+      issue_date: '2025-04-17',
+      due_date: null,
+      subtotal: 100000,
+      tax_amount: 10000,
+      total_amount: 110000,
+      notes: null,
     };
     mockFrom.mockReturnValue(makeBuilder({ data: row, error: null }));
 

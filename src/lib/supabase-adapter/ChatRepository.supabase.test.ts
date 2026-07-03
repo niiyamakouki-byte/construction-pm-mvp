@@ -53,8 +53,10 @@ describe('ChatRepository Phase B — Supabase routing', () => {
     const row = {
       id: 'chat-1',
       project_id: 'p-1',
-      sender: 'user-1',
-      content: 'テストメッセージ',
+      sender_id: 'user-1',
+      sender_name: '山田',
+      body: 'テストメッセージ',
+      message_type: 'text',
       created_at: '2025-04-17T00:00:00.000Z',
     };
     mockFrom.mockReturnValue(makeBuilder({ data: row, error: null }));
@@ -76,8 +78,8 @@ describe('ChatRepository Phase B — Supabase routing', () => {
 
   it('useSupabase=true で listByProjectAsync が project_id でフィルタする', async () => {
     const rows = [
-      { id: 'chat-1', project_id: 'p-1', sender: 'u1', content: 'A', created_at: '' },
-      { id: 'chat-2', project_id: 'p-2', sender: 'u2', content: 'B', created_at: '' },
+      { id: 'chat-1', project_id: 'p-1', sender_id: 'u1', sender_name: 'A', body: 'A', message_type: 'text', created_at: '' },
+      { id: 'chat-2', project_id: 'p-2', sender_id: 'u2', sender_name: 'B', body: 'B', message_type: 'text', created_at: '' },
     ];
     mockFrom.mockReturnValue(makeBuilder({ data: rows, error: null }));
 

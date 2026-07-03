@@ -38,40 +38,54 @@ export type InvoiceRecord = {
   pdfPath?: string;
 };
 
-// DB 行 (snake_case) ↔ アプリ型 (camelCase) のマッピング
+// DB実スキーマ: id, project_id, organization_id, invoice_number, customer_id, status, issue_date, due_date, subtotal, tax_amount, total_amount, notes, created_at, updated_at
 type InvoiceRow = {
   id: string;
   project_id: string;
-  amount: number;
-  issued_date: string;
-  paid_date?: string | null;
+  invoice_number: string;
+  customer_id: string | null;
   status: string;
+  issue_date: string;
+  due_date: string | null;
+  subtotal: number;
+  tax_amount: number;
+  total_amount: number;
+  notes: string | null;
 };
 
 function rowToInvoice(row: InvoiceRow): InvoiceRecord {
   return {
     id: row.id,
     projectId: row.project_id,
-    vendorName: '',
-    amount: row.amount,
-    tax: 0,
-    total: row.amount,
+    vendorName: row.notes ?? '',
+    amount: row.subtotal,
+    tax: row.tax_amount,
+    total: row.total_amount,
     items: [],
-    invoiceDate: row.issued_date,
-    dueDate: undefined,
+    invoiceDate: row.issue_date,
+    dueDate: row.due_date ?? undefined,
     status: (row.status as InvoiceStatus) ?? '未確認',
-    paidDate: row.paid_date ?? undefined,
   };
+}
+
+let _invoiceCounter = 1;
+function nextInvoiceNumber(): string {
+  return `INV-${Date.now()}-${_invoiceCounter++}`;
 }
 
 function invoiceToRow(inv: InvoiceRecord): InvoiceRow {
   return {
     id: inv.id,
     project_id: inv.projectId,
-    amount: inv.amount,
-    issued_date: inv.invoiceDate,
-    paid_date: inv.paidDate ?? null,
+    invoice_number: nextInvoiceNumber(),
+    customer_id: null,
     status: inv.status,
+    issue_date: inv.invoiceDate,
+    due_date: inv.dueDate ?? null,
+    subtotal: inv.amount,
+    tax_amount: inv.tax,
+    total_amount: inv.total,
+    notes: inv.vendorName || null,
   };
 }
 

@@ -32,10 +32,13 @@ export type NearMissReportRecord = {
   createdAt: string;
 };
 
+// DB実スキーマ ky_activities: id, project_id, organization_id, activity_date, leader_name, hazards, countermeasures, target_zero, participants, created_at, updated_at
+// DB実スキーマ near_miss_reports: id, project_id, organization_id, occurred_at, location, description, cause, countermeasure, severity, reporter_name, created_at, updated_at
 type KyActivityRow = {
   id: string;
+  project_id: string | null;
   organization_id: string | null;
-  date: string;
+  activity_date: string;
   participants: string[];
   hazards: string[];
   countermeasures: string[];
@@ -44,12 +47,13 @@ type KyActivityRow = {
 
 type NearMissRow = {
   id: string;
+  project_id: string | null;
   organization_id: string | null;
-  datetime: string;
+  occurred_at: string;
   location: string;
   description: string;
   severity: NearMissSeverity;
-  cause_analysis: string;
+  cause: string;
   countermeasure: string;
   created_at: string;
 };
@@ -57,7 +61,7 @@ type NearMissRow = {
 function rowToKy(row: KyActivityRow): KyActivityRecord {
   return {
     id: row.id,
-    date: row.date,
+    date: row.activity_date,
     participants: row.participants,
     hazards: row.hazards,
     countermeasures: row.countermeasures,
@@ -68,8 +72,9 @@ function rowToKy(row: KyActivityRow): KyActivityRecord {
 function kyToRow(r: KyActivityRecord): KyActivityRow {
   return {
     id: r.id,
+    project_id: null,
     organization_id: null,
-    date: r.date,
+    activity_date: r.date,
     participants: r.participants,
     hazards: r.hazards,
     countermeasures: r.countermeasures,
@@ -80,11 +85,11 @@ function kyToRow(r: KyActivityRecord): KyActivityRow {
 function rowToNearMiss(row: NearMissRow): NearMissReportRecord {
   return {
     id: row.id,
-    datetime: row.datetime,
+    datetime: row.occurred_at,
     location: row.location,
     description: row.description,
     severity: row.severity,
-    causeAnalysis: row.cause_analysis,
+    causeAnalysis: row.cause,
     countermeasure: row.countermeasure,
     createdAt: row.created_at,
   };
@@ -93,12 +98,13 @@ function rowToNearMiss(row: NearMissRow): NearMissReportRecord {
 function nearMissToRow(r: NearMissReportRecord): NearMissRow {
   return {
     id: r.id,
+    project_id: null,
     organization_id: null,
-    datetime: r.datetime,
+    occurred_at: r.datetime,
     location: r.location,
     description: r.description,
     severity: r.severity,
-    cause_analysis: r.causeAnalysis,
+    cause: r.causeAnalysis,
     countermeasure: r.countermeasure,
     created_at: r.createdAt,
   };

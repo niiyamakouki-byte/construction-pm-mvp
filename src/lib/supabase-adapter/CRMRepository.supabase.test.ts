@@ -73,7 +73,7 @@ describe('CRMRepository Phase B — Supabase routing', () => {
       phone: '03-0000-0000',
       email: 'tanaka@example.com',
       address: '東京都港区南青山',
-      note: 'VIP顧客',
+      notes: 'VIP顧客',
       created_at: '2025-04-17T00:00:00.000Z',
     };
     mockFrom.mockReturnValue(makeBuilder({ data: row, error: null }));

@@ -38,7 +38,7 @@ export type DealRecord = {
   updatedAt: string;
 };
 
-// DB 行 (snake_case) ↔ アプリ型 (camelCase) のマッピング
+// DB実スキーマ: id, project_id, organization_id, name, company, email, phone, address, notes, status, created_at, updated_at
 type CustomerRow = {
   id: string;
   name: string;
@@ -46,7 +46,7 @@ type CustomerRow = {
   phone?: string | null;
   email?: string | null;
   address?: string | null;
-  note?: string | null;
+  notes?: string | null;
   created_at: string;
 };
 
@@ -58,7 +58,7 @@ function rowToCustomer(row: CustomerRow): CustomerRecord {
     phone: row.phone ?? '',
     email: row.email ?? '',
     address: row.address ?? '',
-    note: row.note ?? '',
+    note: row.notes ?? '',
     createdAt: row.created_at,
   };
 }
@@ -71,7 +71,7 @@ function customerToRow(c: CustomerRecord): CustomerRow {
     phone: c.phone || null,
     email: c.email || null,
     address: c.address || null,
-    note: c.note || null,
+    notes: c.note || null,
     created_at: c.createdAt,
   };
 }

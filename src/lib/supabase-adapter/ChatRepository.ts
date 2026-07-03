@@ -25,11 +25,16 @@ export type ChatMessageRecord = {
 };
 
 // DB 行 (snake_case) ↔ アプリ型 (camelCase) のマッピング
+// DB実スキーマ: id, project_id, organization_id, room_id, sender_id, sender_name, body, message_type, created_at, updated_at
 type ChatMessageRow = {
   id: string;
   project_id: string;
-  sender: string;
-  content: string;
+  organization_id?: string | null;
+  room_id?: string | null;
+  sender_id: string;
+  sender_name: string;
+  body: string;
+  message_type: string;
   created_at: string;
 };
 
@@ -37,11 +42,11 @@ function rowToMessage(row: ChatMessageRow): ChatMessageRecord {
   return {
     id: row.id,
     projectId: row.project_id,
-    userId: row.sender,
-    userName: row.sender,
-    content: row.content,
+    userId: row.sender_id,
+    userName: row.sender_name,
+    content: row.body,
     timestamp: row.created_at,
-    type: 'text',
+    type: row.message_type ?? 'text',
     readBy: [],
   };
 }
@@ -50,8 +55,10 @@ function messageToRow(m: ChatMessageRecord): ChatMessageRow {
   return {
     id: m.id,
     project_id: m.projectId,
-    sender: m.userId,
-    content: m.content,
+    sender_id: m.userId,
+    sender_name: m.userName,
+    body: m.content,
+    message_type: m.type ?? 'text',
     created_at: m.timestamp,
   };
 }
