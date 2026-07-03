@@ -6,6 +6,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { createProjectRepository } from "../stores/project-store.js";
 import { createTaskRepository } from "../stores/task-store.js";
+import { createContractorRepository } from "../stores/contractor-store.js";
 import { useOrganizationContext } from "../contexts/OrganizationContext.js";
 import { filterScheduleTasks } from "../lib/cost-management.js";
 import { toLocalDateString } from "../components/gantt/utils.js";
@@ -124,6 +125,7 @@ export function ResourceAnalysisPage() {
   const { organizationId } = useOrganizationContext();
   const projectRepository = useMemo(() => createProjectRepository(() => organizationId), [organizationId]);
   const taskRepository = useMemo(() => createTaskRepository(() => organizationId), [organizationId]);
+  const contractorRepository = useMemo(() => createContractorRepository(() => organizationId), [organizationId]);
 
   const [ganttTasks, setGanttTasks] = useState<GanttTask[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
@@ -134,13 +136,15 @@ export function ResourceAnalysisPage() {
 
   const loadData = useCallback(async () => {
     try {
-      const [allTasks, allProjects] = await Promise.all([
+      const [allTasks, allProjects, allContractors] = await Promise.all([
         taskRepository.findAll(),
         projectRepository.findAll(),
+        contractorRepository.findAll(),
       ]);
       setProjects(allProjects);
 
       const projectMap = new Map(allProjects.map((p) => [p.id, p]));
+      const contractorMap = new Map(allContractors.map((c) => [c.id, c]));
       const todayStr = toLocalDateString(new Date());
 
       const nextTasks = filterScheduleTasks(allTasks).map((task) => {
@@ -155,7 +159,7 @@ export function ResourceAnalysisPage() {
           isDateEstimated: !task.startDate,
           isMilestone: false,
           projectIncludesWeekends: project?.includeWeekends ?? true,
-          contractorName: undefined as string | undefined,
+          contractorName: task.contractorId ? contractorMap.get(task.contractorId)?.name : undefined,
         } satisfies GanttTask;
       });
 
@@ -163,7 +167,7 @@ export function ResourceAnalysisPage() {
     } finally {
       setLoading(false);
     }
-  }, [taskRepository, projectRepository]);
+  }, [taskRepository, projectRepository, contractorRepository]);
 
   useEffect(() => { void loadData(); }, [loadData]);
 
