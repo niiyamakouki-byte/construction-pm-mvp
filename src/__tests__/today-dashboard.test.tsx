@@ -9,6 +9,14 @@ import type { Task, Project, CostItem, Expense, Contractor } from "../domain/typ
 // Mock fetch for weather API
 vi.stubGlobal("fetch", vi.fn(() => Promise.reject(new Error("network"))));
 
+// Use local date (not UTC) to match the component's toLocalDateString() helper.
+function localDateStr(date = new Date()): string {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
 // Shared store mock state
 let mockTasks: Task[] = [];
 let mockProjects: Project[] = [];
@@ -90,7 +98,7 @@ vi.mock("../hooks/useHashRouter.js", () => ({
 
 function makeTask(overrides: Partial<Task> = {}): Task {
   const now = new Date().toISOString();
-  const today = new Date().toISOString().slice(0, 10);
+  const today = localDateStr();
   return {
     id: `t-${Date.now()}-${Math.random()}`,
     projectId: "p-1",
@@ -108,7 +116,7 @@ function makeTask(overrides: Partial<Task> = {}): Task {
 
 function makeProject(overrides: Partial<Project> = {}): Project {
   const now = new Date().toISOString();
-  const today = new Date().toISOString().slice(0, 10);
+  const today = localDateStr();
   return {
     id: "p-1",
     name: "品川物流センター新築",
@@ -124,7 +132,7 @@ function makeProject(overrides: Partial<Project> = {}): Project {
 
 function makeCostItem(overrides: Partial<CostItem> = {}): CostItem {
   const now = new Date().toISOString();
-  const today = new Date().toISOString().slice(0, 10);
+  const today = localDateStr();
   return {
     id: "11111111-1111-4111-8111-111111111111",
     projectId: "11111111-1111-4111-8111-111111111112",
@@ -202,14 +210,14 @@ describe("TodayDashboardPage", () => {
   });
 
   it("期限が今日のタスクが表示される", async () => {
-    const today = new Date().toISOString().slice(0, 10);
+    const today = localDateStr();
     mockTasks = [makeTask({ name: "今日締切タスク", dueDate: today, status: "todo" })];
     render(<TodayDashboardPage />);
     await waitFor(() => expect(screen.getByText("今日締切タスク")).toBeDefined());
   });
 
   it("完了済みタスクはフィルタリングされて表示されない", async () => {
-    const today = new Date().toISOString().slice(0, 10);
+    const today = localDateStr();
     mockTasks = [
       makeTask({ name: "完了済みのタスク名", dueDate: today, status: "done" }),
       makeTask({ id: "t-2", name: "未着手タスク", dueDate: today, status: "todo" }),
@@ -243,7 +251,7 @@ describe("TodayDashboardPage", () => {
   });
 
   it("ダッシュボードカードが実データを表示する", async () => {
-    const today = new Date().toISOString().slice(0, 10);
+    const today = localDateStr();
     mockProjects = [
       makeProject({
         id: "11111111-1111-4111-8111-111111111112",
@@ -328,7 +336,7 @@ describe("TodayDashboardPage", () => {
   });
 
   it("HTML日報出力ボタンから日報をエクスポートできる", async () => {
-    const today = new Date().toISOString().slice(0, 10);
+    const today = localDateStr();
     mockProjects = [makeProject()];
     mockTasks = [
       makeTask({
@@ -404,7 +412,7 @@ describe("TodayDashboardPage", () => {
   });
 
   it("今日のおすすめ: 期限超過 > 今日のタスク > 期限なし の順に並ぶ", async () => {
-    const today = new Date().toISOString().slice(0, 10);
+    const today = localDateStr();
     const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
     mockProjects = [makeProject()];
     mockTasks = [

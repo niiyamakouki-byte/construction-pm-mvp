@@ -467,6 +467,7 @@ function GanttPageContent({ initialProjectId = null, openMaster = false }: Gantt
             ?? addDaysBySchedule(startDate, 2, project?.includeWeekends ?? true, task.includeWeekends);
           return {
             ...task,
+            progress: task.progress ?? 0, // DB の NULL 値を 0 に正規化
             projectName: project?.name ?? "不明な案件",
             startDate,
             endDate,

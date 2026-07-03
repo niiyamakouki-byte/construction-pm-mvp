@@ -277,7 +277,7 @@ export function InvoiceManagementPage() {
               />
             </div>
             <div>
-              <label className="mb-1 block text-xs text-slate-500">金額 (税抜) *</label>
+              <label className="mb-1 block text-xs text-slate-500">金額（税抜）*</label>
               <input
                 type="number"
                 min="0"

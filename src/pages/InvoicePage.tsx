@@ -171,6 +171,11 @@ export function InvoicePage() {
       setError("業者名・金額・日付は必須です");
       return;
     }
+    const parsedAmount = Number(amount);
+    if (parsedAmount < 100) {
+      setError("金額が小さすぎます（100円未満）。金額は円単位で入力してください。万円単位の場合は末尾に0000を付けてください。");
+      return;
+    }
     setSaving(true);
     setError(null);
     try {
@@ -180,7 +185,7 @@ export function InvoicePage() {
         projectId: projectId || "",
         expenseDate: invoiceDate,
         description: `請求書: ${vendorName}`,
-        amount: Number(amount),
+        amount: parsedAmount,
         category: "請求書",
         approvalStatus: "pending",
         createdAt: now,
