@@ -229,8 +229,24 @@ export function AssistantChatPanel({ userId = "demo-user" }: Props) {
     });
   }, []);
 
-  // Discord polling（既存の非コマンドメッセージを補完）
+  // パネルが閉じている / タブが非表示の間はポーリングを止める
+  const [pageVisible, setPageVisible] = useState(() =>
+    typeof document === "undefined" ? true : document.visibilityState !== "hidden",
+  );
+
   useEffect(() => {
+    const onVisibilityChange = () => {
+      setPageVisible(document.visibilityState !== "hidden");
+    };
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    return () => document.removeEventListener("visibilitychange", onVisibilityChange);
+  }, []);
+
+  // Discord polling（既存の非コマンドメッセージを補完）
+  // パネル表示中 かつ タブがアクティブな間だけポーリングする
+  useEffect(() => {
+    if (!open || !pageVisible) return;
+
     let active = true;
 
     const poll = async () => {
@@ -275,7 +291,7 @@ export function AssistantChatPanel({ userId = "demo-user" }: Props) {
       active = false;
       clearInterval(timer);
     };
-  }, [userId, lastMessageId, open, addMessages]);
+  }, [userId, lastMessageId, open, pageVisible, addMessages]);
 
   // 展開時: スクロール (未読クリア・位置クランプはopenPanel/togglePanelで行う)
   useEffect(() => {

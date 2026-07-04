@@ -238,3 +238,105 @@ describe("AssistantChatPanel", () => {
     });
   });
 });
+
+describe("AssistantChatPanel — /api/chat/poll ポーリングの開始/停止", () => {
+  beforeEach(() => {
+    Object.defineProperty(window, "innerWidth", { configurable: true, writable: true, value: 1280 });
+    Object.defineProperty(window, "innerHeight", { configurable: true, writable: true, value: 800 });
+    // 本番相当の挙動を検証するため DEV フラグを無効化（デフォルトは vitest 上で DEV=true）
+    vi.stubEnv("DEV", false);
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.unstubAllEnvs();
+    Object.defineProperty(document, "visibilityState", {
+      configurable: true,
+      get: () => "visible",
+    });
+  });
+
+  function setVisibility(state: "visible" | "hidden") {
+    Object.defineProperty(document, "visibilityState", {
+      configurable: true,
+      get: () => state,
+    });
+    fireEvent(document, new Event("visibilitychange"));
+  }
+
+  it("パネルを開いていない間は poll を呼ばない", async () => {
+    render(<AssistantChatPanel userId="test-user" />);
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(10_000);
+    });
+
+    expect(global.fetch).not.toHaveBeenCalled();
+  });
+
+  it("パネルを開くと poll が定期的に呼ばれ、閉じると呼ばれなくなる", async () => {
+    render(<AssistantChatPanel userId="test-user" />);
+
+    // 開く
+    await act(async () => {
+      window.dispatchEvent(new CustomEvent("genbahub:assistant-open"));
+    });
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(2000);
+    });
+    expect(global.fetch).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(2000);
+    });
+    expect(global.fetch).toHaveBeenCalledTimes(2);
+
+    // 閉じる
+    const dialog = screen.getByRole("dialog");
+    const closeBtn = dialog.querySelector('[aria-label="チャットを閉じる"]') as HTMLElement;
+    await act(async () => {
+      fireEvent.click(closeBtn);
+    });
+
+    const callsAfterClose = (global.fetch as ReturnType<typeof vi.fn>).mock.calls.length;
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(10_000);
+    });
+    expect(global.fetch).toHaveBeenCalledTimes(callsAfterClose);
+  });
+
+  it("タブが非表示になると poll を止め、再表示で再開する", async () => {
+    render(<AssistantChatPanel userId="test-user" />);
+
+    await act(async () => {
+      window.dispatchEvent(new CustomEvent("genbahub:assistant-open"));
+    });
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(2000);
+    });
+    expect(global.fetch).toHaveBeenCalledTimes(1);
+
+    // タブを非表示に
+    await act(async () => {
+      setVisibility("hidden");
+    });
+
+    const callsWhileHidden = (global.fetch as ReturnType<typeof vi.fn>).mock.calls.length;
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(10_000);
+    });
+    expect(global.fetch).toHaveBeenCalledTimes(callsWhileHidden);
+
+    // 再表示すると再開する
+    await act(async () => {
+      setVisibility("visible");
+    });
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(2000);
+    });
+    expect((global.fetch as ReturnType<typeof vi.fn>).mock.calls.length).toBeGreaterThan(callsWhileHidden);
+  });
+});
