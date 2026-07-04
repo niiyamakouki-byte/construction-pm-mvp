@@ -1,7 +1,8 @@
 /**
  * P4: リソース分析ビュー
  * 担当者（協力会社）別の稼働時間・タスク数・稼働率を集計して表示する。
- * キャパシティ仮定: 1人1日8h固定（仕様書指示）
+ * キャパシティ仮定: 1人1日8h固定（仕様書指示）。
+ * 集計ロジックは src/lib/resource-analysis.ts に切り出してユニットテスト済み。
  */
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { createProjectRepository } from "../stores/project-store.js";
@@ -12,8 +13,7 @@ import { filterScheduleTasks } from "../lib/cost-management.js";
 import { toLocalDateString } from "../components/gantt/utils.js";
 import type { GanttTask } from "../components/gantt/types.js";
 import type { Project } from "../domain/types.js";
-
-const HOURS_PER_DAY = 8; // ponytail: 固定仮定、設定化しない
+import { computeResourceAnalysis } from "../lib/resource-analysis.js";
 
 type PeriodUnit = "week" | "month";
 
@@ -59,66 +59,12 @@ function periodEnd(start: Date, unit: PeriodUnit): Date {
   return d;
 }
 
+/** ローカルタイムのままの YYYY-MM-DD 文字列（toISOString は UTC 変換で日付ズレする） */
 function toYmd(d: Date): string {
-  return d.toISOString().slice(0, 10);
-}
-
-/** 期間内の稼働日数（weekdays）を計算 */
-function workdaysBetween(start: string, end: string): number {
-  const s = new Date(`${start}T00:00:00`);
-  const e = new Date(`${end}T00:00:00`);
-  let count = 0;
-  const cur = new Date(s);
-  while (cur <= e) {
-    const day = cur.getDay();
-    if (day !== 0 && day !== 6) count++;
-    cur.setDate(cur.getDate() + 1);
-  }
-  return count;
-}
-
-type ResourceRow = {
-  name: string;
-  hours: number;
-  taskCount: number;
-  capacityHours: number;
-  utilizationPct: number;
-};
-
-/** タスクリストと期間から担当者別集計を計算 */
-function computeResources(tasks: GanttTask[], periodStart: string, periodEnd_: string): ResourceRow[] {
-  // 担当者 = contractorName（未設定は「未割当」）
-  const map = new Map<string, { tasks: Set<string>; hours: number }>();
-
-  for (const task of tasks) {
-    // タスクが期間と重なるか判定
-    const overlapStart = task.startDate > periodStart ? task.startDate : periodStart;
-    const overlapEnd = task.endDate < periodEnd_ ? task.endDate : periodEnd_;
-    if (overlapStart > overlapEnd) continue;
-
-    const name = task.contractorName?.trim() || "未割当";
-    const days = workdaysBetween(overlapStart, overlapEnd);
-    const hours = days * HOURS_PER_DAY;
-
-    const existing = map.get(name) ?? { tasks: new Set(), hours: 0 };
-    existing.tasks.add(task.id);
-    existing.hours += hours;
-    map.set(name, existing);
-  }
-
-  // キャパシティ = 期間の稼働日数 × 8h（1人当たり）
-  const totalWorkdays = workdaysBetween(periodStart, periodEnd_);
-  const capacityPerPerson = totalWorkdays * HOURS_PER_DAY;
-
-  return Array.from(map.entries())
-    .map(([name, { tasks, hours }]) => ({
-      name,
-      hours,
-      taskCount: tasks.size,
-      capacityHours: capacityPerPerson,
-      utilizationPct: capacityPerPerson > 0 ? Math.round((hours / capacityPerPerson) * 100) : 0,
-    }))
-    .sort((a, b) => b.hours - a.hours);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
 }
 
 export function ResourceAnalysisPage() {
@@ -133,6 +79,8 @@ export function ResourceAnalysisPage() {
   const [unit, setUnit] = useState<PeriodUnit>("week");
   const today = useMemo(() => new Date(), []);
   const [periodStart, setPeriodStart] = useState<Date>(() => getWeekStart(new Date()));
+  // 全案件（"all"）または特定案件 ID で絞り込む。P4: 案件横断/案件別の両モードを支援
+  const [projectFilter, setProjectFilter] = useState<string>("all");
 
   const loadData = useCallback(async () => {
     try {
@@ -181,14 +129,25 @@ export function ResourceAnalysisPage() {
   const periodStartStr = toYmd(periodStart);
   const periodEndStr = toYmd(pEnd);
 
-  const resources = useMemo(
-    () => computeResources(ganttTasks, periodStartStr, periodEndStr),
-    [ganttTasks, periodStartStr, periodEndStr],
+  const scopedTasks = useMemo(
+    () => (projectFilter === "all" ? ganttTasks : ganttTasks.filter((t) => t.projectId === projectFilter)),
+    [ganttTasks, projectFilter],
   );
 
-  const totalHours = resources.reduce((sum, r) => sum + r.hours, 0);
-  const totalTasks = resources.reduce((sum, r) => sum + r.taskCount, 0);
-  const avgPersons = resources.length;
+  const summary = useMemo(
+    () => computeResourceAnalysis(scopedTasks, periodStartStr, periodEndStr),
+    [scopedTasks, periodStartStr, periodEndStr],
+  );
+  const { rows: resources, totalHours, totalTasks, avgPersons } = summary;
+
+  const isCurrentPeriod = useMemo(() => {
+    const start = unit === "week" ? getWeekStart(today) : getMonthStart(today);
+    return toYmd(start) === periodStartStr;
+  }, [today, unit, periodStartStr]);
+
+  const jumpToToday = () => {
+    setPeriodStart(unit === "week" ? getWeekStart(today) : getMonthStart(today));
+  };
 
   if (loading) {
     return (
@@ -234,8 +193,34 @@ export function ResourceAnalysisPage() {
           >
             ›
           </button>
+          <button
+            type="button"
+            onClick={jumpToToday}
+            disabled={isCurrentPeriod}
+            className="rounded-full bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50 transition-colors disabled:opacity-40 disabled:hover:bg-white"
+          >
+            今日
+          </button>
         </div>
       </div>
+
+      {/* 案件フィルタ（横断 or 特定案件） */}
+      {projects.length > 0 && (
+        <div className="flex items-center gap-2 text-sm">
+          <label htmlFor="project-filter" className="text-slate-500 shrink-0">対象案件</label>
+          <select
+            id="project-filter"
+            value={projectFilter}
+            onChange={(e) => setProjectFilter(e.target.value)}
+            className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20"
+          >
+            <option value="all">全案件を横断</option>
+            {projects.map((p) => (
+              <option key={p.id} value={p.id}>{p.name}</option>
+            ))}
+          </select>
+        </div>
+      )}
 
       {/* KPIカード */}
       <div className="grid grid-cols-3 gap-3">
@@ -249,7 +234,12 @@ export function ResourceAnalysisPage() {
         </div>
         <div className="rounded-2xl bg-white p-4 ring-1 ring-slate-200">
           <p className="text-xs text-slate-500">平均稼働人数</p>
-          <p className="mt-1 text-2xl font-bold tabular-nums text-slate-900">{avgPersons} 名</p>
+          <p className="mt-1 text-2xl font-bold tabular-nums text-slate-900">
+            {avgPersons.toFixed(1)} <span className="text-base font-semibold text-slate-500">名/日</span>
+          </p>
+          <p className="mt-0.5 text-[10px] text-slate-400">
+            延べ稼働時間 ÷ (稼働日 × 8h)
+          </p>
         </div>
       </div>
 
