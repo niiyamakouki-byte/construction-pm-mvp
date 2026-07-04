@@ -11,12 +11,14 @@ const {
   mockListTasks,
   mockSavePhoto,
   mockNavigate,
+  mockFindAllDocuments,
 } = vi.hoisted(() => ({
   mockListByProject: vi.fn(),
   mockSaveEntry: vi.fn(),
   mockListTasks: vi.fn(),
   mockSavePhoto: vi.fn(),
   mockNavigate: vi.fn(),
+  mockFindAllDocuments: vi.fn(),
 }));
 
 vi.mock("../lib/supabase-adapter/SiteEntryRepository.js", () => ({
@@ -42,6 +44,12 @@ vi.mock("../hooks/useHashRouter.js", () => ({
   navigate: mockNavigate,
 }));
 
+vi.mock("../stores/document-store.js", () => ({
+  createDocumentRepository: () => ({
+    findAll: mockFindAllDocuments,
+  }),
+}));
+
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 function createMockLocalStorage(): Storage {
@@ -53,6 +61,33 @@ function createMockLocalStorage(): Storage {
     clear: () => { store.clear(); },
     get length() { return store.size; },
     key: (index: number) => [...store.keys()][index] ?? null,
+  };
+}
+
+type ProjectDocumentLike = {
+  id: string;
+  projectId: string;
+  name: string;
+  type: string;
+  url: string;
+  uploadedBy: string;
+  version: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+function makeDocument(overrides: Partial<ProjectDocumentLike> = {}): ProjectDocumentLike {
+  return {
+    id: "doc-1",
+    projectId: "proj-1",
+    name: "意匠図_A-101",
+    type: "drawing",
+    url: "https://drive.google.com/file/d/abc/view",
+    uploadedBy: "test@example.com",
+    version: "v1.0",
+    createdAt: "2026-07-04T00:00:00.000Z",
+    updatedAt: "2026-07-04T00:00:00.000Z",
+    ...overrides,
   };
 }
 
@@ -79,6 +114,7 @@ beforeEach(() => {
   mockListTasks.mockResolvedValue([]);
   mockSaveEntry.mockResolvedValue(undefined);
   mockSavePhoto.mockResolvedValue(undefined);
+  mockFindAllDocuments.mockResolvedValue([]);
 });
 
 afterEach(() => {
@@ -245,5 +281,55 @@ describe("SiteEntryPage", () => {
     });
     // 大工 task should not appear for 電気 worker
     expect(screen.queryByText("木工造作工事")).toBeNull();
+  });
+
+  // ── Drawings link ──────────────────────────────────────────────────────
+
+  it("資料が0件の場合、図面リンクは表示されない", async () => {
+    mockFindAllDocuments.mockResolvedValue([]);
+    render(<SiteEntryPage projectId="proj-1" />);
+    await waitFor(() => expect(mockListByProject).toHaveBeenCalled());
+    await waitFor(() => expect(mockFindAllDocuments).toHaveBeenCalled());
+    expect(screen.queryByText("図面・資料を見る →")).toBeNull();
+  });
+
+  it("type=drawingの最新版のみが図面一覧に表示される（他プロジェクト・他typeは除外）", async () => {
+    mockFindAllDocuments.mockResolvedValue([
+      makeDocument({ id: "d1", name: "意匠図_A-101", type: "drawing", version: "v2.0" }),
+      makeDocument({ id: "d2", name: "契約書", type: "contract" }),
+      makeDocument({ id: "d3", name: "他案件図面", type: "drawing", projectId: "proj-2" }),
+    ]);
+
+    render(<SiteEntryPage projectId="proj-1" />);
+    await waitFor(() => expect(mockFindAllDocuments).toHaveBeenCalled());
+
+    fireEvent.click(await screen.findByText("図面・資料を見る →"));
+
+    expect(screen.getByText("意匠図_A-101")).toBeTruthy();
+    expect(screen.getByText("v2.0")).toBeTruthy();
+    expect(screen.queryByText("契約書")).toBeNull();
+    expect(screen.queryByText("他案件図面")).toBeNull();
+  });
+
+  it("図面をタップすると別タブで開くリンクになっている", async () => {
+    mockFindAllDocuments.mockResolvedValue([
+      makeDocument({ id: "d1", name: "意匠図_A-101", url: "https://example.com/a101.pdf" }),
+    ]);
+
+    render(<SiteEntryPage projectId="proj-1" />);
+    fireEvent.click(await screen.findByText("図面・資料を見る →"));
+
+    const link = screen.getByText("意匠図_A-101").closest("a");
+    expect(link).not.toBeNull();
+    expect(link?.getAttribute("href")).toBe("https://example.com/a101.pdf");
+    expect(link?.getAttribute("target")).toBe("_blank");
+  });
+
+  it("図面が取得できなくても入退場フロー自体は継続する", async () => {
+    mockFindAllDocuments.mockRejectedValueOnce(new Error("network error"));
+    render(<SiteEntryPage projectId="proj-1" />);
+    await waitFor(() => expect(mockListByProject).toHaveBeenCalled());
+    expect(screen.getByText("← GenbaHub")).toBeTruthy();
+    expect(screen.queryByText("図面・資料を見る →")).toBeNull();
   });
 });

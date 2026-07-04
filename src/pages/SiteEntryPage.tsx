@@ -5,12 +5,15 @@ import { TaskRepository } from "../lib/supabase-adapter/TaskRepository.js";
 import type { Task } from "../lib/supabase-adapter/TaskRepository.js";
 import { PhotoRepository } from "../lib/supabase-adapter/PhotoRepository.js";
 import type { PhotoRecord } from "../lib/supabase-adapter/PhotoRepository.js";
+import { createDocumentRepository } from "../stores/document-store.js";
+import type { ProjectDocument } from "../domain/types.js";
 import { navigate } from "../hooks/useHashRouter.js";
 
 const LS_RECENT_WORKERS = "genbahub_kiosk_recent_workers";
 const siteEntryRepository = new SiteEntryRepository();
 const taskRepository = new TaskRepository();
 const photoRepository = new PhotoRepository();
+const documentRepository = createDocumentRepository();
 
 export const JOB_TYPES = [
   "大工",
@@ -133,6 +136,10 @@ export function SiteEntryPage({ projectId }: { projectId: string }) {
   const [filteredTasks, setFilteredTasks] = useState<Task[]>([]);
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
 
+  // Drawings (latest version only; documents table already holds only the current version)
+  const [drawingDocuments, setDrawingDocuments] = useState<ProjectDocument[]>([]);
+  const [showDocuments, setShowDocuments] = useState(false);
+
   // Progress photos (optional, in-flight files)
   const progressPhotoInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -164,6 +171,22 @@ export function SiteEntryPage({ projectId }: { projectId: string }) {
       // Restore working step if an active record exists (e.g., page refresh)
       const active = records.find((r) => !r.exitTime);
       if (active) setStep("working");
+
+      // Drawings: documents table already holds only the latest version per
+      // document (old versions are moved to document_versions on update), so
+      // no extra de-duplication is needed here.
+      try {
+        const allDocuments = await documentRepository.findAll();
+        if (cancelled) return;
+        setDrawingDocuments(
+          allDocuments
+            .filter((d) => d.projectId === projectId && d.type === "drawing")
+            .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)),
+        );
+      } catch {
+        // 図面一覧が取得できなくても入退場フローは継続する（無言で失敗させない導線はUI側で対応）
+        if (!cancelled) setDrawingDocuments([]);
+      }
     };
     void load();
     return () => { cancelled = true; };
@@ -516,6 +539,52 @@ export function SiteEntryPage({ projectId }: { projectId: string }) {
         </div>
       )}
 
+      {/* Drawings modal (latest version only; hidden entirely when no drawings exist) */}
+      {showDocuments && (
+        <div
+          className="fixed inset-0 z-40 flex items-center justify-center bg-slate-900/60"
+          onClick={() => setShowDocuments(false)}
+        >
+          <div
+            className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm mx-4 max-h-[80vh] flex flex-col gap-4"
+            onClick={(ev) => ev.stopPropagation()}
+          >
+            <div className="flex items-start justify-between gap-3">
+              <h2 className="text-xl font-bold text-slate-900">図面・資料</h2>
+              <button
+                type="button"
+                onClick={() => setShowDocuments(false)}
+                aria-label="閉じる"
+                className="text-slate-400 hover:text-slate-600 text-xl leading-none shrink-0"
+              >
+                &times;
+              </button>
+            </div>
+            <p className="text-xs text-slate-500">
+              各図面の最新版のみ表示されます。旧版は資料ページの履歴から確認してください。
+            </p>
+            <div className="flex-1 overflow-y-auto flex flex-col gap-2">
+              {drawingDocuments.map((doc) => (
+                <a
+                  key={doc.id}
+                  href={doc.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-between gap-3 rounded-xl border-2 border-slate-200 px-4 py-3 hover:border-brand-300 hover:bg-slate-50 transition-colors"
+                >
+                  <span className="font-semibold text-slate-800 text-sm truncate">
+                    {doc.name}
+                  </span>
+                  <span className="shrink-0 rounded-full bg-brand-50 px-2 py-0.5 text-[11px] font-bold text-brand-700">
+                    {doc.version}
+                  </span>
+                </a>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Left panel: worker list or working view */}
       <div className="flex flex-col w-full sm:w-0 sm:flex-1 min-h-0 flex-1 bg-white border-r border-slate-200">
         {isEntered && step === "working" ? (
@@ -776,6 +845,17 @@ export function SiteEntryPage({ projectId }: { projectId: string }) {
         >
           入退場履歴 &rarr;
         </button>
+
+        {/* Drawings link (hidden when there are no drawings) */}
+        {drawingDocuments.length > 0 && (
+          <button
+            type="button"
+            onClick={() => setShowDocuments(true)}
+            className="text-slate-400 text-xs hover:text-white underline mt-2"
+          >
+            図面・資料を見る &rarr;
+          </button>
+        )}
       </div>
 
       {/* Bottom: today log strip */}
