@@ -79,7 +79,12 @@ describe("progress-tracker", () => {
         makeTask({ id: "a", name: "A", startDate: "2025-01-01", dueDate: "2025-01-05", progress: 50, status: "in_progress" }),
       ];
       const result = calculateEarnedValue(tasks, 0, "2025-01-03");
-      expect(result.bac).toBeGreaterThan(0); // inferred from duration
+      // With no budget and no per-task plannedCost, BAC must be 0 rather than a
+      // fabricated value derived from task duration (regression construction_pm_mvp-8qv:
+      // a real project showed BAC=¥136 because task-day counts were used as yen).
+      expect(result.bac).toBe(0);
+      expect(result.pv).toBe(0);
+      expect(result.ev).toBe(0);
     });
   });
 

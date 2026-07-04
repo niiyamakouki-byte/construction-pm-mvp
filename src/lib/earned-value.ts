@@ -60,7 +60,10 @@ function inferBudget(tasks: ProgressTask[], budget?: number): number {
   if (typeof budget === "number" && budget > 0) return budget;
   const plannedCostTotal = tasks.reduce((sum, task) => sum + Math.max(0, task.plannedCost ?? 0), 0);
   if (plannedCostTotal > 0) return plannedCostTotal;
-  return Math.max(1, tasks.reduce((sum, task) => sum + getTaskDuration(task), 0));
+  // No budget and no per-task planned cost data: there is no monetary basis to infer BAC from.
+  // Do NOT fall back to a non-monetary proxy (e.g. summed task durations in days) — that
+  // silently displays a day-count as a yen amount, producing nonsensical BAC/PV values.
+  return 0;
 }
 
 function getTaskWeights(tasks: ProgressTask[]): Map<string, number> {

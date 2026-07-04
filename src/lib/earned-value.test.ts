@@ -94,6 +94,34 @@ describe("earned-value", () => {
     expect(report).toContain("Completed Tasks: 1/2");
   });
 
+  it("does not fabricate BAC/PV from task durations when budget is unset and no plannedCost exists (regression construction_pm_mvp-8qv)", () => {
+    // Mirrors the production report: a real commercial fit-out project with no budget
+    // entered and no per-task plannedCost, but many tasks spanning ~136 days. Before the
+    // fix, inferBudget() fell back to summing task durations (days) and used that number
+    // as if it were a yen budget, producing a tiny "BAC=¥136 / PV=¥135" style value.
+    const longRunningTasks: ProgressTask[] = Array.from({ length: 20 }, (_, i) => {
+      const start = new Date(2025, 0, 1 + i * 7);
+      const due = new Date(2025, 0, 8 + i * 7);
+      const fmt = (d: Date) => d.toISOString().slice(0, 10);
+      return makeTask({
+        id: `t${i}`,
+        name: `Task ${i}`,
+        status: "in_progress",
+        progress: 50,
+        startDate: fmt(start),
+        dueDate: fmt(due),
+        // no plannedCost, no actualCost — matches unbudgeted legacy tasks
+      });
+    });
+
+    const metrics = calculateEarnedValue(longRunningTasks, 0, "2025-05-01");
+
+    expect(metrics.bac).toBe(0);
+    expect(metrics.pv).toBe(0);
+    expect(metrics.ev).toBe(0);
+    expect(metrics.ac).toBe(0);
+  });
+
   it("default asOfDate uses local date, not UTC (timezone regression)", () => {
     // Verify that the no-arg call does not throw and returns a valid YYYY-MM-DD
     // string matching today's local date rather than yesterday's UTC date.
