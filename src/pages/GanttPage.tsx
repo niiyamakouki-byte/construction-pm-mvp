@@ -62,6 +62,12 @@ import {
   readCollapsedPhases,
   writeCollapsedPhases,
 } from "../lib/gantt-phase-grouping.js";
+import {
+  TRADE_CATEGORIES,
+  TRADE_CATEGORY_LABELS,
+  type TradeCategory,
+  filterGanttTasks,
+} from "../lib/gantt-task-filter.js";
 import { ConfirmDialog } from "../components/common/ConfirmDialog.js";
 import { ACTION_LABELS } from "../lib/action-labels.js";
 import { BarChart2, Check, FolderKanban } from "lucide-react";
@@ -419,17 +425,8 @@ function GanttPageContent({ initialProjectId = null, openMaster = false }: Gantt
   const [templateSaveTags, setTemplateSaveTags] = useState<Set<PhaseTemplateTag>>(new Set());
   const [templateSaving, setTemplateSaving] = useState(false);
 
-  // ─── 工種フィルタ ──────────────────────────────────────────────────────────
-  const TRADE_CATEGORIES = ["painting", "framing", "electrical", "plumbing", "finishing", "other"] as const;
-  type TradeCategory = typeof TRADE_CATEGORIES[number];
-  const TRADE_CATEGORY_LABELS: Record<TradeCategory, string> = {
-    painting: "塗装",
-    framing: "軽鉄",
-    electrical: "電気",
-    plumbing: "配管",
-    finishing: "仕上",
-    other: "その他",
-  };
+  // ─── 工種フィルタ（TRADE_CATEGORIES / ラベル / resolveTradeCategory は
+  //     P3 共通ユーティリティ src/lib/gantt-task-filter.ts に集約） ─────────────
   const [activeTrades, setActiveTrades] = useState<Set<TradeCategory>>(new Set(TRADE_CATEGORIES));
   const [riskHighlightIds, setRiskHighlightIds] = useState<string[]>([]);
   const [chatSchedule, setChatSchedule] = useState<GeneratedSchedule | null>(null);
@@ -537,30 +534,16 @@ function GanttPageContent({ initialProjectId = null, openMaster = false }: Gantt
     [ganttTasks, selectedProjectId],
   );
 
-  const resolveTradeCategory = useCallback((task: GanttTask): TradeCategory => {
-    const raw = (task.majorCategory ?? "").toLowerCase();
-    if (raw.includes("paint") || raw.includes("塗装")) return "painting";
-    if (raw.includes("fram") || raw.includes("軽鉄") || raw.includes("下地")) return "framing";
-    if (raw.includes("elect") || raw.includes("電気") || raw.includes("配線")) return "electrical";
-    if (raw.includes("plumb") || raw.includes("配管") || raw.includes("給排水")) return "plumbing";
-    if (raw.includes("finish") || raw.includes("仕上") || raw.includes("クロス") || raw.includes("床")) return "finishing";
-    return "other";
-  }, []);
-
   // ─── P3: 検索 ──────────────────────────────────────────────────────────────
   const [taskSearchQuery, setTaskSearchQuery] = useState("");
 
-  const filteredProjectTasks = useMemo(() => {
-    const tradePassed = selectedProjectTasks.filter((task) => activeTrades.has(resolveTradeCategory(task)));
-    if (!taskSearchQuery.trim()) return tradePassed;
-    const q = taskSearchQuery.trim().toLowerCase();
-    return tradePassed.filter(
-      (task) =>
-        task.name.toLowerCase().includes(q) ||
-        (task.contractorName ?? "").toLowerCase().includes(q) ||
-        task.projectName.toLowerCase().includes(q),
-    );
-  }, [selectedProjectTasks, activeTrades, resolveTradeCategory, taskSearchQuery]);
+  const filteredProjectTasks = useMemo(
+    () => filterGanttTasks(selectedProjectTasks, activeTrades, taskSearchQuery),
+    [selectedProjectTasks, activeTrades, taskSearchQuery],
+  );
+
+  // 検索が絞り込みに寄与しているか（0件時の空状態メッセージの出し分け用）
+  const isSearchActive = taskSearchQuery.trim().length > 0;
 
   // ─── P1: フェーズグルーピング ──────────────────────────────────────────────
   // 工種(majorCategory)で束ね、進捗の日数加重ロールアップ・折りたたみ状態を持つ。
@@ -2116,12 +2099,25 @@ function GanttPageContent({ initialProjectId = null, openMaster = false }: Gantt
               type="search"
               value={taskSearchQuery}
               onChange={(e) => setTaskSearchQuery(e.target.value)}
-              placeholder="工程名・協力会社・案件名で検索"
-              className="w-full rounded-full border border-slate-200 bg-white py-1.5 pl-8 pr-4 text-sm text-slate-700 placeholder:text-slate-400 focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20"
+              placeholder="工程名・協力会社・工種・案件名で検索"
+              aria-label="工程検索"
+              className="w-full rounded-full border border-slate-200 bg-white py-1.5 pl-8 pr-8 text-sm text-slate-700 placeholder:text-slate-400 focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20"
             />
             <svg className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" aria-hidden="true">
               <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
             </svg>
+            {isSearchActive ? (
+              <button
+                type="button"
+                onClick={() => setTaskSearchQuery("")}
+                aria-label="検索をクリア"
+                className="absolute right-2 top-1/2 flex h-5 w-5 -translate-y-1/2 items-center justify-center rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-700 transition-colors"
+              >
+                <svg className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M6 6l12 12M6 18L18 6" />
+                </svg>
+              </button>
+            ) : null}
           </div>
           {/* P3: 件数表示（COMPASS互換: 常に「N件が条件に一致」表示） */}
           <span
@@ -2233,6 +2229,35 @@ function GanttPageContent({ initialProjectId = null, openMaster = false }: Gantt
           secondaryActionLabel="1件ずつ追加"
           onSecondaryAction={() => openQuickAdd(selectedProject.id, selectedProject.name)}
         />
+      ) : filteredProjectTasks.length === 0 ? (
+        // P3: 検索/フィルタで 0 件になった時の空状態（案件自体には工程がある場合）
+        <div className="rounded-2xl bg-white p-8 text-center ring-1 ring-slate-200">
+          <p className="text-sm font-semibold text-slate-700">
+            該当する工程が見つかりません
+          </p>
+          <p className="mt-1 text-xs text-slate-500">
+            {isSearchActive
+              ? "検索キーワードや工種フィルタを見直してください"
+              : "工種フィルタで全て非表示にしています"}
+          </p>
+          {isSearchActive ? (
+            <button
+              type="button"
+              onClick={() => setTaskSearchQuery("")}
+              className="mt-3 rounded-full bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-200 transition-colors"
+            >
+              検索をクリア
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setActiveTrades(new Set(TRADE_CATEGORIES))}
+              className="mt-3 rounded-full bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-200 transition-colors"
+            >
+              工種フィルタを全表示に戻す
+            </button>
+          )}
+        </div>
       ) : (
         <GanttChart
           ganttTasks={filteredProjectTasks}

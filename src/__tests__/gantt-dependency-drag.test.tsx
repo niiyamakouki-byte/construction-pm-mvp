@@ -209,7 +209,7 @@ function renderChartWithDependency(
 describe("GanttChart 依存線クリック削除", () => {
   it("依存線（曲線）がベジェで描画される", () => {
     renderChartWithDependency();
-    const arrow = screen.getByTestId("dep-arrow-t1-t2") as SVGPathElement;
+    const arrow = screen.getByTestId("dep-arrow-t1-t2") as unknown as SVGPathElement;
     expect(arrow).toBeTruthy();
     // C(=三次ベジェ)コマンドを含む d 属性を確認
     expect(arrow.getAttribute("d")).toContain("C ");
