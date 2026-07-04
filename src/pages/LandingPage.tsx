@@ -211,7 +211,7 @@ export function LandingPage() {
             <br />
             <span className="text-accent-400">消えていく。</span>
           </h1>
-          <p className="mx-auto mt-6 max-w-lg text-lg text-brand-200">
+          <p className="mx-auto mt-6 max-w-lg text-lg text-brand-200 break-keep">
             内装工事会社のための現場管理SaaS。工程・見積・写真を1画面に集約。
           </p>
           <div className="mt-8 flex justify-center">
@@ -306,7 +306,7 @@ export function LandingPage() {
       <section id="features" className="bg-[#f8fafc] px-4 py-20 sm:px-6">
         <div className="mx-auto max-w-6xl">
           <div className="mb-12 text-center">
-            <h2 className="text-3xl font-bold text-slate-900">内装工事に特化した4つの強み</h2>
+            <h2 className="text-2xl font-bold text-slate-900 sm:text-3xl">内装工事に特化した4つの強み</h2>
             <p className="mt-3 text-slate-500">汎用ツールでは対応できない内装工種・積算・写真管理をカバー。内装工事会社のために作られています。</p>
           </div>
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
@@ -328,7 +328,7 @@ export function LandingPage() {
       <section id="comparison" className="bg-white px-4 py-20 sm:px-6">
         <div className="mx-auto max-w-4xl">
           <div className="mb-10 text-center">
-            <h2 className="text-3xl font-bold text-slate-900">内装工事会社に選ばれる理由</h2>
+            <h2 className="text-2xl font-bold text-slate-900 sm:text-3xl">内装工事会社に選ばれる理由</h2>
             <p className="mt-3 text-slate-500">
               汎用現場管理ツールは多業種向けのため、内装特有の工種・積算・写真管理に対応するには別途カスタマイズが必要です。
               GenbaHub は内装工事向けに最初から設計されています。
@@ -452,7 +452,7 @@ export function LandingPage() {
       <section id="pricing" className="bg-[#f8fafc] px-4 py-20 sm:px-6">
         <div className="mx-auto max-w-6xl">
           <div className="mb-12 text-center">
-            <h2 className="text-3xl font-bold text-slate-900">シンプルな料金体系</h2>
+            <h2 className="text-2xl font-bold text-slate-900 sm:text-3xl">シンプルな料金体系</h2>
             <p className="mt-3 text-slate-500">14日間の無料トライアルでお試しの後、チームに合ったプランをお選びください。</p>
           </div>
           <div className="grid gap-6 sm:grid-cols-3">
@@ -515,7 +515,7 @@ export function LandingPage() {
           </div>
           <p className="mt-6 text-center text-sm text-slate-400">
             大規模プロジェクト・エンタープライズのご相談は{" "}
-            <a href="mailto:info@laporta.co.jp" className="text-brand-500 hover:underline">
+            <a href="mailto:info@laporta.co.jp" className="text-brand-500 hover:underline whitespace-nowrap">
               お問い合わせ
             </a>
             ください。
