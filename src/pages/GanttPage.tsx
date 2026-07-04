@@ -899,6 +899,23 @@ function GanttPageContent({ initialProjectId = null, openMaster = false }: Gantt
     await connectTasks(fromTaskId, toTaskId);
   }, [connectState, connectTasks]);
 
+  // P2.5: ガント上の依存線クリックからの依存解除。fromTaskId=先行 / toTaskId=後続。
+  const removeDependencyEdge = useCallback(async (fromTaskId: string, toTaskId: string) => {
+    const toTask = ganttTasks.find((t) => t.id === toTaskId);
+    if (!toTask) return;
+    const updated = (toTask.dependencies ?? []).filter((id) => id !== fromTaskId);
+    if (updated.length === (toTask.dependencies?.length ?? 0)) return;
+    try {
+      await taskRepository.update(toTaskId, {
+        dependencies: updated,
+        updatedAt: new Date().toISOString(),
+      });
+      await loadData();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "依存関係の解除に失敗しました");
+    }
+  }, [ganttTasks, loadData, taskRepository]);
+
   const handleToggleConnectMode = useCallback(() => {
     setConnectMode((prev) => {
       if (prev) setConnectState(null);
@@ -2240,6 +2257,7 @@ function GanttPageContent({ initialProjectId = null, openMaster = false }: Gantt
           onSetConnectState={setConnectState}
           onConnectTask={(toTaskId) => void handleConnectTask(toTaskId)}
           onConnectTasks={(fromTaskId, toTaskId) => void connectTasks(fromTaskId, toTaskId)}
+          onRemoveDependency={(fromTaskId, toTaskId) => void removeDependencyEdge(fromTaskId, toTaskId)}
           onTimelineTouchStart={handleTimelineTouchStart}
           onTimelineTouchMove={handleTimelineTouchMove}
           onTimelineTouchEnd={handleTimelineTouchEnd}

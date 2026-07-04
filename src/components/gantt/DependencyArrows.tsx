@@ -14,10 +14,14 @@ type Props = {
   totalDays: number;
   /** P2.5: visibleRows でフェーズ行を考慮した正確な Y 座標計算に使用 */
   visibleRows?: VisibleRow[];
+  /** P2.5: 依存線クリック時に呼ばれ、先行(predecessorId)→後続(successorId)の依存を削除する */
+  onRemoveDependency?: (predecessorId: string, successorId: string) => void;
 };
 
 type ArrowSpec = {
   key: string;
+  predecessorId: string;
+  successorId: string;
   x1: number;
   y1: number;
   x2: number;
@@ -51,7 +55,7 @@ function ArrowheadMarker({ id, color }: { id: string; color: string }) {
 }
 
 /** SVG overlay that draws dependency arrows between task bars, styled by type. */
-export function DependencyArrows({ tasks, chartStart, dayWidth, totalDays, visibleRows }: Props) {
+export function DependencyArrows({ tasks, chartStart, dayWidth, totalDays, visibleRows, onRemoveDependency }: Props) {
   const { rowHeight, headerHeight, phaseRowHeight } = gantt;
 
   // P2.5: visibleRows があればフェーズ行を考慮した row index を使用
@@ -148,7 +152,16 @@ export function DependencyArrows({ tasks, chartStart, dayWidth, totalDays, visib
           break;
       }
 
-      arrows.push({ key: `${predecessorId}-${successor.id}`, x1, y1, x2, y2, depType });
+      arrows.push({
+        key: `${predecessorId}-${successor.id}`,
+        predecessorId,
+        successorId: successor.id,
+        x1,
+        y1,
+        x2,
+        y2,
+        depType,
+      });
     }
   }
 
@@ -157,7 +170,18 @@ export function DependencyArrows({ tasks, chartStart, dayWidth, totalDays, visib
   const chartWidth = (totalDays + 1) * dayWidth;
   const clipId = "dep-arrows-clip";
 
+  const handleClick = (predecessorId: string, successorId: string, predName: string, succName: string) => {
+    if (!onRemoveDependency) return;
+    // 削除確認: 誤タップ防止
+    const ok = typeof window !== "undefined" && window.confirm
+      ? window.confirm(`依存関係を解除しますか？\n先行: ${predName}\n後続: ${succName}`)
+      : true;
+    if (ok) onRemoveDependency(predecessorId, successorId);
+  };
+
   return (
+    // ルート SVG は pointer-events-none（バー本体のクリックを塞がない）。
+    // 個別の <path> だけ pointer-events-auto でクリック可能にする。
     <svg
       className="pointer-events-none absolute inset-0 z-10"
       style={{ width: chartWidth, height: "100%" }}
@@ -173,21 +197,45 @@ export function DependencyArrows({ tasks, chartStart, dayWidth, totalDays, visib
         )}
       </defs>
       <g clipPath={`url(#${clipId})`}>
-        {arrows.map(({ key, x1, y1, x2, y2, depType }) => {
+        {arrows.map(({ key, predecessorId, successorId, x1, y1, x2, y2, depType }) => {
           const style = DEP_STYLE[depType];
           const cx = (x1 + x2) / 2;
           const d = `M ${x1} ${y1} C ${cx} ${y1} ${cx} ${y2} ${x2} ${y2}`;
+          const predName = tasks.find((t) => t.id === predecessorId)?.name ?? predecessorId;
+          const succName = tasks.find((t) => t.id === successorId)?.name ?? successorId;
+          const clickable = Boolean(onRemoveDependency);
           return (
-            <path
-              key={key}
-              d={d}
-              fill="none"
-              stroke={style.stroke}
-              strokeWidth="1.5"
-              strokeOpacity="0.85"
-              strokeDasharray={style.dasharray}
-              markerEnd={`url(#${style.markerId})`}
-            />
+            <g key={key}>
+              {/* 目視用の細い曲線 */}
+              <path
+                data-testid={`dep-arrow-${predecessorId}-${successorId}`}
+                d={d}
+                fill="none"
+                stroke={style.stroke}
+                strokeWidth="1.5"
+                strokeOpacity="0.85"
+                strokeDasharray={style.dasharray}
+                markerEnd={`url(#${style.markerId})`}
+                pointerEvents="none"
+              />
+              {/* クリック用の太い透明パス（ヒットエリア）。 */}
+              {clickable && (
+                <path
+                  data-testid={`dep-arrow-hit-${predecessorId}-${successorId}`}
+                  d={d}
+                  fill="none"
+                  stroke="transparent"
+                  strokeWidth="14"
+                  className="pointer-events-auto cursor-pointer"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    handleClick(predecessorId, successorId, predName, succName);
+                  }}
+                >
+                  <title>{`依存: ${predName} → ${succName}（クリックで解除）`}</title>
+                </path>
+              )}
+            </g>
           );
         })}
       </g>

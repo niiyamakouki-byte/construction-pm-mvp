@@ -54,6 +54,8 @@ type Props = {
   onConnectTask: (toTaskId: string) => void;
   /** バードラッグ接続の確定: fromTaskId=先行 / toTaskId=後続 */
   onConnectTasks: (fromTaskId: string, toTaskId: string) => void;
+  /** P2.5: 依存線クリックからの依存解除。fromTaskId=先行 / toTaskId=後続 */
+  onRemoveDependency?: (fromTaskId: string, toTaskId: string) => void;
   onTimelineTouchStart?: (event: ReactTouchEvent<HTMLDivElement>) => void;
   onTimelineTouchMove?: (event: ReactTouchEvent<HTMLDivElement>) => void;
   onTimelineTouchEnd?: (event: ReactTouchEvent<HTMLDivElement>) => void;
@@ -87,6 +89,7 @@ export function GanttChart({
   onSetConnectState,
   onConnectTask,
   onConnectTasks,
+  onRemoveDependency,
   onTimelineTouchStart,
   onTimelineTouchMove,
   onTimelineTouchEnd,
@@ -470,6 +473,7 @@ export function GanttChart({
               dayWidth={dayWidth}
               totalDays={totalDays}
               visibleRows={visibleRows}
+              onRemoveDependency={onRemoveDependency}
             />
 
             {connectDrag ? (

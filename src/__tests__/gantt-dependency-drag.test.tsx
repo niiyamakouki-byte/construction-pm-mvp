@@ -168,3 +168,84 @@ describe("GanttChart バードラッグ接続", () => {
     expect(screen.queryByTestId("connect-drag-preview")).toBeNull();
   });
 });
+
+// ────────────────────────────────────────────────────────────────
+// P2.5: 依存線クリックからの削除
+// ────────────────────────────────────────────────────────────────
+
+function renderChartWithDependency(
+  onRemoveDependency?: ReturnType<typeof vi.fn>,
+): ReturnType<typeof render> {
+  // t2 が t1 に依存 → t1(先行) → t2(後続) の曲線が描画される想定
+  const t1 = makeTask({ id: "t1", name: "工程A" });
+  const t2 = makeTask({ id: "t2", name: "工程B", dependencies: ["t1"] });
+  return render(
+    <GanttChart
+      ganttTasks={[t1, t2]}
+      visibleRows={[
+        { type: "task", task: t1 },
+        { type: "task", task: t2 },
+      ]}
+      chartLayout={chartLayout}
+      dragState={null}
+      dragRef={{ current: null }}
+      connectMode={false}
+      connectState={null}
+      today="2025-01-03"
+      scrollRef={createRef<HTMLDivElement>()}
+      onTaskDragStart={vi.fn()}
+      onTaskResizeStart={vi.fn()}
+      onOpenTaskDetail={vi.fn()}
+      onOpenQuickAdd={vi.fn()}
+      onTogglePhase={vi.fn()}
+      onSetConnectState={vi.fn()}
+      onConnectTask={vi.fn()}
+      onConnectTasks={vi.fn()}
+      onRemoveDependency={onRemoveDependency}
+    />,
+  );
+}
+
+describe("GanttChart 依存線クリック削除", () => {
+  it("依存線（曲線）がベジェで描画される", () => {
+    renderChartWithDependency();
+    const arrow = screen.getByTestId("dep-arrow-t1-t2") as SVGPathElement;
+    expect(arrow).toBeTruthy();
+    // C(=三次ベジェ)コマンドを含む d 属性を確認
+    expect(arrow.getAttribute("d")).toContain("C ");
+  });
+
+  it("ヒットパスをクリックすると confirm 後に onRemoveDependency(先行, 後続) が呼ばれる", () => {
+    const onRemove = vi.fn();
+    const originalConfirm = window.confirm;
+    window.confirm = vi.fn().mockReturnValue(true);
+    try {
+      renderChartWithDependency(onRemove);
+      const hit = screen.getByTestId("dep-arrow-hit-t1-t2");
+      fireEvent.click(hit);
+      expect(window.confirm).toHaveBeenCalled();
+      expect(onRemove).toHaveBeenCalledWith("t1", "t2");
+    } finally {
+      window.confirm = originalConfirm;
+    }
+  });
+
+  it("confirm でキャンセルすると onRemoveDependency は呼ばれない", () => {
+    const onRemove = vi.fn();
+    const originalConfirm = window.confirm;
+    window.confirm = vi.fn().mockReturnValue(false);
+    try {
+      renderChartWithDependency(onRemove);
+      const hit = screen.getByTestId("dep-arrow-hit-t1-t2");
+      fireEvent.click(hit);
+      expect(onRemove).not.toHaveBeenCalled();
+    } finally {
+      window.confirm = originalConfirm;
+    }
+  });
+
+  it("onRemoveDependency 未指定ならヒットパスは描画されない", () => {
+    renderChartWithDependency();
+    expect(screen.queryByTestId("dep-arrow-hit-t1-t2")).toBeNull();
+  });
+});
