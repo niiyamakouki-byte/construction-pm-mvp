@@ -17,7 +17,12 @@ import type { ChartLayout, GanttTask, QuickAddState, TaskDetailState } from "../
 import type { GeneratedSchedule, GeneratedTask } from "../lib/ai-schedule-generator.js";
 import { getDefaultPaceData } from "../lib/ai-schedule-generator.js";
 import { monteCarloSchedule, identifyDrivingPaths } from "../lib/schedule-risk-forecaster.js";
-import { parseScheduleCommand, applyScheduleEdit } from "../lib/schedule-chat-editor.js";
+import {
+  parseScheduleCommand,
+  applyScheduleEdit,
+  needsConfirmation,
+  describeEdit,
+} from "../lib/schedule-chat-editor.js";
 import type { ScheduleEdit } from "../lib/schedule-chat-editor.js";
 import {
   addDays,
@@ -131,6 +136,11 @@ function ganttTasksToGeneratedSchedule(
       durationDays,
       dependencies: t.dependencies ?? [],
       crewSize: 1,
+      // P5: 自然言語編集用の付随フィールド
+      assigneeName: t.contractorName ?? null,
+      assigneeId: t.assigneeId ?? null,
+      progress: t.progress ?? 0,
+      phase: t.majorCategory ?? undefined,
     };
   });
 
@@ -260,6 +270,17 @@ function ChatEditorPanel({ schedule, onScheduleChange }: ChatEditorPanelProps) {
   const [input, setInput] = useState("");
   const [history, setHistory] = useState<ChatEdit[]>([]);
   const [error, setError] = useState<string | null>(null);
+  /** confidence が低い時に確認チップを出すための保留状態 */
+  const [pendingEdits, setPendingEdits] = useState<{ text: string; edits: ScheduleEdit[] } | null>(null);
+
+  const applyEdits = useCallback((text: string, edits: ScheduleEdit[]) => {
+    const next = applyScheduleEdit(schedule, edits);
+    const entry: ChatEdit = { text, edits, appliedAt: new Date() };
+    setHistory((prev) => [entry, ...prev]);
+    onScheduleChange(next);
+    setInput("");
+    setPendingEdits(null);
+  }, [schedule, onScheduleChange]);
 
   const handleSubmit = useCallback((e: React.FormEvent | React.KeyboardEvent) => {
     e.preventDefault();
@@ -272,15 +293,30 @@ function ChatEditorPanel({ schedule, onScheduleChange }: ChatEditorPanelProps) {
         setError("コマンドを認識できませんでした。例: 「塗装を2日後ろ倒し」");
         return;
       }
-      const next = applyScheduleEdit(schedule, edits);
-      const entry: ChatEdit = { text, edits, appliedAt: new Date() };
-      setHistory((prev) => [entry, ...prev]);
-      onScheduleChange(next);
-      setInput("");
+      // confidence 低い編集が含まれていれば確認チップを出す
+      if (edits.some(needsConfirmation)) {
+        setPendingEdits({ text, edits });
+        return;
+      }
+      applyEdits(text, edits);
     } catch (err) {
       setError(err instanceof Error ? err.message : "適用エラー");
     }
-  }, [input, schedule, onScheduleChange]);
+  }, [input, schedule, applyEdits]);
+
+  const handleConfirmPending = useCallback(() => {
+    if (!pendingEdits) return;
+    setError(null);
+    try {
+      applyEdits(pendingEdits.text, pendingEdits.edits);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "適用エラー");
+    }
+  }, [pendingEdits, applyEdits]);
+
+  const handleCancelPending = useCallback(() => {
+    setPendingEdits(null);
+  }, []);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -335,6 +371,36 @@ function ChatEditorPanel({ schedule, onScheduleChange }: ChatEditorPanelProps) {
 
       {error && (
         <p className="mt-2 text-xs font-medium text-red-600">{error}</p>
+      )}
+
+      {pendingEdits && (
+        <div className="mt-3 rounded-xl bg-amber-50 px-3 py-3 ring-1 ring-amber-200">
+          <p className="text-xs font-semibold text-amber-800">この解釈で合ってますか?</p>
+          <ul className="mt-2 space-y-1 text-xs text-amber-900">
+            {pendingEdits.edits.map((edit, idx) => (
+              <li key={idx} className="flex items-start gap-2">
+                <span className="mt-0.5 text-amber-600">·</span>
+                <span>{describeEdit(edit, schedule)}</span>
+              </li>
+            ))}
+          </ul>
+          <div className="mt-3 flex gap-2">
+            <button
+              type="button"
+              onClick={handleConfirmPending}
+              className="rounded-xl bg-amber-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-amber-700 transition-colors"
+            >
+              この解釈で適用
+            </button>
+            <button
+              type="button"
+              onClick={handleCancelPending}
+              className="rounded-xl border border-amber-300 bg-white px-3 py-1.5 text-xs font-semibold text-amber-700 hover:bg-amber-100 transition-colors"
+            >
+              キャンセル
+            </button>
+          </div>
+        </div>
       )}
 
       {history.length > 0 && (

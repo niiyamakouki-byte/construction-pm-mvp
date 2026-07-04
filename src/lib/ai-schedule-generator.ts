@@ -51,6 +51,14 @@ export type GeneratedTask = {
   area?: number;
   floor?: number;
   room?: string;
+  /** P5: 自然言語編集用の任意フィールド（担当者名） */
+  assigneeName?: string | null;
+  /** P5: 自然言語編集用の任意フィールド（担当者ID）*/
+  assigneeId?: string | null;
+  /** P5: 進捗率 0-100（source GanttTask.progress を反映）*/
+  progress?: number;
+  /** P5: フェーズ名（source GanttTask.majorCategory を反映）*/
+  phase?: string;
 };
 
 export type GeneratedSchedule = {
