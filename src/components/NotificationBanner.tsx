@@ -223,7 +223,7 @@ export function NotificationBanner({ refreshKey }: NotificationBannerProps) {
 
   if (loadError) {
     return (
-      <section className="border-b border-red-200 bg-red-50">
+      <section className="ios-main-with-sidebar border-b border-red-200 bg-red-50">
         <div className="mx-auto max-w-6xl px-4 py-2 text-sm text-red-700" role="alert">
           {loadError}
         </div>
@@ -241,7 +241,7 @@ export function NotificationBanner({ refreshKey }: NotificationBannerProps) {
 
   if (collapsed) {
     return (
-      <section className="border-b border-slate-200 bg-[linear-gradient(180deg,#fffef8_0%,#ffffff_100%)]">
+      <section className="ios-main-with-sidebar border-b border-slate-200 bg-[linear-gradient(180deg,#fffef8_0%,#ffffff_100%)]">
         <div className="mx-auto max-w-6xl px-4">
           <div className="flex min-h-[44px] items-center gap-2">
             <button
@@ -367,12 +367,12 @@ export function NotificationBanner({ refreshKey }: NotificationBannerProps) {
   }
 
   return (
-    <section className="border-b border-slate-200 bg-[linear-gradient(180deg,#fffef8_0%,#ffffff_100%)]">
+    <section className="ios-main-with-sidebar border-b border-slate-200 bg-[linear-gradient(180deg,#fffef8_0%,#ffffff_100%)]">
       <div className="mx-auto max-w-6xl px-4 py-3">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">
-              Alert Center
+              アラートセンター
             </p>
             <h2 className="mt-1 text-sm font-bold text-slate-900">
               <span>重要通知 {freshCount}件</span>

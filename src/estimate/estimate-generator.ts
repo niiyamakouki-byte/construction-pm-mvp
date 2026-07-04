@@ -10,6 +10,14 @@ import costMasterData from "./cost-master.json";
 
 const master: CostMaster = costMasterData as CostMaster;
 
+/** ローカル日付をYYYY-MM-DD形式に変換（toISOString()はUTC基準のため深夜0-9時のJSTで日付がズレる） */
+function toLocalDateString(date: Date): string {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
 /** コードからマスター品目を検索 */
 function findMasterItem(code: string): MasterItem | undefined {
   for (const cat of master.categories) {
@@ -132,8 +140,8 @@ export function generateEstimate(req: EstimateRequest): Estimate {
     id: generateId(),
     propertyName,
     clientName,
-    createdAt: now.toISOString().slice(0, 10),
-    validUntil: validUntil.toISOString().slice(0, 10),
+    createdAt: toLocalDateString(now),
+    validUntil: toLocalDateString(validUntil),
     sections,
     directCost,
     managementFee,
