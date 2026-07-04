@@ -55,6 +55,13 @@ import { readMasterPresetHistory, writeMasterPresetHistory } from "../lib/gantt-
 import { calcMasterPreview } from "../lib/master-preview.js";
 import { savePhaseTemplate } from "../lib/phase-template/storage.js";
 import type { PhaseTemplate, PhaseTemplateTag } from "../lib/phase-template/types.js";
+import {
+  buildGanttVisibleRows,
+  computePhaseProgressMap,
+  groupTasksByPhase,
+  readCollapsedPhases,
+  writeCollapsedPhases,
+} from "../lib/gantt-phase-grouping.js";
 import { ConfirmDialog } from "../components/common/ConfirmDialog.js";
 import { ACTION_LABELS } from "../lib/action-labels.js";
 import { BarChart2, Check, FolderKanban } from "lucide-react";
@@ -556,37 +563,33 @@ function GanttPageContent({ initialProjectId = null, openMaster = false }: Gantt
   }, [selectedProjectTasks, activeTrades, resolveTradeCategory, taskSearchQuery]);
 
   // ─── P1: フェーズグルーピング ──────────────────────────────────────────────
-  // 工種(majorCategory)でタスクをグループ化し、折りたたみ状態を管理する
+  // 工種(majorCategory)で束ね、進捗の日数加重ロールアップ・折りたたみ状態を持つ。
+  // 折りたたみ状態は案件ごとに LocalStorage へ永続化する（次回訪問時も維持）。
   const [collapsedPhases, setCollapsedPhases] = useState<Set<string>>(new Set());
 
-  const phaseGroups = useMemo(() => {
-    const groups = new Map<string, GanttTask[]>();
-    for (const task of filteredProjectTasks) {
-      const key = task.majorCategory ?? "その他";
-      const existing = groups.get(key) ?? [];
-      existing.push(task);
-      groups.set(key, existing);
+  useEffect(() => {
+    // 案件切替 → その案件の折りたたみ状態を復元
+    if (!selectedProjectId) {
+      setCollapsedPhases(new Set());
+      return;
     }
-    return groups;
-  }, [filteredProjectTasks]);
+    setCollapsedPhases(readCollapsedPhases(selectedProjectId));
+  }, [selectedProjectId]);
 
-  // フェーズ進捗ロールアップ（日数加重平均）
-  const phaseProgress = useMemo(() => {
-    const result = new Map<string, number>();
-    for (const [key, tasks] of phaseGroups) {
-      let totalDays = 0;
-      let weightedProgress = 0;
-      for (const task of tasks) {
-        const start = new Date(`${task.startDate}T00:00:00`);
-        const end = new Date(`${task.endDate}T00:00:00`);
-        const days = Math.max(1, Math.round((end.getTime() - start.getTime()) / 86400000) + 1);
-        totalDays += days;
-        weightedProgress += task.progress * days;
-      }
-      result.set(key, totalDays > 0 ? Math.round(weightedProgress / totalDays) : 0);
-    }
-    return result;
-  }, [phaseGroups]);
+  useEffect(() => {
+    if (!selectedProjectId) return;
+    writeCollapsedPhases(selectedProjectId, collapsedPhases);
+  }, [collapsedPhases, selectedProjectId]);
+
+  const phaseGroups = useMemo(
+    () => groupTasksByPhase(filteredProjectTasks),
+    [filteredProjectTasks],
+  );
+
+  const phaseProgress = useMemo(
+    () => computePhaseProgressMap(phaseGroups),
+    [phaseGroups],
+  );
 
   const handleTogglePhase = useCallback((phaseKey: string) => {
     setCollapsedPhases((prev) => {
@@ -597,33 +600,23 @@ function GanttPageContent({ initialProjectId = null, openMaster = false }: Gantt
     });
   }, []);
 
-  // P1: visibleRows にフェーズヘッダー行 + タスク行を構築
-  const ganttVisibleRows = useMemo(() => {
-    if (phaseGroups.size === 0) {
-      return filteredProjectTasks.map((task) => ({ type: "task" as const, task }));
-    }
-    const rows: Array<{ type: "task"; task: GanttTask } | { type: "phase"; group: { projectId: string; phaseName: string; projectName: string; tasks: GanttTask[]; collapsed: boolean } }> = [];
-    for (const [key, tasks] of phaseGroups) {
-      const collapsed = collapsedPhases.has(key);
-      rows.push({
-        type: "phase",
-        group: {
-          // P1 fix: 実際の projectId を使用（旧: 工種名を誤って projectId に設定していた）
-          projectId: selectedProjectId ?? "",
-          phaseName: key,                               // 工種名: 折りたたみキー・表示用
-          projectName: selectedProject?.name ?? key,    // 案件名: QuickAdd フォームの表示用
-          tasks,
-          collapsed,
-        },
-      });
-      if (!collapsed) {
-        for (const task of tasks) {
-          rows.push({ type: "task", task });
-        }
-      }
-    }
-    return rows;
-  }, [phaseGroups, collapsedPhases, filteredProjectTasks, selectedProjectId, selectedProject]);
+  const handleCollapseAllPhases = useCallback(() => {
+    setCollapsedPhases(new Set(phaseGroups.keys()));
+  }, [phaseGroups]);
+
+  const handleExpandAllPhases = useCallback(() => {
+    setCollapsedPhases(new Set());
+  }, []);
+
+  const ganttVisibleRows = useMemo(
+    () =>
+      buildGanttVisibleRows(phaseGroups, collapsedPhases, {
+        projectId: selectedProjectId ?? "",
+        projectName: selectedProject?.name ?? "",
+        fallbackTasks: filteredProjectTasks,
+      }),
+    [phaseGroups, collapsedPhases, filteredProjectTasks, selectedProjectId, selectedProject],
+  );
 
   const handleMoveTask = useCallback(
     async (task: GanttTask, direction: "up" | "down") => {
@@ -2113,10 +2106,13 @@ function GanttPageContent({ initialProjectId = null, openMaster = false }: Gantt
               <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
             </svg>
           </div>
-          {/* P3: 件数表示 */}
-          <span className="shrink-0 text-xs text-slate-500">
-            {filteredProjectTasks.length}件
-            {taskSearchQuery.trim() && "が条件に一致"}
+          {/* P3: 件数表示（COMPASS互換: 常に「N件が条件に一致」表示） */}
+          <span
+            className="shrink-0 text-xs text-slate-500"
+            aria-live="polite"
+            aria-atomic="true"
+          >
+            {filteredProjectTasks.length}件が条件に一致
           </span>
         </div>
 
@@ -2161,21 +2157,37 @@ function GanttPageContent({ initialProjectId = null, openMaster = false }: Gantt
               </button>
             );
           })}
-          {/* P1: 一括開閉ボタン */}
-          <div className="ml-auto flex gap-1">
+          {/* P1: フェーズ一括開閉（COMPASS互換：折/展） */}
+          <div
+            className="ml-auto flex items-center gap-1"
+            role="group"
+            aria-label="フェーズ一括開閉"
+          >
             <button
               type="button"
-              onClick={() => setCollapsedPhases(new Set(phaseGroups.keys()))}
-              className="rounded-full bg-white px-3 py-1.5 text-xs font-semibold text-slate-500 ring-1 ring-slate-200 hover:bg-slate-50 transition-colors"
+              onClick={handleCollapseAllPhases}
+              disabled={phaseGroups.size === 0}
+              aria-label="全フェーズを折りたたむ"
+              title="全フェーズを折りたたむ"
+              className="inline-flex items-center gap-1 rounded-full bg-white px-3 py-1.5 text-xs font-semibold text-slate-500 ring-1 ring-slate-200 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 transition-colors"
             >
-              全折
+              <svg className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24" aria-hidden="true">
+                <path strokeLinecap="round" strokeLinejoin="round" d="m5 15 7-7 7 7" />
+              </svg>
+              折
             </button>
             <button
               type="button"
-              onClick={() => setCollapsedPhases(new Set())}
-              className="rounded-full bg-white px-3 py-1.5 text-xs font-semibold text-slate-500 ring-1 ring-slate-200 hover:bg-slate-50 transition-colors"
+              onClick={handleExpandAllPhases}
+              disabled={phaseGroups.size === 0 || collapsedPhases.size === 0}
+              aria-label="全フェーズを展開する"
+              title="全フェーズを展開する"
+              className="inline-flex items-center gap-1 rounded-full bg-white px-3 py-1.5 text-xs font-semibold text-slate-500 ring-1 ring-slate-200 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 transition-colors"
             >
-              全展
+              <svg className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24" aria-hidden="true">
+                <path strokeLinecap="round" strokeLinejoin="round" d="m19 9-7 7-7-7" />
+              </svg>
+              展
             </button>
           </div>
         </div>
