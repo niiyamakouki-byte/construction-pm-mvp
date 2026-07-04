@@ -598,7 +598,7 @@ export function ProjectDetailPage({
         message={
           <>
             <span className="font-semibold text-slate-800">{project.name}</span>
-            を削除します。紐づく工程・資材・変更履歴・通知・関連書類もすべて削除され、写真の紐づけも失われます（写真データ自体は保持されます）。この操作は取り消せません。
+            を削除します。紐づく工程・資材・変更履歴・通知・関連書類・写真の記録もすべて削除されます。この操作は取り消せません。
           </>
         }
         confirmLabel={deletingProject ? "削除中..." : "削除する"}

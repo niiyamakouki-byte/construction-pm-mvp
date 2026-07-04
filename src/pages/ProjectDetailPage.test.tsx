@@ -330,7 +330,7 @@ describe("ProjectDetailPage", () => {
 
     const dialog = await screen.findByRole("alertdialog");
     expect(within(dialog).getByText("南青山リノベーション")).toBeDefined();
-    expect(within(dialog).getByText(/紐づく工程・資材・変更履歴・通知・関連書類もすべて削除され/)).toBeDefined();
+    expect(within(dialog).getByText(/紐づく工程・資材・変更履歴・通知・関連書類・写真の記録もすべて削除されます/)).toBeDefined();
 
     await user.click(within(dialog).getByRole("button", { name: "削除する" }));
 
