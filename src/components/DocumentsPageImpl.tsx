@@ -1,37 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "../contexts/AuthContext.js";
 import { useOrganizationContext } from "../contexts/OrganizationContext.js";
-import type { Project } from "../domain/types.js";
+import type { DocumentType, DocumentVersion, Project, ProjectDocument } from "../domain/types.js";
 import { navigate } from "../hooks/useHashRouter.js";
 import { createProjectRepository } from "../stores/project-store.js";
+import { createDocumentRepository, createDocumentVersionRepository } from "../stores/document-store.js";
 import { ProjectDetailTabs } from "./ProjectDetailTabs.js";
-
-type DocumentType = "drawing" | "contract" | "permit" | "daily_report" | "photo" | "invoice" | "other";
-
-type ProjectDocument = {
-  id: string;
-  createdAt: string;
-  updatedAt: string;
-  projectId: string;
-  name: string;
-  type: DocumentType;
-  url: string;
-  uploadedBy: string;
-  version: string;
-};
-
-type DocumentVersion = {
-  id: string;
-  createdAt: string;
-  updatedAt: string;
-  documentId: string;
-  projectId: string;
-  name: string;
-  type: DocumentType;
-  url: string;
-  uploadedBy: string;
-  version: string;
-};
 
 type PreviewConfig =
   | { mode: "image"; src: string }
@@ -116,23 +90,19 @@ function getPreviewConfig(url: string): PreviewConfig {
   return null;
 }
 
-async function parseApiResponse<T>(response: Response): Promise<T> {
-  const data = (await response.json().catch(() => null)) as
-    | { error?: string; document?: unknown; documents?: unknown; versions?: unknown }
-    | null;
-
-  if (!response.ok) {
-    throw new Error(data?.error ?? "ドキュメントAPIの呼び出しに失敗しました。");
-  }
-
-  return data as T;
-}
-
 export function DocumentsPage({ projectId }: { projectId: string }) {
   const { organizationId } = useOrganizationContext();
   const { user } = useAuth();
   const projectRepository = useMemo(
     () => createProjectRepository(() => organizationId),
+    [organizationId],
+  );
+  const documentRepository = useMemo(
+    () => createDocumentRepository(() => organizationId),
+    [organizationId],
+  );
+  const documentVersionRepository = useMemo(
+    () => createDocumentVersionRepository(() => organizationId),
     [organizationId],
   );
   const [project, setProject] = useState<Project | null>(null);
@@ -160,18 +130,17 @@ export function DocumentsPage({ projectId }: { projectId: string }) {
         setLoading(true);
         setError(null);
 
-        const [projectData, response] = await Promise.all([
+        const [projectData, allDocuments] = await Promise.all([
           projectRepository.findById(projectId),
-          fetch(`/api/projects/${encodeURIComponent(projectId)}/documents`),
+          documentRepository.findAll(),
         ]);
-        const data = await parseApiResponse<{ documents: ProjectDocument[] }>(response);
 
         if (cancelled) {
           return;
         }
 
         setProject(projectData);
-        setDocuments(sortByNewest(data.documents));
+        setDocuments(sortByNewest(allDocuments.filter((document) => document.projectId === projectId)));
       } catch (err) {
         if (!cancelled) {
           setError(err instanceof Error ? err.message : "ドキュメント一覧の読み込みに失敗しました。");
@@ -188,7 +157,7 @@ export function DocumentsPage({ projectId }: { projectId: string }) {
     return () => {
       cancelled = true;
     };
-  }, [projectId, projectRepository]);
+  }, [projectId, projectRepository, documentRepository]);
 
   useEffect(() => {
     if (selectedDocumentId && !documents.some((document) => document.id === selectedDocumentId)) {
@@ -227,9 +196,8 @@ export function DocumentsPage({ projectId }: { projectId: string }) {
       setLoadingVersions(true);
       setError(null);
 
-      const response = await fetch(`/api/documents/${encodeURIComponent(document.id)}/versions`);
-      const data = await parseApiResponse<{ versions: DocumentVersion[] }>(response);
-      setVersions(sortByNewest(data.versions));
+      const allVersions = await documentVersionRepository.findAll();
+      setVersions(sortByNewest(allVersions.filter((version) => version.documentId === document.id)));
 
       if (!getPreviewConfig(document.url)) {
         window.open(document.url, "_blank", "noopener,noreferrer");
@@ -246,26 +214,24 @@ export function DocumentsPage({ projectId }: { projectId: string }) {
     setError(null);
 
     try {
-      const response = await fetch(`/api/projects/${encodeURIComponent(projectId)}/documents`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          name: name.trim(),
-          type,
-          url: url.trim(),
-          uploadedBy: user?.email ?? "Compass Web",
-          version: "v1.0",
-        }),
+      const now = new Date().toISOString();
+      const created = await documentRepository.create({
+        id: crypto.randomUUID(),
+        createdAt: now,
+        updatedAt: now,
+        projectId,
+        name: name.trim(),
+        type,
+        url: url.trim(),
+        uploadedBy: user?.email ?? "Compass Web",
+        version: "v1.0",
       });
-      const data = await parseApiResponse<{ document: ProjectDocument }>(response);
 
-      setDocuments((current) => sortByNewest([data.document, ...current]));
+      setDocuments((current) => sortByNewest([created, ...current]));
       setName("");
       setType("drawing");
       setUrl("");
-      await loadVersions(data.document);
+      await loadVersions(created);
     } catch (err) {
       setError(err instanceof Error ? err.message : "ドキュメントの登録に失敗しました。");
     } finally {
@@ -278,24 +244,37 @@ export function DocumentsPage({ projectId }: { projectId: string }) {
     setError(null);
 
     try {
-      const response = await fetch(`/api/documents/${encodeURIComponent(document.id)}`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          url: newUrl,
-          version: computeNextVersion(document.version),
-        }),
+      const archivedAt = new Date().toISOString();
+      // 更新前のドキュメントをバージョン履歴として退避してから、現行ドキュメントを更新する
+      await documentVersionRepository.create({
+        id: crypto.randomUUID(),
+        createdAt: archivedAt,
+        updatedAt: archivedAt,
+        documentId: document.id,
+        projectId: document.projectId,
+        name: document.name,
+        type: document.type,
+        url: document.url,
+        uploadedBy: document.uploadedBy,
+        version: document.version,
       });
-      const data = await parseApiResponse<{ document: ProjectDocument }>(response);
+
+      const updated = await documentRepository.update(document.id, {
+        url: newUrl,
+        version: computeNextVersion(document.version),
+        updatedAt: archivedAt,
+      });
+
+      if (!updated) {
+        throw new Error("ドキュメントが見つかりません。");
+      }
 
       setDocuments((current) =>
-        sortByNewest(current.map((existing) => (existing.id === data.document.id ? data.document : existing))),
+        sortByNewest(current.map((existing) => (existing.id === updated.id ? updated : existing))),
       );
       setVersionUploadDocumentId(null);
       setVersionUploadUrl("");
-      await loadVersions(data.document);
+      await loadVersions(updated);
     } catch (err) {
       setError(err instanceof Error ? err.message : "新しいバージョンのアップロードに失敗しました。");
     } finally {

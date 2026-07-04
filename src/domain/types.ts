@@ -155,3 +155,35 @@ export type ContractChecklistItem = BaseEntity & {
   itemKey: string;   // DEFAULT_CONTRACT_ITEMS のキー
   checked: boolean;
 };
+
+// ── ProjectDocument / DocumentVersion ─────────────────
+
+export type DocumentType =
+  | "drawing"
+  | "contract"
+  | "permit"
+  | "daily_report"
+  | "photo"
+  | "invoice"
+  | "other";
+
+/** 案件ドキュメント（現行版）。旧版は DocumentVersion として document_versions に退避する */
+export type ProjectDocument = BaseEntity & {
+  projectId: string;
+  name: string;
+  type: DocumentType;
+  url: string;
+  uploadedBy: string;
+  version: string;
+};
+
+/** ドキュメントの旧版スナップショット */
+export type DocumentVersion = BaseEntity & {
+  documentId: string;
+  projectId: string;
+  name: string;
+  type: DocumentType;
+  url: string;
+  uploadedBy: string;
+  version: string;
+};

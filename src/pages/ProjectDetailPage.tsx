@@ -22,6 +22,7 @@ import { navigate } from "../hooks/useHashRouter.js";
 import { useOrganizationContext } from "../contexts/OrganizationContext.js";
 import { filterScheduleTasks } from "../lib/cost-management.js";
 import { EmptyState } from "../components/EmptyState.js";
+import { DocumentsPage } from "../components/DocumentsPageImpl.js";
 import { ProjectDetailTabs } from "../components/ProjectDetailTabs.js";
 import { ProjectMapEmbed } from "../components/ProjectMapEmbed.js";
 import { ProjectFlowWidget } from "../components/ProjectFlowWidget.js";
@@ -497,6 +498,10 @@ export function ProjectDetailPage({
         </button>
       </div>
     );
+  }
+
+  if (subPath === "documents") {
+    return <DocumentsPage projectId={projectId} />;
   }
 
   // Stats

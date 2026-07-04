@@ -6,11 +6,28 @@ import type { Project } from "../domain/types.js";
 // ── Mocks ──────────────────────────────────────────────────────────────────────
 
 const mockFindById = vi.fn();
+const mockDocumentFindAll = vi.fn();
+const mockDocumentCreate = vi.fn();
+const mockDocumentUpdate = vi.fn();
+const mockVersionFindAll = vi.fn();
+const mockVersionCreate = vi.fn();
 const mockNavigate = vi.hoisted(() => vi.fn());
 
 vi.mock("../stores/project-store.js", () => ({
   createProjectRepository: () => ({
     findById: mockFindById,
+  }),
+}));
+
+vi.mock("../stores/document-store.js", () => ({
+  createDocumentRepository: () => ({
+    findAll: mockDocumentFindAll,
+    create: mockDocumentCreate,
+    update: mockDocumentUpdate,
+  }),
+  createDocumentVersionRepository: () => ({
+    findAll: mockVersionFindAll,
+    create: mockVersionCreate,
   }),
 }));
 
@@ -70,33 +87,21 @@ function makeDocument(overrides: Partial<DocumentFixture> = {}): DocumentFixture
   };
 }
 
-function jsonResponse(body: unknown, init: { ok?: boolean; status?: number } = {}) {
-  const ok = init.ok ?? true;
-  return {
-    ok,
-    status: init.status ?? (ok ? 200 : 400),
-    json: async () => body,
-  } as Response;
-}
-
-let fetchMock: ReturnType<typeof vi.fn>;
-
 beforeEach(() => {
   vi.clearAllMocks();
   mockFindById.mockResolvedValue(makeProject());
-  fetchMock = vi.fn();
-  vi.stubGlobal("fetch", fetchMock);
+  mockVersionFindAll.mockResolvedValue([]);
+  mockVersionCreate.mockResolvedValue(undefined);
 });
 
 afterEach(() => {
   cleanup();
-  vi.unstubAllGlobals();
 });
 
 describe("DocumentsPage - 既存資料への新バージョンアップロード", () => {
   it("資料一覧の各行に「新しいバージョンをアップロード」操作がある", async () => {
     const existingDocument = makeDocument();
-    fetchMock.mockResolvedValueOnce(jsonResponse({ documents: [existingDocument] }));
+    mockDocumentFindAll.mockResolvedValue([existingDocument]);
 
     render(<DocumentsPage projectId="proj-1" />);
 
@@ -104,35 +109,15 @@ describe("DocumentsPage - 既存資料への新バージョンアップロード
     expect(screen.getByRole("button", { name: "新しいバージョンをアップロード" })).toBeTruthy();
   });
 
-  it("新しいバージョンをアップロードすると createDocument(POST) ではなく updateDocument(PATCH) を呼び、旧urlが履歴に退避される", async () => {
+  it("新しいバージョンをアップロードすると documentRepository.create ではなく update を呼び、旧urlが履歴に退避される", async () => {
     const existingDocument = makeDocument();
     const updatedDocument = { ...existingDocument, url: "https://drive.google.com/file/d/updated/view", version: "v1.1" };
 
-    fetchMock.mockImplementation((input: string, init?: RequestInit) => {
-      if (input === "/api/projects/proj-1/documents" && (!init || init.method === undefined)) {
-        return Promise.resolve(jsonResponse({ documents: [existingDocument] }));
-      }
-      if (input === `/api/documents/${existingDocument.id}` && init?.method === "PATCH") {
-        const body = JSON.parse(init.body as string) as { url: string; version: string };
-        expect(body.url).toBe("https://drive.google.com/file/d/updated/view");
-        expect(body.version).toBe("v1.1");
-        return Promise.resolve(jsonResponse({ document: updatedDocument }));
-      }
-      if (input === `/api/documents/${existingDocument.id}/versions`) {
-        return Promise.resolve(
-          jsonResponse({
-            versions: [
-              {
-                ...existingDocument,
-                id: "version-1",
-                documentId: existingDocument.id,
-              },
-            ],
-          }),
-        );
-      }
-      throw new Error(`unexpected fetch call: ${input} ${init?.method ?? "GET"}`);
-    });
+    mockDocumentFindAll.mockResolvedValue([existingDocument]);
+    mockDocumentUpdate.mockResolvedValue(updatedDocument);
+    mockVersionFindAll.mockResolvedValue([
+      { ...existingDocument, id: "version-1", documentId: existingDocument.id },
+    ]);
 
     render(<DocumentsPage projectId="proj-1" />);
     await screen.findByText(existingDocument.name);
@@ -144,17 +129,25 @@ describe("DocumentsPage - 既存資料への新バージョンアップロード
     fireEvent.click(screen.getByRole("button", { name: "アップロード" }));
 
     await waitFor(() => {
-      const patchCalls = fetchMock.mock.calls.filter(
-        (call) => call[0] === `/api/documents/${existingDocument.id}` && call[1]?.method === "PATCH",
-      );
-      expect(patchCalls).toHaveLength(1);
+      expect(mockDocumentUpdate).toHaveBeenCalledTimes(1);
     });
-
-    // createDocument(新規POST) は呼ばれていない
-    const createCalls = fetchMock.mock.calls.filter(
-      (call) => call[0] === "/api/projects/proj-1/documents" && call[1]?.method === "POST",
+    expect(mockDocumentUpdate).toHaveBeenCalledWith(
+      existingDocument.id,
+      expect.objectContaining({ url: "https://drive.google.com/file/d/updated/view", version: "v1.1" }),
     );
-    expect(createCalls).toHaveLength(0);
+
+    // 更新前のドキュメントがバージョン履歴として退避される
+    expect(mockVersionCreate).toHaveBeenCalledTimes(1);
+    expect(mockVersionCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        documentId: existingDocument.id,
+        url: existingDocument.url,
+        version: existingDocument.version,
+      }),
+    );
+
+    // documentRepository.create(新規登録) は呼ばれていない
+    expect(mockDocumentCreate).not.toHaveBeenCalled();
 
     // 版数バッジが更新後の版数を表示する
     await screen.findByText("版 v1.1");
@@ -171,21 +164,9 @@ describe("DocumentsPage - 既存資料への新バージョンアップロード
       version: "v1.1",
     };
 
-    fetchMock.mockImplementation((input: string, init?: RequestInit) => {
-      if (input === "/api/projects/proj-1/documents" && init?.method === undefined) {
-        return Promise.resolve(jsonResponse({ documents: [existingDocument] }));
-      }
-      if (input === `/api/documents/${existingDocument.id}` && init?.method === "PATCH") {
-        return Promise.resolve(jsonResponse({ document: updatedDocument }));
-      }
-      if (input === `/api/documents/${existingDocument.id}/versions`) {
-        return Promise.resolve(jsonResponse({ versions: [] }));
-      }
-      if (input === "/api/projects/proj-1/documents" && init?.method === "POST") {
-        throw new Error("createDocument(POST) は呼ばれてはいけない（既存の新版にするを選択した場合）");
-      }
-      throw new Error(`unexpected fetch call: ${input} ${init?.method ?? "GET"}`);
-    });
+    mockDocumentFindAll.mockResolvedValue([existingDocument]);
+    mockDocumentUpdate.mockResolvedValue(updatedDocument);
+    mockVersionFindAll.mockResolvedValue([]);
 
     render(<DocumentsPage projectId="proj-1" />);
     await screen.findByText(existingDocument.name);
@@ -204,31 +185,22 @@ describe("DocumentsPage - 既存資料への新バージョンアップロード
     fireEvent.click(screen.getByRole("button", { name: "既存の新しいバージョンにする" }));
 
     await waitFor(() => {
-      const patchCalls = fetchMock.mock.calls.filter(
-        (call) => call[0] === `/api/documents/${existingDocument.id}` && call[1]?.method === "PATCH",
-      );
-      expect(patchCalls).toHaveLength(1);
+      expect(mockDocumentUpdate).toHaveBeenCalledTimes(1);
     });
+
+    // documentRepository.create(新規登録) は呼ばれてはいけない（既存の新版にするを選択した場合）
+    expect(mockDocumentCreate).not.toHaveBeenCalled();
 
     // 一覧には依然1件のみ（新規ドキュメントとして並存しない）
     expect(screen.getAllByRole("button", { name: "新しいバージョンをアップロード" })).toHaveLength(1);
   });
 
-  it("既存の新規登録フロー（同名なし）は createDocument(POST) を呼ぶ", async () => {
+  it("既存の新規登録フロー（同名なし）は documentRepository.create を呼ぶ", async () => {
     const createdDocument = makeDocument({ id: "doc-2", name: "新規図面_B-1" });
 
-    fetchMock.mockImplementation((input: string, init?: RequestInit) => {
-      if (input === "/api/projects/proj-1/documents" && init?.method === undefined) {
-        return Promise.resolve(jsonResponse({ documents: [] }));
-      }
-      if (input === "/api/projects/proj-1/documents" && init?.method === "POST") {
-        return Promise.resolve(jsonResponse({ document: createdDocument }, { status: 201 }));
-      }
-      if (input === "/api/documents/doc-2/versions") {
-        return Promise.resolve(jsonResponse({ versions: [] }));
-      }
-      throw new Error(`unexpected fetch call: ${input} ${init?.method ?? "GET"}`);
-    });
+    mockDocumentFindAll.mockResolvedValue([]);
+    mockDocumentCreate.mockResolvedValue(createdDocument);
+    mockVersionFindAll.mockResolvedValue([]);
 
     render(<DocumentsPage projectId="proj-1" />);
     await waitFor(() => expect(mockFindById).toHaveBeenCalled());
@@ -242,11 +214,11 @@ describe("DocumentsPage - 既存資料への新バージョンアップロード
     fireEvent.click(screen.getByRole("button", { name: "ドキュメントを追加" }));
 
     await waitFor(() => {
-      const createCalls = fetchMock.mock.calls.filter(
-        (call) => call[0] === "/api/projects/proj-1/documents" && call[1]?.method === "POST",
-      );
-      expect(createCalls).toHaveLength(1);
+      expect(mockDocumentCreate).toHaveBeenCalledTimes(1);
     });
+    expect(mockDocumentCreate).toHaveBeenCalledWith(
+      expect.objectContaining({ name: "新規図面_B-1", projectId: "proj-1", version: "v1.0" }),
+    );
 
     await screen.findByText("版 v1.0");
   });

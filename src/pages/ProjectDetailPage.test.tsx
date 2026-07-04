@@ -57,6 +57,12 @@ vi.mock("../components/ProjectDetailTabs.js", () => ({
   ProjectDetailTabs: () => <div data-testid="project-detail-tabs" />,
 }));
 
+vi.mock("../components/DocumentsPageImpl.js", () => ({
+  DocumentsPage: ({ projectId }: { projectId: string }) => (
+    <div data-testid="documents-page-impl">{projectId}</div>
+  ),
+}));
+
 vi.mock("../components/ProjectMapEmbed.js", () => ({
   ProjectMapEmbed: ({ address }: { address: string }) => <div data-testid="project-map">{address}</div>,
 }));
@@ -238,6 +244,13 @@ describe("ProjectDetailPage", () => {
     expect(received[0]?.type).toBe("genbahub:assistant-open");
 
     window.removeEventListener("genbahub:assistant-open", handler);
+  });
+
+  it("renders DocumentsPage when subPath is documents", async () => {
+    render(<ProjectDetailPage projectId="proj-1" subPath="documents" />);
+
+    const documentsPage = await screen.findByTestId("documents-page-impl");
+    expect(documentsPage.textContent).toBe("proj-1");
   });
 
   it("shows the field-start flow and routes each action", async () => {
