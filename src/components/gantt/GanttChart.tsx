@@ -377,15 +377,19 @@ export function GanttChart({
             {visibleMilestones.map((milestone, index) => (
               <div
                 key={milestone.id}
+                data-testid="milestone-marker"
+                data-milestone-status={milestone.status}
                 className="pointer-events-none absolute z-20 -translate-x-1/2"
                 style={{
                   left: milestone.offset * dayWidth + dayWidth / 2,
                   top: headerHeight + 8 + (index % 2) * 24,
                 }}
+                title={`${milestone.name} (${milestone.targetDate})`}
               >
                 <div className="flex flex-col items-center gap-1">
                   <span
-                    className={`block h-3.5 w-3.5 rotate-45 rounded-[3px] border border-white shadow-sm ${milestoneTone[milestone.status].split(" ")[0]}`}
+                    aria-label={`マイルストーン: ${milestone.name}`}
+                    className={`block h-4 w-4 rotate-45 border-2 border-white shadow-md ${milestoneTone[milestone.status].split(" ")[0]}`}
                   />
                   {dayWidth >= 20 ? (
                     <span className={`rounded-full bg-white/95 px-2 py-1 text-[10px] font-semibold shadow-sm ${milestoneTone[milestone.status].split(" ")[1]}`}>

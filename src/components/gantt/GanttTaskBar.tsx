@@ -77,6 +77,8 @@ export function GanttTaskBar({
   // P2: 完了タスクはグレー系で視覚的に区別
   const color = task.status === "done" ? "#94a3b8" : statusColor[task.status];
   const labelVisible = barWidth >= 96;
+  const contractorVisible = barWidth >= 100 && Boolean(task.contractorName);
+  const progress = Math.min(Math.max(task.progress, 0), 100);
 
   // Cascade ghost bar geometry
   const ghostStartOffset = cascadePreviewDates
@@ -90,7 +92,7 @@ export function GanttTaskBar({
     ghostDuration !== null ? Math.max(ghostDuration * dayWidth, dayWidth) : null;
 
   return (
-    <div className="relative border-b border-slate-100 bg-white" style={{ height: rowHeight }}>
+    <div className="group relative border-b border-slate-100 bg-white" style={{ height: rowHeight }}>
       {/* Cascade ghost bar — shown when a predecessor is being dragged */}
       {ghostLeft !== null && ghostWidth !== null && (
         <div
@@ -124,7 +126,7 @@ export function GanttTaskBar({
         tabIndex={0}
         data-task-id={task.id}
         aria-label={`${task.name} ${statusLabel[task.status]} ${task.progress}%${overdue ? " 期限超過" : ""}`}
-        className={`absolute rounded-full border border-white/70 shadow-sm transition-transform ${
+        className={`group/bar absolute rounded-full border border-white/70 shadow-sm transition-transform ${
           isDragging ? "cursor-grabbing opacity-90" : "cursor-pointer active:scale-[0.99]"
         } ${connectMode ? "ring-2 ring-violet-400 ring-offset-1" : ""}`}
         style={{
@@ -132,7 +134,8 @@ export function GanttTaskBar({
           top: 14,
           width: Math.max(barWidth - 8, 24),
           height: rowHeight - 28,
-          backgroundColor: color,
+          // P2: 未完了部分を透過色で薄く見せて、進捗塗り分けを明確化
+          backgroundColor: `${color}80`,
           touchAction: "none",
         }}
         onPointerDown={(event) => {
@@ -171,18 +174,23 @@ export function GanttTaskBar({
           }
         }}
       >
+        {/* P2: 進捗塗り分け（左から progress% を濃色でベタ塗り） */}
         <div
-          className="absolute inset-y-0 left-0 rounded-full bg-white/18"
-          style={{ width: `${Math.min(task.progress, 100)}%` }}
+          data-testid="progress-fill"
+          className="absolute inset-y-0 left-0 rounded-full"
+          style={{ width: `${progress}%`, backgroundColor: color }}
         />
-        <div className="absolute inset-0 flex items-center justify-between gap-2 px-3 text-white">
+        <div
+          className="absolute inset-0 flex items-center justify-between gap-2 px-3 text-white"
+          style={{ textShadow: "0 1px 2px rgba(15, 23, 42, 0.35)" }}
+        >
           <div className="min-w-0">
             {labelVisible ? <p className="truncate text-[12px] font-semibold">{task.name}</p> : null}
-            {barWidth >= 144 ? (
+            {contractorVisible ? (
+              <p className="truncate text-[10px] text-white/85">{task.contractorName}</p>
+            ) : barWidth >= 144 ? (
               <p className="truncate text-[10px] text-white/80">
-                {task.contractorName
-                  ? task.contractorName
-                  : `${formatScheduleDate(displayStartDate)} - ${formatScheduleDate(displayEndDate)}`}
+                {`${formatScheduleDate(displayStartDate)} - ${formatScheduleDate(displayEndDate)}`}
               </p>
             ) : null}
           </div>
@@ -210,11 +218,11 @@ export function GanttTaskBar({
           <div className="h-4 w-1 rounded-full bg-white/70" />
         </div>
       </div>
-      {/* 依存関係ドラッグ用ハンドル（バー右端の外側） */}
+      {/* P2.5: 依存関係ドラッグ用ハンドル（バー右端の外側、ホバーで出現） */}
       <button
         type="button"
         aria-label={`依存関係を接続: ${task.name}`}
-        className="absolute z-10 h-3 w-3 rounded-full border border-white bg-slate-400 shadow-sm hover:bg-slate-500"
+        className="absolute z-10 h-3 w-3 rounded-full border border-white bg-slate-400 opacity-0 shadow-sm transition-opacity hover:bg-slate-500 focus-visible:opacity-100 group-hover:opacity-100"
         style={{
           left: barLeft + 4 + Math.max(barWidth - 8, 24) + 2,
           top: 14 + (rowHeight - 28) / 2 - 6,

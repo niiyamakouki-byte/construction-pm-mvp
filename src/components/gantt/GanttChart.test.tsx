@@ -1,8 +1,11 @@
 import { createRef } from "react";
-import { render } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { cleanup, render } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { GanttChart } from "./GanttChart.js";
 import type { ChartLayout, GanttTask } from "./types.js";
+import type { Milestone } from "../../lib/milestone-tracker.js";
+
+afterEach(() => cleanup());
 
 const chartLayout: ChartLayout = {
   chartStart: "2025-01-01",
@@ -108,5 +111,87 @@ describe("GanttChart", () => {
     const holidayCell = container.querySelector('[title="元日"]');
     expect(holidayCell).not.toBeNull();
     expect(holidayCell?.className).toContain("bg-rose-50");
+  });
+
+  // P2: マイルストーン ◆ マーカー描画
+  it("マイルストーンが◆(rotate-45)で描画される", () => {
+    const milestones: Milestone[] = [
+      {
+        id: "ms1",
+        projectId: "p1",
+        name: "内装検査",
+        targetDate: "2025-01-02",
+        status: "on-track",
+      },
+    ];
+
+    const { getByTestId } = render(
+      <GanttChart
+        ganttTasks={[task]}
+        visibleRows={[{ type: "task", task }]}
+        chartLayout={chartLayout}
+        dragState={null}
+        dragRef={{ current: null }}
+        connectMode={false}
+        connectState={null}
+        milestones={milestones}
+        showMilestones={true}
+        today="2025-01-03"
+        scrollRef={createRef<HTMLDivElement>()}
+        onTaskDragStart={vi.fn()}
+        onTaskResizeStart={vi.fn()}
+        onOpenTaskDetail={vi.fn()}
+        onOpenQuickAdd={vi.fn()}
+        onTogglePhase={vi.fn()}
+        onSetConnectState={vi.fn()}
+        onConnectTask={vi.fn()}
+        onConnectTasks={vi.fn()}
+      />,
+    );
+
+    const marker = getByTestId("milestone-marker") as HTMLElement;
+    expect(marker.dataset.milestoneStatus).toBe("on-track");
+    // ◆形状（rotate-45 の正方形）を確認
+    const diamond = marker.querySelector("span[aria-label^='マイルストーン']");
+    expect(diamond).toBeTruthy();
+    expect(diamond?.className).toContain("rotate-45");
+  });
+
+  it("showMilestones=false のときはマイルストーンが非表示", () => {
+    const milestones: Milestone[] = [
+      {
+        id: "ms1",
+        projectId: "p1",
+        name: "内装検査",
+        targetDate: "2025-01-02",
+        status: "on-track",
+      },
+    ];
+
+    const { queryByTestId } = render(
+      <GanttChart
+        ganttTasks={[task]}
+        visibleRows={[{ type: "task", task }]}
+        chartLayout={chartLayout}
+        dragState={null}
+        dragRef={{ current: null }}
+        connectMode={false}
+        connectState={null}
+        milestones={milestones}
+        showMilestones={false}
+        today="2025-01-03"
+        scrollRef={createRef<HTMLDivElement>()}
+        onTaskDragStart={vi.fn()}
+        onTaskResizeStart={vi.fn()}
+        onOpenTaskDetail={vi.fn()}
+        onOpenQuickAdd={vi.fn()}
+        onTogglePhase={vi.fn()}
+        onSetConnectState={vi.fn()}
+        onConnectTask={vi.fn()}
+        onConnectTasks={vi.fn()}
+      />,
+    );
+
+    expect(queryByTestId("milestone-marker")).toBeNull();
   });
 });
