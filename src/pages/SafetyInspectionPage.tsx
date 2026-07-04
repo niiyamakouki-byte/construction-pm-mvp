@@ -633,23 +633,31 @@ export function SafetyInspectionPage() {
       </div>
 
       {/* Tabs */}
-      <div className="mobile-scroll-x overflow-x-auto pb-0.5">
-        <div className="flex min-w-max gap-1 rounded-xl bg-slate-100 p-1">
-          {TAB_DEFS.map(({ key, label, icon }) => (
-            <button
-              key={key}
-              type="button"
-              onClick={() => setActiveTab(key)}
-              className={`whitespace-nowrap rounded-lg px-3 py-2 text-xs font-semibold transition-colors ${
-                activeTab === key
-                  ? "bg-white text-slate-900 shadow-sm"
-                  : "text-slate-500 hover:text-slate-700"
-              }`}
-            >
-              <span aria-hidden="true">{icon}</span> {label}
-            </button>
-          ))}
+      <div className="relative">
+        <div className="mobile-scroll-x overflow-x-auto pb-0.5" data-testid="safety-tab-scroll">
+          <div className="flex min-w-max gap-1 rounded-xl bg-slate-100 p-1">
+            {TAB_DEFS.map(({ key, label, icon }) => (
+              <button
+                key={key}
+                type="button"
+                onClick={() => setActiveTab(key)}
+                className={`whitespace-nowrap rounded-lg px-3 py-2 text-xs font-semibold transition-colors ${
+                  activeTab === key
+                    ? "bg-white text-slate-900 shadow-sm"
+                    : "text-slate-500 hover:text-slate-700"
+                }`}
+              >
+                <span aria-hidden="true">{icon}</span> {label}
+              </button>
+            ))}
+          </div>
         </div>
+        {/* Right-edge fade affordance — signals horizontal scroll on narrow viewports */}
+        <div
+          aria-hidden="true"
+          data-testid="tab-scroll-fade"
+          className="pointer-events-none absolute inset-y-0 right-0 w-10 rounded-r-xl bg-gradient-to-l from-white to-transparent"
+        />
       </div>
 
       {/* Tab: Checklist */}

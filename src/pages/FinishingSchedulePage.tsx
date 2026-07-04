@@ -5,6 +5,20 @@
 
 import { useCallback, useMemo, useRef, useState } from "react";
 
+function resolveProjectNameFromStorage(): string {
+  try {
+    const lastId = localStorage.getItem("genbahub:last-project-id");
+    if (!lastId) return "施工案件";
+    const raw = localStorage.getItem("genbahub:projects");
+    if (!raw) return "施工案件";
+    const projects = JSON.parse(raw) as Array<{ id: string; name?: string }>;
+    const found = projects.find((p) => p.id === lastId);
+    return found?.name ?? "施工案件";
+  } catch {
+    return "施工案件";
+  }
+}
+
 // ── 型定義 ────────────────────────────────────────────────────────────────────
 
 export type RoomPart = "床材" | "壁材" | "天井材" | "巾木" | "建具" | "備考";
@@ -293,10 +307,11 @@ export interface FinishingScheduleProps {
 }
 
 export function FinishingSchedulePage({
-  projectName = "施工案件",
+  projectName: projectNameProp,
   siteAddress = "",
   createdDate,
 }: FinishingScheduleProps) {
+  const projectName = projectNameProp ?? resolveProjectNameFromStorage();
   const [rows, setRows] = useState<RowData[]>(buildInitialRows);
   const [templateFading, setTemplateFading] = useState(false);
   const today = createdDate ?? new Date().toISOString().slice(0, 10);
