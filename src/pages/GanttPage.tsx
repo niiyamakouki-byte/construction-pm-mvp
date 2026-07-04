@@ -1913,7 +1913,7 @@ function GanttPageContent({ initialProjectId = null, openMaster = false }: Gantt
                   : "bg-white text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50"
               }`}
             >
-              Milestones
+              マイルストーン
               {" "}
               {milestoneIndicators.length}
             </button>
@@ -1926,7 +1926,7 @@ function GanttPageContent({ initialProjectId = null, openMaster = false }: Gantt
                   : "bg-white text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50"
               }`}
             >
-              Changes
+              変更履歴
               {" "}
               {projectChangeOrders.length}
             </button>

@@ -287,6 +287,8 @@ export function ProjectDetailPage({
   const [applyingTemplate, setApplyingTemplate] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [deletingTaskId, setDeletingTaskId] = useState<string | null>(null);
+  const [showDeleteProjectConfirm, setShowDeleteProjectConfirm] = useState(false);
+  const [deletingProject, setDeletingProject] = useState(false);
   const weatherFetchKeyRef = useRef<string | null>(null);
   const [selectedPhase, setSelectedPhase] = useState<string>(ConstructionPhase.demolition);
   const [completedChecklistIds, setCompletedChecklistIds] = useState<Set<string>>(new Set());
@@ -460,6 +462,20 @@ export function ProjectDetailPage({
     }
   };
 
+  const confirmDeleteProject = async () => {
+    setDeletingProject(true);
+    setError(null);
+    try {
+      await projectRepository.delete(projectId);
+      setShowDeleteProjectConfirm(false);
+      navigate("/");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "案件の削除に失敗しました");
+    } finally {
+      setDeletingProject(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center gap-2 py-16">
@@ -569,6 +585,21 @@ export function ProjectDetailPage({
         variant="danger"
         onConfirm={() => void confirmDeleteTask()}
         onCancel={() => setDeletingTaskId(null)}
+      />
+
+      <ConfirmDialog
+        open={showDeleteProjectConfirm}
+        title="案件を削除"
+        message={
+          <>
+            <span className="font-semibold text-slate-800">{project.name}</span>
+            を削除します。紐づく工程・資材・変更履歴・通知・関連書類もすべて削除され、写真の紐づけも失われます（写真データ自体は保持されます）。この操作は取り消せません。
+          </>
+        }
+        confirmLabel={deletingProject ? "削除中..." : "削除する"}
+        variant="danger"
+        onConfirm={() => void confirmDeleteProject()}
+        onCancel={() => setShowDeleteProjectConfirm(false)}
       />
 
       {/* Project Header */}
@@ -747,6 +778,17 @@ export function ProjectDetailPage({
             </p>
           </div>
         </label>
+
+        <div className="mt-4 border-t border-slate-100 pt-3">
+          <p className="text-xs font-semibold text-red-600 uppercase tracking-wider">危険な操作</p>
+          <button
+            type="button"
+            onClick={() => setShowDeleteProjectConfirm(true)}
+            className="mt-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-600 transition-colors hover:bg-red-100"
+          >
+            この案件を削除する
+          </button>
+        </div>
       </div>
 
       {/* Progress & Stats */}

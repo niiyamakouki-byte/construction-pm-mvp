@@ -1,11 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { navigate } from "../hooks/useHashRouter.js";
 import { ProjectDetailPage } from "./ProjectDetailPage.js";
 
 const mockProjectFindById = vi.fn();
 const mockProjectUpdate = vi.fn();
+const mockProjectDelete = vi.fn();
 const mockTaskFindAll = vi.fn();
 const mockTaskCreate = vi.fn();
 const mockTaskUpdate = vi.fn();
@@ -23,6 +24,7 @@ vi.mock("../stores/project-store.js", () => ({
   createProjectRepository: () => ({
     findById: mockProjectFindById,
     update: mockProjectUpdate,
+    delete: mockProjectDelete,
   }),
 }));
 
@@ -109,6 +111,7 @@ describe("ProjectDetailPage", () => {
     vi.stubGlobal("crypto", { randomUUID: vi.fn(() => "uuid-test") });
     mockProjectFindById.mockResolvedValue(baseProject);
     mockProjectUpdate.mockResolvedValue(undefined);
+    mockProjectDelete.mockResolvedValue(true);
     mockTaskFindAll.mockResolvedValue([]);
     mockTaskCreate.mockResolvedValue(undefined);
     mockTaskUpdate.mockResolvedValue(undefined);
@@ -303,5 +306,38 @@ describe("ProjectDetailPage", () => {
     expect(navigate).toHaveBeenNthCalledWith(2, "/portal/proj-1/%E5%86%85%E9%87%8E%E5%BB%BA%E8%A3%85");
     expect(navigate).toHaveBeenNthCalledWith(3, "/safety");
     expect(navigate).toHaveBeenNthCalledWith(4, "/project/proj-1/chat");
+  });
+
+  it("deletes the project after confirming, and navigates back to the list", async () => {
+    const user = userEvent.setup();
+    render(<ProjectDetailPage projectId="proj-1" />);
+
+    await screen.findByText("危険な操作");
+    await user.click(screen.getByRole("button", { name: "この案件を削除する" }));
+
+    const dialog = await screen.findByRole("alertdialog");
+    expect(within(dialog).getByText("南青山リノベーション")).toBeDefined();
+    expect(within(dialog).getByText(/紐づく工程・資材・変更履歴・通知・関連書類もすべて削除され/)).toBeDefined();
+
+    await user.click(within(dialog).getByRole("button", { name: "削除する" }));
+
+    await waitFor(() => {
+      expect(mockProjectDelete).toHaveBeenCalledWith("proj-1");
+    });
+    expect(navigate).toHaveBeenCalledWith("/");
+  });
+
+  it("does not delete the project when the confirm dialog is cancelled", async () => {
+    const user = userEvent.setup();
+    render(<ProjectDetailPage projectId="proj-1" />);
+
+    await screen.findByText("危険な操作");
+    await user.click(screen.getByRole("button", { name: "この案件を削除する" }));
+
+    const dialog = await screen.findByRole("alertdialog");
+    await user.click(within(dialog).getByRole("button", { name: "キャンセル" }));
+
+    expect(mockProjectDelete).not.toHaveBeenCalled();
+    expect(screen.queryByRole("alertdialog")).toBeNull();
   });
 });
