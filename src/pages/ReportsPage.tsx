@@ -41,16 +41,14 @@ export function ReportsPage({ projectId }: { projectId?: string }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Load projects
+  // Load projects (selectedProjectId excluded from deps to avoid double-fetch)
   useEffect(() => {
     const repo = createProjectRepository(() => organizationId);
     repo.findAll().then((all) => {
       setProjects(all);
-      if (!selectedProjectId && all.length > 0) {
-        setSelectedProjectId(all[0].id);
-      }
+      setSelectedProjectId((prev) => (prev === "" && all.length > 0 ? all[0].id : prev));
     }).catch(() => setError("案件の読み込みに失敗しました"));
-  }, [organizationId, selectedProjectId]);
+  }, [organizationId]);
 
   const selectedProject = projects.find((p) => p.id === selectedProjectId) ?? null;
 

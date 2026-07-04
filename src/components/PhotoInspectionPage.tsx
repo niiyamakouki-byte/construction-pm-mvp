@@ -394,13 +394,13 @@ export function PhotoInspectionPage({ projectId, projectName }: Props) {
         onDrop={handleDrop}
         onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
         onDragLeave={() => setDragOver(false)}
-        onClick={() => fileInputRef.current?.click()}
+        onClick={() => { if (!processing) fileInputRef.current?.click(); }}
         style={{
           border: `2px dashed ${dragOver ? COLOR_SAGE : "#cbd5e1"}`,
           borderRadius: 12,
           padding: "28px 20px",
           textAlign: "center",
-          cursor: "pointer",
+          cursor: processing ? "not-allowed" : "pointer",
           background: dragOver ? "#f0f7ed" : "#fafafa",
           marginBottom: 20,
           transition: "border-color 0.15s, background 0.15s",
@@ -467,6 +467,7 @@ export function PhotoInspectionPage({ projectId, projectName }: Props) {
         <div style={{ marginTop: 20, display: "flex", gap: 10 }}>
           <button
             onClick={handleGenerateReport}
+            disabled={processing}
             style={{
               padding: "8px 20px",
               borderRadius: 8,
@@ -474,8 +475,9 @@ export function PhotoInspectionPage({ projectId, projectName }: Props) {
               background: COLOR_SAGE,
               color: "#fff",
               fontWeight: 600,
-              cursor: "pointer",
+              cursor: processing ? "not-allowed" : "pointer",
               fontSize: "0.9rem",
+              opacity: processing ? 0.5 : 1,
             }}
           >
             報告書を生成

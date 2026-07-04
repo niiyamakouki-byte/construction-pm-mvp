@@ -2,13 +2,27 @@ import { expect, test, type Page } from "@playwright/test";
 
 const MOBILE_390 = { width: 390, height: 844 };
 
+const SEED_PROJECT = {
+  id: "550e8400-e29b-41d4-a716-446655440000",
+  name: "モバイルテスト案件",
+  description: "",
+  status: "active",
+  mode: "normal",
+  startDate: "2026-07-01",
+  endDate: "2026-08-31",
+  includeWeekends: false,
+  createdAt: "2026-07-01T00:00:00Z",
+  updatedAt: "2026-07-01T00:00:00Z",
+};
+
 async function prepareAuthenticatedMobile(page: Page) {
   await page.setViewportSize(MOBILE_390);
-  await page.addInitScript(() => {
+  await page.addInitScript((project) => {
     window.__E2E_BYPASS_AUTH__ = true;
     localStorage.setItem("genbahub_onboarding_done", "1");
     localStorage.setItem("genbahub_tour_done", "1");
-  });
+    localStorage.setItem("genbahub:projects", JSON.stringify([project]));
+  }, SEED_PROJECT);
 }
 
 async function expectNoHorizontalCollapse(page: Page) {
@@ -49,6 +63,8 @@ test.describe("390px mobile responsive routes", () => {
   test("/estimate keeps form and catalog content readable", async ({ page }) => {
     await page.goto("/#/estimate");
     await page.waitForLoadState("networkidle");
+    // EstimatePage shows a mode selector first; click "手動で作成" to enter the form
+    await page.getByRole("button", { name: "手動で作成" }).click();
     await expect(page.getByRole("heading", { name: "品目から手動で作成" })).toBeVisible();
 
     await expectNoHorizontalCollapse(page);

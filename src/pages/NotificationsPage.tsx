@@ -111,7 +111,8 @@ export function NotificationsPage() {
           {notifications.some((n) => n.status === "pending") && (
             <button
               onClick={() => void handleMarkAllSent()}
-              className="rounded-lg bg-emerald-500 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-600 transition-colors shadow-sm"
+              disabled={loading}
+              className="rounded-lg bg-emerald-500 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-600 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
               style={{ minHeight: 36 }}
             >
               全て送信済みに
@@ -119,7 +120,8 @@ export function NotificationsPage() {
           )}
           <button
             onClick={() => { setLoading(true); void loadData(); }}
-            className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 transition-colors shadow-sm"
+            disabled={loading}
+            className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
             style={{ minHeight: 36 }}
           >
             更新

@@ -60,10 +60,8 @@ export function PhotoPage() {
   const loadProjects = useCallback(async () => {
     const all = await projectRepository.findAll();
     setProjects(all);
-    if (!selectedProjectId && all[0]) {
-      setSelectedProjectId(all[0].id);
-    }
-  }, [projectRepository, selectedProjectId]);
+    setSelectedProjectId((prev) => (prev === "" && all[0] ? all[0].id : prev));
+  }, [projectRepository]);
 
   const loadPhotos = useCallback(async (projectId: string) => {
     if (!projectId) {
