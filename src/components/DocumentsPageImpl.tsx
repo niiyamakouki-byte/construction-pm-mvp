@@ -87,6 +87,17 @@ function getGooglePreviewUrl(url: string): string | null {
   return null;
 }
 
+function computeNextVersion(currentVersion: string): string {
+  const match = currentVersion.trim().match(/^v(\d+)\.(\d+)$/i);
+  if (match) {
+    const major = Number(match[1]);
+    const minor = Number(match[2]) + 1;
+    return `v${major}.${minor}`;
+  }
+
+  return `${currentVersion.trim()}+1`;
+}
+
 function getPreviewConfig(url: string): PreviewConfig {
   const googlePreviewUrl = getGooglePreviewUrl(url);
   if (googlePreviewUrl) {
@@ -136,6 +147,10 @@ export function DocumentsPage({ projectId }: { projectId: string }) {
   const [saving, setSaving] = useState(false);
   const [loadingVersions, setLoadingVersions] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [duplicateCandidate, setDuplicateCandidate] = useState<ProjectDocument | null>(null);
+  const [versionUploadDocumentId, setVersionUploadDocumentId] = useState<string | null>(null);
+  const [versionUploadUrl, setVersionUploadUrl] = useState("");
+  const [versionUploadSaving, setVersionUploadSaving] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -226,8 +241,7 @@ export function DocumentsPage({ projectId }: { projectId: string }) {
     }
   };
 
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
+  const createNewDocument = async () => {
     setSaving(true);
     setError(null);
 
@@ -257,6 +271,76 @@ export function DocumentsPage({ projectId }: { projectId: string }) {
     } finally {
       setSaving(false);
     }
+  };
+
+  const submitNewVersion = async (document: ProjectDocument, newUrl: string) => {
+    setVersionUploadSaving(true);
+    setError(null);
+
+    try {
+      const response = await fetch(`/api/documents/${encodeURIComponent(document.id)}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          url: newUrl,
+          version: computeNextVersion(document.version),
+        }),
+      });
+      const data = await parseApiResponse<{ document: ProjectDocument }>(response);
+
+      setDocuments((current) =>
+        sortByNewest(current.map((existing) => (existing.id === data.document.id ? data.document : existing))),
+      );
+      setVersionUploadDocumentId(null);
+      setVersionUploadUrl("");
+      await loadVersions(data.document);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "新しいバージョンのアップロードに失敗しました。");
+    } finally {
+      setVersionUploadSaving(false);
+    }
+  };
+
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    const trimmedName = name.trim();
+    const existingMatch = documents.find(
+      (document) => document.name.trim().toLowerCase() === trimmedName.toLowerCase(),
+    );
+
+    if (existingMatch) {
+      setError(null);
+      setDuplicateCandidate(existingMatch);
+      return;
+    }
+
+    await createNewDocument();
+  };
+
+  const handleCreateAsNew = async () => {
+    setDuplicateCandidate(null);
+    await createNewDocument();
+  };
+
+  const handleUpdateExisting = async () => {
+    if (!duplicateCandidate) {
+      return;
+    }
+
+    const target = duplicateCandidate;
+    setDuplicateCandidate(null);
+    await submitNewVersion(target, url.trim());
+    setName("");
+    setType("drawing");
+    setUrl("");
+  };
+
+  const handleVersionUploadSubmit = async (event: React.FormEvent<HTMLFormElement>, document: ProjectDocument) => {
+    event.preventDefault();
+    await submitNewVersion(document, versionUploadUrl.trim());
   };
 
   if (loading) {
@@ -402,6 +486,39 @@ export function DocumentsPage({ projectId }: { projectId: string }) {
                 </button>
               </div>
             </form>
+
+            {duplicateCandidate ? (
+              <div role="alert" className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                <p>
+                  「{duplicateCandidate.name}」という同名のドキュメントが既に登録されています。新規ドキュメントとして追加しますか、既存ドキュメントの新しいバージョンとして登録しますか？
+                </p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={() => void handleUpdateExisting()}
+                    disabled={saving || versionUploadSaving}
+                    className="rounded-lg bg-brand-600 px-3 py-1.5 text-xs font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    既存の新しいバージョンにする
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void handleCreateAsNew()}
+                    disabled={saving || versionUploadSaving}
+                    className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    新規ドキュメントとして追加
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setDuplicateCandidate(null)}
+                    className="rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-500 hover:text-slate-700"
+                  >
+                    キャンセル
+                  </button>
+                </div>
+              </div>
+            ) : null}
           </section>
 
           <section className="space-y-4">
@@ -423,27 +540,79 @@ export function DocumentsPage({ projectId }: { projectId: string }) {
                   ) : (
                     <div className="mt-3 space-y-2">
                       {sortByNewest(groupedDocuments).map((document) => (
-                        <button
+                        <div
                           key={document.id}
-                          type="button"
-                          onClick={() => void loadVersions(document)}
-                          className={`w-full rounded-2xl border px-4 py-3 text-left ${
+                          className={`w-full rounded-2xl border px-4 py-3 ${
                             selectedDocumentId === document.id
                               ? "border-brand-300 bg-brand-50"
                               : "border-slate-200 hover:border-brand-200 hover:bg-slate-50"
                           }`}
                         >
-                          <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-                            <div>
-                              <p className="font-semibold text-slate-900">{document.name}</p>
-                              <p className="mt-1 text-xs text-slate-500">{documentTypeLabels[document.type]} / {document.uploadedBy}</p>
+                          <button type="button" onClick={() => void loadVersions(document)} className="w-full text-left">
+                            <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                              <div>
+                                <p className="font-semibold text-slate-900">{document.name}</p>
+                                <p className="mt-1 text-xs text-slate-500">{documentTypeLabels[document.type]} / {document.uploadedBy}</p>
+                              </div>
+                              <div className="flex shrink-0 flex-wrap gap-2 text-xs text-slate-500">
+                                <span className="rounded-full bg-white px-2.5 py-1 shadow-sm">アップロード {formatDocumentDate(document.createdAt)}</span>
+                                <span className="rounded-full bg-white px-2.5 py-1 shadow-sm">版 {document.version}</span>
+                              </div>
                             </div>
-                            <div className="flex shrink-0 flex-wrap gap-2 text-xs text-slate-500">
-                              <span className="rounded-full bg-white px-2.5 py-1 shadow-sm">アップロード {formatDocumentDate(document.createdAt)}</span>
-                              <span className="rounded-full bg-white px-2.5 py-1 shadow-sm">版 {document.version}</span>
-                            </div>
+                          </button>
+
+                          <div className="mt-2 flex justify-end">
+                            {versionUploadDocumentId === document.id ? (
+                              <form
+                                onSubmit={(event) => void handleVersionUploadSubmit(event, document)}
+                                className="flex w-full flex-col gap-2 sm:flex-row sm:items-center"
+                              >
+                                <label className="flex-1">
+                                  <span className="sr-only">{document.name} の新しいバージョンのファイルURL</span>
+                                  <input
+                                    type="url"
+                                    required
+                                    autoFocus
+                                    value={versionUploadUrl}
+                                    onChange={(event) => setVersionUploadUrl(event.target.value)}
+                                    placeholder="新しいバージョンのファイルURL"
+                                    className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
+                                  />
+                                </label>
+                                <div className="flex shrink-0 gap-2">
+                                  <button
+                                    type="submit"
+                                    disabled={versionUploadSaving}
+                                    className="rounded-lg bg-brand-600 px-3 py-1.5 text-xs font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
+                                  >
+                                    {versionUploadSaving ? "アップロード中..." : "アップロード"}
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setVersionUploadDocumentId(null);
+                                      setVersionUploadUrl("");
+                                    }}
+                                    className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700"
+                                  >
+                                    キャンセル
+                                  </button>
+                                </div>
+                              </form>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setVersionUploadDocumentId(document.id);
+                                  setVersionUploadUrl("");
+                                }}
+                                className="text-xs font-semibold text-brand-600 hover:text-brand-800"
+                              >
+                                新しいバージョンをアップロード
+                              </button>
+                            )}
                           </div>
-                        </button>
+                        </div>
                       ))}
                     </div>
                   )}
