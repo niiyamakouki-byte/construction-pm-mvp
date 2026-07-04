@@ -307,11 +307,12 @@ export function ProjectListPage() {
             <button
               type="button"
               onClick={() => {
+                const id = createdProjectId;
                 setCreatedProjectName(null);
                 setCreatedProjectId(null);
                 setCreatedCaptureModeRef(null);
                 setIsFirstProject(false);
-                navigate("/estimate");
+                navigate(id ? `/estimate?projectId=${encodeURIComponent(id)}` : "/estimate");
               }}
               className="rounded-2xl bg-white px-4 py-2 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-200"
             >

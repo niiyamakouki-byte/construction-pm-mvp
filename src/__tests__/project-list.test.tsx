@@ -172,7 +172,10 @@ describe("ProjectListPage", () => {
     });
     await user.click(cta);
 
-    expect(vi.mocked(navigate)).toHaveBeenCalledWith("/estimate");
+    // 作成直後の案件が見積画面で自動選択されるよう projectId をクエリで渡す
+    const calls = vi.mocked(navigate).mock.calls;
+    const estimateCall = calls.find((c) => c[0].startsWith("/estimate?projectId="));
+    expect(estimateCall).toBeDefined();
   });
 
   it("工程表を作る案件を登録すると工程表CTAが表示され /gantt/xxx へ遷移する", async () => {

@@ -67,6 +67,7 @@ describe("EstimatePage", () => {
     mocks.generateEstimatePdf.mockReset();
     mocks.projectFindAll.mockReset();
     mocks.projectFindAll.mockResolvedValue([]);
+    window.location.hash = "";
     vi.doUnmock("react");
   });
 
@@ -315,5 +316,53 @@ describe("EstimatePage", () => {
     mocks.projectFindAll.mockResolvedValue([]);
     await renderEstimatePage();
     expect(screen.queryByLabelText(/案件を選ぶ/)).toBeNull();
+  });
+
+  it("URLにprojectIdが指定されていると案件が自動選択され物件名も自動入力される", async () => {
+    mocks.projectFindAll.mockResolvedValue([
+      {
+        id: "proj-auto",
+        name: "自動選択案件",
+        description: "",
+        status: "active",
+        startDate: "2026-01-01",
+        includeWeekends: false,
+        createdAt: "2026-01-01T00:00:00.000Z",
+        updatedAt: "2026-01-01T00:00:00.000Z",
+      },
+    ]);
+    window.location.hash = "/estimate?projectId=proj-auto";
+
+    await renderEstimatePage();
+
+    const select = (await screen.findByLabelText(/案件を選ぶ/)) as HTMLSelectElement;
+    await waitFor(() => expect(select.value).toBe("proj-auto"));
+
+    const propertyInput = screen.getByLabelText(/物件名/) as HTMLInputElement;
+    await waitFor(() => expect(propertyInput.value).toBe("自動選択案件"));
+  });
+
+  it("URLにprojectIdの指定がなければ従来通り未選択のまま表示される", async () => {
+    mocks.projectFindAll.mockResolvedValue([
+      {
+        id: "proj-manual",
+        name: "手動選択案件",
+        description: "",
+        status: "active",
+        startDate: "2026-01-01",
+        includeWeekends: false,
+        createdAt: "2026-01-01T00:00:00.000Z",
+        updatedAt: "2026-01-01T00:00:00.000Z",
+      },
+    ]);
+    window.location.hash = "/estimate";
+
+    await renderEstimatePage();
+
+    const select = (await screen.findByLabelText(/案件を選ぶ/)) as HTMLSelectElement;
+    expect(select.value).toBe("");
+
+    const propertyInput = screen.getByLabelText(/物件名/) as HTMLInputElement;
+    expect(propertyInput.value).toBe("");
   });
 });

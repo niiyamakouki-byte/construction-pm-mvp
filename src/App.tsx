@@ -267,7 +267,7 @@ function AppShell() {
       icon: "more",
       path: "/notifications",
       matchRoute: (currentRoute) =>
-        ["/today", "/invoice", "/estimate", "/takeoff", "/contractors", "/notifications", "/help", "/node-schedule", "/cost-management", "/weather", "/safety", "/procurement", "/orders", "/crm", "/reports", "/invoices", "/invoices/reconcile", "/cross-project-gantt", "/progress-review", "/photos", "/freee", "/finishing", "/schedule", "/phase-templates"].includes(currentRoute) || currentRoute.startsWith("/reports/") || currentRoute.startsWith("/freee?") || currentRoute.startsWith("/finishing"),
+        ["/today", "/invoice", "/estimate", "/takeoff", "/contractors", "/notifications", "/help", "/node-schedule", "/cost-management", "/weather", "/safety", "/procurement", "/orders", "/crm", "/reports", "/invoices", "/invoices/reconcile", "/cross-project-gantt", "/progress-review", "/photos", "/freee", "/finishing", "/schedule", "/phase-templates"].includes(currentRoute) || currentRoute.startsWith("/reports/") || currentRoute.startsWith("/freee?") || currentRoute.startsWith("/finishing") || currentRoute.startsWith("/estimate?"),
     },
   ];
 
@@ -306,7 +306,7 @@ function AppShell() {
       label: t("common:nav.estimate"),
       icon: "estimate",
       path: "/estimate",
-      matchRoute: (currentRoute) => currentRoute === "/estimate",
+      matchRoute: (currentRoute) => currentRoute === "/estimate" || currentRoute.startsWith("/estimate?"),
     },
     {
       key: "takeoff",
@@ -715,7 +715,7 @@ function AppShell() {
         </ErrorBoundary>
       );
     }
-    if (route === "/estimate") {
+    if (route === "/estimate" || route.startsWith("/estimate?")) {
       return <EstimatePage />;
     }
     if (route === "/takeoff") {
@@ -851,7 +851,7 @@ function AppShell() {
     { key: "progress-review", label: t("common:nav.progress_review"), icon: "progress-review", path: "/progress-review", active: route === "/progress-review", group: "field", aiHint: "写真から進捗と不足証跡を見る" },
     { key: "safety", label: t("common:nav.safety_management"), icon: "safety", path: "/safety", active: route === "/safety", group: "field", aiHint: "安全確認と是正漏れを見る" },
     { key: "phase-templates", label: "テンプレライブラリ", icon: "phase-templates", path: "/phase-templates", active: route === "/phase-templates", group: "field", aiHint: "標準工程テンプレートを探す" },
-    { key: "estimate", label: t("common:nav.estimate"), icon: "estimate", path: "/estimate", active: route === "/estimate", group: "money", aiHint: "見積作成と粗利の前提を確認する" },
+    { key: "estimate", label: t("common:nav.estimate"), icon: "estimate", path: "/estimate", active: route === "/estimate" || route.startsWith("/estimate?"), group: "money", aiHint: "見積作成と粗利の前提を確認する" },
     { key: "takeoff", label: "拾い出し", icon: "takeoff", path: "/takeoff", active: route === "/takeoff", group: "money", aiHint: "図面をなぞって数量を拾い見積へ送る" },
     { key: "invoice", label: t("common:nav.invoices_nav"), icon: "invoice", path: "/invoice", active: route === "/invoice", group: "money", aiHint: "請求漏れと入金予定を見る" },
     { key: "cost", label: t("common:nav.cost"), icon: "cost", path: "/cost-management", active: route === "/cost-management", group: "money", aiHint: "予算超過と原価差異を見る" },

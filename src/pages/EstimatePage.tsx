@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   readAndClearEstimateInject,
 } from "../lib/takeoff-to-estimate.js";
@@ -603,6 +603,21 @@ function MatsubamebushiTab() {
 
 type EstimateMode = null | "pdf" | "manual";
 
+/**
+ * /#/estimate?projectId=... で遷移してきたときに projectId を抜き出す。
+ * hash router のため query は「?」の前にも後ろにも来うる（FreeePage の extractCodeFromUrl と同じ考え方）。
+ */
+function extractProjectIdFromUrl(): string {
+  if (typeof window === "undefined") return "";
+  const search = new URLSearchParams(window.location.search);
+  const fromSearch = search.get("projectId");
+  if (fromSearch) return fromSearch;
+  const hash = window.location.hash;
+  const q = hash.indexOf("?");
+  if (q === -1) return "";
+  return new URLSearchParams(hash.slice(q + 1)).get("projectId") ?? "";
+}
+
 function EstimatePageContent() {
   const [estimateMode, setEstimateMode] = useState<EstimateMode>(() => {
     if (typeof window !== "undefined") {
@@ -629,7 +644,7 @@ function EstimatePageContent() {
     [organizationId],
   );
   const [projectOptions, setProjectOptions] = useState<{ id: string; name: string }[]>([]);
-  const [selectedProjectId, setSelectedProjectId] = useState<string>("");
+  const [selectedProjectId, setSelectedProjectId] = useState<string>(() => extractProjectIdFromUrl());
   const [linkedProjectName, setLinkedProjectName] = useState<string>("");
 
   useEffect(() => {
@@ -649,6 +664,19 @@ function EstimatePageContent() {
       disposed = true;
     };
   }, [projectRepository]);
+
+  // 案件作成→見積導線: URLのprojectIdが読み込み済み案件と一致したら物件名/紐づけ名を自動反映する（初回のみ）
+  const deepLinkProjectAppliedRef = useRef(false);
+  useEffect(() => {
+    if (deepLinkProjectAppliedRef.current) return;
+    if (!selectedProjectId) return;
+    const found = projectOptions.find((p) => p.id === selectedProjectId);
+    if (found) {
+      setPropertyName(found.name);
+      setLinkedProjectName(found.name);
+      deepLinkProjectAppliedRef.current = true;
+    }
+  }, [projectOptions, selectedProjectId]);
 
   // 拾い出し → 見積流し込み: DrawingViewer が localStorage に書いたアイテムを読み取る
   const [takeoffInjectBanner, setTakeoffInjectBanner] = useState(false);
