@@ -53,6 +53,12 @@ function getFallbackProgress(status: TaskStatus): number {
 }
 
 function getActualProgress(task: ProgressTask): number {
+  // status is the source of truth for terminal state: a task marked "done" is
+  // always 100% complete, even if its progress field was never synced (e.g. an
+  // edit surface that updates status without touching progress). Without this,
+  // done tasks with a stale progress=0 silently zero out EV/percentComplete
+  // (regression construction_pm_mvp-7ry / construction_pm_mvp-e0q).
+  if (task.status === "done") return 100;
   return clampPercentage(task.progress ?? getFallbackProgress(task.status));
 }
 

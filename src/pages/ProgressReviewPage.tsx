@@ -3,6 +3,7 @@ import { useOrganizationContext } from "../contexts/OrganizationContext.js";
 import { navigate } from "../hooks/useHashRouter.js";
 import { createProjectRepository } from "../stores/project-store.js";
 import { createTaskRepository } from "../stores/task-store.js";
+import { filterScheduleTasks } from "../lib/cost-management.js";
 import type { Project } from "../domain/types.js";
 import type { GeneratedSchedule, GeneratedTask, WorkCategory } from "../lib/ai-schedule-generator.js";
 import {
@@ -141,7 +142,10 @@ export function ProgressReviewPage() {
     if (!project) return;
     try {
       const allTasks = await taskRepository.findAll();
-      const tasks = allTasks.filter((t) => t.projectId === projectId);
+      // Exclude cost-tracking pseudo-tasks (e.g. vendor labor cost entries) the same way
+      // GanttPage does, so the task count shown here matches the Gantt/工程表 screen
+      // (regression construction_pm_mvp-7ry: 16件 here vs 14件 on Gantt for the same project).
+      const tasks = filterScheduleTasks(allTasks).filter((t) => t.projectId === projectId);
       const gen = buildGeneratedSchedule(project, tasks);
       setSchedule(gen);
       setDeltas([]);

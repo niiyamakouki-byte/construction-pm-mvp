@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { Project } from "../domain/types.js";
 import {
   calculateEarnedValue,
+  calculateProjectProgress,
   costPerformanceIndex,
   estimateAtCompletion,
   generateEVReport,
@@ -120,6 +121,40 @@ describe("earned-value", () => {
     expect(metrics.pv).toBe(0);
     expect(metrics.ev).toBe(0);
     expect(metrics.ac).toBe(0);
+  });
+
+  it("treats status=done as 100% actual progress even when the stored progress field is stale/zero (regression construction_pm_mvp-7ry / construction_pm_mvp-e0q)", () => {
+    // Mirrors production data for 渋谷ワインバー Bre.S SHIBUYA: several tasks have
+    // status="done" but progress=0 because the field was never synced when status
+    // changed. Before the fix, calculateProjectProgress()/calculateEarnedValue()
+    // treated these as 0% actual, silently zeroing out percentComplete/EV for
+    // otherwise-completed work.
+    const staleDoneTasks: ProgressTask[] = [
+      makeTask({
+        id: "t1",
+        name: "仮設工事",
+        status: "done",
+        progress: 0,
+        startDate: "2025-01-01",
+        dueDate: "2025-01-05",
+        plannedCost: 1000,
+      }),
+      makeTask({
+        id: "t2",
+        name: "給排水設備工事",
+        status: "done",
+        progress: 0,
+        startDate: "2025-01-06",
+        dueDate: "2025-01-10",
+        plannedCost: 1000,
+      }),
+    ];
+
+    expect(calculateProjectProgress(staleDoneTasks)).toBe(100);
+
+    const metrics = calculateEarnedValue(staleDoneTasks, 2000, "2025-01-15");
+    expect(metrics.percentComplete).toBe(100);
+    expect(metrics.ev).toBe(metrics.bac);
   });
 
   it("default asOfDate uses local date, not UTC (timezone regression)", () => {

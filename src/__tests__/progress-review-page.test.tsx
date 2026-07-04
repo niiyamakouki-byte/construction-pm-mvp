@@ -69,4 +69,52 @@ describe("ProgressReviewPage", () => {
 
     expect(vi.mocked(navigate)).toHaveBeenCalledWith("/today");
   });
+
+  it("コスト集計用の疑似タスク(Grow等)を除外し、工程表(Gantt)と同じ件数を表示する (regression construction_pm_mvp-7ry)", async () => {
+    // Mirrors production: 渋谷ワインバー Bre.S SHIBUYA has 16 rows in the tasks table,
+    // 2 of which are vendor labor-cost pseudo-tasks ("Grow 2月 労務費" 等) that GanttPage
+    // already excludes via filterScheduleTasks(). Before the fix, ProgressReviewPage counted
+    // all 16 raw rows, showing 16件 here vs 14件 on the Gantt screen for the same project.
+    const project = {
+      id: "proj-1",
+      name: "渋谷ワインバー Bre.S SHIBUYA",
+      description: "",
+      status: "active" as const,
+      startDate: "2026-03-01",
+      includeWeekends: true,
+      createdAt: "2026-01-01T00:00:00.000Z",
+      updatedAt: "2026-01-01T00:00:00.000Z",
+    };
+
+    const makeTask = (id: string, name: string) => ({
+      id,
+      projectId: "proj-1",
+      name,
+      description: "",
+      status: "done" as const,
+      startDate: "2026-03-01",
+      dueDate: "2026-03-05",
+      progress: 0,
+      dependencies: [],
+      createdAt: "2026-01-01T00:00:00.000Z",
+      updatedAt: "2026-01-01T00:00:00.000Z",
+    });
+
+    const tasks = [
+      makeTask("t1", "仮設工事"),
+      makeTask("t2", "給排水設備工事"),
+      makeTask("t3", "Grow 2月 労務費（渋谷ワインバー）"),
+      makeTask("t4", "Grow 3月 労務費（渋谷ワインバー）"),
+    ];
+
+    mockProjectRepository.findAll.mockResolvedValue([project]);
+    mockTaskRepository.findAll.mockResolvedValue(tasks);
+
+    render(<ProgressReviewPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText(/件の工程/)).toBeDefined();
+    });
+    expect(screen.getByText(/^2件の工程/)).toBeDefined();
+  });
 });

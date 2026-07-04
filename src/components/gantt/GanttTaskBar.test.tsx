@@ -120,6 +120,16 @@ describe("GanttTaskBar - P2 進捗塗り分け", () => {
     const fill = getByTestId("progress-fill") as HTMLElement;
     expect(fill.style.width).toBe("100%");
   });
+
+  it("status=done なのに progress=0(未同期)でも進捗フィルは100%表示になり、期限切バッジも出ない (regression construction_pm_mvp-7ry)", () => {
+    const { getByTestId, queryByText } = renderBar(
+      { ...baseTask, status: "done", progress: 0, dueDate: "2025-01-03", endDate: "2025-01-03" },
+      { today: "2025-06-01" },
+    );
+    const fill = getByTestId("progress-fill") as HTMLElement;
+    expect(fill.style.width).toBe("100%");
+    expect(queryByText("期限切")).toBeNull();
+  });
 });
 
 describe("GanttTaskBar - P2 完了タスクのグレー化", () => {

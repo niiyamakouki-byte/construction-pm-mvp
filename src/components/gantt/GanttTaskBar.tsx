@@ -1,7 +1,7 @@
 import { useRef } from "react";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import type { ChartDateInfo, ConnectState, DragState, GanttTask } from "./types.js";
-import { daysBetween, formatScheduleDate, statusColor, statusLabel } from "./utils.js";
+import { daysBetween, effectiveProgress, formatScheduleDate, statusColor, statusLabel } from "./utils.js";
 import { gantt } from "../../theme/index.js";
 
 /** 大項目ごとの色マッピング */
@@ -78,7 +78,7 @@ export function GanttTaskBar({
   const color = task.status === "done" ? "#94a3b8" : statusColor[task.status];
   const labelVisible = barWidth >= 96;
   const contractorVisible = barWidth >= 100 && Boolean(task.contractorName);
-  const progress = Math.min(Math.max(task.progress, 0), 100);
+  const progress = effectiveProgress(task);
 
   // Cascade ghost bar geometry
   const ghostStartOffset = cascadePreviewDates
@@ -125,7 +125,7 @@ export function GanttTaskBar({
         role="button"
         tabIndex={0}
         data-task-id={task.id}
-        aria-label={`${task.name} ${statusLabel[task.status]} ${task.progress}%${overdue ? " 期限超過" : ""}`}
+        aria-label={`${task.name} ${statusLabel[task.status]} ${progress}%${overdue ? " 期限超過" : ""}`}
         className={`group/bar absolute rounded-full border border-white/70 shadow-sm transition-transform ${
           isDragging ? "cursor-grabbing opacity-90" : "cursor-pointer active:scale-[0.99]"
         } ${connectMode ? "ring-2 ring-violet-400 ring-offset-1" : ""}`}
@@ -202,7 +202,7 @@ export function GanttTaskBar({
             ) : null}
             {barWidth >= 78 ? (
               <span className="rounded-full bg-white/18 px-2 py-0.5 text-[11px] font-bold tabular-nums">
-                {task.progress}%
+                {progress}%
               </span>
             ) : null}
           </div>
@@ -313,10 +313,10 @@ export function GanttTaskLabel({
           <div className="h-1.5 flex-1 rounded-full bg-slate-200">
             <div
               className="h-full rounded-full"
-              style={{ width: `${Math.min(task.progress, 100)}%`, backgroundColor: statusColor[task.status] }}
+              style={{ width: `${effectiveProgress(task)}%`, backgroundColor: statusColor[task.status] }}
             />
           </div>
-          <span className="shrink-0 text-[11px] font-semibold tabular-nums text-slate-500">{task.progress}%</span>
+          <span className="shrink-0 text-[11px] font-semibold tabular-nums text-slate-500">{effectiveProgress(task)}%</span>
         </div>
       </button>
       {onMoveTask && (

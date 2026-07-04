@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import type { GanttTask } from "./types.js";
-import { formatScheduleDate, statusColor, statusLabel } from "./utils.js";
+import { effectiveProgress, formatScheduleDate, statusColor, statusLabel } from "./utils.js";
 
 type Props = {
   task: GanttTask;
@@ -80,12 +80,12 @@ export function TaskDrilldownModal({ task, onClose, onEdit }: Props) {
                 <div
                   className="h-full rounded-full transition-all"
                   style={{
-                    width: `${Math.min(task.progress, 100)}%`,
+                    width: `${effectiveProgress(task)}%`,
                     backgroundColor: statusColor[task.status],
                   }}
                 />
               </div>
-              <span className="text-sm font-semibold tabular-nums text-slate-700">{task.progress}%</span>
+              <span className="text-sm font-semibold tabular-nums text-slate-700">{effectiveProgress(task)}%</span>
             </div>
           </div>
 

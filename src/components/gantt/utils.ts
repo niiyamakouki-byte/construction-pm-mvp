@@ -163,6 +163,16 @@ export function progressColor(progress: number): string {
   return "#94a3b8";
 }
 
+/**
+ * Progress value to display for a task, treating status as the source of truth
+ * for terminal state: a task marked "done" always displays 100%, even if the
+ * stored progress field was never synced (regression construction_pm_mvp-7ry).
+ */
+export function effectiveProgress(task: { status: TaskStatus; progress: number }): number {
+  if (task.status === "done") return 100;
+  return Math.min(Math.max(task.progress, 0), 100);
+}
+
 export function getAlertLevel(task: GanttTask, today: string): "overdue" | "urgent" | "soon" | null {
   if (task.status === "done") return null;
   const diff = daysBetween(today, task.endDate);
