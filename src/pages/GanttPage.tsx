@@ -31,6 +31,7 @@ import {
   compareGanttRows,
   computeReorder,
   daysBetween,
+  effectiveProgress,
   formatScheduleDate,
   resolveDependencyDrop,
   toLocalDateString,
@@ -781,7 +782,7 @@ function GanttPageContent({ initialProjectId = null, openMaster = false }: Gantt
       editIncludeWeekends: task.includeWeekends ?? task.projectIncludesWeekends,
       editAssigneeId: task.assigneeId ?? "",
       editContractorId: task.contractorId ?? "",
-      editProgress: task.progress,
+      editProgress: effectiveProgress(task),
       editStatus: task.status,
       editMaterials: task.materials?.join(", ") ?? "",
       editLeadTimeDays: task.lead_time != null

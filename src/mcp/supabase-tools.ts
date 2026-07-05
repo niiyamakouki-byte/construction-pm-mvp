@@ -141,9 +141,15 @@ export async function updateTask(
   supabase?: SupabaseClient,
 ): Promise<TaskRow> {
   const db = supabase ?? getSupabase();
+  // Marking a task "done" without also patching progress leaves a stale value
+  // (often 0) that every screen reading the raw progress field displays as
+  // "complete but 0%" (regression construction_pm_mvp-7ry / construction_pm_mvp-e0q).
+  // Matches the unconditional "done" == 100% rule used everywhere progress is
+  // displayed: progress in the same patch is overridden, same as elsewhere.
+  const patch = input.status === "done" ? { ...input, progress: 100 } : input;
   const { data, error } = await db
     .from("tasks")
-    .update({ ...input, updated_at: new Date().toISOString() })
+    .update({ ...patch, updated_at: new Date().toISOString() })
     .eq("id", id)
     .select()
     .single();

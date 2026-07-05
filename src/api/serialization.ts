@@ -34,6 +34,15 @@ export function serializeProject(project: ApiProjectRecord, taskCount?: number) 
   };
 }
 
+/**
+ * Progress to report for a task: status is the source of truth for terminal
+ * state, so a "done" task always reads as 100% even if its stored progress
+ * field was never synced (regression construction_pm_mvp-7ry / construction_pm_mvp-e0q).
+ */
+function effectiveProgress(task: Pick<ApiTaskRecord, "status" | "progress">): number {
+  return task.status === "done" ? 100 : task.progress;
+}
+
 export function serializeTask(task: ApiTaskRecord) {
   return {
     id: task.id,
@@ -45,7 +54,7 @@ export function serializeTask(task: ApiTaskRecord) {
     status: task.status,
     startDate: task.startDate ?? null,
     endDate: task.dueDate ?? null,
-    progress: task.progress,
+    progress: effectiveProgress(task),
     cost: task.cost,
     dependencies: task.dependencies,
     contractorId: task.contractorId ?? null,
@@ -146,7 +155,7 @@ export function calculateProjectProgress(tasks: ApiTaskRecord[]): number {
     return 0;
   }
 
-  const totalProgress = tasks.reduce((sum, task) => sum + task.progress, 0);
+  const totalProgress = tasks.reduce((sum, task) => sum + effectiveProgress(task), 0);
   return Math.round(totalProgress / tasks.length);
 }
 

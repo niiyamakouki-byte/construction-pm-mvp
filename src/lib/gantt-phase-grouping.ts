@@ -6,6 +6,7 @@
  * GanttPage / GanttChart から表示ロジックを切り出し、単体テストで検証できるようにする。
  */
 import type { GanttTask } from "../components/gantt/types.js";
+import { effectiveProgress } from "../components/gantt/utils.js";
 
 export type PhaseGroupRow = {
   projectId: string;
@@ -50,7 +51,7 @@ export function computePhaseProgress(tasks: readonly GanttTask[]): number {
   for (const task of tasks) {
     const days = taskDurationDays(task);
     totalDays += days;
-    weighted += clampProgress(task.progress) * days;
+    weighted += clampProgress(effectiveProgress(task)) * days;
   }
   if (totalDays === 0) return 0;
   return Math.round(weighted / totalDays);

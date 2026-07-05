@@ -6,7 +6,7 @@ import { createTaskRepository } from "../stores/task-store.js";
 import { useOrganizationContext } from "../contexts/OrganizationContext.js";
 import { navigate } from "../hooks/useHashRouter.js";
 import { readLastProjectId, writeLastProjectId } from "../lib/last-project.js";
-import { formatScheduleDate, statusColor, statusLabel } from "../components/gantt/utils.js";
+import { effectiveProgress, formatScheduleDate, statusColor, statusLabel } from "../components/gantt/utils.js";
 import type { GanttTask } from "../components/gantt/types.js";
 import { filterScheduleTasks } from "../lib/cost-management.js";
 import { ACTION_LABELS } from "../lib/action-labels.js";
@@ -118,7 +118,7 @@ export function TasksPage() {
               <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
                 {statusLabel[task.status]}
               </span>
-              <p className="mt-2 text-sm font-bold tabular-nums text-slate-900">{task.progress}%</p>
+              <p className="mt-2 text-sm font-bold tabular-nums text-slate-900">{effectiveProgress(task)}%</p>
             </div>
           </button>
         ))}

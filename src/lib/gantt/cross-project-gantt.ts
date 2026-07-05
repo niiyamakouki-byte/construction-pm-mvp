@@ -5,6 +5,7 @@
  */
 
 import type { GanttTask } from "../../components/gantt/types.js";
+import { effectiveProgress } from "../../components/gantt/utils.js";
 
 export type CrossProjectGanttTask = GanttTask & {
   projectId: string;
@@ -77,7 +78,7 @@ export function getProjectSummaryCards(
       taskCount === 0
         ? 0
         : Math.round(
-            projectTasks.reduce((sum, t) => sum + t.progress, 0) / taskCount,
+            projectTasks.reduce((sum, t) => sum + effectiveProgress(t), 0) / taskCount,
           );
 
     cards.push({

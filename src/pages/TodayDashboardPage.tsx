@@ -38,7 +38,7 @@ import {
   getDailyWeatherRisk,
   getWeatherEmoji,
 } from "../lib/weather.js";
-import { daysBetween } from "../components/gantt/utils.js";
+import { daysBetween, effectiveProgress } from "../components/gantt/utils.js";
 import {
   createBudgetAlert,
   createDeadlineAlert,
@@ -1228,7 +1228,7 @@ function TodayDashboardPageContent() {
                 dailyReportActiveTasks.length > 0
                   ? dailyReportActiveTasks
                     .slice(0, 3)
-                    .map((task) => `${task.name} (${task.progress}%)`)
+                    .map((task) => `${task.name} (${effectiveProgress(task)}%)`)
                     .join(" / ")
                   : "本日の進行中作業はありません"
               }

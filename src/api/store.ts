@@ -239,6 +239,12 @@ function createTaskRecord(projectId: string, input: CreateTaskInput): ApiTaskRec
 }
 
 function applyTaskUpdate(existing: ApiTaskRecord, input: UpdateTaskInput): ApiTaskRecord {
+  // Marking a task "done" without also patching progress leaves a stale value
+  // (often 0) that every screen reading the raw progress field displays as
+  // "complete but 0%" (regression construction_pm_mvp-7ry / construction_pm_mvp-e0q).
+  // Matches the unconditional "done" == 100% rule used everywhere progress is
+  // displayed: progress in the same patch is overridden, same as elsewhere.
+  const progress = input.status === "done" ? 100 : input.progress;
   return {
     ...existing,
     updatedAt: new Date().toISOString(),
@@ -248,7 +254,7 @@ function applyTaskUpdate(existing: ApiTaskRecord, input: UpdateTaskInput): ApiTa
     ...(input.projectId !== undefined ? { projectId: input.projectId } : {}),
     ...(input.contractorId !== undefined ? { contractorId: input.contractorId ?? undefined } : {}),
     ...(input.contractor !== undefined ? { contractor: input.contractor ?? undefined } : {}),
-    ...(input.progress !== undefined ? { progress: input.progress } : {}),
+    ...(progress !== undefined ? { progress } : {}),
     ...(input.cost !== undefined ? { cost: input.cost } : {}),
     ...(input.dependencies !== undefined ? { dependencies: input.dependencies } : {}),
     ...(input.isMilestone !== undefined ? { isMilestone: input.isMilestone } : {}),

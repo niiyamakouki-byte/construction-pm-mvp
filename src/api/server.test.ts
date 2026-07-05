@@ -805,6 +805,68 @@ describe("GenbaHub API", () => {
     });
   });
 
+  // Regression construction_pm_mvp-7ry / construction_pm_mvp-e0q: PATCHing a
+  // task to status=done without also patching progress used to leave the
+  // stored progress at its stale value (often 0), which every screen reading
+  // the raw progress field displayed as "complete but 0%".
+  it("PATCH /api/tasks/:id で status=done のみ指定した場合 progress が100に正規化される", async () => {
+    const createdProject = await request("POST", "/api/projects", {
+      name: "案件G",
+      contractor: "元請G",
+      address: "栃木県",
+      status: "planning",
+    });
+    const projectId = (createdProject.body as { project: { id: string } }).project.id;
+    const createdTask = await request("POST", `/api/projects/${projectId}/tasks`, {
+      name: "仮設工事",
+      startDate: "2026-06-01",
+      endDate: "2026-06-03",
+      description: "",
+      progress: 0,
+    });
+    const taskId = (createdTask.body as { task: { id: string } }).task.id;
+
+    const response = await request("PATCH", `/api/tasks/${taskId}`, {
+      status: "done",
+    });
+
+    expect(response.status).toBe(200);
+    expect(response.body).toMatchObject({
+      task: { id: taskId, status: "done", progress: 100 },
+    });
+  });
+
+  it("PATCH /api/tasks/:id で status=done と別の progress を同時指定した場合も progress は100に正規化される", async () => {
+    // "done" always means 100% everywhere progress is displayed
+    // (effectiveProgress/getActualProgress, TaskEditModal's own done→100 sync),
+    // so the write path never persists a different stored value for a done task.
+    const createdProject = await request("POST", "/api/projects", {
+      name: "案件H",
+      contractor: "元請H",
+      address: "群馬県",
+      status: "planning",
+    });
+    const projectId = (createdProject.body as { project: { id: string } }).project.id;
+    const createdTask = await request("POST", `/api/projects/${projectId}/tasks`, {
+      name: "給排水設備工事",
+      startDate: "2026-06-01",
+      endDate: "2026-06-03",
+      description: "",
+      progress: 0,
+    });
+    const taskId = (createdTask.body as { task: { id: string } }).task.id;
+
+    const response = await request("PATCH", `/api/tasks/${taskId}`, {
+      status: "done",
+      progress: 80,
+    });
+
+    expect(response.status).toBe(200);
+    expect(response.body).toMatchObject({
+      task: { id: taskId, status: "done", progress: 100 },
+    });
+  });
+
   it("POST /api/tasks/:id/dependencies で依存関係を追加できる", async () => {
     const createdProject = await request("POST", "/api/projects", {
       name: "案件Dependencies",

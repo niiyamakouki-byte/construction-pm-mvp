@@ -1,5 +1,5 @@
 import type { Project, ProjectStatus, Task, TaskStatus } from "../domain/types.js";
-import { addDays, daysBetween, formatScheduleDate } from "../components/gantt/utils.js";
+import { addDays, daysBetween, effectiveProgress, formatScheduleDate } from "../components/gantt/utils.js";
 import { isHoliday } from "./japanese-holidays.js";
 import { escapeHtml } from "./utils/escape-html";
 
@@ -507,7 +507,7 @@ export function buildGanttPdfHtml(
               if (clampedStart <= clampedEnd) {
                 const barLeft = clampedStart * dayWidth;
                 const barWidth = (clampedEnd - clampedStart + 1) * dayWidth;
-                const progressWidth = Math.round(barWidth * (task.progress / 100));
+                const progressWidth = Math.round(barWidth * (effectiveProgress(task) / 100));
                 barHtml = `<div class="bar" style="left:${barLeft}px;width:${barWidth}px;background:${color.bg}">
                   <div class="bar-fill" style="width:${progressWidth}px;background:${color.fill}"></div>
                 </div>`;

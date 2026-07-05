@@ -4,6 +4,7 @@
  */
 
 import type { Project, Invoice, Task, ChatMessage, Photo } from "../../domain/types.js";
+import { effectiveProgress } from "../../components/gantt/utils.js";
 import { detectDangerSignals, type DangerSignal } from "./danger-signals.js";
 import { getPredictionStore } from "../delay-predictor/prediction-store.js";
 import { marginAlertStore } from "../margin-watch/margin-alert-store.js";
@@ -231,7 +232,7 @@ export type PortfolioSummary = {
 
 function computeProjectProgress(tasks: Task[]): number {
   if (tasks.length === 0) return 0;
-  const sum = tasks.reduce((acc, t) => acc + (t.progress ?? 0), 0);
+  const sum = tasks.reduce((acc, t) => acc + effectiveProgress(t), 0);
   return sum / tasks.length;
 }
 

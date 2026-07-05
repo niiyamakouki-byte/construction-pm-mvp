@@ -6,6 +6,7 @@
 
 import type { Expense, Project, Task } from "../domain/types.js";
 import { predictFinalCost, trendAnalysis, type MonthlyData } from "./cost-forecaster.js";
+import { effectiveProgress } from "../components/gantt/utils.js";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -85,7 +86,7 @@ export function predictBudgetOverrun(
 
   const avgProgress =
     tasks.length > 0
-      ? tasks.reduce((s, t) => s + t.progress, 0) / tasks.length
+      ? tasks.reduce((s, t) => s + effectiveProgress(t), 0) / tasks.length
       : 100;
 
   if (avgProgress < 50 && spent > budget * 0.5) {
@@ -152,7 +153,7 @@ export function predictScheduleDelay(
     const plannedPct = totalMs > 0 ? clamp01(elapsedMs / totalMs) * 100 : 0;
     const actualPct =
       tasks.length > 0
-        ? tasks.reduce((s, t) => s + t.progress, 0) / tasks.length
+        ? tasks.reduce((s, t) => s + effectiveProgress(t), 0) / tasks.length
         : plannedPct;
 
     if (actualPct < plannedPct - 10) {

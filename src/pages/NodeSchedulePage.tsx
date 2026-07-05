@@ -5,6 +5,7 @@ import { createProjectRepository } from "../stores/project-store.js";
 import { useOrganizationContext } from "../contexts/OrganizationContext.js";
 import { navigate } from "../hooks/useHashRouter.js";
 import { filterScheduleTasks } from "../lib/cost-management.js";
+import { effectiveProgress } from "../components/gantt/utils.js";
 
 // ── Types ─────────────────────────────────────────────────────
 
@@ -530,7 +531,7 @@ export function NodeSchedulePage() {
                   <foreignObject x="8" y="56" width={NODE_W - 16} height="18">
                     <div style={{ fontSize: "10px", color: color, fontWeight: 600 }}>
                       {statusLabel[task.status]}
-                      {task.progress > 0 && ` · ${task.progress}%`}
+                      {effectiveProgress(task) > 0 && ` · ${effectiveProgress(task)}%`}
                     </div>
                   </foreignObject>
 

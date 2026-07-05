@@ -6,6 +6,7 @@
  */
 
 import type { Project, Task, Expense } from "../domain/types.js";
+import { effectiveProgress } from "../components/gantt/utils.js";
 import type { SiteEntryRecord } from "./site-entry-log.js";
 import { getEntryLog } from "./site-entry-log.js";
 import {
@@ -198,7 +199,7 @@ export function buildDailyReportHtml(input: DailyReportInput): string {
     ? tasks
         .map(
           (t) =>
-            `<tr><td>${escapeHtml(t.name)}</td><td>${t.progress ?? 0}%</td><td>${escapeHtml(t.status)}</td></tr>`,
+            `<tr><td>${escapeHtml(t.name)}</td><td>${effectiveProgress(t)}%</td><td>${escapeHtml(t.status)}</td></tr>`,
         )
         .join("\n")
     : `<tr><td colspan="3">作業なし</td></tr>`;
@@ -262,7 +263,7 @@ export function buildWeeklyReportHtml(input: WeeklyReportInput): string {
   const completedTasks = tasks.filter((t) => t.status === "done").length;
   const inProgressTasks = tasks.filter((t) => t.status === "in_progress").length;
   const avgProgress = tasks.length > 0
-    ? Math.round(tasks.reduce((s, t) => s + (t.progress ?? 0), 0) / tasks.length)
+    ? Math.round(tasks.reduce((s, t) => s + effectiveProgress(t), 0) / tasks.length)
     : 0;
 
   const budget = project.budget ?? 0;

@@ -1,4 +1,5 @@
 import type { DailyReport, Project, Task, Contractor } from "../domain/types.js";
+import { effectiveProgress } from "../components/gantt/utils.js";
 import { escapeHtml } from "./utils/escape-html";
 
 export type DailyReportInput = {
@@ -51,7 +52,7 @@ export function gatherReportData(input: DailyReportInput): DailyReportData {
 
   const workCompleted = activeTasks.map((task) => ({
     taskName: task.name,
-    progress: task.progress,
+    progress: effectiveProgress(task),
     status: task.status,
   }));
 

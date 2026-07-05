@@ -10,6 +10,7 @@ import type { Project } from "../domain/types.js";
 import type { Task } from "../domain/types.js";
 import { createProjectRepository } from "../stores/project-store.js";
 import { createTaskRepository } from "../stores/task-store.js";
+import { effectiveProgress } from "../components/gantt/utils.js";
 import { getEntryLog } from "../lib/site-entry-log.js";
 import type { SiteEntryRecord } from "../lib/site-entry-log.js";
 
@@ -94,7 +95,7 @@ function GanttReadOnly({ tasks }: { tasks: Task[] }) {
               />
             </div>
             <div className="w-12 shrink-0 text-[10px] text-slate-400 text-right">
-              {task.progress ?? 0}%
+              {effectiveProgress(task)}%
             </div>
           </div>
         ))}

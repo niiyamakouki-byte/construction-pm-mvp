@@ -3,6 +3,7 @@
  */
 
 import type { Expense, Project, Task } from "../domain/types.js";
+import { effectiveProgress } from "../components/gantt/utils.js";
 
 export type MonthlyData = {
   month: string; // "2025-01"
@@ -91,7 +92,7 @@ export function predictFinalCost(
   // Weighted average progress
   const totalProgress =
     tasks.length > 0
-      ? tasks.reduce((s, t) => s + t.progress, 0) / tasks.length / 100
+      ? tasks.reduce((s, t) => s + effectiveProgress(t), 0) / tasks.length / 100
       : 0;
 
   if (totalProgress <= 0) {
@@ -162,7 +163,7 @@ export function generateForecastReport(
 
   const completionPct =
     tasks.length > 0
-      ? Math.round(tasks.reduce((s, t) => s + t.progress, 0) / tasks.length)
+      ? Math.round(tasks.reduce((s, t) => s + effectiveProgress(t), 0) / tasks.length)
       : 0;
 
   const trend = trendAnalysis(monthlyData);

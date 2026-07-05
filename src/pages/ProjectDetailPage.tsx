@@ -21,6 +21,7 @@ import { createAppRepository } from "../infra/create-app-repository.js";
 import { navigate } from "../hooks/useHashRouter.js";
 import { useOrganizationContext } from "../contexts/OrganizationContext.js";
 import { filterScheduleTasks } from "../lib/cost-management.js";
+import { effectiveProgress } from "../components/gantt/utils.js";
 import { EmptyState } from "../components/EmptyState.js";
 import { DocumentsPage } from "../components/DocumentsPageImpl.js";
 import { ProjectDetailTabs } from "../components/ProjectDetailTabs.js";
@@ -1121,9 +1122,9 @@ export function ProjectDetailPage({
                             {task.assigneeId}
                           </span>
                         )}
-                        {task.progress > 0 && (
+                        {effectiveProgress(task) > 0 && (
                           <span className="text-[10px] font-semibold text-slate-500 tabular-nums">
-                            {task.progress}%
+                            {effectiveProgress(task)}%
                           </span>
                         )}
                       </div>

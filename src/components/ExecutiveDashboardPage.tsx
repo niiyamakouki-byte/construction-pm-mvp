@@ -20,6 +20,7 @@ import {
   type DangerSignalKind as DangerSignalKindType,
 } from "../lib/exec-dashboard/danger-signals.js";
 import type { Project, Task } from "../domain/types.js";
+import { effectiveProgress } from "./gantt/utils.js";
 
 // ── Constants ──────────────────────────────────────────────────────────────
 
@@ -123,7 +124,7 @@ function ProjectRow({ entry, signalCount }: ProjectRowProps) {
   const progress =
     tasks.length === 0
       ? 0
-      : Math.round(tasks.reduce((s, t) => s + (t.progress ?? 0), 0) / tasks.length);
+      : Math.round(tasks.reduce((s, t) => s + effectiveProgress(t), 0) / tasks.length);
 
   const unpaid = invoices
     .filter((inv) => inv.status !== "paid" && inv.status !== "cancelled")

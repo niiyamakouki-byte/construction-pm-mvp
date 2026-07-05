@@ -90,6 +90,16 @@ function formatPercent(value: number): string {
   return `${Math.round(value)}%`;
 }
 
+/**
+ * Progress to display for a task in printable HTML exports: status is the
+ * source of truth for terminal state, so a "done" task always renders as
+ * 100% even if its stored progress field was never synced (regression
+ * construction_pm_mvp-7ry / construction_pm_mvp-e0q).
+ */
+function effectiveProgress(task: ApiTaskRecord): number {
+  return task.status === "done" ? 100 : task.progress;
+}
+
 function formatCurrency(value: number): string {
   return new Intl.NumberFormat("ja-JP", {
     style: "currency",
@@ -205,9 +215,9 @@ function renderScheduleHtml(project: ApiProjectRecord, tasks: ApiTaskRecord[]): 
             <td style="padding:12px 14px;border-bottom:1px solid #e5e7eb;">
               <div style="display:flex;align-items:center;gap:10px;">
                 <div style="width:120px;height:8px;background:#e5e7eb;border-radius:999px;overflow:hidden;">
-                  <div style="width:${Math.max(0, Math.min(task.progress, 100))}%;height:100%;background:#2d6a4f;"></div>
+                  <div style="width:${Math.max(0, Math.min(effectiveProgress(task), 100))}%;height:100%;background:#2d6a4f;"></div>
                 </div>
-                <span>${escapeHtml(formatPercent(task.progress))}</span>
+                <span>${escapeHtml(formatPercent(effectiveProgress(task)))}</span>
               </div>
             </td>
           </tr>`,
@@ -251,7 +261,7 @@ function renderCostReportHtml(
               <td style="padding:12px 14px;border-bottom:1px solid #e5e7eb;">${formatDate(task.startDate)}</td>
               <td style="padding:12px 14px;border-bottom:1px solid #e5e7eb;">${formatDate(task.dueDate)}</td>
               <td style="padding:12px 14px;border-bottom:1px solid #e5e7eb;">${escapeHtml(task.contractor ?? "未設定")}</td>
-              <td style="padding:12px 14px;border-bottom:1px solid #e5e7eb;">${escapeHtml(formatPercent(task.progress))}</td>
+              <td style="padding:12px 14px;border-bottom:1px solid #e5e7eb;">${escapeHtml(formatPercent(effectiveProgress(task)))}</td>
               <td style="padding:12px 14px;border-bottom:1px solid #e5e7eb;text-align:right;">${escapeHtml(formatCurrency(task.cost))}</td>
             </tr>`,
         ),

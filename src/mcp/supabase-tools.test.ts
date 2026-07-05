@@ -246,6 +246,24 @@ describe("supabase-tools", () => {
       expect(result.status).toBe("done");
       expect(result.progress).toBe(100);
     });
+
+    // Regression construction_pm_mvp-7ry / construction_pm_mvp-e0q: an AI/MCP
+    // caller marking a task "done" without also patching progress used to
+    // leave progress at its stale stored value (often 0), which every screen
+    // reading the raw progress field displayed as "complete but 0%".
+    it("normalizes progress to 100 when status is set to done without an explicit progress", async () => {
+      const db = mockClient({ tasks: [{ ...sampleTask, progress: 0 }] });
+      const result = await updateTask("t1", { status: "done" }, db);
+      expect(result.status).toBe("done");
+      expect(result.progress).toBe(100);
+    });
+
+    it("overrides an explicit progress value in the same patch when status is set to done", async () => {
+      const db = mockClient({ tasks: [{ ...sampleTask, progress: 0 }] });
+      const result = await updateTask("t1", { status: "done", progress: 42 }, db);
+      expect(result.status).toBe("done");
+      expect(result.progress).toBe(100);
+    });
   });
 
   describe("searchProjects", () => {
