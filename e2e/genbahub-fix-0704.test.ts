@@ -9,7 +9,7 @@ import * as url from "url";
 import * as fs from "fs";
 
 const __dirname = path.dirname(url.fileURLToPath(import.meta.url));
-const screenshotsDir = "/Users/koki/fable2-logs/genbahub-fix-0704";
+const screenshotsDir = path.join(__dirname, "screenshots", "genbahub-fix-0704");
 
 if (!fs.existsSync(screenshotsDir)) {
   fs.mkdirSync(screenshotsDir, { recursive: true });

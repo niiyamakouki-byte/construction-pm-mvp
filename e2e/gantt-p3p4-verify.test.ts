@@ -9,7 +9,7 @@ import * as url from "url";
 import * as fs from "fs";
 
 const __dirname = path.dirname(url.fileURLToPath(import.meta.url));
-const screenshotsDir = "/Users/koki/fable2-logs/gantt-verify-p3p4";
+const screenshotsDir = path.join(__dirname, "screenshots", "gantt-verify-p3p4");
 
 if (!fs.existsSync(screenshotsDir)) {
   fs.mkdirSync(screenshotsDir, { recursive: true });
