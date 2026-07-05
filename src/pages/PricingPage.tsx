@@ -8,6 +8,7 @@ import {
   type PlanId,
   type StripePlan,
 } from "../lib/stripe.js";
+import { TRIAL_PERIOD_DAYS } from "../lib/brand.js";
 
 function CheckIcon() {
   return (
@@ -219,6 +220,15 @@ export function PricingPage() {
         <p className="mt-2 text-slate-500">
           現在のプラン:{" "}
           <span className="font-semibold text-brand-600">{currentPlanLabel}</span>
+        </p>
+      </div>
+
+      <div className="mb-6 rounded-2xl border border-brand-200 bg-brand-50 px-5 py-4 text-center">
+        <p className="text-sm font-semibold text-brand-700">
+          {TRIAL_PERIOD_DAYS}日間無料トライアル実施中
+        </p>
+        <p className="mt-1 text-xs text-brand-600">
+          登録後{TRIAL_PERIOD_DAYS}日間は、どちらのプランでも全機能をお試しいただけます。
         </p>
       </div>
 

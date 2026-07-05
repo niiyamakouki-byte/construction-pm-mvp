@@ -75,8 +75,13 @@ describe("PricingPage", () => {
   it("各プランの月額料金が表示される", () => {
     render(<PricingPage />);
     expect(screen.getByText("¥0")).toBeDefined();
-    expect(screen.getByText("¥2,980")).toBeDefined();
-    expect(screen.getByText("¥9,800")).toBeDefined();
+    expect(screen.getByText("¥20,000")).toBeDefined();
+    expect(screen.getByText("¥30,000")).toBeDefined();
+  });
+
+  it("14日間無料トライアルの訴求が表示される", () => {
+    render(<PricingPage />);
+    expect(screen.getByText("14日間無料トライアル実施中")).toBeDefined();
   });
 
   it("Stripe未設定時にスタンダードプランを選択するとモーダルが表示される", async () => {
@@ -120,9 +125,14 @@ describe("PricingPage", () => {
     expect(screen.getByText("クレジットカード不要")).toBeDefined();
   });
 
-  it("プロプランに「API連携」機能が含まれる", () => {
+  it("プロプランに「freee会計連携・入金照合」機能が含まれる", () => {
     render(<PricingPage />);
-    expect(screen.getByText("API連携")).toBeDefined();
+    expect(screen.getByText("freee会計連携・入金照合")).toBeDefined();
+  });
+
+  it("プロプランに「図面差分チェック」機能が含まれる", () => {
+    render(<PricingPage />);
+    expect(screen.getByText("図面差分チェック（AIによる変更点自動検出）")).toBeDefined();
   });
 });
 
