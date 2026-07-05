@@ -944,7 +944,7 @@ function TodayDashboardPageContent() {
   }
 
   return (
-    <div className="mx-auto max-w-lg space-y-4 px-4 pb-8">
+    <div className="mx-auto max-w-[1320px] space-y-4 px-4 pb-8">
       {/* Error banner */}
       {loadError && (
         <div role="alert" className="flex items-start gap-2 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
@@ -1159,7 +1159,7 @@ function TodayDashboardPageContent() {
       {/* Stats Cards */}
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
         <StatCard label="進行中案件" value={activeProjectsCount} color="text-brand-700" bgColor="bg-brand-50" />
-        <StatCard label="進行中タスク" value={inProgressTasks} color="text-blue-600" bgColor="bg-blue-50" />
+        <StatCard label="進行中タスク" value={inProgressTasks} color="text-slate-600" bgColor="bg-slate-50" />
         <StatCard label="完了タスク" value={completedTasks} color="text-emerald-600" bgColor="bg-emerald-50" />
         <StatCard label="期限超過" value={overdueTasks} color="text-red-600" bgColor={overdueTasks > 0 ? "bg-red-50" : "bg-white"} />
       </div>

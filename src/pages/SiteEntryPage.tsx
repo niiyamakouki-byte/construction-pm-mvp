@@ -777,7 +777,7 @@ export function SiteEntryPage({ projectId }: { projectId: string }) {
                 </div>
               ) : (
                 <p className="text-slate-500 text-sm text-center mb-4">
-                  左から職人を選択してください
+                  職人を選択してください
                 </p>
               )}
 
