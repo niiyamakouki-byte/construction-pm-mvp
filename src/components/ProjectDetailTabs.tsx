@@ -11,13 +11,13 @@ export function ProjectDetailTabs({ projectId, activeTab }: ProjectDetailTabsPro
   return (
     <nav
       aria-label="プロジェクトナビゲーション"
-      className="flex rounded-2xl border border-slate-200 bg-white p-1 shadow-sm"
+      className="flex gap-1 overflow-x-auto rounded-2xl border border-slate-200 bg-white p-1 shadow-sm"
     >
       <button
         type="button"
         aria-current={activeTab === "overview" ? "page" : undefined}
         onClick={() => navigate(`/project/${encodedProjectId}`)}
-        className={`flex-1 rounded-xl px-4 py-2 text-sm font-semibold ${
+        className={`shrink-0 whitespace-nowrap rounded-xl px-4 py-2 text-sm font-semibold ${
           activeTab === "overview"
             ? "bg-brand-600 text-white shadow-sm"
             : "text-slate-600 hover:bg-slate-50"
@@ -29,7 +29,7 @@ export function ProjectDetailTabs({ projectId, activeTab }: ProjectDetailTabsPro
         type="button"
         aria-current={activeTab === "documents" ? "page" : undefined}
         onClick={() => navigate(`/project/${encodedProjectId}/documents`)}
-        className={`flex-1 rounded-xl px-4 py-2 text-sm font-semibold ${
+        className={`shrink-0 whitespace-nowrap rounded-xl px-4 py-2 text-sm font-semibold ${
           activeTab === "documents"
             ? "bg-brand-600 text-white shadow-sm"
             : "text-slate-600 hover:bg-slate-50"
@@ -41,7 +41,7 @@ export function ProjectDetailTabs({ projectId, activeTab }: ProjectDetailTabsPro
         type="button"
         aria-current={activeTab === "chat" ? "page" : undefined}
         onClick={() => navigate(`/project/${encodedProjectId}/chat`)}
-        className={`flex-1 rounded-xl px-4 py-2 text-sm font-semibold ${
+        className={`shrink-0 whitespace-nowrap rounded-xl px-4 py-2 text-sm font-semibold ${
           activeTab === "chat"
             ? "bg-brand-600 text-white shadow-sm"
             : "text-slate-600 hover:bg-slate-50"
@@ -53,7 +53,7 @@ export function ProjectDetailTabs({ projectId, activeTab }: ProjectDetailTabsPro
         type="button"
         aria-current={activeTab === "finance" ? "page" : undefined}
         onClick={() => navigate(`/project/${encodedProjectId}/finance`)}
-        className={`flex-1 rounded-xl px-4 py-2 text-sm font-semibold ${
+        className={`shrink-0 whitespace-nowrap rounded-xl px-4 py-2 text-sm font-semibold ${
           activeTab === "finance"
             ? "bg-brand-600 text-white shadow-sm"
             : "text-slate-600 hover:bg-slate-50"
@@ -65,7 +65,7 @@ export function ProjectDetailTabs({ projectId, activeTab }: ProjectDetailTabsPro
         type="button"
         aria-current={activeTab === "contract" ? "page" : undefined}
         onClick={() => navigate(`/project/${encodedProjectId}/contract`)}
-        className={`flex-1 rounded-xl px-4 py-2 text-sm font-semibold ${
+        className={`shrink-0 whitespace-nowrap rounded-xl px-4 py-2 text-sm font-semibold ${
           activeTab === "contract"
             ? "bg-brand-600 text-white shadow-sm"
             : "text-slate-600 hover:bg-slate-50"
