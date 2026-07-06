@@ -33,6 +33,17 @@ export default tseslint.config(
     },
   },
   {
+    files: ["e2e/**/*.mjs"],
+    languageOptions: {
+      globals: {
+        process: "readonly",
+        console: "readonly",
+        window: "readonly",
+        localStorage: "readonly",
+      },
+    },
+  },
+  {
     rules: {
       "no-control-regex": "off",
       "no-irregular-whitespace": "off",
