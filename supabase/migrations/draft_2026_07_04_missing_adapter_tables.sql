@@ -9,7 +9,7 @@
 
 CREATE TABLE IF NOT EXISTS punch_list_items (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  project_id uuid REFERENCES projects(id) ON DELETE CASCADE,
+  project_id text REFERENCES projects(id) ON DELETE CASCADE,
   organization_id uuid,
   title text NOT NULL,
   description text,
@@ -83,7 +83,7 @@ CREATE POLICY "org members can manage punch_list_history"
 
 CREATE TABLE IF NOT EXISTS insurance_claims (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  project_id uuid REFERENCES projects(id) ON DELETE CASCADE,
+  project_id text REFERENCES projects(id) ON DELETE CASCADE,
   organization_id uuid,
   claim_type text NOT NULL,
   incident_date date NOT NULL,
@@ -118,7 +118,7 @@ CREATE POLICY "org members can manage insurance_claims"
 CREATE TABLE IF NOT EXISTS claim_documents (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   claim_id uuid REFERENCES insurance_claims(id) ON DELETE CASCADE,
-  project_id uuid REFERENCES projects(id) ON DELETE CASCADE,
+  project_id text REFERENCES projects(id) ON DELETE CASCADE,
   organization_id uuid,
   file_name text NOT NULL,
   document_type text,   -- 'photo'|'invoice'|'report'|'correspondence'|'other'
@@ -148,7 +148,7 @@ CREATE POLICY "org members can manage claim_documents"
 CREATE TABLE IF NOT EXISTS claim_disputes (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   claim_id uuid REFERENCES insurance_claims(id) ON DELETE CASCADE,
-  project_id uuid REFERENCES projects(id) ON DELETE CASCADE,
+  project_id text REFERENCES projects(id) ON DELETE CASCADE,
   organization_id uuid,
   reason text NOT NULL,
   disputed_amount numeric(12,2) NOT NULL DEFAULT 0,
@@ -183,7 +183,7 @@ CREATE POLICY "org members can manage claim_disputes"
 
 CREATE TABLE IF NOT EXISTS compliance_requirements (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  project_id uuid REFERENCES projects(id) ON DELETE CASCADE,
+  project_id text REFERENCES projects(id) ON DELETE CASCADE,
   organization_id uuid,
   name text NOT NULL,
   category text,
@@ -249,7 +249,7 @@ CREATE POLICY "org members can manage compliance_audit_log"
 
 CREATE TABLE IF NOT EXISTS permit_applications (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  project_id uuid REFERENCES projects(id) ON DELETE CASCADE,
+  project_id text REFERENCES projects(id) ON DELETE CASCADE,
   organization_id uuid,
   permit_type text NOT NULL,
   jurisdiction text,
@@ -284,7 +284,7 @@ CREATE POLICY "org members can manage permit_applications"
 CREATE TABLE IF NOT EXISTS permit_inspections (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   permit_id uuid REFERENCES permit_applications(id) ON DELETE CASCADE,
-  project_id uuid REFERENCES projects(id) ON DELETE CASCADE,
+  project_id text REFERENCES projects(id) ON DELETE CASCADE,
   organization_id uuid,
   inspection_type text NOT NULL,
   scheduled_date date NOT NULL,
@@ -318,7 +318,7 @@ CREATE POLICY "org members can manage permit_inspections"
 
 CREATE TABLE IF NOT EXISTS labor_time_entries (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  project_id uuid REFERENCES projects(id) ON DELETE CASCADE,
+  project_id text REFERENCES projects(id) ON DELETE CASCADE,
   organization_id uuid,
   worker_id text NOT NULL,
   worker_name text NOT NULL,
@@ -351,7 +351,7 @@ CREATE POLICY "org members can manage labor_time_entries"
 
 CREATE TABLE IF NOT EXISTS crew_assignments (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  project_id uuid REFERENCES projects(id) ON DELETE CASCADE,
+  project_id text REFERENCES projects(id) ON DELETE CASCADE,
   organization_id uuid,
   crew_id text NOT NULL,
   crew_name text NOT NULL,
@@ -386,7 +386,7 @@ CREATE POLICY "org members can manage crew_assignments"
 
 CREATE TABLE IF NOT EXISTS meeting_minutes (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  project_id uuid REFERENCES projects(id) ON DELETE CASCADE,
+  project_id text REFERENCES projects(id) ON DELETE CASCADE,
   organization_id uuid,
   meeting_date date NOT NULL,
   meeting_type text NOT NULL,
@@ -450,7 +450,7 @@ CREATE POLICY "org members can manage meeting_action_items"
 
 CREATE TABLE IF NOT EXISTS equipment_rentals (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  project_id uuid REFERENCES projects(id) ON DELETE CASCADE,
+  project_id text REFERENCES projects(id) ON DELETE CASCADE,
   organization_id uuid,
   item_name text NOT NULL,
   quantity int NOT NULL DEFAULT 1,
@@ -484,7 +484,7 @@ CREATE POLICY "org members can manage equipment_rentals"
 CREATE TABLE IF NOT EXISTS equipment_usage_logs (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   rental_id uuid REFERENCES equipment_rentals(id) ON DELETE CASCADE,
-  project_id uuid REFERENCES projects(id) ON DELETE CASCADE,
+  project_id text REFERENCES projects(id) ON DELETE CASCADE,
   organization_id uuid,
   usage_date date NOT NULL,
   hours_used numeric(5,2) DEFAULT 0,
@@ -516,7 +516,7 @@ CREATE POLICY "org members can manage equipment_usage_logs"
 
 CREATE TABLE IF NOT EXISTS warranty_items (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  project_id uuid REFERENCES projects(id) ON DELETE CASCADE,
+  project_id text REFERENCES projects(id) ON DELETE CASCADE,
   organization_id uuid,
   asset_name text NOT NULL,
   category text,
@@ -581,7 +581,7 @@ CREATE POLICY "org members can manage warranty_claims"
 
 CREATE TABLE IF NOT EXISTS phases (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  project_id uuid REFERENCES projects(id) ON DELETE CASCADE,
+  project_id text REFERENCES projects(id) ON DELETE CASCADE,
   organization_id uuid,
   parent_id uuid REFERENCES phases(id) ON DELETE SET NULL,
   level int NOT NULL DEFAULT 1,   -- 1=大項目, 2=中項目, 3=小項目
