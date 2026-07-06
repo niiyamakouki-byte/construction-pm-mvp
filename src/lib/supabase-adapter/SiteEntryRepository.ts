@@ -6,6 +6,7 @@
  */
 
 import { SupabaseRepository } from '../repository/supabase-repository.js';
+import { supabase } from '../repository/supabase-client.js';
 
 export type SiteEntryRecord = {
   id: string;
@@ -22,9 +23,12 @@ export type SiteEntryRecord = {
 
 // DB実スキーマ: id, project_id, organization_id, worker_name, company_name, entry_at, exit_at, entry_type, notes, created_at, updated_at
 // job_type/start_photo_id/end_photo_id/task_id は draft_2026_07_04_site_entry_photos.sql で追加予定
+// organization_id は not null 制約付き。SiteEntryRecord はプロジェクトスコープの型で
+// organizationId を持たないため、insert 時のみ projects テーブルから引いて補う（下記 resolveOrganizationId）。
 type SiteEntryRow = {
   id: string;
   project_id: string;
+  organization_id?: string | null;
   worker_name: string;
   company_name: string;
   entry_at: string;
@@ -73,6 +77,35 @@ function isSupabaseEnabled(): boolean {
   return false;
 }
 
+/**
+ * site_entry_records.organization_id (not null) の導出元。
+ * SiteEntryRecord 自体は project スコープのため、insert 時に以下の順で解決する:
+ *   1. projects.organization_id（プロジェクト側に設定済みならそれを使う。マルチテナント後の正しい値）
+ *   2. organizations テーブル（現行は単一テナント運用でプロジェクト側が未設定のため、
+ *      認証ユーザーが所属する組織を拾うフォールバック。RLSで自組織以外は見えない）
+ * どちらも解決できない場合（未認証アクセス等）は null を返し、DB 側の not-null 制約に委ねる
+ * （anon 経路のRLS設計は別issue・オーナー判断待ち）。
+ */
+async function resolveOrganizationId(projectId: string): Promise<string | null> {
+  const { data: project, error: projectError } = await supabase
+    .from('projects')
+    .select('organization_id')
+    .eq('id', projectId)
+    .maybeSingle();
+  const fromProject = !projectError && project
+    ? (project as { organization_id: string | null }).organization_id
+    : null;
+  if (fromProject) return fromProject;
+
+  const { data: org, error: orgError } = await supabase
+    .from('organizations')
+    .select('id')
+    .limit(1)
+    .maybeSingle();
+  if (orgError || !org) return null;
+  return (org as { id: string }).id;
+}
+
 export class SiteEntryRepository {
   private store = new Map<string, SiteEntryRecord>();
   private supabase: SupabaseRepository<SiteEntryRow> | null;
@@ -119,11 +152,13 @@ export class SiteEntryRepository {
       if (existing) {
         await this.supabase.update(record.id, row);
       } else {
+        const organizationId = await resolveOrganizationId(record.projectId);
         const { id: _id, ...rest } = row;
         void _id;
         await this.supabase.create({
           ...rest,
           id: record.id,
+          organization_id: organizationId,
         } as unknown as Omit<SiteEntryRow, 'id'>);
       }
       return;
