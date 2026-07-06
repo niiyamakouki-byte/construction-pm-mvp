@@ -65,7 +65,7 @@ export function ThemeToggle({ theme, onToggle, className = "" }: ThemeToggleProp
       onClick={onToggle}
       aria-label={`テーマ: ${meta.label}. 次は${meta.nextLabel}`}
       title={`テーマ: ${meta.label}`}
-      className={`flex items-center gap-2 rounded-lg border border-white/15 bg-white/10 px-3 py-2 text-sm font-medium text-white hover:bg-white/15 ${className}`.trim()}
+      className={`flex items-center gap-2 rounded-lg border border-slate-200 bg-white/60 px-3 py-2 text-sm font-medium text-slate-900 hover:bg-slate-100 ${className}`.trim()}
     >
       {meta.icon}
       <span className="hidden sm:inline">{meta.label}</span>

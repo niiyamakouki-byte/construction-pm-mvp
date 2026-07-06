@@ -103,8 +103,8 @@ const statusBg: Record<TaskStatus, string> = {
 };
 
 const statusButtonStyle: Record<TaskStatus, string> = {
-  done: "bg-emerald-600 text-white active:bg-emerald-700",
-  in_progress: "bg-emerald-600 text-white active:bg-emerald-700",
+  done: "bg-emerald-700 text-white active:bg-emerald-800",
+  in_progress: "bg-emerald-700 text-white active:bg-emerald-800",
   todo: "bg-amber-500 text-white active:bg-amber-600",
 };
 
@@ -1160,7 +1160,7 @@ function TodayDashboardPageContent() {
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
         <StatCard label="進行中案件" value={activeProjectsCount} color="text-brand-700" bgColor="bg-brand-50" />
         <StatCard label="進行中タスク" value={inProgressTasks} color="text-slate-600" bgColor="bg-slate-50" />
-        <StatCard label="完了タスク" value={completedTasks} color="text-emerald-600" bgColor="bg-emerald-50" />
+        <StatCard label="完了タスク" value={completedTasks} color="text-emerald-700" bgColor="bg-emerald-50" />
         <StatCard label="期限超過" value={overdueTasks} color="text-red-600" bgColor={overdueTasks > 0 ? "bg-red-50" : "bg-white"} />
       </div>
 
@@ -1358,7 +1358,7 @@ function TodayDashboardPageContent() {
             <p className="mt-3 text-xs font-semibold text-red-600">{photoUploadError}</p>
           )}
           {photoUploadStatus && !photoUploadError && (
-            <p className="mt-3 text-xs font-semibold text-emerald-600">{photoUploadStatus}</p>
+            <p className="mt-3 text-xs font-semibold text-emerald-700">{photoUploadStatus}</p>
           )}
         </div>
       </section>
@@ -1402,7 +1402,7 @@ function TodayDashboardPageContent() {
                 <div className="flex items-center justify-between gap-3 border-t border-slate-100 pt-2">
                   <span>差異</span>
                   <span className={`font-semibold tabular-nums ${
-                    budgetInsight.comparison.overallVariance > 0 ? "text-red-600" : "text-emerald-600"
+                    budgetInsight.comparison.overallVariance > 0 ? "text-red-600" : "text-emerald-700"
                   }`}>
                     {budgetInsight.comparison.overallVariance > 0 ? "+" : ""}
                     {formatCurrency(budgetInsight.comparison.overallVariance)}
@@ -1521,7 +1521,7 @@ function TodayDashboardPageContent() {
                   <div className="flex items-center justify-between mb-1.5">
                     <span className="text-sm font-semibold text-slate-800 truncate">{p.name}</span>
                     <span className={`text-xs font-bold tabular-nums ${
-                      p.pct > 80 ? "text-emerald-600" : p.pct > 50 ? "text-blue-600" : "text-slate-500"
+                      p.pct > 80 ? "text-emerald-700" : p.pct > 50 ? "text-blue-600" : "text-slate-500"
                     }`}>
                       {p.pct}%
                     </span>

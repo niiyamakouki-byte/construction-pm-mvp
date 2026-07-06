@@ -42,9 +42,9 @@ export type CockpitDashboardProps = {
 // ── Helpers ────────────────────────────────────────────────────────────────
 
 function healthColor(score: number): string {
-  if (score > 80) return "#4caf50";
-  if (score > 50) return "#ff9800";
-  return "#f44336";
+  if (score > 80) return "#346538";
+  if (score > 50) return "#8a5a00";
+  return "#c62828";
 }
 
 function healthLabel(score: number): string {
@@ -71,10 +71,10 @@ function companySummary(entries: SiteEntryRecord[]): Record<string, number> {
 
 function statusColor(status: ProjectCockpitSummary["status"]): string {
   switch (status) {
-    case "on_track": return "#4caf50";
-    case "minor_delay": return "#ff9800";
-    case "major_delay": return "#f44336";
-    case "pending": return "#2196f3";
+    case "on_track": return "#346538";
+    case "minor_delay": return "#8a5a00";
+    case "major_delay": return "#c62828";
+    case "pending": return "#1d5fa8";
   }
 }
 
@@ -171,7 +171,7 @@ function CriticalPathBar({ cp }: { cp: CriticalPathStatus | null }) {
   }
 
   const hasDelay = cp.delayedTasks > 0;
-  const barColor = hasDelay ? "#f44336" : "#4caf50";
+  const barColor = hasDelay ? "#c62828" : "#346538";
 
   return (
     <div
@@ -218,7 +218,7 @@ function CriticalPathBar({ cp }: { cp: CriticalPathStatus | null }) {
 function DelayCostCard({ forecast }: { forecast: ForecastReport | null }) {
   const overUnder = forecast?.overUnder ?? 0;
   const hasCost = overUnder > 0;
-  const color = hasCost ? "#f44336" : "#4caf50";
+  const color = hasCost ? "#c62828" : "#346538";
 
   return (
     <div
@@ -249,10 +249,10 @@ function DelayCostCard({ forecast }: { forecast: ForecastReport | null }) {
               style={{
                 color:
                   forecast.riskLevel === "high"
-                    ? "#f44336"
+                    ? "#c62828"
                     : forecast.riskLevel === "medium"
-                      ? "#ff9800"
-                      : "#4caf50",
+                      ? "#8a5a00"
+                      : "#346538",
               }}
             >
               {forecast.riskLevel === "high" ? "高" : forecast.riskLevel === "medium" ? "中" : "低"}
@@ -277,7 +277,7 @@ function WorkersCard({ entries }: { entries: SiteEntryRecord[] }) {
     <div className="rounded-xl border border-emerald-100 bg-emerald-50/40 p-4 backdrop-blur-sm">
       <div className="flex items-center justify-between mb-2">
         <p className="text-xs font-semibold text-slate-500">本日の入場者</p>
-        <span className="text-2xl font-bold text-emerald-600">{count}<span className="text-sm font-semibold text-slate-500 ml-0.5">名</span></span>
+        <span className="text-2xl font-bold text-emerald-700">{count}<span className="text-sm font-semibold text-slate-500 ml-0.5">名</span></span>
       </div>
 
       {companies.length > 0 ? (
@@ -321,9 +321,9 @@ function alertBorderColor(severity: RiskAlert["severity"]): string {
 function alertTextColor(severity: RiskAlert["severity"]): string {
   switch (severity) {
     case "critical": return "#dc2626";
-    case "high":     return "#ea580c";
-    case "medium":   return "#ca8a04";
-    case "low":      return "#16a34a";
+    case "high":     return "#c2410c";
+    case "medium":   return "#8a5a00";
+    case "low":      return "#346538";
   }
 }
 
@@ -351,7 +351,7 @@ function RiskAlertsCard({ alerts }: { alerts: RiskAlert[] }) {
     return (
       <div className="rounded-xl border border-emerald-100 bg-emerald-50/40 p-4 backdrop-blur-sm">
         <p className="text-xs font-semibold text-slate-500">AIリスク予測</p>
-        <p className="mt-1 text-sm text-emerald-600 font-semibold">リスクなし — 順調です</p>
+        <p className="mt-1 text-sm text-emerald-700 font-semibold">リスクなし — 順調です</p>
       </div>
     );
   }
@@ -426,13 +426,13 @@ function CeoOverviewCard({
       {total > 0 && (
         <div className="flex h-2 w-full overflow-hidden rounded-full mb-2">
           {onTrack > 0 && (
-            <div style={{ flex: onTrack, background: "#4caf50" }} />
+            <div style={{ flex: onTrack, background: "#346538" }} />
           )}
           {delayed > 0 && (
-            <div style={{ flex: delayed, background: "#f44336" }} />
+            <div style={{ flex: delayed, background: "#c62828" }} />
           )}
           {pending > 0 && (
-            <div style={{ flex: pending, background: "#2196f3" }} />
+            <div style={{ flex: pending, background: "#1d5fa8" }} />
           )}
         </div>
       )}
