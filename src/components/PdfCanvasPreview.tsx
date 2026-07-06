@@ -1,0 +1,226 @@
+import { useCallback, useEffect, useRef, useState } from "react";
+import * as pdfjs from "pdfjs-dist/legacy/build/pdf.mjs";
+// Vite はこの ?url import を静的アセット URL（ブラウザ取得可）に解決する。
+import workerSrc from "pdfjs-dist/legacy/build/pdf.worker.min.mjs?url";
+import type { RenderTask } from "pdfjs-dist";
+
+if (!pdfjs.GlobalWorkerOptions.workerSrc) {
+  pdfjs.GlobalWorkerOptions.workerSrc = workerSrc;
+}
+
+const MIN_SCALE = 0.4;
+const MAX_SCALE = 4;
+const SCALE_STEP = 0.25;
+
+function clampScale(scale: number): number {
+  return Math.min(MAX_SCALE, Math.max(MIN_SCALE, scale));
+}
+
+function distanceBetweenTouches(touches: React.TouchList): number {
+  const first = touches[0];
+  const second = touches[1];
+  if (!first || !second) return 0;
+  return Math.hypot(second.clientX - first.clientX, second.clientY - first.clientY);
+}
+
+/**
+ * ブラウザネイティブのPDFビューアをiframeにそのまま埋め込むと、
+ * 自動化/一部環境で描画に失敗し黒画面になる不具合(construction_pm_mvp-6jt)への対応。
+ * pdf.js(既存依存)でページをcanvasに自前描画することで、埋め込みビューアに依存しない。
+ */
+export function PdfCanvasPreview({ src, title }: { src: string; title: string }) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const renderTaskRef = useRef<RenderTask | null>(null);
+  const pinchRef = useRef<{ startDistance: number; startScale: number } | null>(null);
+
+  const [docRef, setDocRef] = useState<pdfjs.PDFDocumentProxy | null>(null);
+  const [pageNumber, setPageNumber] = useState(1);
+  const [numPages, setNumPages] = useState(1);
+  const [scale, setScale] = useState(1);
+  const [rotation, setRotation] = useState(0);
+  const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
+
+  // ドキュメントの読み込み(src変更のたびにリセット)
+  useEffect(() => {
+    let cancelled = false;
+    setStatus("loading");
+    setDocRef(null);
+    setPageNumber(1);
+    setScale(1);
+    setRotation(0);
+
+    const loadingTask = pdfjs.getDocument({ url: src });
+    loadingTask.promise.then(
+      (loadedDoc) => {
+        if (cancelled) return;
+        setDocRef(loadedDoc);
+        setNumPages(loadedDoc.numPages);
+        setStatus("ready");
+      },
+      () => {
+        if (cancelled) return;
+        setStatus("error");
+      },
+    );
+
+    return () => {
+      cancelled = true;
+      loadingTask.destroy();
+    };
+  }, [src]);
+
+  // ページ描画
+  const renderPage = useCallback(async () => {
+    if (!docRef) return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    try {
+      const page = await docRef.getPage(pageNumber);
+      const outputScale = typeof window !== "undefined" ? window.devicePixelRatio || 1 : 1;
+      const viewport = page.getViewport({ scale, rotation });
+
+      canvas.width = Math.floor(viewport.width * outputScale);
+      canvas.height = Math.floor(viewport.height * outputScale);
+      canvas.style.width = `${Math.floor(viewport.width)}px`;
+      canvas.style.height = `${Math.floor(viewport.height)}px`;
+
+      const context = canvas.getContext("2d");
+      if (!context) return;
+
+      renderTaskRef.current?.cancel();
+      const transform = outputScale !== 1 ? [outputScale, 0, 0, outputScale, 0, 0] : undefined;
+      const task = page.render({ canvasContext: context, viewport, transform });
+      renderTaskRef.current = task;
+      await task.promise;
+    } catch (err) {
+      const isCancelled = err instanceof Error && err.name === "RenderingCancelledException";
+      if (!isCancelled) setStatus("error");
+    }
+  }, [docRef, pageNumber, scale, rotation]);
+
+  useEffect(() => {
+    renderPage();
+  }, [renderPage]);
+
+  const zoomIn = () => setScale((current) => clampScale(current + SCALE_STEP));
+  const zoomOut = () => setScale((current) => clampScale(current - SCALE_STEP));
+  const resetZoom = () => setScale(1);
+  const rotateClockwise = () => setRotation((current) => (current + 90) % 360);
+  const goToPrevPage = () => setPageNumber((current) => Math.max(1, current - 1));
+  const goToNextPage = () => setPageNumber((current) => Math.min(numPages, current + 1));
+
+  // 2本指ピンチでのズーム
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (e.touches.length === 2) {
+      pinchRef.current = { startDistance: distanceBetweenTouches(e.touches), startScale: scale };
+    }
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (e.touches.length === 2 && pinchRef.current && pinchRef.current.startDistance > 0) {
+      e.preventDefault();
+      const currentDistance = distanceBetweenTouches(e.touches);
+      const ratio = currentDistance / pinchRef.current.startDistance;
+      setScale(clampScale(pinchRef.current.startScale * ratio));
+    }
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (e.touches.length < 2) pinchRef.current = null;
+  };
+
+  if (status === "error") {
+    return (
+      <div className="flex h-[420px] w-full flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-6 text-center text-sm text-slate-500">
+        <p>PDFを読み込めませんでした。上のボタンから元ファイルを開いてください。</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-2">
+      <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs">
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={zoomOut}
+            disabled={scale <= MIN_SCALE}
+            aria-label="縮小"
+            className="rounded-md border border-slate-200 px-2 py-1 font-semibold text-slate-600 hover:border-brand-300 hover:text-brand-700 disabled:opacity-40"
+          >
+            −
+          </button>
+          <button
+            type="button"
+            onClick={resetZoom}
+            aria-label="拡大率をリセット"
+            className="min-w-[3.5rem] rounded-md border border-slate-200 px-2 py-1 font-mono text-slate-600 hover:border-brand-300 hover:text-brand-700"
+          >
+            {Math.round(scale * 100)}%
+          </button>
+          <button
+            type="button"
+            onClick={zoomIn}
+            disabled={scale >= MAX_SCALE}
+            aria-label="拡大"
+            className="rounded-md border border-slate-200 px-2 py-1 font-semibold text-slate-600 hover:border-brand-300 hover:text-brand-700 disabled:opacity-40"
+          >
+            ＋
+          </button>
+          <button
+            type="button"
+            onClick={rotateClockwise}
+            aria-label="回転"
+            className="rounded-md border border-slate-200 px-2 py-1 font-semibold text-slate-600 hover:border-brand-300 hover:text-brand-700"
+          >
+            回転
+          </button>
+        </div>
+
+        {numPages > 1 ? (
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={goToPrevPage}
+              disabled={pageNumber <= 1}
+              aria-label="前のページ"
+              className="rounded-md border border-slate-200 px-2 py-1 font-semibold text-slate-600 hover:border-brand-300 hover:text-brand-700 disabled:opacity-40"
+            >
+              ‹
+            </button>
+            <span className="font-mono text-slate-500">
+              {pageNumber} / {numPages}
+            </span>
+            <button
+              type="button"
+              onClick={goToNextPage}
+              disabled={pageNumber >= numPages}
+              aria-label="次のページ"
+              className="rounded-md border border-slate-200 px-2 py-1 font-semibold text-slate-600 hover:border-brand-300 hover:text-brand-700 disabled:opacity-40"
+            >
+              ›
+            </button>
+          </div>
+        ) : null}
+      </div>
+
+      <div className="h-[420px] w-full overflow-auto rounded-2xl border border-slate-200 bg-slate-50">
+        {status === "loading" ? (
+          <div className="flex h-full w-full items-center justify-center text-sm text-slate-500">読み込み中...</div>
+        ) : null}
+        <div className="flex min-h-full w-full items-start justify-center p-2">
+          <canvas
+            ref={canvasRef}
+            role="img"
+            aria-label={`${title} プレビュー`}
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
+            style={{ display: status === "ready" ? "block" : "none", touchAction: "pan-x pan-y" }}
+          />
+        </div>
+      </div>
+    </div>
+  );
+}

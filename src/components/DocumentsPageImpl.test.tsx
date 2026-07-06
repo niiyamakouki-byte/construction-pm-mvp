@@ -43,6 +43,15 @@ vi.mock("../hooks/useHashRouter.js", () => ({
   navigate: mockNavigate,
 }));
 
+// construction_pm_mvp-6jt: 直接.pdf URLは黒画面になる生iframe埋め込みをやめ、
+// pdf.js canvas描画コンポーネントへ委譲する。ここでは委譲先が正しく呼ばれることのみ検証する
+// (canvas描画自体の挙動は PdfCanvasPreview.test.tsx で検証済み)。
+vi.mock("./PdfCanvasPreview.js", () => ({
+  PdfCanvasPreview: ({ src, title }: { src: string; title: string }) => (
+    <div data-testid="pdf-canvas-preview" data-src={src} data-title={title} />
+  ),
+}));
+
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 function makeProject(overrides: Partial<Project> = {}): Project {
@@ -221,5 +230,28 @@ describe("DocumentsPage - 既存資料への新バージョンアップロード
     );
 
     await screen.findByText("版 v1.0");
+  });
+});
+
+describe("DocumentsPage - PDFプレビュー(construction_pm_mvp-6jt 黒画面バグ回帰)", () => {
+  it("直接.pdf URLのドキュメントを選択すると、生iframeではなくPdfCanvasPreviewへ委譲する", async () => {
+    const pdfDocument = makeDocument({
+      id: "doc-pdf-1",
+      name: "1F平面図.pdf",
+      url: "https://example.com/files/1F-plan.pdf",
+    });
+    mockDocumentFindAll.mockResolvedValue([pdfDocument]);
+
+    render(<DocumentsPage projectId="proj-1" />);
+    await screen.findByText(pdfDocument.name);
+
+    fireEvent.click(screen.getByText(pdfDocument.name));
+
+    const preview = await screen.findByTestId("pdf-canvas-preview");
+    expect(preview.getAttribute("data-src")).toBe(pdfDocument.url);
+    expect(preview.getAttribute("data-title")).toBe(pdfDocument.name);
+
+    // 黒画面の原因だった「生PDF URLを指すiframe」が描画されないこと
+    expect(document.querySelector('iframe[src$=".pdf"]')).toBeNull();
   });
 });

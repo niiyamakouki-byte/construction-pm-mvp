@@ -6,10 +6,12 @@ import { navigate } from "../hooks/useHashRouter.js";
 import { createProjectRepository } from "../stores/project-store.js";
 import { createDocumentRepository, createDocumentVersionRepository } from "../stores/document-store.js";
 import { ProjectDetailTabs } from "./ProjectDetailTabs.js";
+import { PdfCanvasPreview } from "./PdfCanvasPreview.js";
 
 type PreviewConfig =
   | { mode: "image"; src: string }
   | { mode: "iframe"; src: string }
+  | { mode: "pdf"; src: string }
   | null;
 
 const DOCUMENT_TYPE_OPTIONS: Array<{ value: DocumentType; label: string }> = [
@@ -84,7 +86,7 @@ function getPreviewConfig(url: string): PreviewConfig {
   }
 
   if (normalizedUrl.endsWith(".pdf")) {
-    return { mode: "iframe", src: url };
+    return { mode: "pdf", src: url };
   }
 
   return null;
@@ -643,6 +645,10 @@ export function DocumentsPage({ projectId }: { projectId: string }) {
                     src={previewConfig.src}
                     className="h-[420px] w-full rounded-2xl border border-slate-200 bg-slate-50"
                   />
+                ) : null}
+
+                {previewConfig?.mode === "pdf" ? (
+                  <PdfCanvasPreview src={previewConfig.src} title={selectedDocument.name} />
                 ) : null}
 
                 {!previewConfig ? (
