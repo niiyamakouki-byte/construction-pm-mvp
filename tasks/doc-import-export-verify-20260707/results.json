@@ -1,0 +1,30 @@
+{
+  "steps": [
+    {
+      "singleDropRegistered": true
+    },
+    {
+      "smallPdfFirstRenderMs": 160
+    },
+    {
+      "registeredDocCountAfterBatch": "3"
+    },
+    {
+      "largePdfFirstRenderMs": 158,
+      "largePdfPages": 120,
+      "largePdfSizeBytes": 1535892
+    },
+    {
+      "largePdfPageTurnMs": 70
+    },
+    {
+      "largePdfZoomTwoClicksMs": 133
+    },
+    {
+      "shareButtonTapCount": 1,
+      "shareCalls": [
+        "large-test.pdf"
+      ]
+    }
+  ]
+}

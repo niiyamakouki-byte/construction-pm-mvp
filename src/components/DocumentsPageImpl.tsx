@@ -1,10 +1,15 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "../contexts/AuthContext.js";
 import { useOrganizationContext } from "../contexts/OrganizationContext.js";
 import type { DocumentType, DocumentVersion, Project, ProjectDocument } from "../domain/types.js";
 import { navigate } from "../hooks/useHashRouter.js";
 import { createProjectRepository } from "../stores/project-store.js";
 import { createDocumentRepository, createDocumentVersionRepository } from "../stores/document-store.js";
+import {
+  inferDocumentTypeFromFile,
+  isSupportedDocumentFile,
+  uploadProjectDocumentFile,
+} from "../infra/supabase-adapter/document-file-storage.js";
 import { ProjectDetailTabs } from "./ProjectDetailTabs.js";
 import { PdfCanvasPreview } from "./PdfCanvasPreview.js";
 
@@ -74,18 +79,21 @@ function computeNextVersion(currentVersion: string): string {
   return `${currentVersion.trim()}+1`;
 }
 
-function getPreviewConfig(url: string): PreviewConfig {
+function getPreviewConfig(url: string, fallbackName?: string): PreviewConfig {
   const googlePreviewUrl = getGooglePreviewUrl(url);
   if (googlePreviewUrl) {
     return { mode: "iframe", src: googlePreviewUrl };
   }
 
+  // ドラッグ&ドロップで取り込んだファイルは blob: オブジェクトURL(拡張子なし)を
+  // 参照URLとして使うため、URL自体から形式判定できない場合は元ファイル名で補完する。
   const normalizedUrl = url.toLowerCase().split("?")[0] ?? "";
-  if (/\.(png|jpe?g|gif|webp|bmp|svg)$/.test(normalizedUrl)) {
+  const normalizedFallbackName = (fallbackName ?? "").toLowerCase();
+  if (/\.(png|jpe?g|gif|webp|bmp|svg)$/.test(normalizedUrl) || /\.(png|jpe?g|gif|webp|bmp|svg)$/.test(normalizedFallbackName)) {
     return { mode: "image", src: url };
   }
 
-  if (normalizedUrl.endsWith(".pdf")) {
+  if (normalizedUrl.endsWith(".pdf") || normalizedFallbackName.endsWith(".pdf")) {
     return { mode: "pdf", src: url };
   }
 
@@ -123,6 +131,10 @@ export function DocumentsPage({ projectId }: { projectId: string }) {
   const [versionUploadDocumentId, setVersionUploadDocumentId] = useState<string | null>(null);
   const [versionUploadUrl, setVersionUploadUrl] = useState("");
   const [versionUploadSaving, setVersionUploadSaving] = useState(false);
+  const [isDraggingFiles, setIsDraggingFiles] = useState(false);
+  const [dropUploadProgress, setDropUploadProgress] = useState<{ done: number; total: number } | null>(null);
+  const [sharing, setSharing] = useState(false);
+  const dragDepthRef = useRef(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -173,7 +185,7 @@ export function DocumentsPage({ projectId }: { projectId: string }) {
   const filteredDocuments = documents.filter((document) =>
     document.name.toLowerCase().includes(searchQuery.trim().toLowerCase()),
   );
-  const previewConfig = selectedDocument ? getPreviewConfig(selectedDocument.url) : null;
+  const previewConfig = selectedDocument ? getPreviewConfig(selectedDocument.url, selectedDocument.name) : null;
   const currentVersionHistory = selectedDocument
     ? [
         {
@@ -201,7 +213,7 @@ export function DocumentsPage({ projectId }: { projectId: string }) {
       const allVersions = await documentVersionRepository.findAll();
       setVersions(sortByNewest(allVersions.filter((version) => version.documentId === document.id)));
 
-      if (!getPreviewConfig(document.url)) {
+      if (!getPreviewConfig(document.url, document.name)) {
         window.open(document.url, "_blank", "noopener,noreferrer");
       }
     } catch (err) {
@@ -240,6 +252,144 @@ export function DocumentsPage({ projectId }: { projectId: string }) {
       setSaving(false);
     }
   };
+
+  const importDroppedFiles = useCallback(
+    async (files: File[]) => {
+      if (files.length === 0) {
+        return;
+      }
+
+      const supported = files.filter((file) => isSupportedDocumentFile(file));
+      const unsupported = files.filter((file) => !isSupportedDocumentFile(file));
+
+      if (supported.length === 0) {
+        setError("対応していないファイル形式です。PDFまたは画像(PNG/JPEG等)をドロップしてください。");
+        return;
+      }
+
+      setError(null);
+      setDropUploadProgress({ done: 0, total: supported.length });
+
+      let lastCreated: ProjectDocument | null = null;
+      const failures: string[] = [];
+
+      for (const file of supported) {
+        try {
+          const uploaded = await uploadProjectDocumentFile(file, projectId);
+          const now = new Date().toISOString();
+          const created = await documentRepository.create({
+            id: crypto.randomUUID(),
+            createdAt: now,
+            updatedAt: now,
+            projectId,
+            name: uploaded.fileName,
+            type: inferDocumentTypeFromFile(file),
+            url: uploaded.url,
+            uploadedBy: user?.email ?? "Compass Web",
+            version: "v1.0",
+          });
+          lastCreated = created;
+          setDocuments((current) => sortByNewest([created, ...current]));
+        } catch (err) {
+          failures.push(`${file.name}: ${err instanceof Error ? err.message : "アップロードに失敗しました"}`);
+        } finally {
+          setDropUploadProgress((current) =>
+            current ? { done: current.done + 1, total: current.total } : current,
+          );
+        }
+      }
+
+      if (unsupported.length > 0) {
+        failures.unshift(
+          `${unsupported.map((file) => file.name).join(", ")} は対応していない形式のためスキップしました。`,
+        );
+      }
+
+      if (failures.length > 0) {
+        setError(failures.join(" / "));
+      }
+
+      if (lastCreated) {
+        await loadVersions(lastCreated);
+      }
+
+      setDropUploadProgress(null);
+    },
+    [documentRepository, projectId, user],
+  );
+
+  const handleDragEnter = useCallback((event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    if (!event.dataTransfer?.types?.includes("Files")) {
+      return;
+    }
+    dragDepthRef.current += 1;
+    setIsDraggingFiles(true);
+  }, []);
+
+  const handleDragOver = useCallback((event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+  }, []);
+
+  const handleDragLeave = useCallback((event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    dragDepthRef.current = Math.max(0, dragDepthRef.current - 1);
+    if (dragDepthRef.current === 0) {
+      setIsDraggingFiles(false);
+    }
+  }, []);
+
+  const handleDrop = useCallback(
+    (event: React.DragEvent<HTMLDivElement>) => {
+      event.preventDefault();
+      dragDepthRef.current = 0;
+      setIsDraggingFiles(false);
+      const files = Array.from(event.dataTransfer?.files ?? []);
+      void importDroppedFiles(files);
+    },
+    [importDroppedFiles],
+  );
+
+  const handleShareOrDownloadDocument = useCallback(async (document: ProjectDocument) => {
+    setSharing(true);
+    setError(null);
+    try {
+      const response = await fetch(document.url);
+      if (!response.ok) {
+        throw new Error("ファイルの取得に失敗しました");
+      }
+      const blob = await response.blob();
+      const file = new File([blob], document.name, { type: blob.type || "application/octet-stream" });
+
+      const nav = navigator as Navigator & {
+        canShare?: (data: { files: File[] }) => boolean;
+        share?: (data: { files: File[]; title?: string }) => Promise<void>;
+      };
+
+      if (nav.canShare?.({ files: [file] }) && nav.share) {
+        await nav.share({ files: [file], title: document.name });
+        return;
+      }
+
+      const objectUrl = URL.createObjectURL(blob);
+      const link = window.document.createElement("a");
+      link.href = objectUrl;
+      link.download = document.name;
+      window.document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(objectUrl);
+    } catch (err) {
+      if (err instanceof Error && err.name === "AbortError") {
+        // 共有シートをユーザーがキャンセルしただけなのでエラー表示しない
+        return;
+      }
+      // フェッチ不可(CORS等)の場合は従来通り新規タブで開くフォールバック
+      window.open(document.url, "_blank", "noopener,noreferrer");
+    } finally {
+      setSharing(false);
+    }
+  }, []);
 
   const submitNewVersion = async (document: ProjectDocument, newUrl: string) => {
     setVersionUploadSaving(true);
@@ -348,7 +498,28 @@ export function DocumentsPage({ projectId }: { projectId: string }) {
   }
 
   return (
-    <div className="mx-auto max-w-6xl space-y-4 px-4 pb-24">
+    <div
+      className="relative mx-auto max-w-6xl space-y-4 px-4 pb-24"
+      onDragEnter={handleDragEnter}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+    >
+      {isDraggingFiles ? (
+        <div className="pointer-events-none fixed inset-4 z-50 flex items-center justify-center rounded-3xl border-4 border-dashed border-brand-400 bg-brand-50/90">
+          <p className="text-lg font-bold text-brand-700">ここにPDF・画像をドロップして登録</p>
+        </div>
+      ) : null}
+
+      {dropUploadProgress ? (
+        <div role="status" className="flex items-center gap-2 rounded-xl border border-brand-200 bg-brand-50 px-4 py-3 text-sm text-brand-700">
+          <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-brand-300 border-t-brand-700" />
+          <span>
+            ドラッグ&ドロップで登録中... ({dropUploadProgress.done}/{dropUploadProgress.total})
+          </span>
+        </div>
+      ) : null}
+
       <button
         type="button"
         onClick={() => navigate("/app")}
@@ -611,14 +782,24 @@ export function DocumentsPage({ projectId }: { projectId: string }) {
                 <p className="text-sm text-slate-500">ドキュメントを選択すると内容と履歴を確認できます。</p>
               </div>
               {selectedDocument ? (
-                <a
-                  href={selectedDocument.url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600 hover:border-brand-300 hover:text-brand-700"
-                >
-                  元ファイルを開く
-                </a>
+                <div className="flex shrink-0 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => void handleShareOrDownloadDocument(selectedDocument)}
+                    disabled={sharing}
+                    className="rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600 hover:border-brand-300 hover:text-brand-700 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {sharing ? "共有準備中..." : "共有 / ダウンロード"}
+                  </button>
+                  <a
+                    href={selectedDocument.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600 hover:border-brand-300 hover:text-brand-700"
+                  >
+                    元ファイルを開く
+                  </a>
+                </div>
               ) : null}
             </div>
 
