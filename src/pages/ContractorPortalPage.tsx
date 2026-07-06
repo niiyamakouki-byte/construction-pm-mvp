@@ -77,6 +77,24 @@ function GanttReadOnly({ tasks }: { tasks: Task[] }) {
     blocked: "bg-red-400",
   };
 
+  // 日付軸: minDate〜maxDateの間に均等間隔で目盛りを立てる（読み取り専用の簡易表示）
+  const axisTickCount = Math.min(5, totalDays);
+  const axisTicks =
+    minDate && axisTickCount > 1
+      ? Array.from({ length: axisTickCount }, (_, i) => {
+          const dayOffset = Math.round((i / (axisTickCount - 1)) * (totalDays - 1));
+          const tickDate = new Date(minDate);
+          tickDate.setDate(tickDate.getDate() + dayOffset);
+          return {
+            key: `${dayOffset}-${i}`,
+            pct: (dayOffset / totalDays) * 100,
+            label: `${tickDate.getMonth() + 1}/${tickDate.getDate()}`,
+          };
+        })
+      : [];
+
+  const rowGridCols = "grid-cols-[minmax(6.5rem,9rem)_1fr_2.75rem] sm:grid-cols-[minmax(9rem,14rem)_1fr_3rem]";
+
   return (
     <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
       <div className="border-b border-slate-100 px-4 py-3">
@@ -84,17 +102,39 @@ function GanttReadOnly({ tasks }: { tasks: Task[] }) {
           {minDate} 〜 {maxDate}（{totalDays}日間）
         </p>
       </div>
+      {axisTicks.length > 0 && (
+        <div className={`grid ${rowGridCols} items-center gap-2 border-b border-slate-100 bg-slate-50/60 px-4 py-1.5`}>
+          <div />
+          <div className="relative h-4">
+            {axisTicks.map((tick) => (
+              <span
+                key={tick.key}
+                className="absolute -translate-x-1/2 whitespace-nowrap text-[10px] text-slate-400 first:translate-x-0 last:-translate-x-full"
+                style={{ left: `${tick.pct}%` }}
+              >
+                {tick.label}
+              </span>
+            ))}
+          </div>
+          <div />
+        </div>
+      )}
       <div className="overflow-y-auto max-h-96">
         {sorted.map((task) => (
-          <div key={task.id} className="flex items-center gap-2 border-b border-slate-50 px-4 py-2 last:border-0">
-            <div className="w-32 shrink-0 truncate text-xs font-medium text-slate-700">{task.name}</div>
-            <div className="relative flex-1 h-5 rounded bg-slate-100">
+          <div
+            key={task.id}
+            className={`grid ${rowGridCols} items-center gap-2 border-b border-slate-50 px-4 py-2 last:border-0`}
+          >
+            <div className="min-w-0 truncate text-xs font-medium text-slate-700" title={task.name}>
+              {task.name}
+            </div>
+            <div className="relative h-5 rounded bg-slate-100">
               <div
-                className={`absolute top-0.5 h-4 rounded ${statusColors[task.status] ?? "bg-slate-300"}`}
+                className={`absolute top-0.5 h-4 min-w-[10px] rounded ${statusColors[task.status] ?? "bg-slate-300"}`}
                 style={barStyle(task)}
               />
             </div>
-            <div className="w-12 shrink-0 text-[10px] text-slate-400 text-right">
+            <div className="text-right text-[10px] text-slate-400">
               {effectiveProgress(task)}%
             </div>
           </div>
@@ -314,7 +354,7 @@ export function ContractorPortalPage({ projectId, company = undefined }: Props) 
     <div className="min-h-screen bg-slate-50">
       {/* Header */}
       <header className="border-b border-slate-200 bg-white px-4 py-4 shadow-sm">
-        <div className="mx-auto max-w-lg">
+        <div className="mx-auto max-w-lg sm:max-w-2xl lg:max-w-4xl">
           <div className="flex items-center gap-3">
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-700 text-white font-bold text-sm shrink-0">
               G
@@ -331,7 +371,7 @@ export function ContractorPortalPage({ projectId, company = undefined }: Props) 
         </div>
       </header>
 
-      <main className="mx-auto max-w-lg space-y-4 px-4 py-5 pb-8">
+      <main className="mx-auto max-w-lg space-y-4 px-4 py-5 pb-8 sm:max-w-2xl lg:max-w-4xl">
         {/* Project info */}
         <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
           <div className="flex flex-wrap gap-3 text-sm">
