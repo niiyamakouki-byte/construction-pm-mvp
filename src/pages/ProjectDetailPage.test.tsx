@@ -13,8 +13,7 @@ const mockTaskUpdate = vi.fn();
 const mockTaskDelete = vi.fn();
 const mockCostItemFindAll = vi.fn();
 const mockExpenseFindAll = vi.fn();
-const mockGetEntryLog = vi.fn();
-const mockGetTodayWorkerCount = vi.fn();
+const mockListByProjectAsync = vi.fn();
 
 vi.mock("../contexts/OrganizationContext.js", () => ({
   useOrganizationContext: () => ({ organizationId: "test-org" }),
@@ -93,9 +92,12 @@ vi.mock("../lib/site-entry-qr.js", () => ({
   DEFAULT_SITE_ENTRY_NOTES: "・テスト用ルール",
 }));
 
-vi.mock("../lib/site-entry-log.js", () => ({
-  getEntryLog: (...args: Parameters<typeof mockGetEntryLog>) => mockGetEntryLog(...args),
-  getTodayWorkerCount: (...args: Parameters<typeof mockGetTodayWorkerCount>) => mockGetTodayWorkerCount(...args),
+vi.mock("../lib/supabase-adapter/SiteEntryRepository.js", () => ({
+  SiteEntryRepository: class {
+    listByProjectAsync(...args: Parameters<typeof mockListByProjectAsync>) {
+      return mockListByProjectAsync(...args);
+    }
+  },
 }));
 
 const baseProject = {
@@ -126,8 +128,7 @@ describe("ProjectDetailPage", () => {
     mockTaskDelete.mockResolvedValue(undefined);
     mockCostItemFindAll.mockResolvedValue([]);
     mockExpenseFindAll.mockResolvedValue([]);
-    mockGetEntryLog.mockReturnValue([]);
-    mockGetTodayWorkerCount.mockReturnValue(0);
+    mockListByProjectAsync.mockResolvedValue([]);
   });
 
   afterEach(() => {
@@ -294,7 +295,7 @@ describe("ProjectDetailPage", () => {
         updatedAt: "2025-01-01T00:00:00.000Z",
       },
     ]);
-    mockGetEntryLog.mockReturnValueOnce([
+    mockListByProjectAsync.mockResolvedValueOnce([
       {
         id: "entry-1",
         projectId: "proj-1",

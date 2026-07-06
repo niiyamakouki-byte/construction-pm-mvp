@@ -45,8 +45,10 @@ import {
   generateSiteEntryPosterPdf,
   DEFAULT_SITE_ENTRY_NOTES,
 } from "../lib/site-entry-qr.js";
-import { getEntryLog, getTodayWorkerCount } from "../lib/site-entry-log.js";
-import type { SiteEntryRecord } from "../lib/site-entry-log.js";
+import { SiteEntryRepository } from "../lib/supabase-adapter/SiteEntryRepository.js";
+import type { SiteEntryRecord } from "../lib/supabase-adapter/SiteEntryRepository.js";
+
+const siteEntryRepository = new SiteEntryRepository();
 
 // ── Construction templates ────────────────────────────
 
@@ -342,10 +344,18 @@ export function ProjectDetailPage({
   }, [loadData]);
 
   useEffect(() => {
-    const today = new Date().toISOString().slice(0, 10);
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- projectId変化時に入退場ログを同期する意図的なパターン
-    setTodayEntryLog(getEntryLog(projectId, today));
-    setOnSiteCount(getTodayWorkerCount(projectId));
+    let cancelled = false;
+    const loadEntryLog = async () => {
+      const today = new Date().toISOString().slice(0, 10);
+      const records = await siteEntryRepository.listByProjectAsync(projectId, today);
+      if (cancelled) return;
+      setTodayEntryLog(records);
+      setOnSiteCount(records.filter((r) => !r.exitTime).length);
+    };
+    void loadEntryLog();
+    return () => {
+      cancelled = true;
+    };
   }, [projectId]);
 
   useEffect(() => {
