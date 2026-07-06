@@ -40,6 +40,7 @@
 
   /* Sidebar & TopBar dimensions */
   --sidebar-width: 260px;
+  --sidebar-width-collapsed: 64px;
   --topbar-height: 56px;
 }
 
@@ -372,7 +373,13 @@ textarea::placeholder {
   -webkit-backdrop-filter: saturate(180%) blur(20px);
   border-right: 1px solid rgba(60, 60, 67, 0.12);
   overflow-y: auto;
+  overflow-x: hidden;
   z-index: 20;
+  transition: width 0.15s ease;
+}
+
+.ios-sidebar.collapsed {
+  width: var(--sidebar-width-collapsed);
 }
 
 /* Main content shifted right when sidebar visible (desktop only).
@@ -381,6 +388,11 @@ textarea::placeholder {
 @media (min-width: 768px) {
   .ios-main-with-sidebar {
     margin-left: var(--sidebar-width);
+    transition: margin-left 0.15s ease;
+  }
+
+  .ios-main-with-sidebar.collapsed {
+    margin-left: var(--sidebar-width-collapsed);
   }
 }
 

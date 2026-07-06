@@ -1,8 +1,9 @@
 import { lazy, Suspense, useEffect, useState } from "react";
-import { Bot } from "lucide-react";
+import { Bot, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { NavIcon } from "./components/NavIcons.js";
 import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts.js";
+import { useSidebarCollapsed } from "./hooks/useSidebarCollapsed.js";
 import { KeyboardShortcutHelp } from "./components/KeyboardShortcutHelp.js";
 import { InstallPrompt } from "./components/InstallPrompt.js";
 
@@ -176,6 +177,7 @@ function FirstRunBootstrapScreen() {
 function AppShell() {
   const { t } = useTranslation(["common", "pages", "errors"]);
   const route = useHashRoute();
+  const { collapsed: sidebarCollapsed, toggle: toggleSidebarCollapsed } = useSidebarCollapsed(route);
   const { user, signOut } = useAuth();
   const { organizationId } = useOrganizationContext();
   const { persona, setPersona } = usePersona();
@@ -949,32 +951,55 @@ function AppShell() {
         </header>
 
         {/* ── iPadOS Sidebar (desktop only) ── */}
-        <nav className="ios-sidebar hidden md:block" aria-label={t("common:nav.home")}>
-          <div className="px-3 py-4">
-            <div className="mb-4 rounded-2xl border border-[rgba(0,122,255,0.14)] bg-[#007AFF]/6 p-3">
-              <p className="text-xs font-bold text-slate-500">次にやること</p>
-              <div className="mt-2 space-y-1">
-                {quickActions.map((action) => (
-                  <button
-                    key={action.key}
-                    type="button"
-                    onClick={action.action}
-                    className="w-full rounded-xl px-2.5 py-2 text-left hover:bg-white/70"
-                    data-ai-action={action.key}
-                  >
-                    <span className="block text-sm font-bold text-slate-900">{action.label}</span>
-                    <span className="block text-[11px] leading-snug text-slate-500">{action.hint}</span>
-                  </button>
-                ))}
-              </div>
+        <nav
+          className={`ios-sidebar hidden md:block ${sidebarCollapsed ? "collapsed" : ""}`}
+          aria-label={t("common:nav.home")}
+        >
+          <div className={sidebarCollapsed ? "px-2 py-4" : "px-3 py-4"}>
+            <div className={`mb-3 flex ${sidebarCollapsed ? "justify-center" : "justify-end"}`}>
+              <button
+                type="button"
+                onClick={toggleSidebarCollapsed}
+                aria-label={sidebarCollapsed ? "サイドバーを開く" : "サイドバーを閉じる"}
+                aria-expanded={!sidebarCollapsed}
+                className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 hover:bg-[rgba(0,122,255,0.08)] hover:text-[#007AFF]"
+              >
+                {sidebarCollapsed ? (
+                  <PanelLeftOpen className="h-4 w-4" aria-hidden="true" />
+                ) : (
+                  <PanelLeftClose className="h-4 w-4" aria-hidden="true" />
+                )}
+              </button>
             </div>
+
+            {!sidebarCollapsed && (
+              <div className="mb-4 rounded-2xl border border-[rgba(0,122,255,0.14)] bg-[#007AFF]/6 p-3">
+                <p className="text-xs font-bold text-slate-500">次にやること</p>
+                <div className="mt-2 space-y-1">
+                  {quickActions.map((action) => (
+                    <button
+                      key={action.key}
+                      type="button"
+                      onClick={action.action}
+                      className="w-full rounded-xl px-2.5 py-2 text-left hover:bg-white/70"
+                      data-ai-action={action.key}
+                    >
+                      <span className="block text-sm font-bold text-slate-900">{action.label}</span>
+                      <span className="block text-[11px] leading-snug text-slate-500">{action.hint}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <div className="space-y-4">
               {sidebarGroups.map((group) => (
                 <div key={group.group}>
-                  <p className="px-3 pb-1 text-[11px] font-bold tracking-wide text-slate-400">
-                    {group.label}
-                  </p>
+                  {!sidebarCollapsed && (
+                    <p className="px-3 pb-1 text-[11px] font-bold tracking-wide text-slate-400">
+                      {group.label}
+                    </p>
+                  )}
                   <div className="space-y-0.5">
                     {group.items.map((item) => (
                       <button
@@ -983,12 +1008,13 @@ function AppShell() {
                         onClick={() => navigate(item.path)}
                         aria-current={item.active ? "page" : undefined}
                         aria-label={`${item.label}: ${item.aiHint}`}
-                        className={`ios-nav-item${item.active ? " active" : ""}`}
+                        title={sidebarCollapsed ? item.label : undefined}
+                        className={`ios-nav-item${item.active ? " active" : ""}${sidebarCollapsed ? " justify-center px-0" : ""}`}
                         data-ai-route={item.key}
                         data-ai-intent={item.aiHint}
                       >
                         <span className="flex shrink-0 items-center justify-center" aria-hidden="true"><NavIcon id={item.icon} /></span>
-                        <span className="min-w-0 flex-1 truncate">{item.label}</span>
+                        {!sidebarCollapsed && <span className="min-w-0 flex-1 truncate">{item.label}</span>}
                       </button>
                     ))}
                   </div>
@@ -996,7 +1022,7 @@ function AppShell() {
               ))}
             </div>
           </div>
-          {user ? (
+          {user && !sidebarCollapsed ? (
             <div className="border-t border-[rgba(60,60,67,0.12)] px-3 py-3 space-y-1">
               <button
                 type="button"
@@ -1016,7 +1042,7 @@ function AppShell() {
         <main
           id="main-content"
           key={route}
-          className="page-enter ios-main-with-sidebar max-md:ml-0 px-4 py-5 pb-24 sm:py-6"
+          className={`page-enter ios-main-with-sidebar max-md:ml-0 px-4 py-5 pb-24 sm:py-6 ${sidebarCollapsed ? "collapsed" : ""}`}
         >
           <div className="mx-auto max-w-5xl">
             <Suspense fallback={pageFallback}>
