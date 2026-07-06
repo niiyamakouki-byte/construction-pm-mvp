@@ -1885,8 +1885,8 @@ function GanttPageContent({ initialProjectId = null, openMaster = false }: Gantt
       ) : null}
 
       <section className="rounded-[28px] bg-[linear-gradient(145deg,#fff8ef_0%,#f7fbff_55%,#eef6ff_100%)] px-4 py-5 shadow-sm ring-1 ring-slate-200 sm:px-6">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-          <div>
+        <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
+          <div className="min-w-0">
             <p className="text-[11px] font-semibold tracking-[0.2em] text-slate-500">工程表</p>
             <h1 className="mt-1 text-2xl font-bold text-slate-900">{selectedProject.name}</h1>
             <div className="mt-3 flex flex-wrap items-center gap-2 text-sm text-slate-600">
