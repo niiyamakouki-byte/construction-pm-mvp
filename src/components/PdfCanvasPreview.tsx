@@ -31,6 +31,7 @@ function distanceBetweenTouches(touches: React.TouchList): number {
 export function PdfCanvasPreview({ src, title }: { src: string; title: string }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const renderTaskRef = useRef<RenderTask | null>(null);
+  const renderGenerationRef = useRef(0);
   const pinchRef = useRef<{ startDistance: number; startScale: number } | null>(null);
 
   const [docRef, setDocRef] = useState<pdfjs.PDFDocumentProxy | null>(null);
@@ -70,15 +71,38 @@ export function PdfCanvasPreview({ src, title }: { src: string; title: string })
   }, [src]);
 
   // ページ描画
+  // ピンチズーム等でscaleが高頻度に変わりrenderPageが連続発火しても、
+  // 同一canvasへの並行render()呼び出し(pdf.jsの"Cannot use the same canvas
+  // during multiple render() operations"例外)を起こさないよう、
+  // (1) 世代カウンタで自分より新しい呼び出しに追い越された処理は結果を捨て、
+  // (2) 前回のrender taskはcancel()呼び出し後、実際に完了(reject)するまで待ってから
+  // 次のrender()を呼ぶ、の2点で直列化する。
   const renderPage = useCallback(async () => {
     if (!docRef) return;
     const canvas = canvasRef.current;
     if (!canvas) return;
 
+    const generation = ++renderGenerationRef.current;
+    const isStale = () => renderGenerationRef.current !== generation;
+
     try {
       const page = await docRef.getPage(pageNumber);
+      if (isStale()) return;
+
       const outputScale = typeof window !== "undefined" ? window.devicePixelRatio || 1 : 1;
-      const viewport = page.getViewport({ scale, rotation });
+      // getViewportへ明示的にrotationを渡すとページ自身の/Rotateを上書きしてしまうため、
+      // ページ固有の回転(page.rotate)にユーザー操作分の回転を加算する。
+      const effectiveRotation = ((page.rotate ?? 0) + rotation) % 360;
+      const viewport = page.getViewport({ scale, rotation: effectiveRotation });
+
+      if (renderTaskRef.current) {
+        renderTaskRef.current.cancel();
+        // cancel()は非同期。実際にcanvasが解放される(=render taskが決着する)まで
+        // 待たずに次のrender()を呼ぶと、pdf.js側が「同一canvasへの並行render」として
+        // 例外を投げビューア全体がエラー画面化してしまう。
+        await renderTaskRef.current.promise.catch(() => {});
+        if (isStale()) return;
+      }
 
       canvas.width = Math.floor(viewport.width * outputScale);
       canvas.height = Math.floor(viewport.height * outputScale);
@@ -88,12 +112,12 @@ export function PdfCanvasPreview({ src, title }: { src: string; title: string })
       const context = canvas.getContext("2d");
       if (!context) return;
 
-      renderTaskRef.current?.cancel();
       const transform = outputScale !== 1 ? [outputScale, 0, 0, outputScale, 0, 0] : undefined;
       const task = page.render({ canvasContext: context, viewport, transform });
       renderTaskRef.current = task;
       await task.promise;
     } catch (err) {
+      if (isStale()) return;
       const isCancelled = err instanceof Error && err.name === "RenderingCancelledException";
       if (!isCancelled) setStatus("error");
     }
