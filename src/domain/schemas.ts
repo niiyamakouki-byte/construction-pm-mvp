@@ -106,6 +106,9 @@ export const ProjectSchema = BaseEntitySchema.extend({
   longitude: z.number().finite().nullish(),
   budget: z.number().finite().nullish(),
   includeWeekends: z.boolean(),
+  // Per-project custom text shown on the site-entry QR poster (rules/notices).
+  // Falls back to DEFAULT_SITE_ENTRY_NOTES (site-entry-qr.ts) when unset.
+  siteEntryNotes: z.string().nullish(),
 });
 
 export type ProjectStatus = z.infer<typeof ProjectStatusSchema>;

@@ -12,6 +12,7 @@ import {
   MapPin,
   Printer,
   HardHat,
+  FileDown,
 } from "lucide-react";
 import type { Project, ProjectMode, Task, TaskStatus, CostItem, Expense } from "../domain/types.js";
 import { createProjectRepository } from "../stores/project-store.js";
@@ -39,7 +40,11 @@ import {
   evaluatePhaseCompletion,
 } from "../lib/construction-checklist.js";
 import { generateProjectQR, generateFieldModeUrl } from "../lib/qr-code.js";
-import { generateSiteEntryPrintHtml } from "../lib/site-entry-qr.js";
+import {
+  generateSiteEntryPrintHtml,
+  generateSiteEntryPosterPdf,
+  DEFAULT_SITE_ENTRY_NOTES,
+} from "../lib/site-entry-qr.js";
 import { getEntryLog, getTodayWorkerCount } from "../lib/site-entry-log.js";
 import type { SiteEntryRecord } from "../lib/site-entry-log.js";
 
@@ -296,6 +301,8 @@ export function ProjectDetailPage({
   const [completedChecklistIds, setCompletedChecklistIds] = useState<Set<string>>(new Set());
   const [todayEntryLog, setTodayEntryLog] = useState<SiteEntryRecord[]>([]);
   const [onSiteCount, setOnSiteCount] = useState(0);
+  const [siteEntryNotesDraft, setSiteEntryNotesDraft] = useState(DEFAULT_SITE_ENTRY_NOTES);
+  const [savingSiteEntryNotes, setSavingSiteEntryNotes] = useState(false);
 
   const loadData = useCallback(async () => {
     try {
@@ -340,6 +347,30 @@ export function ProjectDetailPage({
     setTodayEntryLog(getEntryLog(projectId, today));
     setOnSiteCount(getTodayWorkerCount(projectId));
   }, [projectId]);
+
+  useEffect(() => {
+    // Seed the editable draft once per project load (not on every project
+    // update) so in-progress edits aren't clobbered by unrelated saves.
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- プロジェクト読込時に現場ルール編集欄を同期する意図的なパターン
+    setSiteEntryNotesDraft(project?.siteEntryNotes ?? DEFAULT_SITE_ENTRY_NOTES);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- project?.id のみを見て再同期する意図的な依存配列
+  }, [project?.id]);
+
+  const handleSaveSiteEntryNotes = async () => {
+    if (!project) return;
+    setSavingSiteEntryNotes(true);
+    try {
+      await projectRepository.update(project.id, {
+        siteEntryNotes: siteEntryNotesDraft,
+        updatedAt: new Date().toISOString(),
+      });
+      await loadData();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "現場ルールの保存に失敗しました");
+    } finally {
+      setSavingSiteEntryNotes(false);
+    }
+  };
 
   const handleStatusChange = async (taskId: string, newStatus: TaskStatus) => {
     try {
@@ -1461,27 +1492,74 @@ export function ProjectDetailPage({
       <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-base font-semibold text-slate-800">入退場QRコード</h2>
-          <button
-            type="button"
-            onClick={() => void (async () => {
-              const html = await generateSiteEntryPrintHtml(
-                projectId,
-                project.name,
-                "https://app.genbahub.com",
-              );
-              const blob = new Blob([html], { type: "text/html" });
-              const url = URL.createObjectURL(blob);
-              window.open(url, "_blank");
-            })()}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-slate-800 px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-slate-700 active:bg-slate-900 transition-colors"
-          >
-            <Printer className="h-3.5 w-3.5" aria-hidden="true" />
-            QR印刷
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => void (async () => {
+                const html = await generateSiteEntryPrintHtml(
+                  projectId,
+                  project.name,
+                  window.location.origin,
+                );
+                const blob = new Blob([html], { type: "text/html" });
+                const url = URL.createObjectURL(blob);
+                window.open(url, "_blank");
+              })()}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-slate-800 px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-slate-700 active:bg-slate-900 transition-colors"
+            >
+              <Printer className="h-3.5 w-3.5" aria-hidden="true" />
+              QR印刷
+            </button>
+            <button
+              type="button"
+              onClick={() => void (async () => {
+                const blob = await generateSiteEntryPosterPdf(
+                  projectId,
+                  project.name,
+                  window.location.origin,
+                  siteEntryNotesDraft,
+                );
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = `入退場QRポスター_${project.name}.pdf`;
+                a.click();
+                URL.revokeObjectURL(url);
+              })()}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-[#5f7766] px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-[#4d6154] active:bg-[#3d4d43] transition-colors"
+            >
+              <FileDown className="h-3.5 w-3.5" aria-hidden="true" />
+              QRポスターPDF
+            </button>
+          </div>
         </div>
         <p className="text-xs text-slate-500 mb-4">
           印刷したQRを現場入口に掲示。職人がスマホでスキャンして入退場を記録できます。
         </p>
+
+        {/* Custom site rules / notices — reflected on the poster PDF */}
+        <div className="mb-4 rounded-lg border border-slate-200 bg-slate-50/60 p-3">
+          <label htmlFor="site-entry-notes" className="mb-1.5 block text-xs font-semibold text-slate-700">
+            現場ルール・注意事項（QRポスターPDFに反映されます）
+          </label>
+          <textarea
+            id="site-entry-notes"
+            value={siteEntryNotesDraft}
+            onChange={(e) => setSiteEntryNotesDraft(e.target.value)}
+            rows={4}
+            className="w-full rounded-md border border-slate-300 bg-white px-2.5 py-2 text-xs text-slate-700 focus:border-[#5f7766] focus:outline-none focus:ring-1 focus:ring-[#5f7766]"
+          />
+          <div className="mt-2 flex items-center justify-end">
+            <button
+              type="button"
+              onClick={() => void handleSaveSiteEntryNotes()}
+              disabled={savingSiteEntryNotes}
+              className="inline-flex items-center rounded-lg bg-[#5f7766] px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-[#4d6154] disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {savingSiteEntryNotes ? "保存中…" : "保存"}
+            </button>
+          </div>
+        </div>
 
         {/* On-site count badge */}
         <div className="mb-4 inline-flex items-center gap-2 rounded-xl bg-emerald-50 border border-emerald-200 px-3 py-2">

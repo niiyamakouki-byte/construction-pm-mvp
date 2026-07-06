@@ -89,6 +89,8 @@ vi.mock("../lib/qr-code.js", () => ({
 
 vi.mock("../lib/site-entry-qr.js", () => ({
   generateSiteEntryPrintHtml: () => "<html></html>",
+  generateSiteEntryPosterPdf: () => new Blob(["pdf"], { type: "application/pdf" }),
+  DEFAULT_SITE_ENTRY_NOTES: "・テスト用ルール",
 }));
 
 vi.mock("../lib/site-entry-log.js", () => ({
@@ -352,5 +354,24 @@ describe("ProjectDetailPage", () => {
 
     expect(mockProjectDelete).not.toHaveBeenCalled();
     expect(screen.queryByRole("alertdialog")).toBeNull();
+  });
+
+  it("seeds the site-entry notes textarea with the default template and saves edits", async () => {
+    const user = userEvent.setup();
+    render(<ProjectDetailPage projectId="proj-1" />);
+
+    const textarea = await screen.findByLabelText("現場ルール・注意事項（QRポスターPDFに反映されます）") as HTMLTextAreaElement;
+    expect(textarea.value).toBe("・テスト用ルール");
+
+    await user.clear(textarea);
+    await user.type(textarea, "・独自の注意事項");
+    await user.click(screen.getByRole("button", { name: "保存" }));
+
+    await waitFor(() => {
+      expect(mockProjectUpdate).toHaveBeenCalledWith(
+        "proj-1",
+        expect.objectContaining({ siteEntryNotes: "・独自の注意事項" }),
+      );
+    });
   });
 });
