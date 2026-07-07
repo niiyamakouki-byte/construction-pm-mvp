@@ -10,6 +10,7 @@ import {
   clearPasswordRecoveryMode,
   isPasswordRecoveryMode,
 } from "../lib/password-recovery.js";
+import { PushNotificationCard } from "../components/PushNotificationCard.js";
 
 function getOAuthRedirectUrl(): string | undefined {
   if (typeof window === "undefined") return undefined;
@@ -153,6 +154,9 @@ export function AccountSettingsPage() {
           </p>
         )}
       </section>
+
+      {/* プッシュ通知 */}
+      <PushNotificationCard />
 
       {/* パスワード変更 */}
       <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
