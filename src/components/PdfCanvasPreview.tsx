@@ -4,7 +4,14 @@ import * as pdfjs from "pdfjs-dist/legacy/build/pdf.mjs";
 import workerSrc from "pdfjs-dist/legacy/build/pdf.worker.min.mjs?url";
 import type { RenderTask } from "pdfjs-dist";
 import { Eraser, PenLine, Share2, Undo2 } from "lucide-react";
-import { PdfAnnotationLayer, type PdfAnnotationLayerHandle, type PdfAnnotationTool, type PenKind } from "./PdfAnnotationLayer.js";
+import {
+  PdfAnnotationLayer,
+  computeOutline,
+  fillOutline,
+  type PdfAnnotationLayerHandle,
+  type PdfAnnotationTool,
+  type PenKind,
+} from "./PdfAnnotationLayer.js";
 import { shareOrDownloadFile } from "../lib/share-file.js";
 
 const ANNOTATION_COLORS = [
@@ -23,6 +30,21 @@ const PEN_KINDS: { label: string; value: PenKind }[] = [
   { label: "蛍光ペン", value: "highlighter" },
   { label: "太マーカー", value: "marker" },
   { label: "鉛筆", value: "pencil" },
+];
+
+// 遊び第2弾: ペン切替時のミニプレビュー。実際の描画関数(computeOutline/fillOutline)を
+// そのまま流用するので、見た目は本番の線と一致する。サンプル点とキャンバスサイズは
+// 「小さな見本を描ければ十分」なので固定値でよい(ponytail: 実サイズ反映が要るなら
+// annotateWidthPx を base に渡すよう拡張)。
+const PEN_PREVIEW_WIDTH = 48;
+const PEN_PREVIEW_HEIGHT = 20;
+const PEN_PREVIEW_BASE_STROKE_PX = 2;
+const PEN_PREVIEW_SAMPLE_POINTS = [
+  { x: 4, y: 15, pressure: 0.5 },
+  { x: 14, y: 6, pressure: 0.5 },
+  { x: 26, y: 16, pressure: 0.5 },
+  { x: 38, y: 7, pressure: 0.5 },
+  { x: 44, y: 12, pressure: 0.5 },
 ];
 
 if (!pdfjs.GlobalWorkerOptions.workerSrc) {
@@ -80,6 +102,9 @@ export function PdfCanvasPreview({
   const [sharingAnnotated, setSharingAnnotated] = useState(false);
   const [showSaved, setShowSaved] = useState(false);
   const savedHideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [showPenPreview, setShowPenPreview] = useState(false);
+  const penPreviewCanvasRef = useRef<HTMLCanvasElement>(null);
+  const penPreviewHideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handleAnnotationSaved = useCallback(() => {
     setShowSaved(true);
@@ -87,9 +112,29 @@ export function PdfCanvasPreview({
     savedHideTimerRef.current = setTimeout(() => setShowSaved(false), 1400);
   }, []);
 
+  // ペン切替時、選んだペン先の質感をちょこんと見せて消える(触った人だけ気づく程度の遊び)。
+  // 本番の描画と同じcomputeOutline/fillOutlineを使うので、見た目は実際の線と一致する。
+  const triggerPenPreview = useCallback(
+    (kind: PenKind) => {
+      const ctx = penPreviewCanvasRef.current?.getContext("2d");
+      // テスト環境のgetContextスタブ({}など)では描画APIが無いのでスキップする
+      // (PdfAnnotationLayerのdrawLiveFrameと同じガード)。
+      if (ctx && typeof ctx.clearRect === "function" && typeof ctx.beginPath === "function") {
+        ctx.clearRect(0, 0, PEN_PREVIEW_WIDTH, PEN_PREVIEW_HEIGHT);
+        const outline = computeOutline(PEN_PREVIEW_SAMPLE_POINTS, kind, PEN_PREVIEW_BASE_STROKE_PX);
+        fillOutline(ctx, outline, annotateColor, kind, PEN_PREVIEW_WIDTH, PEN_PREVIEW_HEIGHT);
+      }
+      setShowPenPreview(true);
+      if (penPreviewHideTimerRef.current) clearTimeout(penPreviewHideTimerRef.current);
+      penPreviewHideTimerRef.current = setTimeout(() => setShowPenPreview(false), 700);
+    },
+    [annotateColor],
+  );
+
   useEffect(() => {
     return () => {
       if (savedHideTimerRef.current) clearTimeout(savedHideTimerRef.current);
+      if (penPreviewHideTimerRef.current) clearTimeout(penPreviewHideTimerRef.current);
     };
   }, []);
 
@@ -320,7 +365,7 @@ export function PdfCanvasPreview({
 
           {annotateActive ? (
             <>
-              <div className="flex items-center gap-1">
+              <div className="relative flex items-center gap-1">
                 {PEN_KINDS.map((k) => (
                   <button
                     key={k.value}
@@ -328,6 +373,7 @@ export function PdfCanvasPreview({
                     onClick={() => {
                       setAnnotateTool("pen");
                       setAnnotatePenKind(k.value);
+                      triggerPenPreview(k.value);
                     }}
                     aria-pressed={annotateTool === "pen" && annotatePenKind === k.value}
                     className={`rounded-md border px-2 py-1 font-semibold ${
@@ -339,6 +385,23 @@ export function PdfCanvasPreview({
                     {k.label}
                   </button>
                 ))}
+
+                {/* ペン先ミニプレビュー: position/opacityのみのGPUアニメ、レイアウトは動かさない */}
+                <div
+                  data-testid="pen-preview"
+                  data-visible={showPenPreview}
+                  aria-hidden="true"
+                  className={`pointer-events-none absolute -top-8 left-0 z-10 flex items-center rounded-md border border-[#EAEAEA] bg-white px-1.5 py-1 shadow-[0_2px_8px_rgba(0,0,0,0.04)] transition-all duration-200 ease-out ${
+                    showPenPreview ? "translate-y-0 opacity-100" : "translate-y-1 opacity-0"
+                  }`}
+                >
+                  <canvas
+                    ref={penPreviewCanvasRef}
+                    width={PEN_PREVIEW_WIDTH}
+                    height={PEN_PREVIEW_HEIGHT}
+                    className="block h-5 w-12"
+                  />
+                </div>
               </div>
 
               <div className="flex items-center gap-1">

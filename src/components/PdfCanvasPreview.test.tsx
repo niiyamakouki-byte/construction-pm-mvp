@@ -237,4 +237,29 @@ describe("PdfCanvasPreview", () => {
     expect(pencil.getAttribute("aria-pressed")).toBe("true");
     expect(ballpoint.getAttribute("aria-pressed")).toBe("false");
   });
+
+  it("ペン切替時にペン先ミニプレビューが一瞬表示されてから消える", async () => {
+    mockGetDocumentImpl = () => ({
+      promise: Promise.resolve({ numPages: 1, getPage: mockGetPage }),
+      destroy: vi.fn(),
+    });
+
+    render(<PdfCanvasPreview src="https://example.com/sample.pdf" title="サンプル資料" />);
+    await waitFor(() => expect(mockRender).toHaveBeenCalledTimes(1));
+
+    await act(async () => {
+      screen.getByRole("button", { name: /赤入れ$/ }).click();
+    });
+
+    const preview = screen.getByTestId("pen-preview");
+    expect(preview.getAttribute("data-visible")).toBe("false");
+
+    await act(async () => {
+      screen.getByRole("button", { name: "鉛筆" }).click();
+    });
+
+    expect(preview.getAttribute("data-visible")).toBe("true");
+
+    await waitFor(() => expect(preview.getAttribute("data-visible")).toBe("false"), { timeout: 2000 });
+  });
 });

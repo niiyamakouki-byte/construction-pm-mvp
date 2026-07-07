@@ -48,7 +48,7 @@ function getGrainPattern(ctx: CanvasRenderingContext2D): CanvasPattern | null {
 type StrokeInputPoint = { x: number; y: number; pressure: number };
 
 /** Fill a perfect-freehand outline polygon; pencil also gets a clipped paper-grain pass. */
-function fillOutline(
+export function fillOutline(
   ctx: CanvasRenderingContext2D,
   outline: [number, number][],
   color: string,
@@ -86,7 +86,7 @@ function fillOutline(
   ctx.globalCompositeOperation = "source-over";
 }
 
-function computeOutline(points: StrokeInputPoint[], penKind: PenKind, sizePx: number): [number, number][] {
+export function computeOutline(points: StrokeInputPoint[], penKind: PenKind, sizePx: number): [number, number][] {
   const preset = PEN_PRESETS[penKind];
   const simulatePressure = !hasRealPressureSignal(points.map((p) => p.pressure));
   return getStroke(points, preset.strokeOptions(Math.max(1, sizePx * preset.sizeMult), simulatePressure));
