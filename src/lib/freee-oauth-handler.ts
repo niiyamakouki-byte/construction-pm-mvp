@@ -18,6 +18,9 @@ import {
 type UpsertResult = { error: { message: string } | null };
 
 export type FreeeTokenUpserter = {
+  // ponytail: supabase-js の upsert() は Promise ではなく thenable な
+  // PostgrestFilterBuilder を返す（catch/finally/toStringTag を持たない）。
+  // PromiseLike にしておけば実体の型が変わっても await 前提のコードは崩れない。
   upsert(row: {
     user_id: string;
     access_token: string;
@@ -25,7 +28,7 @@ export type FreeeTokenUpserter = {
     expires_at: string;
     company_id?: number | null;
     scope?: string | null;
-  }): Promise<UpsertResult>;
+  }): PromiseLike<UpsertResult>;
 };
 
 // ── Auth (consent リダイレクト) ─────────────────────────────

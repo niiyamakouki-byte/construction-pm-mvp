@@ -100,10 +100,12 @@ export async function consumeRateLimit(
  * api_rate_limits テーブル（migration 020）を前提とする。
  */
 export function createSupabaseRateLimitStore(supabase: {
+  // ponytail: supabase-js の rpc() も upsert() 同様 thenable(PostgrestFilterBuilder)
+  // を返す。PromiseLike にして実体とのドリフトを防ぐ。
   rpc: (
     fn: string,
     args: Record<string, unknown>,
-  ) => Promise<{ data: unknown; error: { message: string } | null }>;
+  ) => PromiseLike<{ data: unknown; error: { message: string } | null }>;
 }): RateLimitStore {
   return {
     async increment({ userId, endpoint, windowStart }) {
