@@ -168,47 +168,28 @@ describe("EstimatePage", () => {
     expect(mocks.generateEstimate).not.toHaveBeenCalled();
   });
 
-  it("選択品目が空の状態で生成するとバリデーションエラーが表示される", async () => {
-    vi.resetModules();
-
-    let hasSelectedItems = true;
-    const actualReact = await vi.importActual<typeof import("react")>("react");
-
-    vi.doMock("react", () => ({
-      ...actualReact,
-      useState<T>(initial: T) {
-        if (Array.isArray(initial)) {
-          const selectedItems = new Proxy([] as unknown[], {
-            get(target, property, receiver) {
-              if (property === "length") {
-                return hasSelectedItems ? 1 : 0;
-              }
-              return Reflect.get(target, property, receiver);
-            },
-          });
-          return [selectedItems as T, vi.fn()] as [T, (value: T) => void];
-        }
-
-        return actualReact.useState(initial);
-      },
-    }));
-
-    const { EstimatePage } = await import("../pages/EstimatePage.js");
+  it("選択品目が空の状態では見積書を生成ボタンごと非表示になる", async () => {
+    // 生成ボタンは「選択済み品目」カード内にあり selectedItems.length > 0 でのみ描画される
+    // (EstimatePage.tsx:1206) ため、0件では生成自体がUI上できない構造になっている。
     const user = userEvent.setup();
-
-    render(<EstimatePage />);
-    // UX刷新(20260704): 手動フローへ進んでから品目カタログが表示される
-    const manualBtn = await screen.findByRole("button", { name: /手動で作成/ });
-    manualBtn.click();
-    await screen.findByText("品目カタログ");
+    await renderEstimatePage();
 
     await user.type(screen.getByLabelText(/物件名/), "テスト物件");
-    hasSelectedItems = false;
-    await user.click(screen.getByRole("button", { name: "見積書を生成" }));
+    expect(screen.queryByRole("button", { name: "見積書を生成" })).toBeNull();
 
-    await waitFor(() =>
-      expect(screen.getByText("品目を1つ以上追加してください")).toBeDefined(),
-    );
+    // 品目を一度追加してから削除し、選択済み品目が0件の状態に戻す
+    await user.click(screen.getByRole("button", { name: /解体・撤去/ }));
+    await user.click(screen.getByRole("button", { name: /内装解体（木造）/ }));
+    await waitFor(() => expect(screen.getByText("選択済み品目 (1件)")).toBeDefined());
+    expect(screen.getByRole("button", { name: "見積書を生成" })).toBeDefined();
+
+    const row = getSelectedRow("内装解体（木造）");
+    await user.click(within(row).getByRole("button", { name: "内装解体（木造）を削除" }));
+    await user.click(screen.getByRole("button", { name: "削除する" }));
+
+    await waitFor(() => expect(screen.queryByText(/選択済み品目/)).toBeNull());
+    expect(screen.queryByRole("button", { name: "見積書を生成" })).toBeNull();
+    expect(mocks.generateEstimate).not.toHaveBeenCalled();
   });
 
   it("見積作成タブのファーストビューにPDF CTAヒーローが表示される", async () => {
