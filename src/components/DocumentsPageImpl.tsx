@@ -829,7 +829,11 @@ export function DocumentsPage({ projectId }: { projectId: string }) {
                 ) : null}
 
                 {previewConfig?.mode === "pdf" ? (
-                  <PdfCanvasPreview src={previewConfig.src} title={selectedDocument.name} />
+                  <PdfCanvasPreview
+                    src={previewConfig.src}
+                    title={selectedDocument.name}
+                    documentId={selectedDocument.id}
+                  />
                 ) : null}
 
                 {!previewConfig ? (

@@ -3,6 +3,20 @@ import * as pdfjs from "pdfjs-dist/legacy/build/pdf.mjs";
 // Vite はこの ?url import を静的アセット URL（ブラウザ取得可）に解決する。
 import workerSrc from "pdfjs-dist/legacy/build/pdf.worker.min.mjs?url";
 import type { RenderTask } from "pdfjs-dist";
+import { Eraser, PenLine, Share2, Undo2 } from "lucide-react";
+import { PdfAnnotationLayer, type PdfAnnotationLayerHandle, type PdfAnnotationTool } from "./PdfAnnotationLayer.js";
+import { shareOrDownloadFile } from "../lib/share-file.js";
+
+const ANNOTATION_COLORS = [
+  { label: "赤", value: "#D64545" },
+  { label: "セージ", value: "#346538" },
+  { label: "チャコール", value: "#2F3437" },
+] as const;
+
+const ANNOTATION_WIDTHS = [
+  { label: "細", value: 2 },
+  { label: "太", value: 5 },
+] as const;
 
 if (!pdfjs.GlobalWorkerOptions.workerSrc) {
   pdfjs.GlobalWorkerOptions.workerSrc = workerSrc;
@@ -28,11 +42,21 @@ function distanceBetweenTouches(touches: React.TouchList): number {
  * 自動化/一部環境で描画に失敗し黒画面になる不具合(construction_pm_mvp-6jt)への対応。
  * pdf.js(既存依存)でページをcanvasに自前描画することで、埋め込みビューアに依存しない。
  */
-export function PdfCanvasPreview({ src, title }: { src: string; title: string }) {
+export function PdfCanvasPreview({
+  src,
+  title,
+  documentId,
+}: {
+  src: string;
+  title: string;
+  /** Storage key for hand-drawn annotations. Defaults to `src` when omitted. */
+  documentId?: string;
+}) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const renderTaskRef = useRef<RenderTask | null>(null);
   const renderGenerationRef = useRef(0);
   const pinchRef = useRef<{ startDistance: number; startScale: number } | null>(null);
+  const annotationLayerRef = useRef<PdfAnnotationLayerHandle>(null);
 
   const [docRef, setDocRef] = useState<pdfjs.PDFDocumentProxy | null>(null);
   const [pageNumber, setPageNumber] = useState(1);
@@ -40,6 +64,14 @@ export function PdfCanvasPreview({ src, title }: { src: string; title: string })
   const [scale, setScale] = useState(1);
   const [rotation, setRotation] = useState(0);
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
+  const [viewportSize, setViewportSize] = useState({ width: 0, height: 0 });
+  const [annotateActive, setAnnotateActive] = useState(false);
+  const [annotateTool, setAnnotateTool] = useState<PdfAnnotationTool>("pen");
+  const [annotateColor, setAnnotateColor] = useState<string>(ANNOTATION_COLORS[0].value);
+  const [annotateWidthPx, setAnnotateWidthPx] = useState<number>(ANNOTATION_WIDTHS[0].value);
+  const [sharingAnnotated, setSharingAnnotated] = useState(false);
+
+  const resolvedDocumentId = documentId ?? src;
 
   // ドキュメントの読み込み(src変更のたびにリセット)
   useEffect(() => {
@@ -49,6 +81,7 @@ export function PdfCanvasPreview({ src, title }: { src: string; title: string })
     setPageNumber(1);
     setScale(1);
     setRotation(0);
+    setAnnotateActive(false);
 
     const loadingTask = pdfjs.getDocument({ url: src });
     loadingTask.promise.then(
@@ -94,6 +127,7 @@ export function PdfCanvasPreview({ src, title }: { src: string; title: string })
       // ページ固有の回転(page.rotate)にユーザー操作分の回転を加算する。
       const effectiveRotation = ((page.rotate ?? 0) + rotation) % 360;
       const viewport = page.getViewport({ scale, rotation: effectiveRotation });
+      setViewportSize({ width: Math.floor(viewport.width), height: Math.floor(viewport.height) });
 
       if (renderTaskRef.current) {
         renderTaskRef.current.cancel();
@@ -153,6 +187,23 @@ export function PdfCanvasPreview({ src, title }: { src: string; title: string })
   const handleTouchEnd = (e: React.TouchEvent) => {
     if (e.touches.length < 2) pinchRef.current = null;
   };
+
+  const handleShareAnnotated = useCallback(async () => {
+    const base = canvasRef.current;
+    const layer = annotationLayerRef.current;
+    if (!base || !layer) return;
+    setSharingAnnotated(true);
+    try {
+      const blob = await layer.exportComposite(base);
+      if (!blob) return;
+      const file = new File([blob], `${title}_赤入れ.png`, { type: "image/png" });
+      await shareOrDownloadFile(file);
+    } catch (err) {
+      if (err instanceof Error && err.name === "AbortError") return;
+    } finally {
+      setSharingAnnotated(false);
+    }
+  }, [title]);
 
   if (status === "error") {
     return (
@@ -229,20 +280,130 @@ export function PdfCanvasPreview({ src, title }: { src: string; title: string })
         ) : null}
       </div>
 
+      {status === "ready" ? (
+        <div className="flex flex-wrap items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs">
+          <button
+            type="button"
+            onClick={() => setAnnotateActive((current) => !current)}
+            aria-pressed={annotateActive}
+            className={`flex items-center gap-1 rounded-md px-2 py-1 font-semibold ${
+              annotateActive
+                ? "bg-brand-700 text-white"
+                : "border border-slate-200 text-slate-600 hover:border-brand-300 hover:text-brand-700"
+            }`}
+          >
+            <PenLine className="h-3.5 w-3.5" aria-hidden="true" />
+            赤入れ{annotateActive ? "中" : ""}
+          </button>
+
+          {annotateActive ? (
+            <>
+              <div className="flex items-center gap-1">
+                {ANNOTATION_COLORS.map((c) => (
+                  <button
+                    key={c.value}
+                    type="button"
+                    onClick={() => {
+                      setAnnotateTool("pen");
+                      setAnnotateColor(c.value);
+                    }}
+                    aria-label={c.label}
+                    aria-pressed={annotateTool === "pen" && annotateColor === c.value}
+                    className={`h-6 w-6 rounded-full border-2 ${
+                      annotateTool === "pen" && annotateColor === c.value ? "border-slate-900" : "border-slate-200"
+                    }`}
+                    style={{ backgroundColor: c.value }}
+                  />
+                ))}
+              </div>
+
+              <div className="flex items-center gap-1">
+                {ANNOTATION_WIDTHS.map((w) => (
+                  <button
+                    key={w.value}
+                    type="button"
+                    onClick={() => {
+                      setAnnotateTool("pen");
+                      setAnnotateWidthPx(w.value);
+                    }}
+                    aria-pressed={annotateTool === "pen" && annotateWidthPx === w.value}
+                    className={`rounded-md border px-2 py-1 font-semibold ${
+                      annotateTool === "pen" && annotateWidthPx === w.value
+                        ? "border-brand-700 bg-brand-50 text-brand-700"
+                        : "border-slate-200 text-slate-600 hover:border-brand-300 hover:text-brand-700"
+                    }`}
+                  >
+                    {w.label}
+                  </button>
+                ))}
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setAnnotateTool("eraser")}
+                aria-pressed={annotateTool === "eraser"}
+                className={`flex items-center gap-1 rounded-md border px-2 py-1 font-semibold ${
+                  annotateTool === "eraser"
+                    ? "border-brand-700 bg-brand-50 text-brand-700"
+                    : "border-slate-200 text-slate-600 hover:border-brand-300 hover:text-brand-700"
+                }`}
+              >
+                <Eraser className="h-3.5 w-3.5" aria-hidden="true" />
+                消しゴム
+              </button>
+
+              <button
+                type="button"
+                onClick={() => annotationLayerRef.current?.undo()}
+                className="flex items-center gap-1 rounded-md border border-slate-200 px-2 py-1 font-semibold text-slate-600 hover:border-brand-300 hover:text-brand-700"
+              >
+                <Undo2 className="h-3.5 w-3.5" aria-hidden="true" />
+                取り消し
+              </button>
+
+              <button
+                type="button"
+                onClick={() => void handleShareAnnotated()}
+                disabled={sharingAnnotated}
+                className="ml-auto flex items-center gap-1 rounded-md border border-slate-200 px-2 py-1 font-semibold text-slate-600 hover:border-brand-300 hover:text-brand-700 disabled:opacity-40"
+              >
+                <Share2 className="h-3.5 w-3.5" aria-hidden="true" />
+                {sharingAnnotated ? "共有準備中..." : "注釈付きで共有"}
+              </button>
+            </>
+          ) : null}
+        </div>
+      ) : null}
+
       <div className="h-[420px] w-full overflow-auto rounded-2xl border border-slate-200 bg-slate-50">
         {status === "loading" ? (
           <div className="flex h-full w-full items-center justify-center text-sm text-slate-500">読み込み中...</div>
         ) : null}
         <div className="flex min-h-full w-full items-start justify-center p-2">
-          <canvas
-            ref={canvasRef}
-            role="img"
-            aria-label={`${title} プレビュー`}
-            onTouchStart={handleTouchStart}
-            onTouchMove={handleTouchMove}
-            onTouchEnd={handleTouchEnd}
-            style={{ display: status === "ready" ? "block" : "none", touchAction: "pan-x pan-y" }}
-          />
+          <div className="relative inline-block">
+            <canvas
+              ref={canvasRef}
+              role="img"
+              aria-label={`${title} プレビュー`}
+              onTouchStart={handleTouchStart}
+              onTouchMove={handleTouchMove}
+              onTouchEnd={handleTouchEnd}
+              style={{ display: status === "ready" ? "block" : "none", touchAction: "pan-x pan-y" }}
+            />
+            {status === "ready" && viewportSize.width > 0 ? (
+              <PdfAnnotationLayer
+                ref={annotationLayerRef}
+                documentId={resolvedDocumentId}
+                pageNumber={pageNumber}
+                viewportWidth={viewportSize.width}
+                viewportHeight={viewportSize.height}
+                active={annotateActive}
+                tool={annotateTool}
+                color={annotateColor}
+                strokeWidthPx={annotateWidthPx}
+              />
+            ) : null}
+          </div>
         </div>
       </div>
     </div>
