@@ -30,6 +30,20 @@ describe("createStroke", () => {
     expect(a.color).toBe("#D64545");
     expect(a.width).toBe(0.01);
   });
+
+  it("defaults penKind/alphas/widthMults to undefined (old ballpoint-only strokes)", () => {
+    const a = createStroke([{ x: 0, y: 0 }], "#D64545", 0.01);
+    expect(a.penKind).toBeUndefined();
+    expect(a.alphas).toBeUndefined();
+    expect(a.widthMults).toBeUndefined();
+  });
+
+  it("stores penKind, alphas, and widthMults when provided (pencil strokes)", () => {
+    const a = createStroke([{ x: 0, y: 0 }, { x: 1, y: 1 }], "#2F3437", 0.01, "pencil", [0.5, 0.7], [1, 1.4]);
+    expect(a.penKind).toBe("pencil");
+    expect(a.alphas).toEqual([0.5, 0.7]);
+    expect(a.widthMults).toEqual([1, 1.4]);
+  });
 });
 
 describe("addStroke / undoLastStroke", () => {

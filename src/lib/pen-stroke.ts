@@ -13,6 +13,9 @@ export type PenSample = {
   y: number;
   pressure: number;
   t: number;
+  /** Apple Pencil tilt in degrees (-90..90). 0/absent on mouse/touch. */
+  tiltX?: number;
+  tiltY?: number;
 };
 
 export type StrokeKind = "line" | "polyline" | "polygon";

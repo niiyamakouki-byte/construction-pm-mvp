@@ -4,7 +4,7 @@ import * as pdfjs from "pdfjs-dist/legacy/build/pdf.mjs";
 import workerSrc from "pdfjs-dist/legacy/build/pdf.worker.min.mjs?url";
 import type { RenderTask } from "pdfjs-dist";
 import { Eraser, PenLine, Share2, Undo2 } from "lucide-react";
-import { PdfAnnotationLayer, type PdfAnnotationLayerHandle, type PdfAnnotationTool } from "./PdfAnnotationLayer.js";
+import { PdfAnnotationLayer, type PdfAnnotationLayerHandle, type PdfAnnotationTool, type PenKind } from "./PdfAnnotationLayer.js";
 import { shareOrDownloadFile } from "../lib/share-file.js";
 
 const ANNOTATION_COLORS = [
@@ -17,6 +17,13 @@ const ANNOTATION_WIDTHS = [
   { label: "細", value: 2 },
   { label: "太", value: 5 },
 ] as const;
+
+const PEN_KINDS: { label: string; value: PenKind }[] = [
+  { label: "ボールペン", value: "ballpoint" },
+  { label: "蛍光ペン", value: "highlighter" },
+  { label: "太マーカー", value: "marker" },
+  { label: "鉛筆", value: "pencil" },
+];
 
 if (!pdfjs.GlobalWorkerOptions.workerSrc) {
   pdfjs.GlobalWorkerOptions.workerSrc = workerSrc;
@@ -67,6 +74,7 @@ export function PdfCanvasPreview({
   const [viewportSize, setViewportSize] = useState({ width: 0, height: 0 });
   const [annotateActive, setAnnotateActive] = useState(false);
   const [annotateTool, setAnnotateTool] = useState<PdfAnnotationTool>("pen");
+  const [annotatePenKind, setAnnotatePenKind] = useState<PenKind>("ballpoint");
   const [annotateColor, setAnnotateColor] = useState<string>(ANNOTATION_COLORS[0].value);
   const [annotateWidthPx, setAnnotateWidthPx] = useState<number>(ANNOTATION_WIDTHS[0].value);
   const [sharingAnnotated, setSharingAnnotated] = useState(false);
@@ -299,6 +307,27 @@ export function PdfCanvasPreview({
           {annotateActive ? (
             <>
               <div className="flex items-center gap-1">
+                {PEN_KINDS.map((k) => (
+                  <button
+                    key={k.value}
+                    type="button"
+                    onClick={() => {
+                      setAnnotateTool("pen");
+                      setAnnotatePenKind(k.value);
+                    }}
+                    aria-pressed={annotateTool === "pen" && annotatePenKind === k.value}
+                    className={`rounded-md border px-2 py-1 font-semibold ${
+                      annotateTool === "pen" && annotatePenKind === k.value
+                        ? "border-brand-700 bg-brand-50 text-brand-700"
+                        : "border-slate-200 text-slate-600 hover:border-brand-300 hover:text-brand-700"
+                    }`}
+                  >
+                    {k.label}
+                  </button>
+                ))}
+              </div>
+
+              <div className="flex items-center gap-1">
                 {ANNOTATION_COLORS.map((c) => (
                   <button
                     key={c.value}
@@ -401,6 +430,7 @@ export function PdfCanvasPreview({
                 tool={annotateTool}
                 color={annotateColor}
                 strokeWidthPx={annotateWidthPx}
+                penKind={annotatePenKind}
               />
             ) : null}
           </div>

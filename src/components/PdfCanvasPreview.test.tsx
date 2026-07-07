@@ -208,4 +208,33 @@ describe("PdfCanvasPreview", () => {
     expect(screen.queryByText(/読み込めませんでした/)).toBeNull();
     expect(container.querySelector("canvas")).not.toBeNull();
   });
+
+  it("赤入れモード中に4種のペン(ボールペン/蛍光ペン/太マーカー/鉛筆)を切り替えられる", async () => {
+    mockGetDocumentImpl = () => ({
+      promise: Promise.resolve({ numPages: 1, getPage: mockGetPage }),
+      destroy: vi.fn(),
+    });
+
+    render(<PdfCanvasPreview src="https://example.com/sample.pdf" title="サンプル資料" />);
+    await waitFor(() => expect(mockRender).toHaveBeenCalledTimes(1));
+
+    await act(async () => {
+      screen.getByRole("button", { name: /赤入れ$/ }).click();
+    });
+
+    const ballpoint = screen.getByRole("button", { name: "ボールペン" });
+    const pencil = screen.getByRole("button", { name: "鉛筆" });
+    expect(screen.getByRole("button", { name: "蛍光ペン" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "太マーカー" })).toBeTruthy();
+    // ballpoint is selected by default
+    expect(ballpoint.getAttribute("aria-pressed")).toBe("true");
+    expect(pencil.getAttribute("aria-pressed")).toBe("false");
+
+    await act(async () => {
+      pencil.click();
+    });
+
+    expect(pencil.getAttribute("aria-pressed")).toBe("true");
+    expect(ballpoint.getAttribute("aria-pressed")).toBe("false");
+  });
 });

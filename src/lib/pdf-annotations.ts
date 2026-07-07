@@ -6,6 +6,9 @@
 
 export type AnnotationPoint = { x: number; y: number };
 
+/** Ink rendering style. Absent on old saved strokes → treated as "ballpoint". */
+export type PenKind = "ballpoint" | "highlighter" | "marker" | "pencil";
+
 export type PdfStroke = {
   id: string;
   /** points normalized 0-1 relative to the page's displayed viewport */
@@ -17,6 +20,18 @@ export type PdfStroke = {
    * of staying a fixed screen-pixel size.
    */
   width: number;
+  penKind?: PenKind;
+  /**
+   * Per-point opacity (0-1), same length as `points`. Only populated for
+   * "pencil" strokes, where mark darkness follows drawing speed/pressure.
+   */
+  alphas?: number[];
+  /**
+   * Per-point line-width multiplier, same length as `points`. Only populated
+   * for "pencil" strokes — Apple Pencil tilt makes the mark wider/scratchier,
+   * mimicking graphite laid on its side.
+   */
+  widthMults?: number[];
 };
 
 /** page number (1-based) -> strokes drawn on that page */
@@ -42,8 +57,15 @@ export function saveAnnotations(documentId: string, data: PdfAnnotations): void 
   }
 }
 
-export function createStroke(points: AnnotationPoint[], color: string, width: number): PdfStroke {
-  return { id: crypto.randomUUID(), points, color, width };
+export function createStroke(
+  points: AnnotationPoint[],
+  color: string,
+  width: number,
+  penKind?: PenKind,
+  alphas?: number[],
+  widthMults?: number[],
+): PdfStroke {
+  return { id: crypto.randomUUID(), points, color, width, penKind, alphas, widthMults };
 }
 
 export function addStroke(data: PdfAnnotations, page: number, stroke: PdfStroke): PdfAnnotations {
