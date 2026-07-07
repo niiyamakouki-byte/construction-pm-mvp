@@ -137,12 +137,14 @@ export const PdfAnnotationLayer = forwardRef<PdfAnnotationLayerHandle, Props>(fu
   const livePenKindRef = useRef<PenKind>(penKind);
   // Cached outlines for already-committed strokes so live-drawing frames
   // don't re-run getStroke() on every past stroke, only the in-progress one.
-  // Keyed by viewport size too, since outline coordinates are in CSS px.
+  // Outline coordinates are in CSS px, so a viewport resize invalidates every
+  // entry at once (see the effect below that clears the map on resize) —
+  // the key only needs the stroke id, not the viewport size.
   const outlineCacheRef = useRef<Map<string, [number, number][]>>(new Map());
 
   const getCachedOutline = useCallback(
     (stroke: PdfStroke): [number, number][] => {
-      const key = `${stroke.id}|${viewportWidth}|${viewportHeight}`;
+      const key = stroke.id;
       let outline = outlineCacheRef.current.get(key);
       if (!outline) {
         const pressures = stroke.pressures ?? stroke.points.map(() => 0.5);
@@ -181,12 +183,24 @@ export const PdfAnnotationLayer = forwardRef<PdfAnnotationLayerHandle, Props>(fu
     }
   }, [viewportWidth, viewportHeight, pageNumber, getCachedOutline]);
 
-  // documentId変化時にlocalStorageから注釈を読み込む(drawing-pinsと同じ初期化パターン)
+  // documentId変化時にlocalStorageから注釈を読み込む(drawing-pinsと同じ初期化パターン)。
+  // stroke.idはドキュメントをまたいで衝突しないUUIDなので、切替前のドキュメントの
+  // outlineキャッシュも(参照されないまま)クリアしないと1セッション中に開いた全ドキュメントの
+  // ストローク分だけキャッシュが積み上がる。
   useEffect(() => {
+    outlineCacheRef.current.clear();
     annotationsRef.current = loadAnnotations(documentId);
     redrawAll();
     // eslint-disable-next-line react-hooks/exhaustive-deps -- documentId変化時のみ再読込。redrawAllは同フレーム内の最新版を使う
   }, [documentId]);
+
+  // viewport寸法(ズーム/回転)が変わったら、そのサイズ向けにキャッシュしたoutlineは
+  // 二度と使われないため破棄する。破棄しないとピンチズーム中に通過した中間サイズの
+  // エントリがストローク数 x 通過サイズ数ぶん溜まり続け、セッションが長引くほど
+  // メモリが単調増加する(参照: getCachedOutlineのキャッシュキー)。
+  useEffect(() => {
+    outlineCacheRef.current.clear();
+  }, [viewportWidth, viewportHeight]);
 
   // ページ切替・ズーム・回転でviewport寸法が変わるたびに全再描画(既存ストロークが追従する)
   useEffect(() => {
@@ -284,6 +298,10 @@ export const PdfAnnotationLayer = forwardRef<PdfAnnotationLayerHandle, Props>(fu
   const handlePointerDown = useCallback(
     (e: React.PointerEvent<HTMLCanvasElement>) => {
       if (!active) return;
+      // 2本目以降の同時ポインタ(利き手で描画中に反対の手/掌が触れる、二本指の誤タップ等)を
+      // 無視する。samplesRefは単一ストローク用の共有バッファなので、描画中に別の
+      // pointerDownを受け入れるとサンプル列が混ざり線が壊れる。
+      if (drawingRef.current) return;
       if (e.pointerType === "pen") penEverUsedRef.current = true;
       // palm rejection ハイブリッド: pen入力が一度でも観測された環境ではtouchを無視する。
       // pen非対応環境(スマホ等)ではtouchが唯一の入力なので許可する。

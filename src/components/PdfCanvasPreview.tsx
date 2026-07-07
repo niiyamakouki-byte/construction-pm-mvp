@@ -342,43 +342,50 @@ export function PdfCanvasPreview({
 
           {annotateActive ? (
             <>
-              <div className="relative flex items-center gap-1">
+              <div className="flex items-center gap-1">
                 {PEN_KINDS.map((k) => (
-                  <button
-                    key={k.value}
-                    type="button"
-                    onClick={() => {
-                      setAnnotateTool("pen");
-                      setAnnotatePenKind(k.value);
-                      triggerPenPreview(k.value);
-                    }}
-                    aria-pressed={annotateTool === "pen" && annotatePenKind === k.value}
-                    className={`rounded-md border px-2 py-1 font-semibold ${
-                      annotateTool === "pen" && annotatePenKind === k.value
-                        ? "border-brand-700 bg-brand-50 text-brand-700"
-                        : "border-slate-200 text-slate-600 hover:border-brand-300 hover:text-brand-700"
-                    }`}
-                  >
-                    {k.label}
-                  </button>
-                ))}
+                  <span key={k.value} className="relative inline-flex">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setAnnotateTool("pen");
+                        setAnnotatePenKind(k.value);
+                        triggerPenPreview(k.value);
+                      }}
+                      aria-pressed={annotateTool === "pen" && annotatePenKind === k.value}
+                      className={`rounded-md border px-2 py-1 font-semibold ${
+                        annotateTool === "pen" && annotatePenKind === k.value
+                          ? "border-brand-700 bg-brand-50 text-brand-700"
+                          : "border-slate-200 text-slate-600 hover:border-brand-300 hover:text-brand-700"
+                      }`}
+                    >
+                      {k.label}
+                    </button>
 
-                {/* ペン先ミニプレビュー: position/opacityのみのGPUアニメ、レイアウトは動かさない */}
-                <div
-                  data-testid="pen-preview"
-                  data-visible={showPenPreview}
-                  aria-hidden="true"
-                  className={`pointer-events-none absolute -top-8 left-0 z-10 flex items-center rounded-md border border-[#EAEAEA] bg-white px-1.5 py-1 shadow-[0_2px_8px_rgba(0,0,0,0.04)] transition-all duration-200 ease-out ${
-                    showPenPreview ? "translate-y-0 opacity-100" : "translate-y-1 opacity-0"
-                  }`}
-                >
-                  <canvas
-                    ref={penPreviewCanvasRef}
-                    width={PEN_PREVIEW_WIDTH}
-                    height={PEN_PREVIEW_HEIGHT}
-                    className="block h-5 w-12"
-                  />
-                </div>
+                    {/*
+                      ペン先ミニプレビュー: position/opacityのみのGPUアニメ、レイアウトは動かさない。
+                      いま選ばれているペンのボタンの真下にだけ出す(以前は常に先頭ボタンの上に固定表示され、
+                      他のペンを選んでも表示位置が動かず・かつツールバー1段上の行に被って隠す不具合があった)。
+                    */}
+                    {annotatePenKind === k.value ? (
+                      <div
+                        data-testid="pen-preview"
+                        data-visible={showPenPreview}
+                        aria-hidden="true"
+                        className={`pointer-events-none absolute left-1/2 top-full z-10 mt-1 flex -translate-x-1/2 items-center rounded-md border border-[#EAEAEA] bg-white px-1.5 py-1 shadow-[0_2px_8px_rgba(0,0,0,0.04)] transition-all duration-200 ease-out ${
+                          showPenPreview ? "translate-y-0 opacity-100" : "-translate-y-1 opacity-0"
+                        }`}
+                      >
+                        <canvas
+                          ref={penPreviewCanvasRef}
+                          width={PEN_PREVIEW_WIDTH}
+                          height={PEN_PREVIEW_HEIGHT}
+                          className="block h-5 w-12"
+                        />
+                      </div>
+                    ) : null}
+                  </span>
+                ))}
               </div>
 
               <div className="flex items-center gap-1">

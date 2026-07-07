@@ -251,15 +251,55 @@ describe("PdfCanvasPreview", () => {
       screen.getByRole("button", { name: /赤入れ$/ }).click();
     });
 
-    const preview = screen.getByTestId("pen-preview");
-    expect(preview.getAttribute("data-visible")).toBe("false");
+    expect(screen.getByTestId("pen-preview").getAttribute("data-visible")).toBe("false");
 
     await act(async () => {
       screen.getByRole("button", { name: "鉛筆" }).click();
     });
 
-    expect(preview.getAttribute("data-visible")).toBe("true");
+    // プレビューは選んだボタンのそばに付け替わる(ボールペンの下に固定されたDOMノードではない)ため、
+    // 「表示」判定は都度取り直す。
+    expect(screen.getByTestId("pen-preview").getAttribute("data-visible")).toBe("true");
 
-    await waitFor(() => expect(preview.getAttribute("data-visible")).toBe("false"), { timeout: 2000 });
+    await waitFor(() => expect(screen.getByTestId("pen-preview").getAttribute("data-visible")).toBe("false"), {
+      timeout: 2000,
+    });
+  });
+
+  it("ペン先ミニプレビューは常に先頭ボタン固定ではなく、実際に選んだペンのボタンのそばに表示される", async () => {
+    // 品質監査(2026-07-07)で発見: 以前はプレビューが常にボールペンボタンの
+    // 位置に固定表示され、他のペンを選んでも表示位置が動かなかった。かつ
+    // ツールバー1段上の行(拡大率コントロール)に被って隠れていた。
+    mockGetDocumentImpl = () => ({
+      promise: Promise.resolve({ numPages: 1, getPage: mockGetPage }),
+      destroy: vi.fn(),
+    });
+
+    render(<PdfCanvasPreview src="https://example.com/sample.pdf" title="サンプル資料" />);
+    await waitFor(() => expect(mockRender).toHaveBeenCalledTimes(1));
+
+    await act(async () => {
+      screen.getByRole("button", { name: /赤入れ$/ }).click();
+    });
+
+    await act(async () => {
+      screen.getByRole("button", { name: "鉛筆" }).click();
+    });
+
+    const pencilButton = screen.getByRole("button", { name: "鉛筆" });
+    const preview = screen.getByTestId("pen-preview");
+    // プレビューは選んだボタンの直後の兄弟要素として、そのボタンの真下に出る
+    expect(preview.previousElementSibling).toBe(pencilButton);
+    // 表示中のインスタンスは常に1つだけ(切替時に前の位置に残らない)
+    expect(screen.getAllByTestId("pen-preview")).toHaveLength(1);
+
+    await act(async () => {
+      screen.getByRole("button", { name: "ボールペン" }).click();
+    });
+
+    const ballpointButton = screen.getByRole("button", { name: "ボールペン" });
+    const movedPreview = screen.getByTestId("pen-preview");
+    expect(movedPreview.previousElementSibling).toBe(ballpointButton);
+    expect(screen.getAllByTestId("pen-preview")).toHaveLength(1);
   });
 });
