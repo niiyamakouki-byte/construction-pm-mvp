@@ -109,7 +109,7 @@ export function InstallPrompt() {
           <button
             type="button"
             onClick={handleInstall}
-            className="text-xs font-semibold text-white bg-[#1976d2] rounded-lg px-3 py-1.5"
+            className="text-xs font-semibold text-white bg-brand-600 hover:bg-brand-700 rounded-lg px-3 py-1.5"
           >
             追加
           </button>

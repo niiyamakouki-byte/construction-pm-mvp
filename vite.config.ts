@@ -14,7 +14,7 @@ export default defineConfig({
         name: "GenbaHub",
         short_name: "現場Hub",
         description: "建設現場のプロジェクト管理ツール。工程・タスク・天気・見積を一元管理。",
-        theme_color: "#1976d2",
+        theme_color: "#346538",
         background_color: "#ffffff",
         display: "standalone",
         orientation: "any",
@@ -44,21 +44,31 @@ export default defineConfig({
         ],
       },
       workbox: {
+        // Custom push / notificationclick handlers, imported into the generated SW.
+        importScripts: ["/push-sw.js"],
+        // Offline SPA deep-links fall back to the precached shell (denylist API routes).
+        navigateFallback: "index.html",
+        navigateFallbackDenylist: [/^\/api\//],
         runtimeCaching: [
           {
-            urlPattern: /^https:\/\/.*\.supabase\.co\/.*/i,
-            handler: "NetworkFirst",
+            // Recently viewed案件/工程表/ドキュメント: cached copy shows instantly, revalidated in background.
+            urlPattern: /^https:\/\/.*\.supabase\.co\/rest\/v1\/.*/i,
+            handler: "StaleWhileRevalidate",
             options: {
               cacheName: "supabase-api-cache",
-              networkTimeoutSeconds: 10,
               expiration: {
-                maxEntries: 100,
-                maxAgeSeconds: 60 * 60 * 24,
+                maxEntries: 200,
+                maxAgeSeconds: 60 * 60 * 24 * 7,
               },
               cacheableResponse: {
                 statuses: [0, 200],
               },
             },
+          },
+          {
+            // Auth/storage/realtime endpoints must always hit network.
+            urlPattern: /^https:\/\/.*\.supabase\.co\/(auth|storage|realtime)\/.*/i,
+            handler: "NetworkOnly",
           },
           {
             urlPattern: /\.(?:png|jpg|jpeg|svg|gif|webp|ico)$/i,
