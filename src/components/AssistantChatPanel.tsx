@@ -169,6 +169,24 @@ export function AssistantChatPanel({ userId = "demo-user" }: Props) {
   const resizeRef = useRef<{ startMouseX: number; startMouseY: number; startW: number; startH: number } | null>(null);
   const showFab = viewportWidth < MOBILE_BREAKPOINT;
 
+  // モバイルはFABが固定位置で浮くため、スクロール中はダッシュボードの数値等を隠さないよう半透明化する
+  // (construction_pm_mvp mobile squad 2026-07-07: 本日の入場者カード等の右端数値がFABに隠れる不具合の修正)
+  const [isScrolling, setIsScrolling] = useState(false);
+  useEffect(() => {
+    if (!showFab) return;
+    let timeoutId: ReturnType<typeof setTimeout>;
+    const onScroll = () => {
+      setIsScrolling(true);
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(() => setIsScrolling(false), 500);
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      clearTimeout(timeoutId);
+    };
+  }, [showFab]);
+
   useEffect(() => {
     const onResize = () => {
       setViewportWidth(window.innerWidth);
@@ -614,7 +632,7 @@ export function AssistantChatPanel({ userId = "demo-user" }: Props) {
             transition={{ duration: 0.2 }}
             onMouseDown={onDragStart}
             onClick={() => { setOpen(true); setUnread(0); setPos((p) => clampPanelPos(p.x, p.y, size.w, size.h)); }}
-            className="relative flex h-14 w-14 items-center justify-center rounded-full shadow-lg cursor-grab active:cursor-grabbing"
+            className={`relative flex h-14 w-14 items-center justify-center rounded-full shadow-lg cursor-grab active:cursor-grabbing transition-opacity duration-300 ${isScrolling ? "opacity-40" : "opacity-100"}`}
             style={{ background: "#7BA88A", color: "#fff" }}
             aria-label={`ラポルタ秘書を開く (${shortcutLabel})`}
             data-testid="assistant-chat-fab"

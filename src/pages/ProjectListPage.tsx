@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { BookOpen, CalendarDays } from "lucide-react";
+import { BookOpen, CalendarDays, FileText } from "lucide-react";
 import type { Project, ProjectMode, ProjectStatus, Task } from "../domain/types.js";
 import { createProjectRepository } from "../stores/project-store.js";
 import { createTaskRepository } from "../stores/task-store.js";
@@ -601,11 +601,18 @@ export function ProjectListPage() {
       ) : projects.length > 0 ? (
         <div className="grid gap-3">
           {projects.map((project) => (
-            <button
+            <div
               key={project.id}
-              type="button"
+              role="button"
+              tabIndex={0}
               onClick={() => openProjectGantt(project)}
-              className="rounded-[26px] bg-white px-4 py-4 text-left shadow-sm ring-1 ring-slate-200 transition-transform active:scale-[0.99] sm:px-5"
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  openProjectGantt(project);
+                }
+              }}
+              className="cursor-pointer rounded-[26px] bg-white px-4 py-4 text-left shadow-sm ring-1 ring-slate-200 transition-transform active:scale-[0.99] sm:px-5"
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0 flex-1">
@@ -622,17 +629,30 @@ export function ProjectListPage() {
                     <p className="mt-2 line-clamp-2 text-sm text-slate-500">{project.description}</p>
                   ) : null}
                 </div>
-                {projectMode(project) === "memo" ? (
-                  <span className="ios-btn-primary shrink-0 px-3 py-2 text-xs">
-                    <BookOpen size={13} aria-hidden="true" />
-                    {t("pages:project_list.open_record")}
-                  </span>
-                ) : (
-                  <span className="ios-btn-primary shrink-0 px-3 py-2 text-xs">
-                    <CalendarDays size={13} aria-hidden="true" />
-                    {t("pages:project_list.open_gantt")}
-                  </span>
-                )}
+                <div className="flex shrink-0 flex-col items-end gap-1.5">
+                  {projectMode(project) === "memo" ? (
+                    <span className="ios-btn-primary px-3 py-2 text-xs">
+                      <BookOpen size={13} aria-hidden="true" />
+                      {t("pages:project_list.open_record")}
+                    </span>
+                  ) : (
+                    <span className="ios-btn-primary px-3 py-2 text-xs">
+                      <CalendarDays size={13} aria-hidden="true" />
+                      {t("pages:project_list.open_gantt")}
+                    </span>
+                  )}
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      navigate(`/project/${project.id}/documents`);
+                    }}
+                    className="inline-flex shrink-0 items-center gap-1 rounded-full border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50"
+                  >
+                    <FileText size={13} aria-hidden="true" />
+                    ドキュメント
+                  </button>
+                </div>
               </div>
               <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-slate-400">
                 <span>{project.address ?? t("common:labels.unset")}</span>
@@ -648,7 +668,7 @@ export function ProjectListPage() {
                   );
                 })()}
               </div>
-            </button>
+            </div>
           ))}
         </div>
       ) : null}

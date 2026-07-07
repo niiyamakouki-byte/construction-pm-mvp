@@ -213,4 +213,25 @@ describe("ProjectListPage", () => {
     await user.click(estimateOnly);
     expect(vi.mocked(navigate)).toHaveBeenCalledWith("/estimate");
   });
+
+  // 通常案件のカードは丸ごとタップで/gantt/xxxへ直行し、ProjectDetailPage(ドキュメントタブ含む)へ
+  // 到達する導線が存在しなかった不具合の回帰テスト(construction_pm_mvp mobile squad 2026-07-07)
+  it("案件カードの「ドキュメント」ボタンから /project/xxx/documents へ遷移する（工程表へは遷移しない）", async () => {
+    const user = userEvent.setup();
+    render(<ProjectListPage />);
+
+    await screen.findByText("新規案件");
+    await user.click(screen.getByText("新規案件"));
+    await user.type(screen.getByPlaceholderText("例: 渋谷オフィスビル内装工事"), "ドキュメント導線テスト案件");
+    await user.click(screen.getByRole("button", { name: "作成" }));
+
+    await screen.findByText("ドキュメント導線テスト案件");
+    const docButton = await screen.findByRole("button", { name: "ドキュメント" });
+    await user.click(docButton);
+
+    const calls = vi.mocked(navigate).mock.calls;
+    const docCall = calls.find((c) => c[0].startsWith("/project/") && c[0].endsWith("/documents"));
+    expect(docCall).toBeDefined();
+    expect(calls.some((c) => c[0].startsWith("/gantt/"))).toBe(false);
+  });
 });
