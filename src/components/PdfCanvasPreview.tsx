@@ -78,6 +78,20 @@ export function PdfCanvasPreview({
   const [annotateColor, setAnnotateColor] = useState<string>(ANNOTATION_COLORS[0].value);
   const [annotateWidthPx, setAnnotateWidthPx] = useState<number>(ANNOTATION_WIDTHS[0].value);
   const [sharingAnnotated, setSharingAnnotated] = useState(false);
+  const [showSaved, setShowSaved] = useState(false);
+  const savedHideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleAnnotationSaved = useCallback(() => {
+    setShowSaved(true);
+    if (savedHideTimerRef.current) clearTimeout(savedHideTimerRef.current);
+    savedHideTimerRef.current = setTimeout(() => setShowSaved(false), 1400);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (savedHideTimerRef.current) clearTimeout(savedHideTimerRef.current);
+    };
+  }, []);
 
   const resolvedDocumentId = documentId ?? src;
 
@@ -390,6 +404,16 @@ export function PdfCanvasPreview({
                 取り消し
               </button>
 
+              <span
+                role="status"
+                aria-hidden={!showSaved}
+                className={`font-semibold text-brand-700 transition-all duration-300 ease-out ${
+                  showSaved ? "translate-y-0 opacity-100" : "-translate-y-1 opacity-0"
+                }`}
+              >
+                {showSaved ? "保存済み" : ""}
+              </span>
+
               <button
                 type="button"
                 onClick={() => void handleShareAnnotated()}
@@ -431,6 +455,7 @@ export function PdfCanvasPreview({
                 color={annotateColor}
                 strokeWidthPx={annotateWidthPx}
                 penKind={annotatePenKind}
+                onSaved={handleAnnotationSaved}
               />
             ) : null}
           </div>

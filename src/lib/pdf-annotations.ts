@@ -22,16 +22,12 @@ export type PdfStroke = {
   width: number;
   penKind?: PenKind;
   /**
-   * Per-point opacity (0-1), same length as `points`. Only populated for
-   * "pencil" strokes, where mark darkness follows drawing speed/pressure.
+   * Per-point pressure (0-1), same length as `points`. Fed to perfect-freehand
+   * for width tapering. Absent (or all ~0.5) on old/no-pressure-device
+   * strokes, which fall back to velocity-simulated width — see
+   * hasRealPressureSignal in pen-presets.ts.
    */
-  alphas?: number[];
-  /**
-   * Per-point line-width multiplier, same length as `points`. Only populated
-   * for "pencil" strokes — Apple Pencil tilt makes the mark wider/scratchier,
-   * mimicking graphite laid on its side.
-   */
-  widthMults?: number[];
+  pressures?: number[];
 };
 
 /** page number (1-based) -> strokes drawn on that page */
@@ -62,10 +58,9 @@ export function createStroke(
   color: string,
   width: number,
   penKind?: PenKind,
-  alphas?: number[],
-  widthMults?: number[],
+  pressures?: number[],
 ): PdfStroke {
-  return { id: crypto.randomUUID(), points, color, width, penKind, alphas, widthMults };
+  return { id: crypto.randomUUID(), points, color, width, penKind, pressures };
 }
 
 export function addStroke(data: PdfAnnotations, page: number, stroke: PdfStroke): PdfAnnotations {

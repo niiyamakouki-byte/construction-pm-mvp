@@ -31,18 +31,16 @@ describe("createStroke", () => {
     expect(a.width).toBe(0.01);
   });
 
-  it("defaults penKind/alphas/widthMults to undefined (old ballpoint-only strokes)", () => {
+  it("defaults penKind/pressures to undefined (old ballpoint-only strokes)", () => {
     const a = createStroke([{ x: 0, y: 0 }], "#D64545", 0.01);
     expect(a.penKind).toBeUndefined();
-    expect(a.alphas).toBeUndefined();
-    expect(a.widthMults).toBeUndefined();
+    expect(a.pressures).toBeUndefined();
   });
 
-  it("stores penKind, alphas, and widthMults when provided (pencil strokes)", () => {
-    const a = createStroke([{ x: 0, y: 0 }, { x: 1, y: 1 }], "#2F3437", 0.01, "pencil", [0.5, 0.7], [1, 1.4]);
+  it("stores penKind and pressures when provided (e.g. pencil strokes)", () => {
+    const a = createStroke([{ x: 0, y: 0 }, { x: 1, y: 1 }], "#2F3437", 0.01, "pencil", [0.5, 0.7]);
     expect(a.penKind).toBe("pencil");
-    expect(a.alphas).toEqual([0.5, 0.7]);
-    expect(a.widthMults).toEqual([1, 1.4]);
+    expect(a.pressures).toEqual([0.5, 0.7]);
   });
 });
 
