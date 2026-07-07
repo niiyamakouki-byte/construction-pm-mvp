@@ -109,6 +109,48 @@ describe("PdfAnnotationLayer", () => {
     restoreRect();
   });
 
+  it("描画中に別ポインタのpointerupが1本目のストローク終了を誤って早期発火させない", () => {
+    const { container } = render(
+      <PdfAnnotationLayer
+        documentId={DOC_ID}
+        pageNumber={1}
+        viewportWidth={300}
+        viewportHeight={200}
+        active
+        tool="pen"
+        color="#D64545"
+        strokeWidthPx={2}
+        penKind="ballpoint"
+      />,
+    );
+    const canvas = container.querySelector("canvas");
+    expect(canvas).not.toBeNull();
+    const restoreRect = patchCanvasRect(canvas!, 300, 200);
+
+    act(() => {
+      canvas!.dispatchEvent(pointerEvent("pointerdown", { pointerId: 1, clientX: 10, clientY: 10 }));
+      canvas!.dispatchEvent(pointerEvent("pointermove", { pointerId: 1, clientX: 40, clientY: 40 }));
+      // 1本目が描画中のまま、2本目(掌など。pointerdown自体は既存ガードで無視される)の
+      // pointerupだけが単独で届くケース(pointerId一致チェックが無いと1本目が誤って終了する)
+      canvas!.dispatchEvent(pointerEvent("pointerup", { pointerId: 2, clientX: 250, clientY: 150 }));
+      // 1本目はまだ描画継続中のはずなので、以降のmove/upで最後まで伸びる
+      canvas!.dispatchEvent(pointerEvent("pointermove", { pointerId: 1, clientX: 80, clientY: 80 }));
+      canvas!.dispatchEvent(pointerEvent("pointerup", { pointerId: 1, clientX: 80, clientY: 80 }));
+    });
+    act(() => {
+      vi.advanceTimersByTime(300);
+    });
+
+    const strokes = loadAnnotations(DOC_ID)[1] ?? [];
+    expect(strokes).toHaveLength(1);
+    const last = strokes[0]!.points[strokes[0]!.points.length - 1]!;
+    // 早期終了していれば終点は(40,40)止まりになる
+    expect(last.x).toBeCloseTo(80 / 300);
+    expect(last.y).toBeCloseTo(80 / 200);
+
+    restoreRect();
+  });
+
   it("getContextがテスト環境の最小限スタブ({}など)を返しても描画せずクラッシュしない", () => {
     const getContextSpy = vi
       .spyOn(HTMLCanvasElement.prototype, "getContext")

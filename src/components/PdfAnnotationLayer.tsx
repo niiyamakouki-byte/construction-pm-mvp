@@ -129,6 +129,10 @@ export const PdfAnnotationLayer = forwardRef<PdfAnnotationLayerHandle, Props>(fu
   const annotationsRef = useRef<PdfAnnotations>({});
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const drawingRef = useRef(false);
+  // 描画中のストロークを所有するpointerId。pointerup/cancel/moveが別ポインタ
+  // (掌や2本目の指)から届いた場合は無視し、1本目のストロークを誤って
+  // 終了・混入させない(2本目自体は単に無視するのが正しい挙動)。
+  const activePointerIdRef = useRef<number | null>(null);
   const penEverUsedRef = useRef(false);
   const samplesRef = useRef<PenSample[]>([]);
   const rafScheduledRef = useRef(false);
@@ -278,6 +282,7 @@ export const PdfAnnotationLayer = forwardRef<PdfAnnotationLayerHandle, Props>(fu
   const finishStroke = useCallback(
     (commit: boolean) => {
       drawingRef.current = false;
+      activePointerIdRef.current = null;
       const samples = samplesRef.current;
       samplesRef.current = [];
       if (!commit || samples.length < 2) {
@@ -310,6 +315,7 @@ export const PdfAnnotationLayer = forwardRef<PdfAnnotationLayerHandle, Props>(fu
       if (!pos) return;
       (e.currentTarget as HTMLCanvasElement).setPointerCapture?.(e.pointerId);
       drawingRef.current = true;
+      activePointerIdRef.current = e.pointerId;
 
       if (tool === "eraser") {
         eraseAtClient(e.clientX, e.clientY);
@@ -336,6 +342,7 @@ export const PdfAnnotationLayer = forwardRef<PdfAnnotationLayerHandle, Props>(fu
   const handlePointerMove = useCallback(
     (e: React.PointerEvent<HTMLCanvasElement>) => {
       if (!drawingRef.current) return;
+      if (e.pointerId !== activePointerIdRef.current) return;
       if (e.pointerType === "touch" && penEverUsedRef.current) return;
 
       if (tool === "eraser") {
@@ -366,6 +373,7 @@ export const PdfAnnotationLayer = forwardRef<PdfAnnotationLayerHandle, Props>(fu
 
   const handlePointerUp = useCallback(
     (e: React.PointerEvent<HTMLCanvasElement>) => {
+      if (e.pointerId !== activePointerIdRef.current) return;
       (e.currentTarget as HTMLCanvasElement).releasePointerCapture?.(e.pointerId);
       finishStroke(true);
     },
@@ -374,6 +382,7 @@ export const PdfAnnotationLayer = forwardRef<PdfAnnotationLayerHandle, Props>(fu
 
   const handlePointerCancel = useCallback(
     (e: React.PointerEvent<HTMLCanvasElement>) => {
+      if (e.pointerId !== activePointerIdRef.current) return;
       (e.currentTarget as HTMLCanvasElement).releasePointerCapture?.(e.pointerId);
       finishStroke(false);
     },
