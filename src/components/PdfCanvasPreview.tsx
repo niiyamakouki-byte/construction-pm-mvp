@@ -6,13 +6,12 @@ import type { RenderTask } from "pdfjs-dist";
 import { Eraser, PenLine, Share2, Undo2 } from "lucide-react";
 import {
   PdfAnnotationLayer,
-  computeOutline,
-  fillOutline,
   type PdfAnnotationLayerHandle,
   type PdfAnnotationTool,
   type PenKind,
 } from "./PdfAnnotationLayer.js";
 import { shareOrDownloadFile } from "../lib/share-file.js";
+import { PEN_PREVIEW_HEIGHT, PEN_PREVIEW_WIDTH, drawPenPreview } from "../lib/pen-preview.js";
 
 const ANNOTATION_COLORS = [
   { label: "赤", value: "#D64545" },
@@ -30,21 +29,6 @@ const PEN_KINDS: { label: string; value: PenKind }[] = [
   { label: "蛍光ペン", value: "highlighter" },
   { label: "太マーカー", value: "marker" },
   { label: "鉛筆", value: "pencil" },
-];
-
-// 遊び第2弾: ペン切替時のミニプレビュー。実際の描画関数(computeOutline/fillOutline)を
-// そのまま流用するので、見た目は本番の線と一致する。サンプル点とキャンバスサイズは
-// 「小さな見本を描ければ十分」なので固定値でよい(ponytail: 実サイズ反映が要るなら
-// annotateWidthPx を base に渡すよう拡張)。
-const PEN_PREVIEW_WIDTH = 48;
-const PEN_PREVIEW_HEIGHT = 20;
-const PEN_PREVIEW_BASE_STROKE_PX = 2;
-const PEN_PREVIEW_SAMPLE_POINTS = [
-  { x: 4, y: 15, pressure: 0.5 },
-  { x: 14, y: 6, pressure: 0.5 },
-  { x: 26, y: 16, pressure: 0.5 },
-  { x: 38, y: 7, pressure: 0.5 },
-  { x: 44, y: 12, pressure: 0.5 },
 ];
 
 if (!pdfjs.GlobalWorkerOptions.workerSrc) {
@@ -116,14 +100,7 @@ export function PdfCanvasPreview({
   // 本番の描画と同じcomputeOutline/fillOutlineを使うので、見た目は実際の線と一致する。
   const triggerPenPreview = useCallback(
     (kind: PenKind) => {
-      const ctx = penPreviewCanvasRef.current?.getContext("2d");
-      // テスト環境のgetContextスタブ({}など)では描画APIが無いのでスキップする
-      // (PdfAnnotationLayerのdrawLiveFrameと同じガード)。
-      if (ctx && typeof ctx.clearRect === "function" && typeof ctx.beginPath === "function") {
-        ctx.clearRect(0, 0, PEN_PREVIEW_WIDTH, PEN_PREVIEW_HEIGHT);
-        const outline = computeOutline(PEN_PREVIEW_SAMPLE_POINTS, kind, PEN_PREVIEW_BASE_STROKE_PX);
-        fillOutline(ctx, outline, annotateColor, kind, PEN_PREVIEW_WIDTH, PEN_PREVIEW_HEIGHT);
-      }
+      drawPenPreview(penPreviewCanvasRef.current, annotateColor, kind);
       setShowPenPreview(true);
       if (penPreviewHideTimerRef.current) clearTimeout(penPreviewHideTimerRef.current);
       penPreviewHideTimerRef.current = setTimeout(() => setShowPenPreview(false), 700);
