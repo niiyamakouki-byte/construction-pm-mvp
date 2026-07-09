@@ -293,8 +293,12 @@ test.describe("GenbaHub 全ページ監査", () => {
     const badTexts = await checkNoBadText(page);
     expect(badTexts, `不正テキスト検出: ${badTexts.join(", ")}`).toHaveLength(0);
 
-    // デモデータが表示されている（案件名）
-    await expect(page.locator("text=GenbaHubデモ案件")).toBeVisible({ timeout: 5000 });
+    // デモデータが表示されている（案件カード）
+    await expect(
+      page.getByRole("button").filter({
+        has: page.getByRole("heading", { name: "GenbaHubデモ案件", exact: true }),
+      }),
+    ).toBeVisible({ timeout: 5000 });
 
     // コンソールエラー記録（テスト失敗させずに記録のみ）
     console.log(`[/app] errors=${JSON.stringify(errors)}, warns=${JSON.stringify(warns)}`);
@@ -328,7 +332,12 @@ test.describe("GenbaHub 全ページ監査", () => {
     expect(badTexts, `不正テキスト検出: ${badTexts.join(", ")}`).toHaveLength(0);
 
     // タスクが表示されている
-    await expect(page.locator("text=塗装下地調整")).toBeVisible({ timeout: 5000 });
+    await expect(
+      page.getByRole("button", {
+        name: "塗装下地調整 株式会社ラポルタ 2026/6/29 - 2026/7/8 進行中 50%",
+        exact: true,
+      }),
+    ).toBeVisible({ timeout: 5000 });
 
     console.log(`[/tasks] errors=${JSON.stringify(errors)}, warns=${JSON.stringify(warns)}`);
   });
@@ -391,11 +400,11 @@ test.describe("GenbaHub 全ページ監査", () => {
 
     // 仕上表固有UI要素 — 部屋名ヘッダーか素材列名が表示されるか確認
     const finishingLocators = [
-      page.locator("text=床材"),
-      page.locator("text=仕上表"),
-      page.locator("text=部屋"),
-      page.locator("text=LDK"),
-      page.locator("text=ナチュラル系"),
+      page.getByTestId("finishing-table"),
+      page.getByRole("columnheader", { name: "床材", exact: true }),
+      page.getByRole("columnheader", { name: "部屋", exact: true }),
+      page.locator('input[value="LDK"]'),
+      page.getByTestId("template-ナチュラル系"),
     ];
     let hasFinishingContent = false;
     for (const loc of finishingLocators) {
@@ -464,7 +473,7 @@ test.describe("GenbaHub 全ページ監査", () => {
     expect(badTexts, `不正テキスト検出: ${badTexts.join(", ")}`).toHaveLength(0);
 
     // 安全管理固有UI（タブ等）
-    await expect(page.locator("text=チェックリスト")).toBeVisible({ timeout: 10000 });
+    await expect(page.getByRole("button", { name: "チェックリスト", exact: true })).toBeVisible({ timeout: 10000 });
 
     console.log(`[/safety] errors=${JSON.stringify(errors)}, warns=${JSON.stringify(warns)}`);
   });
@@ -525,7 +534,7 @@ test.describe("GenbaHub 全ページ監査", () => {
     expect(badTexts, `不正テキスト検出: ${badTexts.join(", ")}`).toHaveLength(0);
 
     // SEEDデータの協力会社が表示されている
-    await expect(page.locator("text=株式会社ラポルタ")).toBeVisible({ timeout: 5000 });
+    await expect(page.getByText("株式会社ラポルタ", { exact: true })).toBeVisible({ timeout: 5000 });
 
     console.log(`[/contractors] errors=${JSON.stringify(errors)}, warns=${JSON.stringify(warns)}`);
   });

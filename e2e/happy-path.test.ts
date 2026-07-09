@@ -18,7 +18,7 @@ test.describe("Happy Path: ログイン後 /today ダッシュボード表示", 
     await page.waitForLoadState("networkidle");
 
     // App shell visible (not login form)
-    await expect(page.locator("text=GenbaHub").first()).toBeVisible({ timeout: 10000 });
+    await expect(page.getByRole("button", { name: "案件を作成する", exact: true })).toBeVisible({ timeout: 10000 });
     await expect(page.locator("#email")).not.toBeVisible();
 
     // No uncaught JS errors
@@ -37,14 +37,8 @@ test.describe("Happy Path: ガントチャート画面遷移", () => {
     await page.waitForLoadState("networkidle");
 
     // App shell visible (not login form)
-    await expect(page.locator("text=GenbaHub").first()).toBeVisible({ timeout: 10000 });
+    await expect(page.getByRole("button", { name: "案件を登録する", exact: true })).toBeVisible({ timeout: 10000 });
     await expect(page.locator("#email")).not.toBeVisible();
-
-    // Gantt page content: either task rows or the "工程表" label is present
-    const ganttLabel = page.locator("text=工程表").first();
-    const isVisible = await ganttLabel.isVisible().catch(() => false);
-    // Accept either the gantt label or the broader app shell — page rendered without crash
-    expect(isVisible || true).toBe(true);
 
     // No uncaught JS errors
     expect(errors).toHaveLength(0);
