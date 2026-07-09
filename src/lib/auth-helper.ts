@@ -20,11 +20,15 @@ export type VerifyAuthResult =
  * テストでモックを差し込むためにこの形で受け取る。
  */
 export type SupabaseAuthVerifier = {
-  getUser: (token: string) => Promise<{
+  getUser: (token: string) => PromiseLike<{
     data: { user: { id: string; email?: string } | null };
     error: { message: string } | null;
   }>;
 };
+
+export function asSupabaseAuthVerifier(auth: unknown): SupabaseAuthVerifier {
+  return auth as SupabaseAuthVerifier;
+}
 
 type RequestHeaders = Record<string, string | string[] | undefined>;
 

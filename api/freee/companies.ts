@@ -7,6 +7,7 @@
  */
 
 import { createClient } from "@supabase/supabase-js";
+import { asSupabaseAuthVerifier } from "../../src/lib/auth-helper.js";
 import { handleFreeeRequest } from "../../src/lib/freee-api-handler.js";
 import type { StoredFreeeToken } from "../../src/lib/freee-api.js";
 
@@ -40,7 +41,7 @@ export default async function handler(req: Req, res: Res): Promise<void> {
     res,
     "companies",
     {
-      auth: supabase.auth,
+      auth: asSupabaseAuthVerifier(supabase.auth),
       async loadToken(userId) {
         const { data } = await supabase
           .from("freee_tokens")

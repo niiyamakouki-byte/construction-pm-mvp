@@ -23,6 +23,7 @@ import {
   type InvoiceOcrRequest,
   type InvoiceOcrResponse,
 } from "../src/lib/invoice-ocr-handler.js";
+import { asSupabaseAuthVerifier } from "../src/lib/auth-helper.js";
 import { createSupabaseRateLimitStore } from "../src/lib/rate-limiter.js";
 
 export default async function handler(
@@ -44,7 +45,7 @@ export default async function handler(
   });
 
   await handleInvoiceOcr(req, res, {
-    auth: supabase.auth,
+    auth: asSupabaseAuthVerifier(supabase.auth),
     rateLimitStore: createSupabaseRateLimitStore(supabase),
   });
 }

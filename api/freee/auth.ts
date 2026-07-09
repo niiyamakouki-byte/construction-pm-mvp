@@ -16,7 +16,10 @@
  */
 
 import { createClient } from "@supabase/supabase-js";
-import { verifyBearerAuth } from "../../src/lib/auth-helper.js";
+import {
+  asSupabaseAuthVerifier,
+  verifyBearerAuth,
+} from "../../src/lib/auth-helper.js";
 import { buildConsentRedirect } from "../../src/lib/freee-oauth-handler.js";
 
 type VercelRequest = {
@@ -65,7 +68,10 @@ export default async function handler(
     auth: { persistSession: false, autoRefreshToken: false },
   });
 
-  const authResult = await verifyBearerAuth(supabase.auth, req.headers);
+  const authResult = await verifyBearerAuth(
+    asSupabaseAuthVerifier(supabase.auth),
+    req.headers,
+  );
   if (!authResult.ok) {
     res.status(authResult.status).json({ error: authResult.error });
     return;

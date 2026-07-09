@@ -21,6 +21,7 @@ import {
   createCheckoutSession,
   type CheckoutPlanId,
 } from "../src/lib/checkout-session.js";
+import { asSupabaseAuthVerifier } from "../src/lib/auth-helper.js";
 
 type VercelRequest = {
   method?: string;
@@ -115,7 +116,8 @@ export default async function handler(
     auth: { persistSession: false, autoRefreshToken: false },
   });
 
-  const { data: userData, error: userErr } = await supabase.auth.getUser(token);
+  const auth = asSupabaseAuthVerifier(supabase.auth);
+  const { data: userData, error: userErr } = await auth.getUser(token);
   if (userErr || !userData?.user) {
     res.status(401).json({ error: "認証トークンが無効です" });
     return;

@@ -12,7 +12,10 @@
  */
 
 import { createClient } from "@supabase/supabase-js";
-import { verifyBearerAuth } from "../../src/lib/auth-helper.js";
+import {
+  asSupabaseAuthVerifier,
+  verifyBearerAuth,
+} from "../../src/lib/auth-helper.js";
 import { FreeeApi, type StoredFreeeToken, type TokenStore } from "../../src/lib/freee-api.js";
 
 type Req = {
@@ -60,7 +63,10 @@ export default async function handler(req: Req, res: Res): Promise<void> {
     auth: { persistSession: false, autoRefreshToken: false },
   });
 
-  const authResult = await verifyBearerAuth(supabase.auth, req.headers);
+  const authResult = await verifyBearerAuth(
+    asSupabaseAuthVerifier(supabase.auth),
+    req.headers,
+  );
   if (!authResult.ok) {
     res.status(authResult.status).json({ error: authResult.error });
     return;

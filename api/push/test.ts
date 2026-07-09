@@ -11,6 +11,7 @@
  * 必要な環境変数: VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, VAPID_SUBJECT
  */
 import { createClient } from "@supabase/supabase-js";
+import { asSupabaseAuthVerifier } from "../../src/lib/auth-helper.js";
 import webpush from "web-push";
 
 type VercelRequest = {
@@ -22,6 +23,12 @@ type VercelResponse = {
   status: (code: number) => VercelResponse;
   json: (body: unknown) => void;
   setHeader: (name: string, value: string) => void;
+};
+
+type PushSubscriptionRow = {
+  endpoint: string;
+  p256dh: string;
+  auth: string;
 };
 
 function extractBearer(req: VercelRequest): string | null {
@@ -71,7 +78,8 @@ export default async function handler(
     auth: { persistSession: false, autoRefreshToken: false },
   });
 
-  const { data: userData, error: userErr } = await supabase.auth.getUser(token);
+  const auth = asSupabaseAuthVerifier(supabase.auth);
+  const { data: userData, error: userErr } = await auth.getUser(token);
   if (userErr || !userData?.user) {
     res.status(401).json({ error: "認証トークンが無効です" });
     return;
@@ -87,7 +95,8 @@ export default async function handler(
     res.status(500).json({ error: `購読の取得に失敗しました: ${subsErr.message}` });
     return;
   }
-  if (!subs || subs.length === 0) {
+  const subscriptions = (subs ?? []) as PushSubscriptionRow[];
+  if (subscriptions.length === 0) {
     res.status(404).json({ error: "この端末の購読が見つかりません。先に通知を有効化してください。" });
     return;
   }
@@ -104,7 +113,7 @@ export default async function handler(
   let sent = 0;
   const staleEndpoints: string[] = [];
   await Promise.all(
-    subs.map(async (s) => {
+    subscriptions.map(async (s) => {
       try {
         await webpush.sendNotification(
           { endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } },
