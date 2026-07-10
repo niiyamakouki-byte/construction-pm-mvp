@@ -1,6 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": "pnpm run build",
+  "buildCommand": "if [ \"$VERCEL_ENV\" = \"preview\" ]; then rm -rf api/chat; fi && pnpm run build",
   "devCommand": "pnpm run dev",
   "installCommand": "rm -rf node_modules && pnpm install --frozen-lockfile",
   "redirects": [
