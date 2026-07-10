@@ -47,7 +47,7 @@ describe("ensureFirstRunProject", () => {
 
     expect(result.created).toBe(true);
     expect((await projectRepository.findAll())).toHaveLength(1);
-    expect((await taskRepository.findAll())).toHaveLength(5);
+    expect((await taskRepository.findAll())).toHaveLength(6);
     expect(localStorage.setItem).toHaveBeenCalledWith("genbahub:last-project-id", result.projectId);
   });
 

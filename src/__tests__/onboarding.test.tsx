@@ -141,7 +141,7 @@ describe("OnboardingWizard", () => {
 
     const { navigate } = await import("../hooks/useHashRouter.js");
     expect(mockProjectCreate).toHaveBeenCalledOnce();
-    expect(mockTaskCreate).toHaveBeenCalledTimes(5);
+    expect(mockTaskCreate).toHaveBeenCalledTimes(6);
     expect(onComplete).toHaveBeenCalledOnce();
     expect(vi.mocked(navigate).mock.calls[0]?.[0]).toMatch(/^\/gantt\//);
   });
