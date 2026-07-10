@@ -9,7 +9,7 @@ function yen(n: number): string {
 /**
  * jsPDF インスタンスに日本語フォントを設定する。
  * ビルド時にバンドルされたサブセットフォントを使用するため、CDN不要・オフライン動作可。
- * 収録文字: ASCII + ひらがな + カタカナ + 建設業務頻出漢字（約642文字）
+ * 収録文字: 詳細は noto-sans-jp-font.ts のヘッダコメント参照（約3074文字、単位記号/丸数字含む）
  */
 async function setupJapaneseFont(doc: jsPDF): Promise<void> {
   const { NOTO_SANS_JP_REGULAR_BASE64 } = await import("./noto-sans-jp-font.js");
