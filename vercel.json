@@ -3,6 +3,23 @@
   "buildCommand": "pnpm run build",
   "devCommand": "pnpm run dev",
   "installCommand": "pnpm install",
+  "redirects": [
+    {
+      "source": "/pricing",
+      "destination": "/#/pricing",
+      "statusCode": 301
+    },
+    {
+      "source": "/landing",
+      "destination": "/#/landing",
+      "statusCode": 301
+    },
+    {
+      "source": "/legal",
+      "destination": "/#/legal",
+      "statusCode": 301
+    }
+  ],
   "crons": [
     {
       "path": "/api/cron/supabase-keepalive",
