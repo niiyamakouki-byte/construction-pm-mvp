@@ -255,10 +255,12 @@ export function CardBoardChart({ tasks, onMove, onConnect, onDisconnect }: CardB
                 </foreignObject>
 
                 <foreignObject x="10" y="46" width={CARD_W - 20} height="18" pointerEvents="none">
-                  <div style={{ fontSize: "10px", color: "#94a3b8" }}>
-                    {task.description || " "}
+                  <div style={{ fontSize: "10px", color: "#94a3b8", display: "flex", alignItems: "center", overflow: "hidden" }}>
+                    <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", minWidth: 0 }}>
+                      {task.description || " "}
+                    </span>
                     {task.leadTimeDays != null && (
-                      <span style={{ marginLeft: 6, color: "#facc15" }}>{task.leadTimeDays}日</span>
+                      <span style={{ marginLeft: 6, color: "#facc15", flexShrink: 0 }}>{task.leadTimeDays}日</span>
                     )}
                   </div>
                 </foreignObject>

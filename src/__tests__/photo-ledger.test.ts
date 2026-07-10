@@ -201,6 +201,16 @@ describe("写真キャプション", () => {
     const html = buildPhotoLedgerHtml({ cover: baseCover, entries: [entry] });
     expect(html).toContain("photo-cell");
   });
+
+  // 文字ズレ総点検(2026-07-10): .caption-value は .caption-row (display:flex) の
+  // 子要素で text-overflow:ellipsis を指定していたが、フレックス子のデフォルト
+  // min-width:auto のため縮小されず、長い工種名が隣のセルに重なってはみ出す
+  // 不具合があった。min-width:0 が無いと ellipsis は効かない。
+  it("caption-value に min-width:0 が指定されている（flex内でellipsisを効かせるため）", () => {
+    const html = buildPhotoLedgerHtml({ cover: baseCover, entries: [makeEntry()] });
+    const captionValueRule = /\.caption-value\s*{[^}]*}/.exec(html)?.[0] ?? "";
+    expect(captionValueRule).toMatch(/min-width:\s*0/);
+  });
 });
 
 // ── メタデータ ────────────────────────────────────────────────────────────

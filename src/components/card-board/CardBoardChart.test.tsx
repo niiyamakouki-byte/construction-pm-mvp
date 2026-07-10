@@ -93,4 +93,19 @@ describe("CardBoardChart", () => {
     expect(onDisconnect).not.toHaveBeenCalled();
     confirmSpy.mockRestore();
   });
+
+  // 文字ズレ総点検(2026-07-10): 長い description が overflow:hidden 無しで
+  // 全文表示され、下の「未着手」ステータス行と重なる不具合があった。
+  // ellipsis 表示にはフレックス子要素の min-width:0 が必須（無いと text-overflow が効かない）。
+  it("truncates a long description with ellipsis instead of overflowing onto the status line", () => {
+    const longDesc = "天井軽鉄下地組みと壁下地の耐火間仕切り施工、防音対策のロックウール充填を含む長文の作業内容説明テキストです";
+    const tasks = [makeTask({ id: "a", description: longDesc })];
+    render(<CardBoardChart tasks={tasks} onMove={vi.fn()} onConnect={vi.fn()} onDisconnect={vi.fn()} />);
+
+    const descSpan = screen.getByText(longDesc);
+    expect(descSpan.style.overflow).toBe("hidden");
+    expect(descSpan.style.textOverflow).toBe("ellipsis");
+    expect(descSpan.style.whiteSpace).toBe("nowrap");
+    expect(descSpan.style.minWidth).toBe("0px");
+  });
 });

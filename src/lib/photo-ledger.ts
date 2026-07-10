@@ -285,6 +285,7 @@ const LEDGER_STYLES = `
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    min-width: 0;
   }
   .photo-placeholder {
     display: flex;
