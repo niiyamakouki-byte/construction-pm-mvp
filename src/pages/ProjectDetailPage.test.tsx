@@ -365,6 +365,7 @@ describe("ProjectDetailPage", () => {
     expect(textarea.value).toBe("・テスト用ルール");
 
     await user.clear(textarea);
+    await waitFor(() => expect(textarea.value).toBe(""));
     await user.type(textarea, "・独自の注意事項");
     await user.click(screen.getByRole("button", { name: "保存" }));
 
