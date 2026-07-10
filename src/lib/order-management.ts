@@ -181,7 +181,7 @@ export function getDeliveryCheck(orderId: string): DeliveryCheck | undefined {
 export function buildPdfData(
   orderId: string,
   issuerName = "株式会社ラポルタ",
-  issuerAddress = "東京都港区南青山",
+  issuerAddress = "東京都世田谷区給田5-12-12",
 ): PurchaseOrderPdfData {
   const order = orders.get(orderId);
   if (!order) throw new Error(`Order not found: ${orderId}`);

@@ -209,7 +209,7 @@ export async function generateEstimatePdf(estimate: Estimate): Promise<Blob> {
 
   doc.setFontSize(9);
   doc.text("株式会社ラポルタ", marginL, footerY + 4);
-  doc.text("〒107-0062 東京都港区南青山3丁目", marginL, footerY + 9);
+  doc.text("〒157-0064 東京都世田谷区給田5-12-12", marginL, footerY + 9);
   doc.text("担当: ", marginL, footerY + 14);
 
   // 角印エリア（右下）
