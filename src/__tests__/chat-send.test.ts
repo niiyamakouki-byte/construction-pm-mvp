@@ -89,7 +89,7 @@ describe("api/chat/send", () => {
   });
 
   async function importHandler() {
-    const mod = await import("../../api/chat/send.js");
+    const mod = await import("../vercel-handlers/chat/send.js");
     return mod.default;
   }
 

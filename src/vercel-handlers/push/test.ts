@@ -11,7 +11,7 @@
  * 必要な環境変数: VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, VAPID_SUBJECT
  */
 import { createClient } from "@supabase/supabase-js";
-import { asSupabaseAuthVerifier } from "../../src/lib/auth-helper.js";
+import { asSupabaseAuthVerifier } from "../../lib/auth-helper.js";
 import webpush from "web-push";
 
 type VercelRequest = {

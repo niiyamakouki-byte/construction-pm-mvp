@@ -12,7 +12,7 @@
  *   { subscription: PushSubscriptionJSON, userAgent?: string }
  */
 import { createClient } from "@supabase/supabase-js";
-import { asSupabaseAuthVerifier } from "../../src/lib/auth-helper.js";
+import { asSupabaseAuthVerifier } from "../../lib/auth-helper.js";
 
 type VercelRequest = {
   method?: string;
