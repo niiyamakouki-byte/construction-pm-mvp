@@ -39,6 +39,7 @@
     "freee": "freee連携エラー",
     "tasks": "タスク一覧エラー",
     "node_schedule": "ノードビューエラー",
+    "card_board": "工程カードビューエラー",
     "invoice": "請求書OCRエラー",
     "cost": "コスト管理エラー",
     "invoice_management": "請求書管理エラー",

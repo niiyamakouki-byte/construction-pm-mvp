@@ -12,6 +12,7 @@ const TodayDashboardPage = lazy(() => import("./pages/TodayDashboardPage.js").th
 const ProjectDetailPage = lazy(() => import("./pages/ProjectDetailPage.js").then((m) => ({ default: m.ProjectDetailPage })));
 const GanttPage = lazy(() => import("./pages/GanttPage.js").then((m) => ({ default: m.GanttPage })));
 const NodeSchedulePage = lazy(() => import("./pages/NodeSchedulePage.js").then((m) => ({ default: m.NodeSchedulePage })));
+const CardBoardPage = lazy(() => import("./pages/CardBoardPage.js").then((m) => ({ default: m.CardBoardPage })));
 const InvoicePage = lazy(() => import("./pages/InvoicePage.js").then((m) => ({ default: m.InvoicePage })));
 const EstimatePage = lazy(() => import("./pages/EstimatePage.js").then((m) => ({ default: m.EstimatePage })));
 const ContractorsPage = lazy(() => import("./pages/ContractorsPage.js").then((m) => ({ default: m.ContractorsPage })));
@@ -269,7 +270,7 @@ function AppShell() {
       icon: "more",
       path: "/notifications",
       matchRoute: (currentRoute) =>
-        ["/today", "/invoice", "/estimate", "/takeoff", "/contractors", "/notifications", "/help", "/node-schedule", "/cost-management", "/weather", "/safety", "/procurement", "/orders", "/crm", "/reports", "/invoices", "/invoices/reconcile", "/cross-project-gantt", "/progress-review", "/photos", "/freee", "/finishing", "/schedule", "/phase-templates"].includes(currentRoute) || currentRoute.startsWith("/reports/") || currentRoute.startsWith("/freee?") || currentRoute.startsWith("/finishing") || currentRoute.startsWith("/estimate?"),
+        ["/today", "/invoice", "/estimate", "/takeoff", "/contractors", "/notifications", "/help", "/node-schedule", "/cards", "/cost-management", "/weather", "/safety", "/procurement", "/orders", "/crm", "/reports", "/invoices", "/invoices/reconcile", "/cross-project-gantt", "/progress-review", "/photos", "/freee", "/finishing", "/schedule", "/phase-templates"].includes(currentRoute) || currentRoute.startsWith("/reports/") || currentRoute.startsWith("/freee?") || currentRoute.startsWith("/finishing") || currentRoute.startsWith("/estimate?") || currentRoute.startsWith("/cards/"),
     },
   ];
 
@@ -354,6 +355,13 @@ function AppShell() {
       matchRoute: (currentRoute) => currentRoute === "/node-schedule",
     },
     {
+      key: "cards",
+      label: t("common:nav.cards"),
+      icon: "cards",
+      path: "/cards",
+      matchRoute: (currentRoute) => currentRoute === "/cards" || currentRoute.startsWith("/cards/"),
+    },
+    {
       key: "reports",
       label: t("common:nav.reports"),
       icon: "reports",
@@ -403,6 +411,7 @@ function AppShell() {
   const legalMatch = route.match(/^\/legal(?:#(.+))?$/);
   const projectDetailMatch = route.match(/^\/project\/([^/]+)(?:\/(.+))?$/);
   const ganttMatch = route.match(/^\/gantt(?:\/([^?]+))?/);
+  const cardBoardMatch = route.match(/^\/cards(?:\/([^?]+))?/);
   const entryMatch = route.match(/^\/entry\/(.+)$/);
   const historyMatch = route.match(/^\/attendance-history\/(.+)$/);
   const reportsMatch = route.match(/^\/reports(?:\/(.+))?$/);
@@ -420,6 +429,7 @@ function AppShell() {
   const ganttProjectId = ganttMatch?.[1] ? decodeURIComponent(ganttMatch[1]) : null;
   // Extract openMaster flag from hash query string: /#/gantt/xxx?openMaster=1
   const ganttOpenMaster = ganttMatch ? /[?&]openMaster=1/.test(window.location.hash) : false;
+  const cardBoardProjectId = cardBoardMatch?.[1] ? decodeURIComponent(cardBoardMatch[1]) : null;
   const entryProjectId = entryMatch?.[1] ? decodeURIComponent(entryMatch[1]) : null;
   const historyProjectId = historyMatch?.[1] ? decodeURIComponent(historyMatch[1]) : null;
   const reportsProjectId = reportsMatch?.[1] ? decodeURIComponent(reportsMatch[1]) : undefined;
@@ -689,6 +699,13 @@ function AppShell() {
     }
     if (ganttMatch) {
       return <GanttPage initialProjectId={ganttProjectId} openMaster={ganttOpenMaster} />;
+    }
+    if (cardBoardMatch) {
+      return (
+        <ErrorBoundary fallbackTitle={t("errors:page_error.card_board")}>
+          <CardBoardPage initialProjectId={cardBoardProjectId} />
+        </ErrorBoundary>
+      );
     }
     if (route === "/resource-analysis") {
       return <ResourceAnalysisPage />;
