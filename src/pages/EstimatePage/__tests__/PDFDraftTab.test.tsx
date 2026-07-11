@@ -67,6 +67,7 @@ describe("PDFDraftTab", () => {
     // 税抜合計が表示される
     expect(screen.getByTestId("total-excl-tax")).toBeDefined();
     expect(screen.getByTestId("total-incl-tax")).toBeDefined();
+    expect(screen.getAllByText("PDF読取").length).toBeGreaterThan(0);
   });
 
   it("エラー系: 不正な JSON ファイルでエラーメッセージが表示される", async () => {
