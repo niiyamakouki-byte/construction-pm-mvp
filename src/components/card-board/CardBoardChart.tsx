@@ -290,6 +290,15 @@ export function CardBoardChart({ tasks, onMove, onConnect, onDisconnect }: CardB
                   data-testid={`port-in-${task.id}`}
                   onMouseUp={(e) => handleCardDrop(e, task.id)}
                 />
+                {/* ponytail: transparent hit-area extends tap target to 44px (r=22) */}
+                <circle
+                  cx={0}
+                  cy={CARD_H / 2}
+                  r={22}
+                  fill="transparent"
+                  className="cursor-crosshair"
+                  onMouseUp={(e) => handleCardDrop(e, task.id)}
+                />
                 <circle
                   cx={CARD_W}
                   cy={CARD_H / 2}
@@ -299,6 +308,15 @@ export function CardBoardChart({ tasks, onMove, onConnect, onDisconnect }: CardB
                   strokeWidth="1.5"
                   className="cursor-crosshair"
                   data-testid={`port-out-${task.id}`}
+                  onMouseDown={(e) => handlePortMouseDown(e, task.id)}
+                />
+                {/* ponytail: transparent hit-area extends tap target to 44px (r=22) */}
+                <circle
+                  cx={CARD_W}
+                  cy={CARD_H / 2}
+                  r={22}
+                  fill="transparent"
+                  className="cursor-crosshair"
                   onMouseDown={(e) => handlePortMouseDown(e, task.id)}
                 />
               </g>

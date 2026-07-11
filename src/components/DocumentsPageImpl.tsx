@@ -565,15 +565,26 @@ export function DocumentsPage({ projectId }: { projectId: string }) {
                 <h2 className="text-base font-bold text-slate-900">ドキュメント検索</h2>
                 <p className="text-sm text-slate-500">名前で横断検索し、種別ごとに確認できます。</p>
               </div>
-              <label className="w-full sm:max-w-xs">
+              <label className="relative w-full sm:max-w-xs">
                 <span className="sr-only">ドキュメント検索</span>
                 <input
                   type="search"
                   value={searchQuery}
                   onChange={(event) => setSearchQuery(event.target.value)}
                   placeholder="ドキュメント名で検索"
-                  className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
+                  className="w-full rounded-xl border border-slate-300 py-2 pl-3 pr-11 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
                 />
+                {searchQuery && (
+                  /* ponytail: min-w/h 44px tap target for search clear */
+                  <button
+                    type="button"
+                    onClick={() => setSearchQuery("")}
+                    aria-label="検索をクリア"
+                    className="absolute inset-y-0 right-0 flex min-w-[44px] items-center justify-center text-slate-400 hover:text-slate-600"
+                  >
+                    &times;
+                  </button>
+                )}
               </label>
             </div>
           </section>
