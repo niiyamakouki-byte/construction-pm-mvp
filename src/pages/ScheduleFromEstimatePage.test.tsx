@@ -125,40 +125,58 @@ describe("ScheduleFromEstimatePage — タスク行", () => {
 // ── ステータス切替 ────────────────────────────────────────────────────────────
 
 describe("ScheduleFromEstimatePage — ステータス切替", () => {
-  it("ステータスボタンをクリックすると「進行中」になる", () => {
+  // 新UI: バッジタップ → ピッカー表示 → ステータス選択
+  function openPickerAndSelect(row: HTMLElement, status: "todo" | "in_progress" | "done") {
+    const btn = row.querySelector("[data-testid^='status-btn-']") as HTMLButtonElement;
+    fireEvent.click(btn); // ピッカーを開く
+    const pick = row.querySelector(`[data-testid='status-pick-${status}']`) as HTMLButtonElement;
+    fireEvent.click(pick); // ステータスを選択
+    return btn;
+  }
+
+  it("ピッカーから「進行中」を選ぶと状態が変わる", () => {
     renderPage({ initialLines: [line({ name: "解体工事", code: "DIS-001" })] });
     const rows = screen.getAllByTestId("task-row");
-    const btn = rows[0].querySelector("[data-testid^='status-btn-']") as HTMLButtonElement;
-    fireEvent.click(btn);
+    const btn = openPickerAndSelect(rows[0], "in_progress");
     expect(btn.textContent).toBe("進行中");
   });
 
-  it("「進行中」を再クリックすると「完了」になる", () => {
+  it("ピッカーから「完了」を選ぶと状態が変わる", () => {
     renderPage({ initialLines: [line({ name: "解体工事", code: "DIS-001" })] });
     const rows = screen.getAllByTestId("task-row");
-    const btn = rows[0].querySelector("[data-testid^='status-btn-']") as HTMLButtonElement;
-    fireEvent.click(btn); // → 進行中
-    fireEvent.click(btn); // → 完了
+    openPickerAndSelect(rows[0], "in_progress");
+    const btn = openPickerAndSelect(rows[0], "done");
     expect(btn.textContent).toBe("完了");
   });
 
-  it("「完了」を再クリックすると「未着手」に戻る", () => {
+  it("ピッカーから「未着手」を選ぶと状態が戻る", () => {
     renderPage({ initialLines: [line({ name: "解体工事", code: "DIS-001" })] });
     const rows = screen.getAllByTestId("task-row");
-    const btn = rows[0].querySelector("[data-testid^='status-btn-']") as HTMLButtonElement;
-    fireEvent.click(btn); // → 進行中
-    fireEvent.click(btn); // → 完了
-    fireEvent.click(btn); // → 未着手
+    openPickerAndSelect(rows[0], "done");
+    const btn = openPickerAndSelect(rows[0], "todo");
     expect(btn.textContent).toBe("未着手");
   });
 
   it("1件完了にすると完了カウントが更新される", () => {
     renderPage();
     const rows = screen.getAllByTestId("task-row");
-    const btn = rows[0].querySelector("[data-testid^='status-btn-']") as HTMLButtonElement;
-    fireEvent.click(btn); // → 進行中
-    fireEvent.click(btn); // → 完了
+    openPickerAndSelect(rows[0], "done");
     expect(screen.getByText(/1\/2完了/)).toBeDefined();
+  });
+
+  it("ステータス変更後にUndoトーストが表示される", () => {
+    renderPage({ initialLines: [line({ name: "解体工事", code: "DIS-001" })] });
+    const rows = screen.getAllByTestId("task-row");
+    openPickerAndSelect(rows[0], "in_progress");
+    expect(screen.getByTestId("undo-toast")).toBeDefined();
+  });
+
+  it("Undoボタンを押すと変更が元に戻る", () => {
+    renderPage({ initialLines: [line({ name: "解体工事", code: "DIS-001" })] });
+    const rows = screen.getAllByTestId("task-row");
+    const btn = openPickerAndSelect(rows[0], "in_progress");
+    fireEvent.click(screen.getByTestId("undo-btn"));
+    expect(btn.textContent).toBe("未着手");
   });
 });
 

@@ -212,14 +212,12 @@ function TaskRow({
   onAssigneeChange: (id: string, assigneeId: string | undefined) => void;
   onDependsOnChange: (id: string, dependsOn: string[]) => void;
 }) {
-  const cycleStatus = useCallback(() => {
-    const next: Record<ProjectTask["status"], ProjectTask["status"]> = {
-      todo: "in_progress",
-      in_progress: "done",
-      done: "todo",
-    };
-    onStatusChange(task.id, next[task.status]);
-  }, [task.id, task.status, onStatusChange]);
+  const [showPicker, setShowPicker] = useState(false);
+
+  const handlePickStatus = useCallback((s: ProjectTask["status"]) => {
+    onStatusChange(task.id, s);
+    setShowPicker(false);
+  }, [task.id, onStatusChange]);
 
   const dependencyOptions = useMemo(
     () => allTasks.filter((candidate) => candidate.orderIndex < task.orderIndex),
@@ -241,15 +239,32 @@ function TaskRow({
                 <p className="mt-0.5 text-xs text-slate-400 leading-tight">{task.note}</p>
               )}
             </div>
-            <button
-              type="button"
-              data-testid={`status-btn-${task.id}`}
-              disabled={disabled}
-              onClick={cycleStatus}
-              className={`shrink-0 inline-block rounded-full px-3 py-1 text-xs font-medium transition-colors duration-[150ms] disabled:opacity-60 ${STATUS_CLASS[task.status]}`}
-            >
-              {STATUS_LABEL[task.status]}
-            </button>
+            <div className="shrink-0">
+              <button
+                type="button"
+                data-testid={`status-btn-${task.id}`}
+                disabled={disabled}
+                onClick={() => setShowPicker((v) => !v)}
+                className={`inline-block rounded-full px-3 py-1 text-xs font-medium transition-colors duration-[150ms] disabled:opacity-60 ${STATUS_CLASS[task.status]}`}
+              >
+                {STATUS_LABEL[task.status]}
+              </button>
+              {showPicker && !disabled && (
+                <div className="mt-1 flex gap-1">
+                  {(["todo", "in_progress", "done"] as const).map((s) => (
+                    <button
+                      key={s}
+                      type="button"
+                      data-testid={`status-pick-${s}`}
+                      onClick={() => handlePickStatus(s)}
+                      className={`rounded-full px-2 py-0.5 text-xs font-medium transition-colors ${STATUS_CLASS[s]} ${task.status === s ? "ring-1 ring-current ring-offset-1" : "opacity-70 hover:opacity-100"}`}
+                    >
+                      {STATUS_LABEL[s]}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
           <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-500">
             <span><span className="font-medium text-slate-600">開始</span> {task.startDate}</span>
@@ -346,11 +361,26 @@ function TaskRow({
           type="button"
           data-testid={`status-btn-${task.id}`}
           disabled={disabled}
-          onClick={cycleStatus}
+          onClick={() => setShowPicker((v) => !v)}
           className={`inline-block rounded-full px-3 py-1 text-xs font-medium transition-colors duration-[150ms] disabled:opacity-60 ${STATUS_CLASS[task.status]}`}
         >
           {STATUS_LABEL[task.status]}
         </button>
+        {showPicker && !disabled && (
+          <div className="mt-1 flex flex-col gap-1">
+            {(["todo", "in_progress", "done"] as const).map((s) => (
+              <button
+                key={s}
+                type="button"
+                data-testid={`status-pick-${s}`}
+                onClick={() => handlePickStatus(s)}
+                className={`rounded-full px-2 py-0.5 text-xs font-medium transition-colors ${STATUS_CLASS[s]} ${task.status === s ? "ring-1 ring-current ring-offset-1" : "opacity-70 hover:opacity-100"}`}
+              >
+                {STATUS_LABEL[s]}
+              </button>
+            ))}
+          </div>
+        )}
       </td>
     </tr>
   );
@@ -406,6 +436,9 @@ export function ScheduleFromEstimatePage({
   const [loadingTasks, setLoadingTasks] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [undoVisible, setUndoVisible] = useState(false);
+  const undoRef = useRef<{ previousEdits: Record<string, ScheduleTaskEdit>; nextEdits: Record<string, ScheduleTaskEdit> } | null>(null);
+  const undoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const loadedTasksProjectIdRef = useRef<string | null>(null);
 
   const resolvedProjectId = useMemo(
@@ -634,20 +667,53 @@ export function ScheduleFromEstimatePage({
     };
   }, [persistSchedule, persistenceEnabled, resolvedProjectId, taskStore, taskStoreProp]);
 
+  // タイマークリーンアップ
+  useEffect(() => () => {
+    if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
+  }, []);
+
   const handleStatusChange = useCallback((id: string, status: ProjectTask["status"]) => {
+    // 前の Undo が残っていたら即座に確定保存
+    if (undoTimerRef.current) {
+      clearTimeout(undoTimerRef.current);
+      undoTimerRef.current = null;
+      if (undoRef.current) {
+        void persistSchedule(undoRef.current.nextEdits, {
+          rollback: () => setTaskEdits(undoRef.current!.previousEdits),
+        });
+      }
+    }
+
     const previousTaskEdits = taskEdits;
-    const nextTaskEdits = {
-      ...taskEdits,
-      [id]: {
-        ...taskEdits[id],
-        status,
-      },
-    };
+    const nextTaskEdits = { ...taskEdits, [id]: { ...taskEdits[id], status } };
     setTaskEdits(nextTaskEdits);
-    void persistSchedule(nextTaskEdits, {
-      rollback: () => setTaskEdits(previousTaskEdits),
-    });
+    undoRef.current = { previousEdits: previousTaskEdits, nextEdits: nextTaskEdits };
+    setUndoVisible(true);
+
+    undoTimerRef.current = setTimeout(() => {
+      undoTimerRef.current = null;
+      const saved = undoRef.current;
+      undoRef.current = null;
+      setUndoVisible(false);
+      if (saved) {
+        void persistSchedule(saved.nextEdits, {
+          rollback: () => setTaskEdits(saved.previousEdits),
+        });
+      }
+    }, 5000);
   }, [persistSchedule, taskEdits]);
+
+  const handleUndo = useCallback(() => {
+    if (undoTimerRef.current) {
+      clearTimeout(undoTimerRef.current);
+      undoTimerRef.current = null;
+    }
+    if (undoRef.current) {
+      setTaskEdits(undoRef.current.previousEdits);
+      undoRef.current = null;
+    }
+    setUndoVisible(false);
+  }, []);
 
   const handleAssigneeChange = useCallback((id: string, assigneeId: string | undefined) => {
     const previousTaskEdits = taskEdits;
@@ -837,6 +903,26 @@ export function ScheduleFromEstimatePage({
           </section>
         ))}
       </div>
+
+      {/* Undo トースト（5秒間表示） */}
+      {undoVisible && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="fixed bottom-20 left-1/2 z-50 flex -translate-x-1/2 items-center gap-3 rounded-full bg-slate-800 px-4 py-2.5 text-sm text-white shadow-lg"
+          data-testid="undo-toast"
+        >
+          <span>ステータスを変更しました</span>
+          <button
+            type="button"
+            onClick={handleUndo}
+            className="font-semibold text-[#7BA88A] hover:text-[#5E8A6C] transition-colors"
+            data-testid="undo-btn"
+          >
+            元に戻す
+          </button>
+        </div>
+      )}
     </div>
   );
 }
