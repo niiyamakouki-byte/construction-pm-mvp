@@ -128,7 +128,7 @@ export function TaskEditModal({
                 />
               </label>
               <label className="flex flex-col gap-1.5">
-                <span className="text-sm font-medium text-slate-600">協力会社</span>
+                <span className="text-sm font-medium text-slate-600">業者</span>
                 <select
                   value={taskDetail.editContractorId}
                   onChange={(event) => onChange((detail) => ({ ...detail, editContractorId: event.target.value }))}

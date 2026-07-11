@@ -217,7 +217,7 @@ export function GanttChart({
             <p className="text-[11px] font-semibold tracking-[0.18em] text-slate-500">工程</p>
             <div className="mt-2 grid gap-1 text-xs text-slate-500">
               <span>工程名</span>
-              <span>協力会社</span>
+              <span>業者</span>
               <span>進捗</span>
             </div>
           </div>

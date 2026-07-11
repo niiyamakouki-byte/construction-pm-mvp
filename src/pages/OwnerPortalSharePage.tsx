@@ -90,7 +90,7 @@ function PasswordForm({
       <div className="w-full max-w-sm rounded-2xl border border-slate-100 bg-white p-8 shadow-sm">
         <h1 className="mb-1 text-lg font-bold text-slate-800">パスワードを入力</h1>
         <p className="mb-6 text-xs text-slate-400">
-          プロジェクト ID: <span className="font-mono">{projectId}</span>
+          案件ID: <span className="font-mono">{projectId}</span>
         </p>
         <form onSubmit={handleSubmit} className="space-y-4">
           <input

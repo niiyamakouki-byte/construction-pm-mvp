@@ -276,7 +276,7 @@ export function LandingPage() {
               </thead>
               <tbody>
                 {[
-                  ["協力会社見積PDFの転記・集計", "月4時間"],
+                  ["業者見積PDFの転記・集計", "月4時間"],
                   ["現場写真の整理・共有", "月3時間"],
                   ["工程表の更新・関係者への連絡", "月3時間"],
                   ["進捗確認の電話・LINEの往復", "月3時間"],
@@ -514,7 +514,7 @@ export function LandingPage() {
             ))}
           </div>
           <p className="mt-6 text-center text-sm text-slate-400">
-            大規模プロジェクト・エンタープライズのご相談は{" "}
+            大規模案件・エンタープライズのご相談は{" "}
             <a href="mailto:info@laporta.co.jp" className="text-brand-500 hover:underline whitespace-nowrap">
               お問い合わせ
             </a>

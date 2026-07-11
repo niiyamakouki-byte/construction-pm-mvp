@@ -291,7 +291,7 @@ export function ProjectChat({
       {/* Header */}
       <div className="flex items-center gap-2 px-4 py-2 border-b border-slate-200 bg-white">
         <span className="text-xs font-semibold text-slate-600 flex-1">
-          プロジェクトチャット
+          案件チャット
           <span className="text-[10px] text-slate-400 font-normal ml-1">
             ({messages.length}件)
           </span>

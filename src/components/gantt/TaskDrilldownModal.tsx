@@ -102,7 +102,7 @@ export function TaskDrilldownModal({ task, onClose, onEdit }: Props) {
 
           {/* Contractor */}
           <div className="rounded-2xl bg-slate-50 px-4 py-3">
-            <p className="text-[11px] font-semibold tracking-[0.16em] text-slate-500">協力会社</p>
+            <p className="text-[11px] font-semibold tracking-[0.16em] text-slate-500">業者</p>
             <p className="mt-1 text-sm font-semibold text-slate-900">
               {task.contractorName ?? "未設定"}
             </p>

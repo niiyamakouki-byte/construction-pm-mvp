@@ -223,7 +223,7 @@ export function OwnerAmbassadorPage() {
           />
           <input
             type="text"
-            placeholder="完工プロジェクトID"
+            placeholder="完工案件ID"
             value={newAmbProject}
             onChange={(e) => setNewAmbProject(e.target.value)}
             style={{ border: "1px solid #d1d5db", borderRadius: 6, padding: "6px 10px", fontSize: 14, width: 200 }}
@@ -246,7 +246,7 @@ export function OwnerAmbassadorPage() {
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14 }}>
             <thead>
               <tr style={{ background: "#f9fafb" }}>
-                {["施主名", "プロジェクト", "ティア", "成約件数", "総成約額", "総報酬額"].map((h) => (
+                {["施主名", "案件", "ティア", "成約件数", "総成約額", "総報酬額"].map((h) => (
                   <th key={h} style={{ textAlign: "left", padding: "8px 12px", fontWeight: 600, color: "#374151", borderBottom: "1px solid #e5e7eb" }}>
                     {h}
                   </th>

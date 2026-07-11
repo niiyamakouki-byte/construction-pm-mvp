@@ -81,7 +81,7 @@ export function ContractorsPage() {
       setShowForm(false);
       await loadData();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "協力会社の登録に失敗しました");
+      setError(err instanceof Error ? err.message : "業者の登録に失敗しました");
     } finally {
       setSubmitting(false);
     }
@@ -245,7 +245,7 @@ export function ContractorsPage() {
       {contractors.length === 0 && !showForm ? (
         <div className="rounded-xl border-2 border-dashed border-slate-200 bg-white p-10 text-center">
           <p className="text-base font-bold text-slate-900">業者が登録されていません</p>
-          <p className="mt-1 text-sm text-slate-500">「{ACTION_LABELS.contractor.register}」ボタンから協力会社を登録してください。</p>
+          <p className="mt-1 text-sm text-slate-500">「{ACTION_LABELS.contractor.register}」ボタンから業者を登録してください。</p>
         </div>
       ) : (
         <div className="divide-y divide-slate-100 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">

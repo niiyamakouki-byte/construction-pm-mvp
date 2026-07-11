@@ -569,7 +569,7 @@ export function NodeSchedulePage() {
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
             <div className="text-center text-slate-500">
               <p className="text-sm font-medium">タスクがありません</p>
-              <p className="text-xs mt-1">CSVインポートまたはプロジェクト詳細からタスクを追加</p>
+              <p className="text-xs mt-1">CSVインポートまたは案件詳細からタスクを追加</p>
             </div>
           </div>
         )}

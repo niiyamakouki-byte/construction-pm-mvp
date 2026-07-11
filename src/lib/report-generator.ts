@@ -1,5 +1,5 @@
 /**
- * Report Generator — 日報・週報・プロジェクト報告書 PDF Blob 生成
+ * Report Generator — 日報・週報・案件報告書 PDF Blob 生成
  *
  * 既存モジュールからデータを取得し、HTML を構築したうえで
  * jsPDF で PDF Blob に変換して返す。
@@ -371,7 +371,7 @@ export function buildProjectReportHtml(input: ProjectReportInput): string {
     .join("\n");
 
   const body = `
-  <h1>プロジェクト報告書</h1>
+  <h1>案件報告書</h1>
   <div class="meta">
     <div class="meta-item"><span class="label">現場名:</span><span class="value">${escapeHtml(project.name)}</span></div>
     <div class="meta-item"><span class="label">ステータス:</span><span class="value">${escapeHtml(project.status)}</span></div>
@@ -420,7 +420,7 @@ export function buildProjectReportHtml(input: ProjectReportInput): string {
   <ul>${recItems || "<li>なし</li>"}</ul>
 `;
 
-  return htmlDoc(`プロジェクト報告書 - ${project.name}`, body);
+  return htmlDoc(`案件報告書 - ${project.name}`, body);
 }
 
 // ── Public API ────────────────────────────────────────────────────────────
@@ -531,7 +531,7 @@ export function buildMonthlyReportHtml(
   <div class="meta">
     <div class="meta-item"><span class="label">現場名:</span><span class="value">${escapeHtml(project.name)}</span></div>
     <div class="meta-item"><span class="label">対象月:</span><span class="value">${escapeHtml(monthLabel)}</span></div>
-    <div class="meta-item"><span class="label">プロジェクトID:</span><span class="value">${escapeHtml(projectId)}</span></div>
+    <div class="meta-item"><span class="label">案件ID:</span><span class="value">${escapeHtml(projectId)}</span></div>
   </div>
 
   <h2>工事概要</h2>

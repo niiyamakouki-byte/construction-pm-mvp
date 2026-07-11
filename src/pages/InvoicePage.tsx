@@ -322,7 +322,7 @@ export function InvoicePage() {
             </div>
             {projects.length > 0 && (
               <div>
-                <label className="block text-xs font-semibold text-slate-500 mb-1">プロジェクト</label>
+                <label className="block text-xs font-semibold text-slate-500 mb-1">案件</label>
                 <select
                   value={projectId}
                   onChange={(e) => setProjectId(e.target.value)}

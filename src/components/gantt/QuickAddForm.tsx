@@ -262,7 +262,7 @@ export function QuickAddForm({ quickAdd, contractors, onClose, onSubmit, onChang
 
           <div className="grid gap-3 sm:grid-cols-2">
             <label className="flex flex-col gap-1.5">
-              <span className="text-sm font-medium text-slate-600">協力会社</span>
+              <span className="text-sm font-medium text-slate-600">業者</span>
               <select
                 value={quickAdd.contractorId}
                 onChange={(event) => onChange((state) => ({ ...state, contractorId: event.target.value }))}

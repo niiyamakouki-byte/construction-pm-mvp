@@ -60,7 +60,7 @@
     "title": "案件タスク一覧",
     "subtitle": "案件を切り替えて、工程表へ戻る前に一覧で確認できます。",
     "unknown_project": "不明な案件",
-    "no_contractor": "協力会社未設定",
+    "no_contractor": "業者未設定",
     "empty_title": "タスクがありません",
     "empty_desc": "この案件に表示できるタスクはありません。工程表からタスクを追加してください。",
     "go_gantt": "工程表へ"
@@ -114,14 +114,14 @@
   },
   "contractors": {
     "section_label": "業者",
-    "title": "協力会社管理",
+    "title": "業者管理",
     "add_button": "業者を追加",
     "name_label": "会社名",
     "phone_label": "電話番号",
     "email_label": "メールアドレス",
     "specialty_label": "専門工種",
     "empty_title": "業者が登録されていません",
-    "empty_desc": "協力会社を登録すると、工程表でアサインできます。"
+    "empty_desc": "業者を登録すると、工程表でアサインできます。"
   },
   "notifications": {
     "section_label": "通知",
@@ -276,7 +276,7 @@
     "progress_label": "進捗"
   },
   "contractor_portal": {
-    "title": "協力会社ポータル",
+    "title": "業者ポータル",
     "my_tasks": "担当タスク一覧"
   },
   "invoice_management": {

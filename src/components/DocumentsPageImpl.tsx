@@ -486,7 +486,7 @@ export function DocumentsPage({ projectId }: { projectId: string }) {
   if (!project) {
     return (
       <div className="mx-auto max-w-lg px-4 py-12 text-center">
-        <p className="text-sm text-slate-500">プロジェクトが見つかりません</p>
+        <p className="text-sm text-slate-500">案件が見つかりません</p>
         <button
           onClick={() => navigate("/app")}
           className="mt-4 rounded-lg bg-brand-500 px-4 py-2 text-sm font-semibold text-white"
@@ -526,7 +526,7 @@ export function DocumentsPage({ projectId }: { projectId: string }) {
         className="flex items-center gap-1 text-sm text-slate-500 hover:text-brand-600"
       >
         <span aria-hidden="true">&larr;</span>
-        プロジェクト一覧
+        案件一覧
       </button>
 
       {error ? (

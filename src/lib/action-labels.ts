@@ -13,7 +13,7 @@ export const ACTION_LABELS = {
     addSelected: (count: number) => `ガントに追加 (${count}件)`,
   },
   contractor: {
-    register: "協力会社を登録",
+    register: "業者を登録",
     registering: "登録中...",
   },
   customer: {

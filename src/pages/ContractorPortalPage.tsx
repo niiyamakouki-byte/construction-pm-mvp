@@ -333,7 +333,7 @@ export function ContractorPortalPage({ projectId, company = undefined }: Props) 
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-slate-50">
-        <h1 className="sr-only">協力会社ポータル</h1>
+        <h1 className="sr-only">業者ポータル</h1>
         <p className="text-sm text-slate-400">読み込み中...</p>
       </div>
     );
@@ -343,7 +343,7 @@ export function ContractorPortalPage({ projectId, company = undefined }: Props) 
     return (
       <div className="flex min-h-screen items-center justify-center bg-slate-50">
         <div className="rounded-2xl bg-white p-8 text-center shadow-sm">
-          <h1 className="text-lg font-bold text-slate-800">プロジェクトが見つかりません</h1>
+          <h1 className="text-lg font-bold text-slate-800">案件が見つかりません</h1>
           <p className="mt-2 text-sm text-slate-500">URLを確認してください</p>
         </div>
       </div>
@@ -362,7 +362,7 @@ export function ContractorPortalPage({ projectId, company = undefined }: Props) 
             <div className="min-w-0">
               <h1 className="truncate text-base font-bold text-slate-900">{project.name}</h1>
               <p className="text-xs text-slate-400">
-                協力会社ポータル
+                業者ポータル
                 {company && ` — ${company}`}
                 {" "}（閲覧のみ）
               </p>

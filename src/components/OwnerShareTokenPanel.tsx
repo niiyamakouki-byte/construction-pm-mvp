@@ -297,7 +297,7 @@ export function OwnerShareTokenPanel() {
         </header>
 
         {rows.length === 0 ? (
-          <p className="text-sm text-slate-400">プロジェクトがありません</p>
+          <p className="text-sm text-slate-400">案件がありません</p>
         ) : (
           <div className="space-y-4">
             {rows.map((row) => (

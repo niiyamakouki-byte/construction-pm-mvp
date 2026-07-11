@@ -407,7 +407,7 @@ export function SiteLivestreamPage() {
               />
             </div>
             <div>
-              <label style={{ fontSize: 12, color: "#6b7280" }}>プロジェクトID</label>
+              <label style={{ fontSize: 12, color: "#6b7280" }}>案件ID</label>
               <input
                 value={newProjectId}
                 onChange={(e) => setNewProjectId(e.target.value)}
