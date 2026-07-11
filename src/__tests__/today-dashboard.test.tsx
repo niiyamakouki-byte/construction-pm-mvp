@@ -182,14 +182,14 @@ describe("TodayDashboardPage", () => {
     await waitFor(() => expect(screen.getByText("今日のタスク")).toBeDefined());
   });
 
-  it("データ読み込み後にタスク件数バッジが表示される", async () => {
+  it("カレンダー未連携時は「今日の予定」がタスク件数を流用せず0件になる", async () => {
     mockProjects = [makeProject()];
     mockTasks = [makeTask({ name: "タスクA" })];
     render(<TodayDashboardPage />);
     await waitFor(() => {
       const scheduleCard = screen.getByText("今日の予定").closest("button");
       expect(scheduleCard).not.toBeNull();
-      expect(within(scheduleCard as HTMLElement).getByText("1件")).toBeDefined();
+      expect(within(scheduleCard as HTMLElement).getByText("0件")).toBeDefined();
     });
   });
 
@@ -319,7 +319,7 @@ describe("TodayDashboardPage", () => {
       expect(marginCard).not.toBeNull();
       expect(issueCard).not.toBeNull();
 
-      expect(within(scheduleCard as HTMLElement).getByText("3件")).toBeDefined();
+      expect(within(scheduleCard as HTMLElement).getByText("0件")).toBeDefined();
       expect(within(siteCard as HTMLElement).getByText("2現場稼働")).toBeDefined();
       expect(within(notificationCard as HTMLElement).getByText("0件")).toBeDefined();
       expect(within(estimateCard as HTMLElement).getByText("1件")).toBeDefined();

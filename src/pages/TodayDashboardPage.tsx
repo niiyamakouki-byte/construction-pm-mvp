@@ -842,7 +842,9 @@ function TodayDashboardPageContent() {
     weekEnd.setDate(weekEnd.getDate() + 6);
     const weekEndStr = toLocalDateString(weekEnd);
 
-    const todayScheduleCount = tasks.length + (todayGoogleCalendar.connected ? todayGoogleCalendar.events.length : 0);
+    // 「今日の予定」はカレンダー(会議・打合せ)の件数を表示する。タスク件数(期限超過含む)を
+    // 混ぜると「未読通知」の期限超過内訳と数字が一致してしまい紛らわしいため、タスク数は含めない。
+    const todayScheduleCount = todayGoogleCalendar.connected ? todayGoogleCalendar.events.length : 0;
     const weeklyActiveProjects = allProjects.filter((project) => {
       if (project.status !== "active" && project.status !== "planning") return false;
       const projectTasks = allTasks.filter((task) => task.projectId === project.id);
@@ -877,8 +879,8 @@ function TodayDashboardPageContent() {
     return {
       todayScheduleValue: `${todayScheduleCount}件`,
       todayScheduleSubtext: todayGoogleCalendar.connected
-        ? `個人予定 ${todayGoogleCalendar.events.length}件を含む`
-        : "会議・打合せ含む",
+        ? `個人予定 ${todayGoogleCalendar.events.length}件`
+        : "カレンダー未連携",
       weeklyActiveProjectsValue: `${weeklyActiveProjects}現場稼働`,
       weeklyActiveProjectsSubtext: weeklyActiveProjects > 0 ? `今週 ${weeklyActiveProjects}件が進行予定` : "今週の稼働予定なし",
       unreadNotificationsValue: `${unreadNotificationCount}件`,
@@ -899,7 +901,6 @@ function TodayDashboardPageContent() {
     inProgressTasks,
     overdueTasks,
     procurementAlerts.length,
-    tasks.length,
     today,
     todayGoogleCalendar.connected,
     todayGoogleCalendar.events.length,
