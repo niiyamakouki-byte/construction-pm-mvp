@@ -42,7 +42,6 @@ const EMPTY_FORM = {
   vendorName: "",
   vendorContact: "",
   amount: "",
-  tax: "",
   invoiceDate: "",
   dueDate: "",
   bankInfo: "",
@@ -63,6 +62,8 @@ export function InvoiceManagementPage() {
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState(EMPTY_FORM);
   const [formProjectId, setFormProjectId] = useState("");
+  // 税込/税抜モード: "excl" = 税抜金額入力→10%自動計算, "incl" = 税込金額入力→逆算
+  const [taxMode, setTaxMode] = useState<"excl" | "incl">("excl");
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -151,8 +152,7 @@ export function InvoiceManagementPage() {
 
   const handleSubmit = useCallback(async () => {
     setSaveError(null);
-    const amountNum = Number(form.amount.replace(/,/g, ""));
-    const taxNum = Number(form.tax.replace(/,/g, ""));
+    const inputNum = Number(form.amount.replace(/,/g, ""));
     if (!form.vendorName.trim()) {
       setSaveError("業者名を入力してください");
       return;
@@ -161,13 +161,22 @@ export function InvoiceManagementPage() {
       setSaveError("請求日を入力してください");
       return;
     }
-    if (Number.isNaN(amountNum) || amountNum <= 0) {
+    if (Number.isNaN(inputNum) || inputNum <= 0) {
       setSaveError("金額を正しく入力してください");
       return;
     }
-    if (Number.isNaN(taxNum) || taxNum < 0) {
-      setSaveError("消費税を正しく入力してください");
-      return;
+    // 税込/税抜モードで amount/tax/total を自動計算
+    let amount: number;
+    let tax: number;
+    let total: number;
+    if (taxMode === "excl") {
+      amount = inputNum;
+      tax = Math.round(inputNum * 0.1);
+      total = amount + tax;
+    } else {
+      total = inputNum;
+      tax = Math.round(inputNum - inputNum / 1.1);
+      amount = total - tax;
     }
     setSaving(true);
     try {
@@ -175,9 +184,9 @@ export function InvoiceManagementPage() {
         projectId: formProjectId,
         vendorName: form.vendorName.trim(),
         vendorContact: form.vendorContact.trim() || undefined,
-        amount: amountNum,
-        tax: taxNum,
-        total: amountNum + taxNum,
+        amount,
+        tax,
+        total,
         items: [],
         bankInfo: form.bankInfo.trim() || undefined,
         registrationNumber: form.registrationNumber.trim() || undefined,
@@ -192,7 +201,7 @@ export function InvoiceManagementPage() {
     } finally {
       setSaving(false);
     }
-  }, [form, formProjectId, refreshInvoices]);
+  }, [form, formProjectId, taxMode, refreshInvoices]);
 
   return (
     <div className="space-y-6">
@@ -220,8 +229,8 @@ export function InvoiceManagementPage() {
         </button>
       </div>
 
-      {/* Monthly Summary */}
-      <div className="grid grid-cols-3 gap-4">
+      {/* Monthly Summary — 縦積み(mobile) / 3列(sm+) */}
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <div className="rounded-xl border border-slate-200 bg-white p-4">
           <p className="text-xs text-slate-500">未払い合計</p>
           <p className="mt-1 text-xl font-bold text-red-600">{formatCurrency(summary.unpaidTotal)}</p>
@@ -240,7 +249,25 @@ export function InvoiceManagementPage() {
       {showForm && (
         <div className="rounded-xl border border-slate-200 bg-white p-5">
           <h2 className="mb-4 font-semibold text-slate-700">{ACTION_LABELS.invoice.register}</h2>
-          <div className="grid grid-cols-2 gap-3">
+          {/* 税込/税抜 切替 */}
+          <div className="mb-4 flex items-center gap-1 rounded-lg border border-slate-200 bg-slate-50 p-1 w-fit">
+            <button
+              type="button"
+              onClick={() => setTaxMode("excl")}
+              className={`rounded-md px-3 py-1 text-xs font-semibold transition-colors ${taxMode === "excl" ? "bg-white text-slate-800 shadow-sm" : "text-slate-500"}`}
+            >
+              税抜入力
+            </button>
+            <button
+              type="button"
+              onClick={() => setTaxMode("incl")}
+              className={`rounded-md px-3 py-1 text-xs font-semibold transition-colors ${taxMode === "incl" ? "bg-white text-slate-800 shadow-sm" : "text-slate-500"}`}
+            >
+              税込入力
+            </button>
+          </div>
+          {/* 1列フォーム — モバイル最適化 */}
+          <div className="grid grid-cols-1 gap-3">
             <div>
               <label className="mb-1 block text-xs text-slate-500">案件</label>
               <select
@@ -277,26 +304,24 @@ export function InvoiceManagementPage() {
               />
             </div>
             <div>
-              <label className="mb-1 block text-xs text-slate-500">金額（税抜）*</label>
+              <label className="mb-1 block text-xs text-slate-500">
+                {taxMode === "excl" ? "金額（税抜）*" : "金額（税込）*"}
+              </label>
               <input
                 type="number"
                 min="0"
                 value={form.amount}
                 onChange={(e) => handleFormChange("amount", e.target.value)}
                 className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
-                placeholder="100000"
+                placeholder={taxMode === "excl" ? "100000" : "110000"}
               />
-            </div>
-            <div>
-              <label className="mb-1 block text-xs text-slate-500">消費税</label>
-              <input
-                type="number"
-                min="0"
-                value={form.tax}
-                onChange={(e) => handleFormChange("tax", e.target.value)}
-                className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
-                placeholder="10000"
-              />
+              {form.amount && Number(form.amount) > 0 && (
+                <p className="mt-1 text-xs text-slate-400">
+                  {taxMode === "excl"
+                    ? `消費税(10%): ${formatCurrency(Math.round(Number(form.amount) * 0.1))} → 合計: ${formatCurrency(Math.round(Number(form.amount) * 1.1))}`
+                    : `消費税: ${formatCurrency(Math.round(Number(form.amount) - Number(form.amount) / 1.1))} (税抜: ${formatCurrency(Math.round(Number(form.amount) / 1.1))})`}
+                </p>
+              )}
             </div>
             <div>
               <label className="mb-1 block text-xs text-slate-500">請求日 *</label>
@@ -337,13 +362,15 @@ export function InvoiceManagementPage() {
               />
             </div>
             <div>
-              <label className="mb-1 block text-xs text-slate-500">PDFパス (OCR取込)</label>
+              <label className="mb-1 block text-xs text-slate-500">PDFアップロード</label>
               <input
-                type="text"
-                value={form.pdfPath}
-                onChange={(e) => handleFormChange("pdfPath", e.target.value)}
-                className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
-                placeholder="/invoices/invoice_001.pdf"
+                type="file"
+                accept=".pdf"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  handleFormChange("pdfPath", file ? file.name : "");
+                }}
+                className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-600 file:mr-3 file:rounded file:border-0 file:bg-slate-100 file:px-2 file:py-1 file:text-xs file:font-semibold file:text-slate-700"
               />
             </div>
           </div>
