@@ -1,6 +1,6 @@
 /**
  * Development/Preview-only deterministic demo seed.
- * Provenance: laporta-beads-d4vpz; creator: Codex; implementation commit: pending.
+ * Provenance: laporta-beads-d4vpz; creator: Codex; implementation commit: 6285f41.
  */
 import type { CostItem, Project, Task } from "../domain/types.js";
 import type { UploadedPhoto } from "../infra/supabase-adapter/photo-repository.js";

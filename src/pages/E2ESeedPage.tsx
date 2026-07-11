@@ -1,4 +1,4 @@
-/** Provenance: laporta-beads-d4vpz; creator: Codex; implementation commit: pending. */
+/** Provenance: laporta-beads-d4vpz; creator: Codex; implementation commit: 6285f41. */
 import { useEffect, useState } from "react";
 import { navigate } from "../hooks/useHashRouter.js";
 import { isE2ESeedAllowed, seedE2EDemoData, type E2ESeedResult } from "../lib/e2e-seed.js";
