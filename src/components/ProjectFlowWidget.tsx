@@ -70,7 +70,7 @@ export function ProjectFlowWidget({
           </svg>
         </div>
         <div className="flex-1 min-w-0">
-          <h2 className="text-sm font-semibold text-slate-800">プロジェクトフロー</h2>
+          <h2 className="text-sm font-semibold text-slate-800">案件フロー</h2>
           <p className="text-xs text-slate-500">
             現在: {getStageLabel(currentStage)} · {progressPct}% 完了
           </p>

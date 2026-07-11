@@ -117,7 +117,7 @@ function HealthGauge({ health }: { health: HealthScore | null }) {
 
   return (
     <div className="flex flex-col items-center gap-1">
-      <p className="text-xs font-semibold text-slate-500">プロジェクト健全性</p>
+      <p className="text-xs font-semibold text-slate-500">案件健全性</p>
       <div className="relative">
         <svg width="120" height="120" viewBox="0 0 120 120" aria-label={`健全性スコア ${score}`}>
           {/* Background track */}

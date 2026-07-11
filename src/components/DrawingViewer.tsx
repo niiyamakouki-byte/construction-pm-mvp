@@ -128,7 +128,7 @@ export function DrawingViewer({
   initialPins = [],
   onPinsChange,
   compareDrawingUrl,
-  projectName = "プロジェクト",
+  projectName = "案件",
   drawingName = "図面",
   costMaster = [],
   projectId,

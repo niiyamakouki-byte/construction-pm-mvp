@@ -166,7 +166,7 @@ export function CrossProjectGanttPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-xl font-bold text-slate-900">全案件ガントチャート</h1>
-        <p className="mt-1 text-sm text-slate-500">全プロジェクトのタスクを横断表示</p>
+        <p className="mt-1 text-sm text-slate-500">全案件のタスクを横断表示</p>
       </div>
 
       {/* Summary cards */}

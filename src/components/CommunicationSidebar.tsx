@@ -121,7 +121,7 @@ export function CommunicationSidebar({ open, onClose, projectId }: Props) {
             <ProjectChat projectId={projectId} />
           ) : (
             <p className="px-4 py-3 text-xs text-slate-400">
-              プロジェクトを選択するとチャットが利用できます。
+              案件を選択するとチャットが利用できます。
             </p>
           )}
         </div>

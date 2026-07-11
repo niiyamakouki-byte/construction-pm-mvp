@@ -2198,7 +2198,7 @@ function GanttPageContent({ initialProjectId = null, openMaster = false }: Gantt
               type="search"
               value={taskSearchQuery}
               onChange={(e) => setTaskSearchQuery(e.target.value)}
-              placeholder="工程名・協力会社・工種・案件名で検索"
+              placeholder="工程名・業者・工種・案件名で検索"
               aria-label="工程検索"
               className="w-full rounded-full border border-slate-200 bg-white py-1.5 pl-8 pr-8 text-sm text-slate-700 placeholder:text-slate-400 focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/20"
             />

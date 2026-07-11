@@ -370,7 +370,7 @@ function SafetyDocumentsTab({ projectId }: { projectId: string }) {
     const copied = copyDocumentToProject(copySourceId, copyProjectId);
     if (copied) {
       refresh();
-      setStatus(`書類をプロジェクト「${copyProjectId}」にコピーしました`);
+      setStatus(`書類を案件「${copyProjectId}」にコピーしました`);
       setCopySourceId("");
       setCopyProjectId("");
     } else {
@@ -435,7 +435,7 @@ function SafetyDocumentsTab({ projectId }: { projectId: string }) {
 
       {/* 他プロジェクトからコピー */}
       <form onSubmit={handleCopy} className="rounded-2xl border border-slate-200 bg-white p-5 space-y-3">
-        <h2 className="text-sm font-bold text-slate-800">他プロジェクトからコピー</h2>
+        <h2 className="text-sm font-bold text-slate-800">他案件からコピー</h2>
         <div>
           <label className="block text-xs font-semibold text-slate-600 mb-1" htmlFor="copy-source">
             コピー元書類ID
@@ -451,7 +451,7 @@ function SafetyDocumentsTab({ projectId }: { projectId: string }) {
         </div>
         <div>
           <label className="block text-xs font-semibold text-slate-600 mb-1" htmlFor="copy-target">
-            コピー先プロジェクトID
+            コピー先案件ID
           </label>
           <input
             id="copy-target"

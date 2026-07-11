@@ -308,7 +308,7 @@ export function GanttTaskLabel({
             {task.name}
           </p>
         </div>
-        <p className="mt-1 truncate text-xs text-slate-500">{task.contractorName ?? "協力会社未設定"}</p>
+        <p className="mt-1 truncate text-xs text-slate-500">{task.contractorName ?? "業者未設定"}</p>
         <div className="mt-2 flex items-center gap-2">
           <div className="h-1.5 flex-1 rounded-full bg-slate-200">
             <div

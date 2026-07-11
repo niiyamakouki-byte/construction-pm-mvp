@@ -109,7 +109,7 @@ export function TasksPage() {
                 <span className="inline-block h-3 w-3 rounded-full" style={{ backgroundColor: statusColor[task.status] }} />
                 <p className="truncate text-base font-semibold text-slate-900">{task.name}</p>
               </div>
-              <p className="mt-2 text-sm text-slate-500">{task.contractorName ?? "協力会社未設定"}</p>
+              <p className="mt-2 text-sm text-slate-500">{task.contractorName ?? "業者未設定"}</p>
               <p className="mt-1 text-sm text-slate-500">
                 {formatScheduleDate(task.startDate)} - {formatScheduleDate(task.endDate)}
               </p>

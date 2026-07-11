@@ -124,7 +124,7 @@ describe("ClientViewerPage", () => {
     render(<ClientViewerPage projectId="unknown" />);
     const el = await screen.findByRole("heading", { name: "施主ポータル" });
     expect(el).toBeDefined();
-    expect(screen.getByText("プロジェクトが見つかりません")).toBeDefined();
+    expect(screen.getByText("案件が見つかりません")).toBeDefined();
   });
 
   it("calculates 50% progress with 1 done of 2 tasks", async () => {

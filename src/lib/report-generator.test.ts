@@ -175,7 +175,7 @@ describe("buildProjectReportHtml", () => {
   it("returns valid HTML with project title", () => {
     const html = buildProjectReportHtml({ project: makeProject() });
     expect(html).toContain("<!DOCTYPE html>");
-    expect(html).toContain("プロジェクト報告書");
+    expect(html).toContain("案件報告書");
     expect(html).toContain("南青山リノベ");
   });
 
@@ -220,7 +220,7 @@ describe("buildProjectReportHtml", () => {
 
   it("handles project with no tasks or expenses", () => {
     const html = buildProjectReportHtml({ project: makeProject(), tasks: [], expenses: [] });
-    expect(html).toContain("プロジェクト報告書");
+    expect(html).toContain("案件報告書");
   });
 });
 

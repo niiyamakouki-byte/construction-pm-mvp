@@ -981,7 +981,7 @@ function EstimatePageContent() {
             <div>
               <p className="text-base font-bold text-slate-900">PDFから作成</p>
               <p className="mt-1 text-sm text-slate-500">
-                協力会社の見積PDFを読み込んで自動でドラフト化
+                業者の見積PDFを読み込んで自動でドラフト化
               </p>
             </div>
           </button>

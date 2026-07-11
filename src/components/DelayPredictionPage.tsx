@@ -216,7 +216,7 @@ export function DelayPredictionPage({
       <div className="flex flex-wrap items-end gap-3">
         <div>
           <label className="block text-xs font-medium text-slate-500 mb-1">
-            プロジェクト
+            案件
           </label>
           <select
             className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm"
@@ -281,7 +281,7 @@ export function DelayPredictionPage({
 
       {tasks.length === 0 && selectedProjectId && (
         <p className="text-sm text-slate-400" data-testid="no-tasks-msg">
-          このプロジェクトにはタスクがありません。
+          この案件にはタスクがありません。
         </p>
       )}
 

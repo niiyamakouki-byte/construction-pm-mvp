@@ -16,7 +16,7 @@ type ReportType = "daily" | "weekly" | "project";
 const REPORT_LABELS: Record<ReportType, string> = {
   daily: "日報",
   weekly: "週報",
-  project: "プロジェクト報告書",
+  project: "案件報告書",
 };
 
 function today(): string {
@@ -114,7 +114,7 @@ export function ReportsPage({ projectId }: { projectId?: string }) {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-bold text-slate-900">報告書</h1>
-          <p className="text-sm text-slate-500">日報・週報・プロジェクト報告書を生成</p>
+          <p className="text-sm text-slate-500">日報・週報・案件報告書を生成</p>
         </div>
         <button
           onClick={() => navigate("/app")}

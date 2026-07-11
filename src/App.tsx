@@ -877,7 +877,7 @@ function AppShell() {
     { key: "reports", label: t("common:nav.reports"), icon: "reports", path: "/reports", active: route === "/reports" || route.startsWith("/reports/"), group: "money", aiHint: "報告書と経営向け集計を出す" },
     { key: "freee", label: t("common:nav.freee"), icon: "freee", path: "/freee", active: route === "/freee" || route.startsWith("/freee?"), group: "money", aiHint: "会計連携と仕訳候補を見る" },
     { key: "crm", label: t("common:nav.crm"), icon: "crm", path: "/crm", active: route === "/crm", group: "growth", aiHint: "見込み客と次回接触を整理する" },
-    { key: "contractors", label: t("common:nav.partner_companies"), icon: "partner-companies", path: "/contractors", active: route === "/contractors", group: "growth", aiHint: "協力会社と発注先候補を見る" },
+    { key: "contractors", label: t("common:nav.partner_companies"), icon: "partner-companies", path: "/contractors", active: route === "/contractors", group: "growth", aiHint: "業者と発注先候補を見る" },
     { key: "help", label: t("common:nav.help"), icon: "help", path: "/help", active: route === "/help", group: "system", aiHint: "使い方とショートカットを見る" },
     { key: "account", label: "アカウント設定", icon: "account", path: "/account", active: route === "/account", group: "system", aiHint: "ユーザー・組織・表示設定を変える" },
   ];

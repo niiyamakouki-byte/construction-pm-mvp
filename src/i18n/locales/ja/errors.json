@@ -51,7 +51,7 @@
     "crm": "CRMエラー",
     "notifications": "通知一覧エラー",
     "help": "ヘルプエラー",
-    "project_detail": "プロジェクト詳細エラー",
+    "project_detail": "案件詳細エラー",
     "mood_board": "ムードボードエラー"
   }
 }

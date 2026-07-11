@@ -10,7 +10,7 @@ export function ProjectDetailTabs({ projectId, activeTab }: ProjectDetailTabsPro
 
   return (
     <nav
-      aria-label="プロジェクトナビゲーション"
+      aria-label="案件ナビゲーション"
       className="flex gap-1 overflow-x-auto rounded-2xl border border-slate-200 bg-white p-1 shadow-sm"
     >
       <button

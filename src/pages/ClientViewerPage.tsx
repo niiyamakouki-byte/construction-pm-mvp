@@ -145,7 +145,7 @@ function FlowIndicator({ stage }: { stage: ProjectStage | null }) {
   const currentIndex = stage ? STAGE_ORDER.indexOf(stage) : -1;
   return (
     <div className="mb-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-      <h3 className="mb-4 text-sm font-semibold text-slate-700">プロジェクトフロー</h3>
+      <h3 className="mb-4 text-sm font-semibold text-slate-700">案件フロー</h3>
       <div className="flex flex-wrap gap-1">
         {STAGE_ORDER.map((s, i) => {
           const isDone = currentIndex > i;
@@ -347,7 +347,7 @@ export function ClientViewerPage({ projectId }: { projectId: string }) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-slate-50">
         <h1 className="sr-only">施主ポータル</h1>
-        <p className="text-sm text-slate-500">プロジェクトが見つかりません</p>
+        <p className="text-sm text-slate-500">案件が見つかりません</p>
       </div>
     );
   }

@@ -47,7 +47,7 @@ describe("ContractorPortalPage", () => {
 
   it("renders loading state initially", () => {
     render(<ContractorPortalPage projectId="proj-1" />);
-    expect(screen.getByRole("heading", { name: "協力会社ポータル" })).toBeDefined();
+    expect(screen.getByRole("heading", { name: "業者ポータル" })).toBeDefined();
     expect(screen.getByText("読み込み中...")).toBeDefined();
   });
 
@@ -60,7 +60,7 @@ describe("ContractorPortalPage", () => {
   it("shows read-only portal label after load", async () => {
     render(<ContractorPortalPage projectId="proj-1" />);
     await screen.findAllByText("南青山リノベーション");
-    expect(screen.getByText(/協力会社ポータル/)).toBeDefined();
+    expect(screen.getByText(/業者ポータル/)).toBeDefined();
   });
 
   it("shows company name when provided", async () => {
@@ -87,7 +87,7 @@ describe("ContractorPortalPage", () => {
   it("renders not found state for unknown project", async () => {
     mockFindById.mockResolvedValueOnce(null);
     render(<ContractorPortalPage projectId="unknown" />);
-    const el = await screen.findByRole("heading", { name: "プロジェクトが見つかりません" });
+    const el = await screen.findByRole("heading", { name: "案件が見つかりません" });
     expect(el).toBeDefined();
   });
 });

@@ -531,7 +531,7 @@ export function ProjectDetailPage({
   if (!project) {
     return (
       <div className="mx-auto max-w-lg px-4 py-12 text-center">
-        <p className="text-sm text-slate-500">プロジェクトが見つかりません</p>
+        <p className="text-sm text-slate-500">案件が見つかりません</p>
         <button
           onClick={() => navigate("/")}
           className="mt-4 ios-btn-primary px-4 py-2 text-sm"
@@ -607,7 +607,7 @@ export function ProjectDetailPage({
         className="flex items-center gap-1 text-sm text-slate-500 hover:text-[#007AFF] transition-colors"
       >
         <span aria-hidden="true">&larr;</span>
-        プロジェクト一覧
+        案件一覧
       </button>
 
       {/* Error banner */}
@@ -785,7 +785,7 @@ export function ProjectDetailPage({
 
       {/* Settings */}
       <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
-        <h2 className="mb-2 text-xs font-semibold text-slate-500 uppercase tracking-wider">プロジェクト設定</h2>
+        <h2 className="mb-2 text-xs font-semibold text-slate-500 uppercase tracking-wider">案件設定</h2>
         <label className="flex cursor-pointer items-center gap-3">
           <div className="relative">
             <input
@@ -955,7 +955,7 @@ export function ProjectDetailPage({
           </>
         ) : (
           <p className="text-xs text-slate-400">
-            プロジェクトに予算を設定するとキャッシュフローが表示されます。
+            案件に予算を設定するとキャッシュフローが表示されます。
             {totalExpenses > 0 && ` 現在の支出: ¥${totalExpenses.toLocaleString("ja-JP")}`}
           </p>
         )}
@@ -1431,7 +1431,7 @@ export function ProjectDetailPage({
               key: "portal",
               eyebrow: "最新資料",
               title: `${workType}向けの共有ビュー`,
-              body: "協力会社ポータル側で、現場に必要な段取りと共有事項をすぐ見に行く想定です。",
+              body: "業者ポータル側で、現場に必要な段取りと共有事項をすぐ見に行く想定です。",
               action: "共有ビューを開く",
               onClick: () => navigate(
                 fieldPersona.company
