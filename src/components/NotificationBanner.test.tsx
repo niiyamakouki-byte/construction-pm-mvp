@@ -167,7 +167,7 @@ describe("NotificationBanner", () => {
       risk: { reasons: ["強風注意"] },
     });
 
-    render(<NotificationBanner refreshKey="/today" />);
+    render(<NotificationBanner autoExpand refreshKey="/today" />);
 
     // overdue (2000-01-01) はstaleなので件数から除外され、ヒント表示に回る
     expect(await screen.findByText("重要通知 3件")).toBeDefined();
@@ -183,7 +183,7 @@ describe("NotificationBanner", () => {
     mockProjects = [makeProject({ id: "p-1", name: "青山オフィス改修" })];
     mockTasks = [makeTask({ id: "t-overdue", dueDate: "2000-01-01" })];
 
-    render(<NotificationBanner refreshKey="/tasks" />);
+    render(<NotificationBanner autoExpand refreshKey="/tasks" />);
 
     const button = await screen.findByRole("button", { name: "通知一覧へ" });
     await user.click(button);
@@ -196,7 +196,7 @@ describe("NotificationBanner", () => {
     mockProjects = [makeProject({ id: "p-1", name: "青山オフィス改修" })];
     mockTasks = [makeTask({ id: "t-overdue", dueDate: "2000-01-01" })];
 
-    render(<NotificationBanner refreshKey="/app" />);
+    render(<NotificationBanner autoExpand refreshKey="/app" />);
 
     // Wait for notifications to load
     await screen.findByRole("button", { name: "通知一覧へ" });
@@ -236,7 +236,7 @@ describe("NotificationBanner", () => {
       }),
     ];
 
-    render(<NotificationBanner refreshKey="/gantt" />);
+    render(<NotificationBanner autoExpand refreshKey="/gantt" />);
 
     const expandBtns = await screen.findAllByRole("button", { name: "通知を展開" });
     await user.click(expandBtns[0]);
@@ -261,7 +261,7 @@ describe("NotificationBanner", () => {
       makeTask({ id: "t-3", name: "搬入確認", dueDate: d(7) }),
     ];
 
-    render(<NotificationBanner refreshKey="/grouping" />);
+    render(<NotificationBanner autoExpand refreshKey="/grouping" />);
 
     // 重要通知件数とグループヘッダーが見える（collapsed→expanded のuseEffect完了を待つ）
     expect(await screen.findByText("重要通知 3件")).toBeDefined();
@@ -295,7 +295,7 @@ describe("NotificationBanner", () => {
       makeTask({ id: "t-old-2", name: "古い超過B", dueDate: toLocalDateString(oldOverdue) }),
     ];
 
-    render(<NotificationBanner refreshKey="/stale" />);
+    render(<NotificationBanner autoExpand refreshKey="/stale" />);
 
     // 親グループを展開
     const header = await screen.findByRole("button", { name: /期限超過タスク 3件/ });
@@ -322,7 +322,7 @@ describe("NotificationBanner", () => {
       makeTask({ id: "t-fresh", name: "新しい超過A", dueDate: toLocalDateString(recentOverdue) }),
     ];
 
-    const { unmount } = render(<NotificationBanner refreshKey="/dismiss" />);
+    const { unmount } = render(<NotificationBanner autoExpand refreshKey="/dismiss" />);
 
     expect(await screen.findByText("重要通知 1件")).toBeDefined();
     // 単独通知なのでヘッダーなく直接表示。×ボタンが見える。
@@ -335,7 +335,7 @@ describe("NotificationBanner", () => {
 
     // リロード相当 = unmount → 再 mount。localStorage は維持される。
     unmount();
-    render(<NotificationBanner refreshKey="/dismiss" />);
+    render(<NotificationBanner autoExpand refreshKey="/dismiss" />);
 
     // 非表示が永続化されているのでバナーは出ない
     await mockTaskFindAll.mock.results[mockTaskFindAll.mock.results.length - 1]?.value;
@@ -353,7 +353,7 @@ describe("NotificationBanner", () => {
       makeTask({ id: "t-fresh", name: "新しい超過A", dueDate: toLocalDateString(recentOverdue) }),
     ];
 
-    const { unmount } = render(<NotificationBanner refreshKey="/snooze" />);
+    const { unmount } = render(<NotificationBanner autoExpand refreshKey="/snooze" />);
 
     expect(await screen.findByText(/新しい超過A/)).toBeDefined();
     const snoozeBtn = screen.getByRole("button", { name: "後で（明日の朝まで非表示）" });
@@ -373,7 +373,7 @@ describe("NotificationBanner", () => {
     localStorageData["genbahub.notification.dismissals"] = JSON.stringify(parsed);
 
     unmount();
-    render(<NotificationBanner refreshKey="/snooze" />);
+    render(<NotificationBanner autoExpand refreshKey="/snooze" />);
     expect(await screen.findByText(/新しい超過A/)).toBeDefined();
   });
 
@@ -392,7 +392,7 @@ describe("NotificationBanner", () => {
       makeTask({ id: "t-3", name: "搬入確認", dueDate: d(7) }),
     ];
 
-    render(<NotificationBanner refreshKey="/count" />);
+    render(<NotificationBanner autoExpand refreshKey="/count" />);
 
     expect(await screen.findByText("重要通知 3件")).toBeDefined();
     const header = await screen.findByRole("button", { name: /期限超過タスク 3件/ });
@@ -423,7 +423,7 @@ describe("NotificationBanner", () => {
       }),
     ];
 
-    render(<NotificationBanner refreshKey="/tasks" />);
+    render(<NotificationBanner autoExpand refreshKey="/tasks" />);
 
     expect(await screen.findByText("重要通知 1件")).toBeDefined();
     expect(screen.queryByRole("button", { name: "通知一覧へ" })).toBeNull();
