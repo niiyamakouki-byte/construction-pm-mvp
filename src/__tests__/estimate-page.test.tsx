@@ -36,8 +36,8 @@ vi.mock("../contexts/OrganizationContext.js", () => ({
 async function renderEstimatePage() {
   const { EstimatePage } = await import("../pages/EstimatePage.js");
   render(<EstimatePage />);
-  // UX刷新(20260704): 着地は選択カード2枚。手動フローへ進んでから品目カタログが表示される
-  const manualBtn = await screen.findByRole("button", { name: /手動で作成/ });
+  // UX刷新(20260704): 着地は選択カード2枚。品目追加フローへ進んでから品目カタログが表示される
+  const manualBtn = await screen.findByRole("button", { name: /品目追加/ });
   manualBtn.click();
   await screen.findByText("品目カタログ");
 }
@@ -78,6 +78,15 @@ describe("EstimatePage", () => {
     expect(screen.getByLabelText(/お客様名/)).toBeDefined();
     expect(screen.getByText("品目カタログ")).toBeDefined();
     expect(screen.queryByText(/選択済み品目/)).toBeNull();
+  });
+
+  it("作成前の手動作成画面では二次アクションを表示しない", async () => {
+    await renderEstimatePage();
+
+    expect(screen.getByText("品目から手動で作成")).toBeDefined();
+    expect(screen.queryByRole("button", { name: /業者比較/ })).toBeNull();
+    expect(screen.queryByRole("button", { name: /3提案プラン/ })).toBeNull();
+    expect(screen.queryByText("PDF由来ドラフト")).toBeNull();
   });
 
   it("カテゴリを開閉すると品目一覧の表示が切り替わる", async () => {
@@ -192,14 +201,16 @@ describe("EstimatePage", () => {
     expect(mocks.generateEstimate).not.toHaveBeenCalled();
   });
 
-  it("見積作成タブのファーストビューにPDF CTAヒーローが表示される", async () => {
-    // UX刷新(20260704): 着地は選択カード2枚。PDFカードと手動カードが表示される
+  it("初期入口はPDF読取と品目追加の2つだけを表示する", async () => {
+    // UX刷新(20260704): 着地は選択カード2枚。PDF読取カードと品目追加カードが表示される
     const { EstimatePage } = await import("../pages/EstimatePage.js");
     render(<EstimatePage />);
-    const pdfCard = await screen.findByRole("button", { name: /PDFから作成/ });
+    const pdfCard = await screen.findByRole("button", { name: /PDF読取/ });
     expect(pdfCard).toBeDefined();
-    expect(pdfCard.textContent).toContain("PDFから作成");
-    expect(screen.getByRole("button", { name: /手動で作成/ })).toBeDefined();
+    expect(pdfCard.textContent).toContain("PDF読取");
+    expect(screen.getByRole("button", { name: /品目追加/ })).toBeDefined();
+    expect(screen.queryByRole("button", { name: /業者比較/ })).toBeNull();
+    expect(screen.queryByRole("button", { name: /3提案プラン/ })).toBeNull();
   });
 
   it("入力内容から見積を生成して結果画面を表示する", async () => {
@@ -237,6 +248,29 @@ describe("EstimatePage", () => {
     const disclaimer = screen.getByTestId("estimate-disclaimer");
     expect(disclaimer).toBeDefined();
     expect(disclaimer.textContent).toContain("±20%");
+  });
+
+  it("見積作成後に二次アクションとして業者比較と3提案プランを開ける", async () => {
+    const user = userEvent.setup();
+    await renderEstimatePage();
+
+    await user.type(screen.getByLabelText(/物件名/), "二次アクション確認");
+    await user.click(screen.getByRole("button", { name: /解体・撤去/ }));
+    await user.click(screen.getByRole("button", { name: /内装解体（木造）/ }));
+    await user.click(screen.getByRole("button", { name: "見積書を生成" }));
+
+    await waitFor(() => expect(screen.getByTestId("post-estimate-actions")).toBeDefined());
+    expect(screen.getByRole("button", { name: /業者比較/ })).toBeDefined();
+    expect(screen.getByRole("button", { name: /3提案プラン/ })).toBeDefined();
+
+    await user.click(screen.getByRole("button", { name: /業者比較/ }));
+    expect(screen.getByTestId("comparison-secondary-section")).toBeDefined();
+    expect(screen.getByText("業者見積比較")).toBeDefined();
+
+    await user.click(screen.getByRole("button", { name: /3提案プラン/ }));
+    const proposalSection = screen.getByTestId("proposal-secondary-section");
+    expect(proposalSection).toBeDefined();
+    expect(within(proposalSection).getByText("3提案プラン")).toBeDefined();
   });
 
   it("案件を選ぶセレクトで案件を選択すると物件名が自動入力される", async () => {

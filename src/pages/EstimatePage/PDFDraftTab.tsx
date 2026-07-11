@@ -357,6 +357,7 @@ export function PDFDraftTab({ costMaster, onSave }: Props) {
               <tr className="border-b border-slate-200 bg-slate-50/80 text-slate-500">
                 <th className="py-2 px-3 text-left font-medium">コード</th>
                 <th className="py-2 px-3 text-left font-medium">品目</th>
+                <th className="py-2 px-2 text-left font-medium w-20">出所</th>
                 <th className="py-2 px-2 text-right font-medium w-20">数量</th>
                 <th className="py-2 px-2 text-right font-medium w-12">単位</th>
                 <th className="py-2 px-2 text-right font-medium w-24">単価</th>
@@ -376,6 +377,14 @@ export function PDFDraftTab({ costMaster, onSave }: Props) {
                   >
                     <td className="py-1.5 px-3 text-slate-400 font-mono">{line.code}</td>
                     <td className="py-1.5 px-3 text-slate-700 font-medium">{line.name}</td>
+                    <td className="py-1.5 px-2">
+                      <span
+                        className="inline-flex rounded bg-brand-50 px-1.5 py-0.5 text-[10px] font-semibold text-brand-700"
+                        data-testid={`source-badge-${line.code}`}
+                      >
+                        PDF読取
+                      </span>
+                    </td>
                     <td className="py-1.5 px-2 text-right tabular-nums">
                       {editMode ? (
                         <input
@@ -424,7 +433,7 @@ export function PDFDraftTab({ costMaster, onSave }: Props) {
               })}
               {effectiveLines.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="py-6 text-center text-sm text-slate-400">
+                  <td colSpan={8} className="py-6 text-center text-sm text-slate-400">
                     見積行なし
                   </td>
                 </tr>

@@ -30,8 +30,6 @@ type SelectedItem = EstimateInput & { name: string; unit: string; unitPrice: num
 
 const SIMULATION_MARGINS = [20, 25, 30];
 
-type PageTab = "estimate" | "comparison" | "matsubamebushi" | "pdf_draft";
-
 // cost-master のフラット化（pdf-to-estimate パイプライン用）
 const PDF_COST_MASTER: CostMasterItem[] = (
   costMasterRaw as { categories: { items: CostMasterItem[] }[] }
@@ -137,7 +135,7 @@ function ComparisonTab() {
   };
 
   return (
-    <div className="mx-auto max-w-3xl space-y-4 px-4 pb-24">
+    <div className="space-y-4">
       <h2 className="text-base font-semibold text-slate-900">業者見積比較</h2>
 
       {/* 業者入力フォーム群 */}
@@ -436,7 +434,7 @@ function MatsubamebushiTab() {
         }}
         onCancel={() => setDeleteTarget(null)}
       />
-      <h2 className="text-base font-semibold text-slate-900">松竹梅3パターン見積</h2>
+      <h2 className="text-base font-semibold text-slate-900">3提案プラン</h2>
       <p className="text-xs text-slate-500">
         同じ品目リストで松(高品質)・竹(標準)・梅(コスト重視)の単価を並列管理し、合計と粗利率を比較できます。
       </p>
@@ -602,6 +600,7 @@ function MatsubamebushiTab() {
 }
 
 type EstimateMode = null | "pdf" | "manual";
+type SecondaryAction = "comparison" | "proposal";
 
 /**
  * /#/estimate?projectId=... で遷移してきたときに projectId を抜き出す。
@@ -627,7 +626,7 @@ function EstimatePageContent() {
     }
     return null;
   });
-  const [activeTab, setActiveTab] = useState<PageTab>("estimate");
+  const [activeSecondaryAction, setActiveSecondaryAction] = useState<SecondaryAction | null>(null);
   const [propertyName, setPropertyName] = useState("");
   const [clientName, setClientName] = useState("");
   const [selectedItems, setSelectedItems] = useState<SelectedItem[]>([]);
@@ -825,10 +824,13 @@ function EstimatePageContent() {
   // Estimate result view
   if (estimate) {
     return (
-      <div className="mx-auto max-w-2xl px-4 pb-24" data-testid="estimate-result">
+      <div className="mx-auto max-w-3xl px-4 pb-24" data-testid="estimate-result">
         <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <button
-            onClick={() => setEstimate(null)}
+            onClick={() => {
+              setEstimate(null);
+              setActiveSecondaryAction(null);
+            }}
             className="flex items-center gap-1 text-sm text-slate-500 hover:text-brand-600 transition-colors"
           >
             <span aria-hidden="true">&larr;</span>
@@ -958,6 +960,77 @@ function EstimatePageContent() {
             <p>本見積は概算です。現地調査の結果により実際の金額は±20%程度変動する場合があります。</p>
           </div>
         </div>
+
+        <section
+          className="mt-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
+          data-testid="post-estimate-actions"
+        >
+          <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <h2 className="text-base font-semibold text-slate-900">作成後アクション</h2>
+              <p className="mt-1 text-xs text-slate-500">
+                見積作成後に、業者の比較や3提案プランの作成へ進めます。
+              </p>
+            </div>
+          </div>
+          <div className="mt-3 grid gap-2 sm:grid-cols-2">
+            <button
+              type="button"
+              onClick={() =>
+                setActiveSecondaryAction((current) =>
+                  current === "comparison" ? null : "comparison",
+                )
+              }
+              aria-pressed={activeSecondaryAction === "comparison"}
+              className={`rounded-xl border px-4 py-3 text-left transition-colors ${
+                activeSecondaryAction === "comparison"
+                  ? "border-brand-300 bg-brand-50 text-brand-800"
+                  : "border-slate-200 bg-slate-50/60 text-slate-700 hover:border-slate-300 hover:bg-slate-50"
+              }`}
+            >
+              <span className="block text-sm font-bold">業者比較</span>
+              <span className="mt-1 block text-xs text-slate-500">
+                複数業者の単価と合計を横並びで確認
+              </span>
+            </button>
+            <button
+              type="button"
+              onClick={() =>
+                setActiveSecondaryAction((current) =>
+                  current === "proposal" ? null : "proposal",
+                )
+              }
+              aria-pressed={activeSecondaryAction === "proposal"}
+              className={`rounded-xl border px-4 py-3 text-left transition-colors ${
+                activeSecondaryAction === "proposal"
+                  ? "border-brand-300 bg-brand-50 text-brand-800"
+                  : "border-slate-200 bg-slate-50/60 text-slate-700 hover:border-slate-300 hover:bg-slate-50"
+              }`}
+            >
+              <span className="block text-sm font-bold">3提案プラン</span>
+              <span className="mt-1 block text-xs text-slate-500">
+                松・竹・梅の単価パターンを作成
+              </span>
+            </button>
+          </div>
+        </section>
+
+        {activeSecondaryAction === "comparison" && (
+          <section
+            className="mt-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
+            data-testid="comparison-secondary-section"
+          >
+            <ComparisonTab />
+          </section>
+        )}
+        {activeSecondaryAction === "proposal" && (
+          <section
+            className="mt-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
+            data-testid="proposal-secondary-section"
+          >
+            <MatsubamebushiTab />
+          </section>
+        )}
       </div>
     );
   }
@@ -979,7 +1052,7 @@ function EstimatePageContent() {
               📄
             </div>
             <div>
-              <p className="text-base font-bold text-slate-900">PDFから作成</p>
+              <p className="text-base font-bold text-slate-900">PDF読取</p>
               <p className="mt-1 text-sm text-slate-500">
                 協力会社の見積PDFを読み込んで自動でドラフト化
               </p>
@@ -994,7 +1067,7 @@ function EstimatePageContent() {
               ✏️
             </div>
             <div>
-              <p className="text-base font-bold text-slate-900">手動で作成</p>
+              <p className="text-base font-bold text-slate-900">品目追加</p>
               <p className="mt-1 text-sm text-slate-500">
                 品目カタログから選んで組み立てる
               </p>
@@ -1054,63 +1127,6 @@ function EstimatePageContent() {
       {/* Page heading */}
       <h1 className="text-2xl font-bold text-slate-900">見積（手動作成）</h1>
 
-      {/* Tab switcher */}
-      <div className="rounded-lg border border-slate-200 bg-slate-50 p-1">
-        <div className="grid grid-cols-2 gap-1 sm:flex">
-        <button
-          type="button"
-          onClick={() => setActiveTab("estimate")}
-          className={`min-w-0 rounded-md px-2 py-2 text-sm font-semibold transition-colors sm:flex-1 sm:px-3 ${
-            activeTab === "estimate"
-              ? "bg-white text-slate-900 shadow-sm"
-              : "text-slate-500 hover:text-slate-700"
-          }`}
-        >
-          見積作成
-        </button>
-        <button
-          type="button"
-          onClick={() => setActiveTab("comparison")}
-          className={`min-w-0 rounded-md px-2 py-2 text-sm font-semibold transition-colors sm:flex-1 sm:px-3 ${
-            activeTab === "comparison"
-              ? "bg-white text-slate-900 shadow-sm"
-              : "text-slate-500 hover:text-slate-700"
-          }`}
-        >
-          業者比較
-        </button>
-        <button
-          type="button"
-          onClick={() => setActiveTab("matsubamebushi")}
-          className={`min-w-0 rounded-md px-2 py-2 text-sm font-semibold transition-colors sm:flex-1 sm:px-3 ${
-            activeTab === "matsubamebushi"
-              ? "bg-white text-slate-900 shadow-sm"
-              : "text-slate-500 hover:text-slate-700"
-          }`}
-        >
-          松竹梅
-        </button>
-        <button
-          type="button"
-          onClick={() => setActiveTab("pdf_draft")}
-          className={`min-w-0 rounded-md px-2 py-2 text-sm font-semibold transition-colors sm:flex-1 sm:px-3 ${
-            activeTab === "pdf_draft"
-              ? "bg-white text-slate-900 shadow-sm"
-              : "text-slate-500 hover:text-slate-700"
-          }`}
-        >
-          PDF由来ドラフト
-        </button>
-        </div>
-      </div>
-
-      {activeTab === "comparison" && <ComparisonTab />}
-      {activeTab === "matsubamebushi" && <MatsubamebushiTab />}
-      {activeTab === "pdf_draft" && (
-        <PDFDraftTab costMaster={PDF_COST_MASTER} />
-      )}
-      {activeTab === "estimate" && (
-        <>
       <h2 className="text-base font-semibold text-slate-900">品目から手動で作成</h2>
 
       {error && (
@@ -1419,8 +1435,6 @@ function EstimatePageContent() {
           ))}
         </div>
       </div>
-        </>
-      )}
     </div>
   );
 }
