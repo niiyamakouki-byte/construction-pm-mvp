@@ -12,6 +12,7 @@ import { EstimatePageErrorBoundary } from "../components/PageErrorBoundaries.js"
 import { ConfirmDialog } from "../components/common/ConfirmDialog.js";
 import { createProjectRepository } from "../stores/project-store.js";
 import { useOrganizationContext } from "../contexts/OrganizationContext.js";
+import { useAuth } from "../contexts/AuthContext.js";
 import {
   calculateFromMargin,
   simulateMultiple,
@@ -31,6 +32,21 @@ type SelectedItem = EstimateInput & { name: string; unit: string; unitPrice: num
 const SIMULATION_MARGINS = [20, 25, 30];
 
 type PageTab = "estimate" | "comparison" | "matsubamebushi" | "pdf_draft";
+
+// ── 見積ステータス ──────────────────────────────────────────────────────────────
+type EstimateStatus = "draft" | "internal_approved" | "submitted";
+
+const ESTIMATE_STATUS_LABEL: Record<EstimateStatus, string> = {
+  draft: "概算ドラフト",
+  internal_approved: "社内確認済み",
+  submitted: "提出版",
+};
+
+const ESTIMATE_STATUS_CLASS: Record<EstimateStatus, string> = {
+  draft: "bg-amber-50 text-amber-700 border border-amber-200",
+  internal_approved: "bg-[#EDF3EC] text-[#346538] border border-[#7BA88A]/40",
+  submitted: "bg-slate-900 text-white border border-slate-800",
+};
 
 // cost-master のフラット化（pdf-to-estimate パイプライン用）
 const PDF_COST_MASTER: CostMasterItem[] = (
@@ -619,6 +635,7 @@ function extractProjectIdFromUrl(): string {
 }
 
 function EstimatePageContent() {
+  const { user } = useAuth();
   const [estimateMode, setEstimateMode] = useState<EstimateMode>(() => {
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
@@ -633,6 +650,11 @@ function EstimatePageContent() {
   const [selectedItems, setSelectedItems] = useState<SelectedItem[]>([]);
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [estimate, setEstimate] = useState<Estimate | null>(null);
+  const [estimateStatus, setEstimateStatus] = useState<EstimateStatus>("draft");
+  const [estimateVersion, setEstimateVersion] = useState(1);
+  const [estimateUpdatedAt, setEstimateUpdatedAt] = useState("");
+  const [showSubmitConfirm, setShowSubmitConfirm] = useState(false);
+  const [prevTotal, setPrevTotal] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [pdfLoading, setPdfLoading] = useState(false);
   const [targetMargin, setTargetMargin] = useState<string>("25");
@@ -798,9 +820,23 @@ function EstimatePageContent() {
         items: selectedItems.map((i) => ({ code: i.code, quantity: i.quantity })),
       });
       setEstimate(est);
+      setEstimateStatus("draft");
+      setEstimateVersion(1);
+      setEstimateUpdatedAt(new Date().toLocaleString("ja-JP", { timeZone: "Asia/Tokyo" }));
+      setPrevTotal(est.total);
     } catch (e) {
       setError(e instanceof Error ? e.message : "見積生成に失敗しました");
     }
+  };
+
+  const handleEstimateStatusChange = (next: EstimateStatus) => {
+    if (next === "submitted" && next !== estimateStatus) {
+      setShowSubmitConfirm(true);
+      return;
+    }
+    setEstimateStatus(next);
+    setEstimateUpdatedAt(new Date().toLocaleString("ja-JP", { timeZone: "Asia/Tokyo" }));
+    if (next !== "draft") setEstimateVersion((v) => v + 1);
   };
 
   const handleDownloadPdf = async () => {
@@ -825,6 +861,7 @@ function EstimatePageContent() {
   // Estimate result view
   if (estimate) {
     return (
+      <>
       <div className="mx-auto max-w-2xl px-4 pb-24" data-testid="estimate-result">
         <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <button
@@ -841,6 +878,36 @@ function EstimatePageContent() {
           >
             {pdfLoading ? "生成中..." : "PDF出力"}
           </button>
+        </div>
+
+        {/* ── 見積ステータスバナー ── */}
+        <div className="mb-3 rounded-xl border border-slate-200 bg-white px-4 py-3" data-testid="estimate-status-banner">
+          <div className="flex flex-wrap items-center gap-3">
+            <span className={`rounded-full px-3 py-1 text-xs font-semibold tracking-wide ${ESTIMATE_STATUS_CLASS[estimateStatus]}`} data-testid="estimate-status-badge">
+              {ESTIMATE_STATUS_LABEL[estimateStatus]}
+            </span>
+            <span className="font-mono text-xs text-slate-400">v{estimateVersion}</span>
+            <span className="text-xs text-slate-400">{user?.email ?? "—"}</span>
+            {estimateUpdatedAt && (
+              <span className="text-xs text-slate-400">{estimateUpdatedAt}</span>
+            )}
+          </div>
+          <div className="mt-2 flex gap-1.5">
+            {(["draft", "internal_approved", "submitted"] as const).map((s) => (
+              <button
+                key={s}
+                type="button"
+                onClick={() => handleEstimateStatusChange(s)}
+                className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
+                  estimateStatus === s
+                    ? ESTIMATE_STATUS_CLASS[s]
+                    : "border-slate-200 text-slate-500 hover:bg-slate-50"
+                }`}
+              >
+                {ESTIMATE_STATUS_LABEL[s]}
+              </button>
+            ))}
+          </div>
         </div>
 
         <div className="responsive-card rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
@@ -959,6 +1026,43 @@ function EstimatePageContent() {
           </div>
         </div>
       </div>
+
+      {/* 提出版への変更確認 */}
+      <ConfirmDialog
+        open={showSubmitConfirm}
+        title="提出版に変更"
+        message={
+          <div className="space-y-2">
+            <p>見積を<span className="font-semibold text-slate-800">提出版</span>に変更します。</p>
+            <div className="rounded-lg bg-slate-50 px-3 py-2 text-sm">
+              <div className="flex justify-between">
+                <span className="text-slate-500">現在の合計金額</span>
+                <span className="font-mono font-semibold text-slate-800">¥{estimate.total.toLocaleString("ja-JP")}</span>
+              </div>
+              {prevTotal !== estimate.total && (
+                <div className="mt-1 flex justify-between text-xs">
+                  <span className="text-slate-400">前回との差分</span>
+                  <span className={`font-mono font-semibold ${estimate.total > prevTotal ? "text-red-600" : "text-[#346538]"}`}>
+                    {estimate.total > prevTotal ? "+" : ""}
+                    ¥{(estimate.total - prevTotal).toLocaleString("ja-JP")}
+                  </span>
+                </div>
+              )}
+            </div>
+            <p className="text-slate-500">この操作は取り消せます（ドラフトに戻せます）。</p>
+          </div>
+        }
+        confirmLabel="提出版にする"
+        onConfirm={() => {
+          setShowSubmitConfirm(false);
+          setEstimateStatus("submitted");
+          setEstimateUpdatedAt(new Date().toLocaleString("ja-JP", { timeZone: "Asia/Tokyo" }));
+          setEstimateVersion((v) => v + 1);
+          setPrevTotal(estimate.total);
+        }}
+        onCancel={() => setShowSubmitConfirm(false)}
+      />
+      </>
     );
   }
 
