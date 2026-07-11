@@ -71,6 +71,7 @@ const LocalSeoPageLazy = lazy(() => import("./components/LocalSeoPage.js").then(
 const InsuranceAssessmentPageLazy = lazy(() => import("./pages/InsuranceAssessmentPage.js").then((m) => ({ default: m.InsuranceAssessmentPage })));
 const PhaseTemplateLibraryPage = lazy(() => import("./pages/PhaseTemplateLibraryPage.js").then((m) => ({ default: m.PhaseTemplateLibraryPage })));
 const TakeoffPage = lazy(() => import("./pages/TakeoffPage.js").then((m) => ({ default: m.TakeoffPage })));
+const E2ESeedPage = lazy(() => import("./pages/E2ESeedPage.js").then((m) => ({ default: m.E2ESeedPage })));
 import { ErrorBoundary } from "./components/ErrorBoundary.js";
 import { AuthGuard } from "./components/AuthGuard.js";
 import { OnboardingWizard, useOnboardingDone } from "./components/OnboardingWizard.js";
@@ -446,6 +447,8 @@ function AppShell() {
     : null;
 
   const pageFallback = <div className="flex items-center justify-center py-20 text-slate-400 text-sm">{t("common:status.loading")}</div>;
+
+  if (route === "/e2e-seed") return <Suspense fallback={pageFallback}><E2ESeedPage /></Suspense>;
 
   // 認証不要ページ（入退場キオスク+協力会社ポータル+施主セレクション+施主ビューア+秘書デモ）
   if (route === "/assistant/demo") {

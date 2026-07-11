@@ -4,6 +4,9 @@ import tailwindcss from "@tailwindcss/vite";
 import { VitePWA } from "vite-plugin-pwa";
 
 export default defineConfig({
+  define: {
+    __VERCEL_ENV__: JSON.stringify(process.env.VERCEL_ENV ?? ""),
+  },
   plugins: [
     tailwindcss(),
     react(),
