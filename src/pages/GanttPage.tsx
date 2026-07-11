@@ -711,6 +711,16 @@ function GanttPageContent({ initialProjectId = null, openMaster = false }: Gantt
     [milestoneIndicators],
   );
 
+  // ponytail: inline derived values for the consolidated summary bar
+  const delayedCount = useMemo(
+    () => selectedProjectTasks.filter((t) => t.status !== "done" && !!t.endDate && t.endDate < today).length,
+    [selectedProjectTasks, today],
+  );
+  const nextInProgressTask = useMemo(
+    () => selectedProjectTasks.find((t) => t.status === "in_progress"),
+    [selectedProjectTasks],
+  );
+
   const projectChangeOrders = useMemo(
     () => (selectedProject ? getChangeOrders(selectedProject.id) : []),
     [selectedProject],
@@ -1902,34 +1912,52 @@ function GanttPageContent({ initialProjectId = null, openMaster = false }: Gantt
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <div className="rounded-2xl bg-white/90 px-4 py-3 text-sm text-slate-600 ring-1 ring-slate-200">
-              ピンチで拡大縮小 / バーをドラッグして日程変更
-            </div>
+            {/* 遅延・次工程サマリ */}
+            {delayedCount > 0 ? (
+              <span className="rounded-full bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-700 ring-1 ring-red-200">
+                遅延 {delayedCount}件
+              </span>
+            ) : null}
+            {nextInProgressTask ? (
+              <span className="max-w-[160px] truncate rounded-full bg-[#EDF3EC] px-3 py-1.5 text-xs font-semibold text-[#346538]" title={nextInProgressTask.name}>
+                次: {nextInProgressTask.name}
+              </span>
+            ) : null}
+
+            {/* Primary CTA */}
+            <button
+              type="button"
+              onClick={() => openQuickAdd(selectedProject.id, selectedProject.name)}
+              className="inline-flex items-center gap-1.5 rounded-md bg-[#111111] px-4 py-2.5 text-sm font-semibold text-white transition-all hover:bg-[#333] active:scale-[0.98]"
+            >
+              <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5} aria-hidden="true">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+              </svg>
+              工程追加
+            </button>
+
+            {/* 表示切り替えトグル */}
             <button
               type="button"
               onClick={() => setShowMilestones((current) => !current)}
-              className={`rounded-2xl px-4 py-3 text-sm font-semibold transition-colors ${
+              className={`rounded-md px-3 py-2.5 text-sm font-semibold transition-colors ${
                 showMilestones
-                  ? "bg-slate-900 text-white shadow-sm"
+                  ? "bg-slate-900 text-white"
                   : "bg-white text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50"
               }`}
             >
-              マイルストーン
-              {" "}
-              {milestoneIndicators.length}
+              MS {milestoneIndicators.length}
             </button>
             <button
               type="button"
               onClick={() => setShowChanges((current) => !current)}
-              className={`rounded-2xl px-4 py-3 text-sm font-semibold transition-colors ${
+              className={`rounded-md px-3 py-2.5 text-sm font-semibold transition-colors ${
                 showChanges
-                  ? "bg-amber-500 text-white shadow-sm"
+                  ? "bg-amber-500 text-white"
                   : "bg-white text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50"
               }`}
             >
-              変更履歴
-              {" "}
-              {projectChangeOrders.length}
+              変更 {projectChangeOrders.length}
             </button>
             {canUndo ? (
               <button
@@ -1937,42 +1965,38 @@ function GanttPageContent({ initialProjectId = null, openMaster = false }: Gantt
                 onClick={() => void handleUndo()}
                 disabled={undoing}
                 aria-label="直前の変更を元に戻す"
-                className="flex h-11 w-11 items-center justify-center rounded-full bg-white text-xl text-slate-600 ring-1 ring-slate-200 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+                className="flex h-10 w-10 items-center justify-center rounded-md bg-white text-slate-600 ring-1 ring-slate-200 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 ↩
               </button>
             ) : null}
-            <button
-              type="button"
-              onClick={handleToggleConnectMode}
-              className={`rounded-2xl px-4 py-3 text-sm font-semibold transition-colors ${
-                connectMode
-                  ? "bg-violet-600 text-white shadow-sm"
-                  : "bg-white text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50"
-              }`}
-            >
-              {connectMode
-                ? connectState
-                  ? "接続先を選択"
-                  : "接続元を選択"
-                : "依存関係を接続"}
-            </button>
-            <button
-              type="button"
-              onClick={() => setMasterModalOpen(true)}
-              className="rounded-2xl bg-brand-600 px-4 py-3 text-sm font-semibold text-white shadow-sm hover:bg-brand-700 transition-colors"
-            >
-              マスタから読み込む
-            </button>
+
+            {/* 編集メニュー */}
             <details className="group relative">
-              <summary className="list-none rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50 [&::-webkit-details-marker]:hidden">
-                その他
+              <summary className="list-none cursor-pointer rounded-md bg-white px-3 py-2.5 text-sm font-semibold text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50 [&::-webkit-details-marker]:hidden">
+                編集
               </summary>
-              <div className="absolute right-0 z-30 mt-2 w-48 rounded-2xl border border-slate-200 bg-white p-2 shadow-xl">
+              <div className="absolute right-0 z-30 mt-1 w-44 rounded-xl border border-slate-200 bg-white p-1.5 shadow-lg">
+                <button
+                  type="button"
+                  onClick={handleToggleConnectMode}
+                  className={`block w-full rounded-lg px-3 py-2 text-left text-sm font-semibold hover:bg-slate-50 ${connectMode ? "text-violet-700" : "text-slate-700"}`}
+                >
+                  {connectMode
+                    ? (connectState ? "接続先を選択" : "接続元を選択")
+                    : "依存関係を接続"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setMasterModalOpen(true)}
+                  className="block w-full rounded-lg px-3 py-2 text-left text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                >
+                  マスタから読み込む
+                </button>
                 <button
                   type="button"
                   onClick={() => setWbsModalOpen(true)}
-                  className="block w-full rounded-xl px-3 py-2 text-left text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                  className="block w-full rounded-lg px-3 py-2 text-left text-sm font-semibold text-slate-700 hover:bg-slate-50"
                 >
                   工程テンプレート
                 </button>
@@ -1980,79 +2004,87 @@ function GanttPageContent({ initialProjectId = null, openMaster = false }: Gantt
                   type="button"
                   disabled={selectedProjectTasks.length === 0}
                   onClick={() => setTemplateSaveOpen(true)}
-                  className="block w-full rounded-xl px-3 py-2 text-left text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                  className="block w-full rounded-lg px-3 py-2 text-left text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
                 >
                   テンプレ保存
                 </button>
                 <button
                   type="button"
                   onClick={() => { setRainDate(""); setRainAffected(null); setRainDialogOpen(true); }}
-                  className="block w-full rounded-xl px-3 py-2 text-left text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                  className="block w-full rounded-lg px-3 py-2 text-left text-sm font-semibold text-slate-700 hover:bg-slate-50"
                 >
                   雨天中止
                 </button>
               </div>
             </details>
-            <div className="flex flex-col items-end gap-1">
-              <button
-                type="button"
-                disabled={pdfExporting}
-                onClick={() => { setPdfError(null); handlePdfPreview(); }}
-                className="rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50"
-              >
-                {pdfExporting ? "出力中..." : "PDF出力"}
-              </button>
-              {pdfError && (
-                <p className="text-xs text-red-600" role="alert">{pdfError}</p>
-              )}
-            </div>
-            <button
-              type="button"
-              disabled={icsExportableCount === 0}
-              onClick={handleICSExport}
-              className="rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              カレンダーに出力 (.ics)
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setShowRiskPanel((v) => !v);
-                if (!chatSchedule) {
-                  setChatSchedule(ganttTasksToGeneratedSchedule(selectedProjectTasks, selectedProject.id, selectedProject.name));
-                }
-              }}
-              className={`rounded-2xl px-4 py-3 text-sm font-semibold transition-colors ${
-                showRiskPanel
-                  ? "bg-red-600 text-white shadow-sm"
-                  : "bg-white text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50"
-              }`}
-            >
-              リスク予測
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setShowChatPanel((v) => !v);
-                if (!chatSchedule) {
-                  setChatSchedule(ganttTasksToGeneratedSchedule(selectedProjectTasks, selectedProject.id, selectedProject.name));
-                }
-              }}
-              className={`rounded-2xl px-4 py-3 text-sm font-semibold transition-colors ${
-                showChatPanel
-                  ? "bg-violet-600 text-white shadow-sm"
-                  : "bg-white text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50"
-              }`}
-            >
-              指示で編集
-            </button>
-            <button
-              type="button"
-              onClick={() => navigate("/resource-analysis")}
-              className="rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50 transition-colors"
-            >
-              リソース分析
-            </button>
+
+            {/* 出力メニュー */}
+            <details className="group relative">
+              <summary className="list-none cursor-pointer rounded-md bg-white px-3 py-2.5 text-sm font-semibold text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50 [&::-webkit-details-marker]:hidden">
+                出力
+              </summary>
+              <div className="absolute right-0 z-30 mt-1 w-44 rounded-xl border border-slate-200 bg-white p-1.5 shadow-lg">
+                <button
+                  type="button"
+                  disabled={pdfExporting}
+                  onClick={() => { setPdfError(null); handlePdfPreview(); }}
+                  className="block w-full rounded-lg px-3 py-2 text-left text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                >
+                  {pdfExporting ? "出力中..." : "PDF出力"}
+                </button>
+                {pdfError && (
+                  <p className="px-3 py-1 text-xs text-red-600" role="alert">{pdfError}</p>
+                )}
+                <button
+                  type="button"
+                  disabled={icsExportableCount === 0}
+                  onClick={handleICSExport}
+                  className="block w-full rounded-lg px-3 py-2 text-left text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                >
+                  カレンダー (.ics)
+                </button>
+              </div>
+            </details>
+
+            {/* 分析メニュー */}
+            <details className="group relative">
+              <summary className="list-none cursor-pointer rounded-md bg-white px-3 py-2.5 text-sm font-semibold text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50 [&::-webkit-details-marker]:hidden">
+                分析
+              </summary>
+              <div className="absolute right-0 z-30 mt-1 w-44 rounded-xl border border-slate-200 bg-white p-1.5 shadow-lg">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowRiskPanel((v) => !v);
+                    if (!chatSchedule) {
+                      setChatSchedule(ganttTasksToGeneratedSchedule(selectedProjectTasks, selectedProject.id, selectedProject.name));
+                    }
+                  }}
+                  className={`block w-full rounded-lg px-3 py-2 text-left text-sm font-semibold hover:bg-slate-50 ${showRiskPanel ? "text-red-700" : "text-slate-700"}`}
+                >
+                  リスク予測
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowChatPanel((v) => !v);
+                    if (!chatSchedule) {
+                      setChatSchedule(ganttTasksToGeneratedSchedule(selectedProjectTasks, selectedProject.id, selectedProject.name));
+                    }
+                  }}
+                  className={`block w-full rounded-lg px-3 py-2 text-left text-sm font-semibold hover:bg-slate-50 ${showChatPanel ? "text-violet-700" : "text-slate-700"}`}
+                >
+                  指示で編集
+                </button>
+                <button
+                  type="button"
+                  onClick={() => navigate("/resource-analysis")}
+                  className="block w-full rounded-lg px-3 py-2 text-left text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                >
+                  リソース分析
+                </button>
+              </div>
+            </details>
           </div>
         </div>
 
