@@ -5,6 +5,7 @@ import { createExecutionBudgetRepository } from "../stores/execution-budget-stor
 import { useOrganizationContext } from "../contexts/OrganizationContext.js";
 import { ChangeRequestAdminPanel } from "./ChangeRequestAdminPanel.js";
 import { getInvoicesByProject, type Invoice } from "../lib/invoice-store.js";
+import { ErrorMessage } from "./common/ErrorMessage.js";
 
 /**
  * 案件の請求書から「入金済み合計」「未入金合計」を算出する。
@@ -215,9 +216,13 @@ export function ProjectFinancePanel({ projectId }: { projectId: string }) {
   return (
     <div className="space-y-4">
       {error && (
-        <div role="alert" className="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
-          {error}
-        </div>
+        <ErrorMessage
+          kind="network"
+          cause={error}
+          impact="入金計画・実行予算データが表示されていない可能性があります。"
+          action="再読み込み"
+          onAction={loadData}
+        />
       )}
 
       {syncMessage && (

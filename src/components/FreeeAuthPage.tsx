@@ -18,6 +18,7 @@
  */
 
 import { useEffect, useState } from "react";
+import { ErrorMessage } from "./common/ErrorMessage.js";
 
 // ── 型 ────────────────────────────────────────────────
 
@@ -194,11 +195,15 @@ export function FreeeAuthPage({ onConnected, onDisconnected }: FreeeAuthPageProp
       <h2 className="text-base font-bold text-slate-900">会計ソフト連携</h2>
 
       {error ? (
-        <div
-          role="alert"
-          className="mt-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
-        >
-          {error}
+        <div className="mt-3">
+          <ErrorMessage
+            kind="network"
+            cause={error}
+            impact="freee との連携が完了していません。"
+            action="再試行"
+            onAction={handleConnect}
+            onDismiss={() => setError(null)}
+          />
         </div>
       ) : null}
 

@@ -12,6 +12,7 @@ import {
 } from "../infra/supabase-adapter/document-file-storage.js";
 import { ProjectDetailTabs } from "./ProjectDetailTabs.js";
 import { PdfCanvasPreview } from "./PdfCanvasPreview.js";
+import { ErrorMessage } from "./common/ErrorMessage.js";
 
 type PreviewConfig =
   | { mode: "image"; src: string }
@@ -530,13 +531,12 @@ export function DocumentsPage({ projectId }: { projectId: string }) {
       </button>
 
       {error ? (
-        <div role="alert" className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-          <span className="mt-0.5 shrink-0">!</span>
-          <span className="flex-1">{error}</span>
-          <button type="button" onClick={() => setError(null)} className="shrink-0 text-red-400 hover:text-red-600" aria-label="エラーを閉じる">
-            &times;
-          </button>
-        </div>
+        <ErrorMessage
+          kind="network"
+          cause={error}
+          impact="ドキュメント一覧が正しく表示されていない可能性があります。"
+          onDismiss={() => setError(null)}
+        />
       ) : null}
 
       <section className="rounded-3xl bg-brand-800 p-6 text-white shadow-sm">
