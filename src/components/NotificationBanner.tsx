@@ -24,6 +24,8 @@ const CRITICAL_TONES = new Set<AppNotification["tone"]>(["red"]);
 
 type NotificationBannerProps = {
   refreshKey?: string;
+  /** 今日画面のみ true。true のときだけ重要通知で自動展開する */
+  autoExpand?: boolean;
 };
 
 const toneClassMap = {
@@ -94,7 +96,7 @@ function groupNotifications(notifications: AppNotification[]): NotificationGroup
     .filter((group): group is NotificationGroup => Boolean(group));
 }
 
-export function NotificationBanner({ refreshKey }: NotificationBannerProps) {
+export function NotificationBanner({ refreshKey, autoExpand = false }: NotificationBannerProps) {
   const { organizationId } = useOrganizationContext();
   const projectRepository = useMemo(
     () => createProjectRepository(() => organizationId),
@@ -196,8 +198,9 @@ export function NotificationBanner({ refreshKey }: NotificationBannerProps) {
     [notifications, dismissals],
   );
 
-  // Keep global notices compact unless a critical item needs immediate attention.
+  // 今日画面のみ重要通知で自動展開。それ以外は常に折りたたみ維持。
   useEffect(() => {
+    if (!autoExpand) return;
     const hasCriticalNotification = visibleNotifications.some((notification) => CRITICAL_TONES.has(notification.tone));
     try {
       const storedPreference = localStorage.getItem(COLLAPSED_KEY);
@@ -209,7 +212,7 @@ export function NotificationBanner({ refreshKey }: NotificationBannerProps) {
     } catch {
       setCollapsed(!hasCriticalNotification);
     }
-  }, [visibleNotifications]);
+  }, [autoExpand, visibleNotifications]);
 
   function handleCollapse() {
     setCollapsed(true);

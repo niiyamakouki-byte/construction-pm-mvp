@@ -1053,7 +1053,7 @@ function AppShell() {
           ) : null}
         </nav>
 
-        <NotificationBanner refreshKey={route} />
+        <NotificationBanner refreshKey={route} autoExpand={route === "/today"} />
 
         {/* ── Main content area (shifted right on desktop) ── */}
         <main
@@ -1152,7 +1152,8 @@ function AppShell() {
         {shouldBootstrapFirstRun && firstRunError ? <OnboardingWizard onComplete={handleOnboardingComplete} /> : null}
         {onboardingDone && !tourDone && showTour ? <TourGuide onComplete={markTourDone} /> : null}
         {showShortcutHelp ? <KeyboardShortcutHelp onClose={() => setShowShortcutHelp(false)} /> : null}
-        <AssistantChatPanel userId={user?.email ?? "anonymous"} />
+        {/* ponytail: ganttMatch があるページは工程追加FABが右下を占有するのでAI FABを非表示 */}
+        {!ganttMatch && <AssistantChatPanel userId={user?.email ?? "anonymous"} />}
         <InstallPrompt />
       </div>
     </AuthGuard>
