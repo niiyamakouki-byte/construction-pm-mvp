@@ -236,7 +236,7 @@ export function GanttChart({
                     type="button"
                     aria-expanded={!collapsed}
                     aria-label={`${row.group.phaseName} ${collapsed ? "展開" : "折りたたむ"}`}
-                    className="flex h-5 w-5 shrink-0 items-center justify-center rounded text-slate-400 hover:bg-slate-200 hover:text-slate-600 transition-colors"
+                    className="flex h-full min-w-[44px] shrink-0 items-center justify-center rounded text-slate-400 hover:bg-slate-200 hover:text-slate-600 transition-colors"
                     onClick={() => onTogglePhase(row.group.phaseName)}
                   >
                     <span className="text-[10px] font-bold">{collapsed ? "▶" : "▼"}</span>
