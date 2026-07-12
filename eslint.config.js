@@ -15,6 +15,7 @@ export default tseslint.config(
       "dist/",
       "node_modules/",
       "public/",
+      ".vercel/",
       ".claude/",
       ".worktrees/",
       ".omc/",
