@@ -63,8 +63,12 @@ test.describe("390px mobile responsive routes", () => {
   test("/estimate keeps form and catalog content readable", async ({ page }) => {
     await page.goto("/#/estimate");
     await page.waitForLoadState("networkidle");
-    // EstimatePage shows a mode selector first; click "手動で作成" to enter the form
-    await page.getByRole("button", { name: "手動で作成" }).click();
+    // EstimatePage shows a mode selector first; click "品目追加" (112ac4fで「手動で作成」から改名) to enter the form
+    const modeCard = page.getByRole("button", { name: "品目追加" });
+    const modeBox = await modeCard.boundingBox();
+    expect(modeBox).not.toBeNull();
+    expect(modeBox?.width).toBeGreaterThanOrEqual(280);
+    await modeCard.click();
     await expect(page.getByRole("heading", { name: "品目から手動で作成" })).toBeVisible();
 
     await expectNoHorizontalCollapse(page);
@@ -73,14 +77,6 @@ test.describe("390px mobile responsive routes", () => {
     const inputBox = await propertyInput.boundingBox();
     expect(inputBox).not.toBeNull();
     expect(inputBox?.width).toBeGreaterThanOrEqual(280);
-
-    const tabGrid = page.getByRole("button", { name: "見積作成", exact: true }).locator("..");
-    const tabMetrics = await tabGrid.evaluate((el) => ({
-      clientWidth: el.clientWidth,
-      scrollWidth: el.scrollWidth,
-    }));
-    expect(tabMetrics.clientWidth).toBeGreaterThanOrEqual(280);
-    expect(tabMetrics.scrollWidth).toBeLessThanOrEqual(tabMetrics.clientWidth);
 
     const catalogButton = page.getByRole("button", { name: /解体・撤去/ });
     const catalogBox = await catalogButton.boundingBox();
