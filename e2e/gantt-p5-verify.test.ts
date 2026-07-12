@@ -198,6 +198,8 @@ async function openChatPanel(page: Page) {
   await expect(
     page.locator('[aria-label="工程検索"]').first(),
   ).toBeVisible({ timeout: 20000 });
+  // 8bc2dd5でツールバーが3入口に集約され「指示で編集」は「分析」メニュー内に移動
+  await page.locator('summary:has-text("分析")').click();
   await page.locator('button:has-text("指示で編集")').click();
   await expect(
     page.locator('text=自然言語で工程を編集'),
