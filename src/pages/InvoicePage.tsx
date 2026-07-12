@@ -176,13 +176,19 @@ export function InvoicePage() {
       setError("金額が小さすぎます（100円未満）。金額は円単位で入力してください。万円単位の場合は末尾に0000を付けてください。");
       return;
     }
+    // expenses.project_id は projects への外部キー必須。案件が1件も無いまま
+    // INSERT すると生のFK違反エラー(英語)がそのまま表示されるため先に案内する。
+    if (!projectId) {
+      setError("経費の保存先となる案件がありません。先に案件一覧から案件を作成してください");
+      return;
+    }
     setSaving(true);
     setError(null);
     try {
       const now = new Date().toISOString();
       await expenseRepository.create({
         id: crypto.randomUUID(),
-        projectId: projectId || "",
+        projectId,
         expenseDate: invoiceDate,
         description: `請求書: ${vendorName}`,
         amount: parsedAmount,
