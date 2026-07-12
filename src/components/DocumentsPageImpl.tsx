@@ -342,6 +342,19 @@ export function DocumentsPage({ projectId }: { projectId: string }) {
     [documentRepository, projectId, user],
   );
 
+  // モバイル/タブレットにはドラッグ&ドロップが存在しないため、
+  // 同じ一括インポート処理へつながるファイル選択ボタンを用意する。
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const handleFileInputChange = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      const files = Array.from(event.target.files ?? []);
+      // 同じファイルを続けて選び直せるよう毎回リセットする
+      event.target.value = "";
+      void importDroppedFiles(files);
+    },
+    [importDroppedFiles],
+  );
+
   const handleDragEnter = useCallback((event: React.DragEvent<HTMLDivElement>) => {
     event.preventDefault();
     if (!event.dataTransfer?.types?.includes("Files")) {
@@ -620,6 +633,27 @@ export function DocumentsPage({ projectId }: { projectId: string }) {
                 <p className="text-sm text-slate-500">ファイル本体は Drive 等に置き、ここでは参照 URL を管理します。</p>
               </div>
               <span className="rounded-full bg-brand-50 px-3 py-1 text-xs font-semibold text-brand-700">初回版は v1.0</span>
+            </div>
+
+            <div className="mt-4 flex flex-wrap items-center gap-3 rounded-2xl border border-dashed border-brand-300 bg-brand-50/50 px-4 py-3">
+              <input
+                ref={fileInputRef}
+                type="file"
+                multiple
+                accept="application/pdf,image/jpeg,image/png,image/heic,image/heif,image/webp,.pdf,.png,.jpg,.jpeg,.heic,.heif,.webp"
+                onChange={handleFileInputChange}
+                className="hidden"
+                aria-label="PDF・画像ファイルを選択して登録"
+              />
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={dropUploadProgress !== null}
+                className="min-h-[44px] rounded-xl bg-brand-700 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-800 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                ファイルを選択して登録
+              </button>
+              <p className="text-xs text-slate-500">PDF・画像をその場で取り込みます。PCではドラッグ&ドロップでも登録できます。</p>
             </div>
 
             <form onSubmit={handleSubmit} className="mt-4 grid gap-3 md:grid-cols-2">

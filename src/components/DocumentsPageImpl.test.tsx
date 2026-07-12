@@ -333,6 +333,31 @@ describe("DocumentsPage - ドラッグ&ドロップ一括インポート", () =>
 
     expect(await screen.findByText("ここにPDF・画像をドロップして登録")).toBeTruthy();
   });
+
+  it("ファイル選択ボタン(モバイル等D&D不可環境向け)からも同じ一括インポートが動く", async () => {
+    mockDocumentFindAll.mockResolvedValue([]);
+    const created = makeDocument({ id: "doc-picked", name: "picked.pdf", url: "blob:picked" });
+    mockUploadProjectDocumentFile.mockResolvedValueOnce({
+      url: "blob:picked",
+      storagePath: null,
+      fileName: "picked.pdf",
+      contentType: "application/pdf",
+      fileSize: 4,
+    });
+    mockDocumentCreate.mockResolvedValueOnce(created);
+
+    render(<DocumentsPage projectId="proj-1" />);
+    await waitFor(() => expect(mockFindById).toHaveBeenCalled());
+
+    const input = screen.getByLabelText("PDF・画像ファイルを選択して登録") as HTMLInputElement;
+    fireEvent.change(input, { target: { files: [makeDropFile("picked.pdf", "application/pdf")] } });
+
+    await waitFor(() => expect(mockDocumentCreate).toHaveBeenCalledTimes(1));
+    expect(mockUploadProjectDocumentFile).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(screen.getAllByText("picked.pdf").length).toBeGreaterThan(0));
+    // 続けて同じファイルを選び直せるようinputはリセットされる
+    expect(input.value).toBe("");
+  });
 });
 
 describe("DocumentsPage - 共有/エクスポート", () => {
