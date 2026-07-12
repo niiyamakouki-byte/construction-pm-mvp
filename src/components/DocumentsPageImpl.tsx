@@ -8,6 +8,7 @@ import { createDocumentRepository, createDocumentVersionRepository } from "../st
 import {
   inferDocumentTypeFromFile,
   isSupportedDocumentFile,
+  refreshDocumentUrl,
   uploadProjectDocumentFile,
 } from "../infra/supabase-adapter/document-file-storage.js";
 import { ProjectDetailTabs } from "./ProjectDetailTabs.js";
@@ -185,7 +186,30 @@ export function DocumentsPage({ projectId }: { projectId: string }) {
   const filteredDocuments = documents.filter((document) =>
     document.name.toLowerCase().includes(searchQuery.trim().toLowerCase()),
   );
-  const previewConfig = selectedDocument ? getPreviewConfig(selectedDocument.url, selectedDocument.name) : null;
+
+  // 保存済みの署名URL(7日期限)は期限切れの可能性があるため、選択のたびに再署名して使う。
+  // 再署名が返るまでは保存済みURLで先に表示を始める(期限内なら即時に見える)。
+  const [refreshedUrl, setRefreshedUrl] = useState<{ documentId: string; url: string } | null>(null);
+  const selectedDocumentUrl =
+    refreshedUrl && selectedDocument && refreshedUrl.documentId === selectedDocument.id
+      ? refreshedUrl.url
+      : (selectedDocument?.url ?? null);
+  useEffect(() => {
+    if (!selectedDocument) return;
+    let cancelled = false;
+    const { id, url } = selectedDocument;
+    void refreshDocumentUrl(url).then((fresh) => {
+      if (!cancelled && fresh !== url) {
+        setRefreshedUrl({ documentId: id, url: fresh });
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedDocument]);
+
+  const previewConfig =
+    selectedDocument && selectedDocumentUrl ? getPreviewConfig(selectedDocumentUrl, selectedDocument.name) : null;
   const currentVersionHistory = selectedDocument
     ? [
         {
@@ -354,7 +378,7 @@ export function DocumentsPage({ projectId }: { projectId: string }) {
     setSharing(true);
     setError(null);
     try {
-      const response = await fetch(document.url);
+      const response = await fetch(await refreshDocumentUrl(document.url));
       if (!response.ok) {
         throw new Error("ファイルの取得に失敗しました");
       }
@@ -803,7 +827,7 @@ export function DocumentsPage({ projectId }: { projectId: string }) {
                     {sharing ? "共有準備中..." : "共有 / ダウンロード"}
                   </button>
                   <a
-                    href={selectedDocument.url}
+                    href={selectedDocumentUrl ?? selectedDocument.url}
                     target="_blank"
                     rel="noreferrer"
                     className="rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600 hover:border-brand-300 hover:text-brand-700"

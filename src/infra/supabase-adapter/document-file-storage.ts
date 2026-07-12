@@ -146,3 +146,34 @@ export async function uploadProjectDocumentFile(
     fileSize: file.size,
   };
 }
+
+const SIGNED_URL_PATH_PATTERN = /\/storage\/v1\/object\/sign\/([^/]+)\/([^?]+)/;
+
+/**
+ * `documents.url` には発行時点の署名付きURL(7日期限)がそのまま保存されているため、
+ * 期限が切れると保存済みドキュメントのプレビュー・共有・ダウンロードが全て失敗する。
+ * ファイル本体はStorageに残っているので、URLに含まれるbucket/pathから
+ * 新しい署名URLを表示・共有の直前に発行し直す。
+ * Supabase Storageの署名URL以外(Drive・blob:等)や再署名に失敗した場合は元のURLを返す。
+ */
+export async function refreshDocumentUrl(url: string, deps: DocumentFileUploadDeps = {}): Promise<string> {
+  const match = url.match(SIGNED_URL_PATH_PATTERN);
+  if (!match) return url;
+
+  const isE2EBypass = deps.isE2EBypass ?? defaultIsE2EBypass;
+  const checkHasSupabaseEnv = deps.hasSupabaseEnv ?? hasSupabaseEnv;
+  if (!checkHasSupabaseEnv() || isE2EBypass()) return url;
+
+  try {
+    const getClient = deps.getClient ?? getSupabaseClient;
+    const client = await getClient();
+    const [, bucket, rawPath] = match;
+    const { data, error } = await client.storage
+      .from(bucket)
+      .createSignedUrl(decodeURIComponent(rawPath), SIGNED_URL_EXPIRES_IN_SECONDS);
+    if (error || !data?.signedUrl) return url;
+    return data.signedUrl;
+  } catch {
+    return url;
+  }
+}

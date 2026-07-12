@@ -3,6 +3,7 @@ import {
   inferDocumentTypeFromFile,
   isSupportedDocumentFile,
   MAX_DOCUMENT_FILE_SIZE,
+  refreshDocumentUrl,
   uploadProjectDocumentFile,
   validateDocumentFile,
 } from "./document-file-storage.js";
@@ -125,5 +126,56 @@ describe("uploadProjectDocumentFile", () => {
         isE2EBypass: () => false,
       }),
     ).rejects.toThrow(/案件/);
+  });
+});
+
+describe("refreshDocumentUrl", () => {
+  const SIGNED_URL =
+    "https://proj.supabase.co/storage/v1/object/sign/project-documents/proj-1/doc%20A.pdf?token=expired-token";
+
+  function makeDeps(createSignedUrl: ReturnType<typeof vi.fn>, from = vi.fn()) {
+    from.mockReturnValue({ upload: vi.fn(), createSignedUrl, remove: vi.fn() });
+    return {
+      hasSupabaseEnv: () => true,
+      isE2EBypass: () => false,
+      getClient: async () => ({ from: vi.fn(), auth: {} as never, storage: { from } }),
+    };
+  }
+
+  it("保存済みの署名URLからbucket/pathを取り出して新しい署名URLを発行し直す", async () => {
+    const createSignedUrl = vi.fn().mockResolvedValue({ data: { signedUrl: "https://signed.example/fresh.pdf" }, error: null });
+    const from = vi.fn();
+
+    const result = await refreshDocumentUrl(SIGNED_URL, makeDeps(createSignedUrl, from));
+
+    expect(from).toHaveBeenCalledWith("project-documents");
+    expect(createSignedUrl).toHaveBeenCalledWith("proj-1/doc A.pdf", expect.any(Number));
+    expect(result).toBe("https://signed.example/fresh.pdf");
+  });
+
+  it("署名URL以外(Drive/blob:等)はそのまま返す", async () => {
+    const createSignedUrl = vi.fn();
+    const deps = makeDeps(createSignedUrl);
+
+    expect(await refreshDocumentUrl("https://drive.google.com/file/d/abc", deps)).toBe(
+      "https://drive.google.com/file/d/abc",
+    );
+    expect(await refreshDocumentUrl("blob:https://app/uuid", deps)).toBe("blob:https://app/uuid");
+    expect(createSignedUrl).not.toHaveBeenCalled();
+  });
+
+  it("再署名に失敗した場合は元のURLへフォールバックする", async () => {
+    const createSignedUrl = vi.fn().mockResolvedValue({ data: null, error: { message: "boom" } });
+
+    expect(await refreshDocumentUrl(SIGNED_URL, makeDeps(createSignedUrl))).toBe(SIGNED_URL);
+  });
+
+  it("Supabase未接続/E2Eバイパス時は再署名せずそのまま返す", async () => {
+    expect(
+      await refreshDocumentUrl(SIGNED_URL, { hasSupabaseEnv: () => false, isE2EBypass: () => false }),
+    ).toBe(SIGNED_URL);
+    expect(
+      await refreshDocumentUrl(SIGNED_URL, { hasSupabaseEnv: () => true, isE2EBypass: () => true }),
+    ).toBe(SIGNED_URL);
   });
 });
