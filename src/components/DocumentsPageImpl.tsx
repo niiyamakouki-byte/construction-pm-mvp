@@ -220,7 +220,7 @@ export function DocumentsPage({ projectId }: { projectId: string }) {
           projectId: selectedDocument.projectId,
           name: selectedDocument.name,
           type: selectedDocument.type,
-          url: selectedDocument.url,
+          url: selectedDocumentUrl ?? selectedDocument.url,
           uploadedBy: selectedDocument.uploadedBy,
           version: selectedDocument.version,
         },
@@ -235,10 +235,24 @@ export function DocumentsPage({ projectId }: { projectId: string }) {
       setError(null);
 
       const allVersions = await documentVersionRepository.findAll();
-      setVersions(sortByNewest(allVersions.filter((version) => version.documentId === document.id)));
+      const documentVersions = sortByNewest(allVersions.filter((version) => version.documentId === document.id));
+      setVersions(documentVersions);
+
+      // 旧版のurlも保存時の署名URL(7日期限)のままなので、「開く」リンクが
+      // 期限切れで死なないよう表示時に再署名して差し替える(現行版と同じ方針)。
+      void Promise.all(
+        documentVersions.map(async (version) => ({ ...version, url: await refreshDocumentUrl(version.url) })),
+      ).then((refreshedVersions) => {
+        setVersions((current) =>
+          current.length === refreshedVersions.length &&
+          current.every((version, index) => version.id === refreshedVersions[index].id)
+            ? refreshedVersions
+            : current,
+        );
+      });
 
       if (!getPreviewConfig(document.url, document.name)) {
-        window.open(document.url, "_blank", "noopener,noreferrer");
+        window.open(await refreshDocumentUrl(document.url), "_blank", "noopener,noreferrer");
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "バージョン履歴の読み込みに失敗しました。");

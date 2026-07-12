@@ -13,6 +13,7 @@ const mockVersionFindAll = vi.fn();
 const mockVersionCreate = vi.fn();
 const mockNavigate = vi.hoisted(() => vi.fn());
 const mockUploadProjectDocumentFile = vi.hoisted(() => vi.fn());
+const mockRefreshDocumentUrl = vi.hoisted(() => vi.fn());
 
 vi.mock("../infra/supabase-adapter/document-file-storage.js", async () => {
   const actual = await vi.importActual<typeof import("../infra/supabase-adapter/document-file-storage.js")>(
@@ -21,6 +22,7 @@ vi.mock("../infra/supabase-adapter/document-file-storage.js", async () => {
   return {
     ...actual,
     uploadProjectDocumentFile: mockUploadProjectDocumentFile,
+    refreshDocumentUrl: mockRefreshDocumentUrl,
   };
 });
 
@@ -112,6 +114,7 @@ beforeEach(() => {
   mockFindById.mockResolvedValue(makeProject());
   mockVersionFindAll.mockResolvedValue([]);
   mockVersionCreate.mockResolvedValue(undefined);
+  mockRefreshDocumentUrl.mockImplementation(async (url: string) => url);
 });
 
 afterEach(() => {
@@ -264,6 +267,51 @@ describe("DocumentsPage - PDFプレビュー(construction_pm_mvp-6jt 黒画面�
 
     // 黒画面の原因だった「生PDF URLを指すiframe」が描画されないこと
     expect(document.querySelector('iframe[src$=".pdf"]')).toBeNull();
+  });
+});
+
+describe("DocumentsPage - バージョン履歴「開く」リンクの再署名(7日期限切れ対策)", () => {
+  it("旧版・現在版とも「開く」リンクは保存済み署名URLではなく再署名後のURLを指す", async () => {
+    const staleCurrentUrl =
+      "https://example.supabase.co/storage/v1/object/sign/project-documents/proj-1/current.pdf?token=stale-current";
+    const staleOldUrl =
+      "https://example.supabase.co/storage/v1/object/sign/project-documents/proj-1/old.pdf?token=stale-old";
+    const pdfDocument = makeDocument({ name: "図面_A-101.pdf", url: staleCurrentUrl, version: "v1.1" });
+    mockDocumentFindAll.mockResolvedValue([pdfDocument]);
+    mockVersionFindAll.mockResolvedValue([
+      { ...makeDocument({ url: staleOldUrl, version: "v1.0" }), id: "version-1", documentId: pdfDocument.id },
+    ]);
+    mockRefreshDocumentUrl.mockImplementation(async (url: string) => url.replace(/token=[^&]+/, "token=fresh"));
+
+    render(<DocumentsPage projectId="proj-1" />);
+    await screen.findByText(pdfDocument.name);
+    fireEvent.click(screen.getByText(pdfDocument.name));
+
+    await screen.findAllByRole("link", { name: "開く" });
+    await waitFor(() => {
+      const hrefs = screen.getAllByRole("link", { name: "開く" }).map((link) => link.getAttribute("href"));
+      expect(hrefs).toContain(staleOldUrl.replace("token=stale-old", "token=fresh"));
+      expect(hrefs).toContain(staleCurrentUrl.replace("token=stale-current", "token=fresh"));
+      expect(hrefs.join(" ")).not.toContain("token=stale");
+    });
+  });
+
+  it("再署名対象外のURL(Drive等)はそのまま「開く」リンクに使われる", async () => {
+    const driveDocument = makeDocument();
+    mockDocumentFindAll.mockResolvedValue([driveDocument]);
+    mockVersionFindAll.mockResolvedValue([
+      { ...makeDocument({ url: "https://drive.google.com/file/d/old-version/view", version: "v0.9" }), id: "version-1", documentId: driveDocument.id },
+    ]);
+
+    render(<DocumentsPage projectId="proj-1" />);
+    await screen.findByText(driveDocument.name);
+    fireEvent.click(screen.getByText(driveDocument.name));
+
+    await waitFor(() => {
+      const hrefs = screen.getAllByRole("link", { name: "開く" }).map((link) => link.getAttribute("href"));
+      expect(hrefs).toContain(driveDocument.url);
+      expect(hrefs).toContain("https://drive.google.com/file/d/old-version/view");
+    });
   });
 });
 
