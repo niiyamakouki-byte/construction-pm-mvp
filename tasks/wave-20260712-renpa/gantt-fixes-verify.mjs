@@ -38,14 +38,12 @@ for (const [label, vp] of [["desktop", { width: 1440, height: 900 }], ["mobile",
     const container = [...document.querySelectorAll(".mobile-scroll-x")].sort((a, b) => b.scrollWidth - a.scrollWidth)[0];
     if (!container) return { error: "no scroll container" };
     const containerRect = container.getBoundingClientRect();
-    // 初期表示のビューポート内に工程バー(絶対配置の色付きバー)が見えるか
-    const bars = [...container.querySelectorAll("[data-task-id], [role=button], div")].filter((el) => {
-      const st = el.getAttribute("style") || "";
-      return st.includes("left") && st.includes("width") && el.getBoundingClientRect().height > 10 && el.getBoundingClientRect().height < 46;
-    });
+    // 初期表示のビューポート内に工程バー(GanttTaskBar: data-task-id)が見えるか
+    const bars = [...container.querySelectorAll("[data-task-id]")];
     const visibleBars = bars.filter((el) => {
       const r = el.getBoundingClientRect();
-      return r.width > 8 && r.right > containerRect.left + 100 && r.left < containerRect.right - 20;
+      // モバイルはタイムライン窓が約196pxしかないため、10px以上見えていれば可視と判定
+      return r.width > 8 && r.right > containerRect.left + 10 && r.left < containerRect.right - 10;
     });
     // 左列ヘッダーの重なり: ヘッダーセルの下端がフェーズ行の上端を越えていないか
     const headerP = [...document.querySelectorAll("p")].find((p) => p.textContent === "工程名・業者・進捗");
