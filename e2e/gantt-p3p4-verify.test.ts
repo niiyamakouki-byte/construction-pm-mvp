@@ -219,6 +219,10 @@ const SEED_TASKS = [
 ];
 
 async function seedLocalStorage(page: Page) {
+  // シードデータは「今日 = 2026-07-04」前提の固定日付(冒頭コメント参照)。
+  // 実時刻のままだと日付経過で過負荷条件(ラポルタ180%)が現在週から外れて
+  // ⑤⑥が腐るため、テスト内時刻を検証日に固定する
+  await page.clock.setFixedTime(new Date("2026-07-04T09:00:00+09:00"));
   await page.addInitScript(
     ({ projects, tasks, contractors }) => {
       window.__E2E_BYPASS_AUTH__ = true;
