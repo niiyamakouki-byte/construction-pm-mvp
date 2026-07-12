@@ -213,13 +213,10 @@ export function GanttChart({
     >
       <div className="flex min-h-[420px]">
         <div className="gantt-label-column shrink-0 border-r border-slate-200 bg-slate-50/80">
-          <div className="border-b border-slate-200 px-3 py-3" style={{ height: headerHeight }}>
+          {/* headerHeight(64px)固定のため縦積みにすると下の行へはみ出して重なる。1行表記で収める */}
+          <div className="overflow-hidden border-b border-slate-200 px-3 py-3" style={{ height: headerHeight }}>
             <p className="text-[11px] font-semibold tracking-[0.18em] text-slate-500">工程</p>
-            <div className="mt-2 grid gap-1 text-xs text-slate-500">
-              <span>工程名</span>
-              <span>業者</span>
-              <span>進捗</span>
-            </div>
+            <p className="mt-2 truncate text-[11px] text-slate-500">工程名・業者・進捗</p>
           </div>
 
           {visibleRows.map((row) => {
