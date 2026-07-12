@@ -14,6 +14,21 @@ function toDate(dateStr: string): Date {
   return new Date(`${dateStr}T00:00:00`);
 }
 
+/**
+ * 工程表の初期スクロール先の日付。基本は今日だが、チャート範囲は常に今日を
+ * 含むため、工期が過去/未来の案件では今日周辺にバーが1本もなく空に見える。
+ * 今日が工程範囲外のときは範囲の端(過去案件=最終工程の終端、未来案件=最初の
+ * 工程の始端)に寄せる。
+ */
+export function initialScrollDate(today: string, tasks: Pick<GanttTask, "startDate" | "endDate">[]): string {
+  if (tasks.length === 0) return today;
+  const minStart = tasks.reduce((min, task) => (task.startDate < min ? task.startDate : min), tasks[0].startDate);
+  const maxEnd = tasks.reduce((max, task) => (task.endDate > max ? task.endDate : max), tasks[0].endDate);
+  if (today < minStart) return minStart;
+  if (today > maxEnd) return maxEnd;
+  return today;
+}
+
 type GanttRowOrder = { sortIndex?: number | null; startDate: string; endDate: string };
 
 /**

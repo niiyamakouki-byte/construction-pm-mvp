@@ -7,6 +7,7 @@ import {
   formatScheduleDate,
   getAlertLevel,
   hasCycle,
+  initialScrollDate,
 } from "./utils.js";
 import type { GanttTask } from "./types.js";
 
@@ -17,6 +18,29 @@ describe("gantt utils", () => {
 
   it("moves backward across weekends when weekends are excluded", () => {
     expect(addDaysBySchedule("2025-01-06", -1, false)).toBe("2025-01-03");
+  });
+});
+
+describe("initialScrollDate (工期外の案件で初期表示が空に見える対策)", () => {
+  const tasks = [
+    { startDate: "2026-03-01", endDate: "2026-03-10" },
+    { startDate: "2026-04-01", endDate: "2026-04-22" },
+  ];
+
+  it("今日が工程範囲内なら今日を返す", () => {
+    expect(initialScrollDate("2026-03-15", tasks)).toBe("2026-03-15");
+  });
+
+  it("工期が過去の案件では最終工程の終端に寄せる", () => {
+    expect(initialScrollDate("2026-07-12", tasks)).toBe("2026-04-22");
+  });
+
+  it("工期が未来の案件では最初の工程の始端に寄せる", () => {
+    expect(initialScrollDate("2026-01-05", tasks)).toBe("2026-03-01");
+  });
+
+  it("工程が無ければ今日を返す", () => {
+    expect(initialScrollDate("2026-07-12", [])).toBe("2026-07-12");
   });
 });
 

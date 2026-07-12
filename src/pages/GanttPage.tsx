@@ -33,6 +33,7 @@ import {
   daysBetween,
   effectiveProgress,
   formatScheduleDate,
+  initialScrollDate,
   resolveDependencyDrop,
   toLocalDateString,
 } from "../components/gantt/utils.js";
@@ -731,15 +732,6 @@ function GanttPageContent({ initialProjectId = null, openMaster = false }: Gantt
     [selectedProject],
   );
 
-  useEffect(() => {
-    if (!loading && scrollRef.current) {
-      const todayMarker = scrollRef.current.querySelector('[data-today="true"]');
-      if (todayMarker) {
-        todayMarker.scrollIntoView({ inline: "center", behavior: "smooth", block: "nearest" });
-      }
-    }
-  }, [loading, selectedProjectId, dayWidth]);
-
   // ?openMaster=1 クエリ付きで遷移してきた場合、データロード完了後にマスターモーダルを自動オープン
   const openMasterHandledRef = useRef(false);
   useEffect(() => {
@@ -1061,6 +1053,22 @@ function GanttPageContent({ initialProjectId = null, openMaster = false }: Gantt
       dayWidth,
     };
   }, [dayWidth, selectedProject, selectedProjectTasks, today]);
+
+  // 初期表示は今日を中心にスクロールする。ただしチャート範囲は常に今日を含むため、
+  // 工期が過去/未来の案件では今日周辺に工程バーが1本もなく「空の工程表」に見える。
+  // 今日が工程範囲外のときは範囲の端(過去案件=最終工程、未来案件=最初の工程)へ寄せる。
+  useEffect(() => {
+    const container = scrollRef.current;
+    if (loading || !container || !chartLayout) return;
+    const target = initialScrollDate(today, selectedProjectTasks);
+    const offset = daysBetween(chartLayout.chartStart, target);
+    const left = Math.max(0, offset * chartLayout.dayWidth + chartLayout.dayWidth / 2 - container.clientWidth / 2);
+    if (typeof container.scrollTo === "function") {
+      container.scrollTo({ left, behavior: "smooth" });
+    } else {
+      container.scrollLeft = left;
+    }
+  }, [loading, selectedProjectId, dayWidth]);
 
   // ─── Googleカレンダー個人予定とのダブり可視化 (Phase A) ────────
   const googleCalendarRange = useMemo(() => {
