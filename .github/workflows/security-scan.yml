@@ -48,10 +48,12 @@ jobs:
         # npmレジストリがpnpm auditの使う旧audit APIを廃止(HTTP 410)したため、
         # 新bulk advisoryエンドポイント対応済みのnpm CLIでauditを代替する。
         # https://github.com/pnpm/pnpm/issues/11265
+        # pnpmが作ったnode_modules(シンボリックリンク構造)と同居させると
+        # npm arboristがクラッシュするため、隔離ディレクトリで実行する。
         run: |
-          npm install --package-lock-only --ignore-scripts
-          npm audit --audit-level=high
-          rm -f package-lock.json
+          audit_dir="$(mktemp -d)"
+          cp package.json "$audit_dir/"
+          (cd "$audit_dir" && npm install --package-lock-only --ignore-scripts && npm audit --audit-level=high)
 
       - name: Semgrep high-confidence scan
         run: |
