@@ -1,5 +1,5 @@
 /**
- * Schedule Chat Editor — PROCOLLA蒸留 / P5拡張
+ * Schedule Chat Editor — PROCOLLA蒸留 / P5拡張 / 第2波(wave2)拡張
  *
  * 自然言語コマンドで工程表を編集するルールベースパーサー。
  * P5では次を追加した:
@@ -10,6 +10,14 @@
  *   - コマンドをレジストリ登録制にした（kind→パーサー+アプライヤ）ため、
  *     新コマンド追加は本ファイル末尾の COMMAND_REGISTRY への1エントリ追記で済む
  *   - 曖昧マッチ時に confidence を下げ、UI 側で確認チップを出せるようにした
+ *
+ * 第2波(wave2, bead laporta-beads-1wb)では「P5で受けられない実用操作」を追加した:
+ *   - 期間シフトの単位拡張: 単発シフトが「日」に加え「週間/週/ヶ月」を解釈
+ *     （「塗装を1週間後ろ倒し」= 7日後ろ倒し）
+ *   - 全工程一括シフト: 「全体を1週間後ろ倒し」「全工程を3日前倒し」
+ *     （全タスクを均一移動＝相対順序を保つのでカスケードしない）
+ *   - 担当者フェーズ一括変更: 「解体工事は全部田中さんに」「内装工事をまとめて鈴木さんに」
+ *   - 進捗フェーズ一括設定: 「解体工事を全部完了」「内装工事をまとめて50%に」
  *
  * 将来 LLM 差し替えを想定して NLParser 抽象化を保持している。
  */
@@ -31,7 +39,12 @@ export type ScheduleEditKind =
   | "set_assignee"        // 担当者を設定
   | "set_progress"        // 進捗率を設定
   | "phase_shift_forward" // フェーズ配下タスクを一括前倒し
-  | "phase_shift_backward"; // フェーズ配下タスクを一括後ろ倒し
+  | "phase_shift_backward" // フェーズ配下タスクを一括後ろ倒し
+  // ─── 第2波（wave2）───
+  | "shift_all_forward"    // 全工程を一括前倒し（日/週/月単位）
+  | "shift_all_backward"   // 全工程を一括後ろ倒し（日/週/月単位）
+  | "set_assignee_phase"   // フェーズ配下タスクの担当者を一括設定
+  | "set_progress_phase";  // フェーズ配下タスクの進捗を一括設定
 
 export interface ScheduleEdit {
   kind: ScheduleEditKind;
@@ -83,6 +96,26 @@ function extractNumber(s: string): number | null {
     if (s.includes(k)) return v;
   }
   return null;
+}
+
+// ─── Duration (期間) utilities — wave2 ────────────────────────────────────────
+//   「N日 / N日間 / N週間 / N週 / Nヶ月」等を暦日数へ正規化する。
+//   ヶ月は概算 30 日（ざっくり工程調整用途のため厳密な暦計算はしない）。
+
+const DURATION_UNIT_PATTERN = "(?:日間|日|週間|週|ヶ月|か月|カ月|ケ月)";
+
+/** 数字＋単位を暦日数に変換。1週間→7、1ヶ月→30。見つからなければ null */
+function parseDurationDays(text: string): number | null {
+  const m = text.match(
+    new RegExp(`([0-9０-９一二三四五六七八九十]+)\\s*${DURATION_UNIT_PATTERN}`),
+  );
+  if (!m) return null;
+  const n = extractNumber(m[1]);
+  if (n === null || n <= 0) return null;
+  const unit = m[0].replace(/^[0-9０-９一二三四五六七八九十\s]+/, "");
+  if (unit.startsWith("週")) return n * 7;
+  if (/月/.test(unit)) return n * 30;
+  return n; // 日 / 日間
 }
 
 // ─── Date parsing ─────────────────────────────────────────────────────────────
@@ -638,6 +671,170 @@ const PHASE_SHIFT_FORWARD_COMMAND: CommandDefinition = {
   },
 };
 
+// ─── Command: shift_all_* (全工程一括シフト) — wave2 ─────────────────────────
+//   「全体を1週間後ろ倒し」「全工程を3日前倒し」「全部の工程をまとめて2日後ろに」
+//   全タスクを均一に移動するため相対順序は不変 → カスケード不要。
+
+const WHOLE_SCHEDULE_HEAD =
+  /^(?:全体|全工程|全ての工程|全ての作業|すべての工程|すべての作業|全部の工程|全タスク|工程全体|工程表全体)(?:を|は)?(?:まとめて|全部|一括で?)?/;
+
+function tryParseShiftAll(
+  segment: string,
+  ctx: CommandContext,
+  direction: "forward" | "backward",
+): ScheduleEdit | null {
+  const head = segment.match(WHOLE_SCHEDULE_HEAD);
+  if (!head) return null;
+  const rest = segment.slice(head[0].length);
+
+  const dirRegex =
+    direction === "backward"
+      ? /後ろ倒し|後倒し|遅らせ|遅らす|延期|後ろに|後に|後ろ/
+      : /前倒し|前倒|早め|繰り上げ|前に/;
+  if (!dirRegex.test(rest)) return null;
+
+  const days = parseDurationDays(rest);
+  if (days === null || days <= 0) return null;
+  if (ctx.schedule.tasks.length === 0) return null;
+
+  return {
+    kind: direction === "backward" ? "shift_all_backward" : "shift_all_forward",
+    taskIds: ctx.schedule.tasks.map((t) => t.id),
+    days,
+    confidence: 0.95,
+    sourceText: segment,
+  };
+}
+
+const SHIFT_ALL_BACKWARD_COMMAND: CommandDefinition = {
+  kind: "shift_all_backward",
+  parse(segment, ctx) {
+    return tryParseShiftAll(segment, ctx, "backward");
+  },
+  apply(edit, { tasksById }) {
+    const shift = edit.days ?? 0;
+    for (const id of edit.taskIds) {
+      const t = tasksById.get(id);
+      if (t) shiftTaskInPlace(t, shift);
+    }
+  },
+};
+
+const SHIFT_ALL_FORWARD_COMMAND: CommandDefinition = {
+  kind: "shift_all_forward",
+  parse(segment, ctx) {
+    return tryParseShiftAll(segment, ctx, "forward");
+  },
+  apply(edit, { tasksById }) {
+    const shift = -(edit.days ?? 0);
+    for (const id of edit.taskIds) {
+      const t = tasksById.get(id);
+      if (t) shiftTaskInPlace(t, shift);
+    }
+  },
+};
+
+// ─── Command: set_assignee_phase (担当者フェーズ一括) — wave2 ─────────────────
+//   「解体工事は全部田中さんに」「内装工事をまとめて鈴木さんに」
+//   「電気工事の担当を全部佐藤さんに」
+
+const PHASE_BULK_MARKER = /(?:全部|全て|まとめて|一括(?:で)?)/;
+
+const SET_ASSIGNEE_PHASE_COMMAND: CommandDefinition = {
+  kind: "set_assignee_phase",
+  parse(segment, ctx) {
+    // 担当者を確実に判別するため、person は敬称(さん/様)か
+    // アサイン系動詞のどちらかを必須にする（「3日後ろに」等の誤検出を防ぐ）。
+    const bulk = PHASE_BULK_MARKER.source;
+    // A: 「<phase>(は|を|の担当を) <bulk> <person>さんに」
+    const withHonorific = segment.match(
+      new RegExp(`^(.+?)(?:の担当を|は|を)${bulk}(.+?)(?:さん|様)(?:に(?:割り?当て|する)?)?$`),
+    );
+    // B: 「<phase>... <bulk> <person>にアサイン/割り当て/担当/お願い」
+    const withVerb = segment.match(
+      new RegExp(`^(.+?)(?:の担当を|は|を)${bulk}(.+?)に(?:アサイン|割り?当て|担当|お願い)`),
+    );
+    const m = withHonorific ?? withVerb;
+    if (!m) return null;
+    const phaseName = m[1].trim().replace(/(?:を|は|の担当)$/, "").trim();
+    const inPhase = resolveTasksInPhase(phaseName, ctx.schedule.tasks);
+    if (inPhase.length === 0) return null;
+    const person = m[2].trim().replace(/\s+/g, "").replace(/(?:さん|様)$/, "");
+    if (!person) return null;
+
+    // フェーズ名がタスク名と衝突しているかで confidence を調整
+    const conflictTaskName = ctx.schedule.tasks.some((t) => t.name === phaseName);
+    return {
+      kind: "set_assignee_phase",
+      taskIds: inPhase.map((t) => t.id),
+      assigneeName: person,
+      phaseName,
+      confidence: conflictTaskName ? 0.6 : 0.9,
+      sourceText: segment,
+    };
+  },
+  apply(edit, { tasksById }) {
+    if (!edit.assigneeName) throw new Error("set_assignee_phase requires assigneeName");
+    for (const id of edit.taskIds) {
+      const t = tasksById.get(id);
+      if (t) {
+        t.assigneeName = edit.assigneeName;
+        t.assigneeId = null;
+      }
+    }
+  },
+};
+
+// ─── Command: set_progress_phase (進捗フェーズ一括) — wave2 ───────────────────
+//   「解体工事を全部完了」「内装工事をまとめて50%に」「解体工事を全部半分」
+
+const SET_PROGRESS_PHASE_COMMAND: CommandDefinition = {
+  kind: "set_progress_phase",
+  parse(segment, ctx) {
+    const m = segment.match(
+      new RegExp(`^(.+?)(?:を|は)${PHASE_BULK_MARKER.source}(.+)$`),
+    );
+    if (!m) return null;
+    const phaseName = m[1].trim();
+    const inPhase = resolveTasksInPhase(phaseName, ctx.schedule.tasks);
+    if (inPhase.length === 0) return null;
+
+    const rest = m[2];
+    let pct: number | null = null;
+    if (/(?:完了|終わ(?:った|らせた|り)?)/.test(rest)) {
+      pct = 100;
+    } else if (/半分/.test(rest)) {
+      pct = 50;
+    } else {
+      const pm = rest.match(/([0-9０-９]+)(?:%|％|パーセント)/);
+      if (pm) {
+        const n = extractNumber(pm[1]);
+        if (n !== null && n >= 0 && n <= 100) pct = n;
+      }
+    }
+    if (pct === null) return null;
+
+    return {
+      kind: "set_progress_phase",
+      taskIds: inPhase.map((t) => t.id),
+      progressPercent: pct,
+      phaseName,
+      confidence: 0.9,
+      sourceText: segment,
+    };
+  },
+  apply(edit, { tasksById }) {
+    const p = edit.progressPercent;
+    if (p === undefined || p < 0 || p > 100) {
+      throw new Error(`set_progress_phase requires progressPercent 0-100 (got ${p})`);
+    }
+    for (const id of edit.taskIds) {
+      const t = tasksById.get(id);
+      if (t) t.progress = p;
+    }
+  },
+};
+
 // ─── Command: set_start / set_end / set_duration ─────────────────────────────
 
 const SET_START_COMMAND: CommandDefinition = {
@@ -739,12 +936,13 @@ const SET_DURATION_COMMAND: CommandDefinition = {
 const SHIFT_BACKWARD_COMMAND: CommandDefinition = {
   kind: "shift_backward",
   parse(segment, ctx) {
+    // wave2: 「日」に加え「週間/週/ヶ月」を受ける（「塗装を1週間後ろ倒し」）
     const m = segment.match(
-      /^(.+?)を([0-9０-９一二三四五六七八九十]+)日(?:後ろ倒し|後倒し|遅らせ|延期)/,
+      /^(.+?)を([0-9０-９一二三四五六七八九十]+(?:日間|日|週間|週|ヶ月|か月|カ月|ケ月))(?:後ろ倒し|後倒し|遅らせ|延期)/,
     );
     if (!m) return null;
-    const days = extractNumber(m[2]);
-    if (!days || days <= 0) return null;
+    const days = parseDurationDays(m[2]);
+    if (days === null || days <= 0) return null;
     const matched = resolveTaskReference(m[1].trim(), ctx.schedule.tasks);
     if (matched.length === 0) return null;
     return {
@@ -767,12 +965,13 @@ const SHIFT_BACKWARD_COMMAND: CommandDefinition = {
 const SHIFT_FORWARD_COMMAND: CommandDefinition = {
   kind: "shift_forward",
   parse(segment, ctx) {
+    // wave2: 「日」に加え「週間/週/ヶ月」を受ける（「塗装を1週間前倒し」）
     const m = segment.match(
-      /^(.+?)を([0-9０-９一二三四五六七八九十]+)日(?:前倒し|前倒|早め|繰り上げ)/,
+      /^(.+?)を([0-9０-９一二三四五六七八九十]+(?:日間|日|週間|週|ヶ月|か月|カ月|ケ月))(?:前倒し|前倒|早め|繰り上げ)/,
     );
     if (!m) return null;
-    const days = extractNumber(m[2]);
-    if (!days || days <= 0) return null;
+    const days = parseDurationDays(m[2]);
+    if (days === null || days <= 0) return null;
     const matched = resolveTaskReference(m[1].trim(), ctx.schedule.tasks);
     if (matched.length === 0) return null;
     return {
@@ -800,6 +999,11 @@ export const COMMAND_REGISTRY: CommandDefinition[] = [
   REMOVE_COMMAND,
   REMOVE_DEP_COMMAND,       // 「AとBの依存を...」を add_dependency より先に
   ADD_DEP_COMMAND,
+  // wave2: 全体シフト＆フェーズ一括は、より汎用な phase_shift / 単体系より先に置く
+  SHIFT_ALL_BACKWARD_COMMAND,
+  SHIFT_ALL_FORWARD_COMMAND,
+  SET_ASSIGNEE_PHASE_COMMAND, // フェーズ一括担当を単体 set_assignee より先に
+  SET_PROGRESS_PHASE_COMMAND, // フェーズ一括進捗を単体 set_progress より先に
   PHASE_SHIFT_BACKWARD_COMMAND, // 「〜全部N日後ろに」 shift より先に
   PHASE_SHIFT_FORWARD_COMMAND,
   SET_ASSIGNEE_COMMAND,
@@ -999,6 +1203,14 @@ export function describeEdit(
       return `${edit.phaseName ?? "フェーズ"}を全部${edit.days}日後ろ倒し (${edit.taskIds.length}件対象)`;
     case "phase_shift_forward":
       return `${edit.phaseName ?? "フェーズ"}を全部${edit.days}日前倒し (${edit.taskIds.length}件対象)`;
+    case "shift_all_backward":
+      return `全工程を${edit.days}日後ろ倒し (${edit.taskIds.length}件対象)`;
+    case "shift_all_forward":
+      return `全工程を${edit.days}日前倒し (${edit.taskIds.length}件対象)`;
+    case "set_assignee_phase":
+      return `${edit.phaseName ?? "フェーズ"}の担当を全部${edit.assigneeName}にします (${edit.taskIds.length}件対象)`;
+    case "set_progress_phase":
+      return `${edit.phaseName ?? "フェーズ"}の進捗を全部${edit.progressPercent}%にします (${edit.taskIds.length}件対象)`;
     default: {
       const _exhaustive: never = edit.kind;
       return `未対応: ${_exhaustive}`;
