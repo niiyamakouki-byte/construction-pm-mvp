@@ -74,10 +74,24 @@ const isoDateString = z
     { message: "ISO 8601 date string required (YYYY-MM-DD or datetime)" },
   );
 
+/**
+ * Accepts any 8-4-4-4-12 hex string, not just RFC4122-compliant UUIDs.
+ * Zod's `.uuid()` additionally enforces the version nibble (1-5) and variant
+ * nibble (8-b), which rejects seed/demo ids like "a1b2c3d4-0001-0001-0001-
+ * 000000000001" that are UUID-shaped but not real generated UUIDs. Those ids
+ * exist in production data (seed projects), so id/projectId/etc. fields use
+ * this looser check instead.
+ */
+const uuidLikeString = z
+  .string()
+  .refine((val) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val), {
+    message: "UUID-shaped string required (8-4-4-4-12 hex)",
+  });
+
 // ── BaseEntity ───────────────────────────────────────────────────────────────
 
 export const BaseEntitySchema = z.object({
-  id: z.string().uuid(),
+  id: uuidLikeString,
   createdAt: isoDateString,
   updatedAt: isoDateString,
 });
@@ -124,7 +138,7 @@ export const TaskStatusSchema = z.enum(["todo", "in_progress", "done"]);
 export const DependencyTypeSchema = z.enum(["FS", "FF", "SS", "SF", "none"]);
 
 export const TaskSchema = BaseEntitySchema.extend({
-  projectId: z.string().uuid(),
+  projectId: uuidLikeString,
   name: z.string(),
   description: z.string(),
   status: TaskStatusSchema,
@@ -166,7 +180,7 @@ export const CostBreakdownTypeSchema = z.enum([
 ]);
 
 export const CostItemSchema = BaseEntitySchema.extend({
-  projectId: z.string().uuid(),
+  projectId: uuidLikeString,
   // Nullable in DB — .nullish() accepts null from Supabase
   taskId: z.string().nullish(),
   description: z.string(),
@@ -193,7 +207,7 @@ export const InvoiceStatusSchema = z.enum([
 ]);
 
 export const InvoiceSchema = BaseEntitySchema.extend({
-  projectId: z.string().uuid(),
+  projectId: uuidLikeString,
   invoiceNumber: z.string(),
   amount: z.number().finite(),
   status: InvoiceStatusSchema,
@@ -215,8 +229,8 @@ export const ContractStatusSchema = z.enum([
 ]);
 
 export const ContractSchema = BaseEntitySchema.extend({
-  projectId: z.string().uuid(),
-  contractorId: z.string().uuid(),
+  projectId: uuidLikeString,
+  contractorId: uuidLikeString,
   title: z.string(),
   amount: z.number().finite(),
   status: ContractStatusSchema,
@@ -237,7 +251,7 @@ export const ChangeOrderStatusSchema = z.enum([
 ]);
 
 export const ChangeOrderSchema = BaseEntitySchema.extend({
-  projectId: z.string().uuid(),
+  projectId: uuidLikeString,
   title: z.string(),
   description: z.string(),
   amount: z.number().finite(),
@@ -252,7 +266,7 @@ export type ChangeOrderStatus = z.infer<typeof ChangeOrderStatusSchema>;
 // ── Photo ─────────────────────────────────────────────────────────────────────
 
 export const PhotoSchema = BaseEntitySchema.extend({
-  projectId: z.string().uuid(),
+  projectId: uuidLikeString,
   taskId: z.string().optional(),
   url: z.string().url(),
   storagePath: z.string().optional(),
@@ -298,7 +312,7 @@ export const MoodBoardItemSchema = z.object({
 });
 
 export const MoodBoardSchema = BaseEntitySchema.extend({
-  projectId: z.string().uuid(),
+  projectId: uuidLikeString,
   title: z.string(),
   items: z.array(MoodBoardItemSchema),
 });
@@ -336,7 +350,7 @@ export const SelectionOptionSchema = z.object({
 });
 
 export const SelectionSchema = BaseEntitySchema.extend({
-  projectId: z.string().uuid(),
+  projectId: uuidLikeString,
   category: SelectionCategorySchema,
   name: z.string(),
   options: z.array(SelectionOptionSchema),
@@ -360,7 +374,7 @@ export const ProcurementMaterialStatusSchema = z.enum([
 ]);
 
 export const ProcurementMaterialSchema = BaseEntitySchema.extend({
-  projectId: z.string().uuid(),
+  projectId: uuidLikeString,
   name: z.string(),
   category: z.string(),
   quantity: z.number().finite().nonnegative(),
@@ -394,7 +408,7 @@ export const PurchaseOrderItemSchema = z.object({
 });
 
 export const PurchaseOrderSchema = BaseEntitySchema.extend({
-  projectId: z.string().uuid(),
+  projectId: uuidLikeString,
   contractorId: z.string(),
   contractorName: z.string(),
   items: z.array(PurchaseOrderItemSchema),
@@ -432,7 +446,7 @@ export const CRMDealStageSchema = z.enum([
 ]);
 
 export const CRMDealSchema = BaseEntitySchema.extend({
-  customerId: z.string().uuid(),
+  customerId: uuidLikeString,
   projectName: z.string(),
   stage: CRMDealStageSchema,
   estimatedAmount: z.number().finite().nonnegative(),
