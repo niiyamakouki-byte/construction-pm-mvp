@@ -1059,7 +1059,7 @@ function AppShell() {
         <main
           id="main-content"
           key={route}
-          className={`page-enter ios-main-with-sidebar max-md:ml-0 px-4 py-5 pb-24 sm:py-6 ${sidebarCollapsed ? "collapsed" : ""}`}
+          className={`page-enter ios-main-with-sidebar assistant-fab-safe-content max-md:ml-0 px-4 py-5 sm:py-6 ${sidebarCollapsed ? "collapsed" : ""}`}
         >
           <div className="mx-auto max-w-5xl">
             <Suspense fallback={pageFallback}>

@@ -1,0 +1,102 @@
+[
+  {
+    "width": 768,
+    "route": "/app",
+    "bodyOverflowX": 0,
+    "mainVisible": true,
+    "mainLeft": 260,
+    "mainRight": 768,
+    "mainPaddingBottom": "96px",
+    "fabVisible": false
+  },
+  {
+    "width": 768,
+    "route": "/schedule",
+    "bodyOverflowX": 0,
+    "mainVisible": true,
+    "mainLeft": 260,
+    "mainRight": 768,
+    "mainPaddingBottom": "96px",
+    "fabVisible": false
+  },
+  {
+    "width": 768,
+    "route": "/weather",
+    "bodyOverflowX": 0,
+    "mainVisible": true,
+    "mainLeft": 260,
+    "mainRight": 768,
+    "mainPaddingBottom": "96px",
+    "fabVisible": false
+  },
+  {
+    "width": 768,
+    "route": "/proposal-generator",
+    "bodyOverflowX": 0,
+    "mainVisible": true,
+    "mainLeft": 260,
+    "mainRight": 768,
+    "mainPaddingBottom": "96px",
+    "fabVisible": false
+  },
+  {
+    "width": 768,
+    "route": "/site-livestream",
+    "bodyOverflowX": 0,
+    "mainVisible": true,
+    "mainLeft": 260,
+    "mainRight": 768,
+    "mainPaddingBottom": "96px",
+    "fabVisible": false
+  },
+  {
+    "width": 1280,
+    "route": "/app",
+    "bodyOverflowX": 0,
+    "mainVisible": true,
+    "mainLeft": 260,
+    "mainRight": 1280,
+    "mainPaddingBottom": "96px",
+    "fabVisible": false
+  },
+  {
+    "width": 1280,
+    "route": "/schedule",
+    "bodyOverflowX": 0,
+    "mainVisible": true,
+    "mainLeft": 260,
+    "mainRight": 1280,
+    "mainPaddingBottom": "96px",
+    "fabVisible": false
+  },
+  {
+    "width": 1280,
+    "route": "/weather",
+    "bodyOverflowX": 0,
+    "mainVisible": true,
+    "mainLeft": 260,
+    "mainRight": 1280,
+    "mainPaddingBottom": "96px",
+    "fabVisible": false
+  },
+  {
+    "width": 1280,
+    "route": "/proposal-generator",
+    "bodyOverflowX": 0,
+    "mainVisible": true,
+    "mainLeft": 260,
+    "mainRight": 1280,
+    "mainPaddingBottom": "96px",
+    "fabVisible": false
+  },
+  {
+    "width": 1280,
+    "route": "/site-livestream",
+    "bodyOverflowX": 0,
+    "mainVisible": true,
+    "mainLeft": 260,
+    "mainRight": 1280,
+    "mainPaddingBottom": "96px",
+    "fabVisible": false
+  }
+]

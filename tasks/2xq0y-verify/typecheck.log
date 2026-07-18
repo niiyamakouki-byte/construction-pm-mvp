@@ -1,0 +1,3 @@
+
+> construction-pm-mvp@1.0.0 typecheck /Users/koki/construction-pm-mvp
+> tsc --noEmit && tsc --noEmit -p tsconfig.api.json

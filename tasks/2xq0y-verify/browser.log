@@ -1,0 +1,109 @@
+[375/seeded] /app positives=0 padding=168px
+[375/seeded] /today positives=0 padding=168px
+[375/seeded] /tasks positives=0 padding=168px
+[375/seeded] /schedule positives=0 padding=168px
+[375/seeded] /cross-project-gantt positives=0 padding=168px
+[375/seeded] /finishing positives=0 padding=null
+[375/seeded] /progress-review positives=0 padding=168px
+[375/seeded] /safety positives=0 padding=168px
+[375/seeded] /phase-templates positives=0 padding=168px
+[375/seeded] /estimate positives=0 padding=168px
+[375/seeded] /takeoff positives=0 padding=168px
+[375/seeded] /invoice positives=0 padding=168px
+[375/seeded] /cost-management positives=0 padding=168px
+[375/seeded] /reports positives=0 padding=168px
+[375/seeded] /freee positives=0 padding=168px
+[375/seeded] /crm positives=0 padding=168px
+[375/seeded] /contractors positives=0 padding=168px
+[375/seeded] /help positives=0 padding=168px
+[375/seeded] /account positives=0 padding=168px
+[375/seeded] /notifications positives=0 padding=168px
+[375/seeded] /weather positives=0 padding=168px
+[375/seeded] /photos positives=0 padding=168px
+[375/seeded] /procurement positives=0 padding=168px
+[375/seeded] /orders positives=0 padding=168px
+[375/seeded] /change-order positives=0 padding=168px
+[375/seeded] /crew-optimizer positives=0 padding=168px
+[375/seeded] /funnel positives=0 padding=null
+[375/seeded] /handover-package positives=0 padding=168px
+[375/seeded] /inquiry-responder positives=0 padding=168px
+[375/seeded] /insurance-assessment positives=0 padding=168px
+[375/seeded] /invoices positives=0 padding=168px
+[375/seeded] /local-seo positives=0 padding=168px
+[375/seeded] /longterm-followup positives=0 padding=168px
+[375/seeded] /margin-watch positives=0 padding=168px
+[375/seeded] /meeting-runner positives=0 padding=168px
+[375/seeded] /node-schedule positives=0 padding=168px
+[375/seeded] /owner-ambassador positives=0 padding=168px
+[375/seeded] /owner-suggestion positives=0 padding=168px
+[375/seeded] /pricing positives=0 padding=null
+[375/seeded] /profit-ranking positives=0 padding=168px
+[375/seeded] /proposal-generator positives=0 padding=168px
+[375/seeded] /repeat-predictor positives=0 padding=168px
+[375/seeded] /resource-analysis positives=0 padding=168px
+[375/seeded] /sales-pipeline positives=0 padding=168px
+[375/seeded] /share-tokens positives=0 padding=null
+[375/seeded] /site-livestream positives=0 padding=168px
+[375/seeded] /login positives=0 padding=null
+[375/seeded] /signup positives=0 padding=null
+[375/seeded] /landing positives=0 padding=null
+[375/empty] /app positives=0 padding=168px
+[375/empty] /today positives=0 padding=168px
+[375/empty] /tasks positives=0 padding=168px
+[375/empty] /schedule positives=0 padding=168px
+[375/empty] /cross-project-gantt positives=0 padding=168px
+[375/empty] /finishing positives=0 padding=null
+[375/empty] /progress-review positives=0 padding=168px
+[375/empty] /safety positives=0 padding=168px
+[375/empty] /phase-templates positives=0 padding=168px
+[375/empty] /estimate positives=0 padding=168px
+[375/empty] /takeoff positives=0 padding=168px
+[375/empty] /invoice positives=0 padding=168px
+[375/empty] /cost-management positives=0 padding=168px
+[375/empty] /reports positives=0 padding=168px
+[375/empty] /freee positives=0 padding=168px
+[375/empty] /crm positives=0 padding=168px
+[375/empty] /contractors positives=0 padding=168px
+[375/empty] /help positives=0 padding=168px
+[375/empty] /account positives=0 padding=168px
+[375/empty] /notifications positives=0 padding=168px
+[375/empty] /weather positives=0 padding=168px
+[375/empty] /photos positives=0 padding=168px
+[375/empty] /procurement positives=0 padding=168px
+[375/empty] /orders positives=0 padding=168px
+[375/empty] /change-order positives=0 padding=168px
+[375/empty] /crew-optimizer positives=0 padding=168px
+[375/empty] /funnel positives=0 padding=null
+[375/empty] /handover-package positives=0 padding=168px
+[375/empty] /inquiry-responder positives=0 padding=168px
+[375/empty] /insurance-assessment positives=0 padding=168px
+[375/empty] /invoices positives=0 padding=168px
+[375/empty] /local-seo positives=0 padding=168px
+[375/empty] /longterm-followup positives=0 padding=168px
+[375/empty] /margin-watch positives=0 padding=168px
+[375/empty] /meeting-runner positives=0 padding=168px
+[375/empty] /node-schedule positives=0 padding=168px
+[375/empty] /owner-ambassador positives=0 padding=168px
+[375/empty] /owner-suggestion positives=0 padding=168px
+[375/empty] /pricing positives=0 padding=null
+[375/empty] /profit-ranking positives=0 padding=168px
+[375/empty] /proposal-generator positives=0 padding=168px
+[375/empty] /repeat-predictor positives=0 padding=168px
+[375/empty] /resource-analysis positives=0 padding=168px
+[375/empty] /sales-pipeline positives=0 padding=168px
+[375/empty] /share-tokens positives=0 padding=null
+[375/empty] /site-livestream positives=0 padding=168px
+[375/empty] /login positives=0 padding=null
+[375/empty] /signup positives=0 padding=null
+[375/empty] /landing positives=0 padding=null
+[responsive/768] /app overflow=0 main=true padding=96px fab=false
+[responsive/768] /schedule overflow=0 main=true padding=96px fab=false
+[responsive/768] /weather overflow=0 main=true padding=96px fab=false
+[responsive/768] /proposal-generator overflow=0 main=true padding=96px fab=false
+[responsive/768] /site-livestream overflow=0 main=true padding=96px fab=false
+[responsive/1280] /app overflow=0 main=true padding=96px fab=false
+[responsive/1280] /schedule overflow=0 main=true padding=96px fab=false
+[responsive/1280] /weather overflow=0 main=true padding=96px fab=false
+[responsive/1280] /proposal-generator overflow=0 main=true padding=96px fab=false
+[responsive/1280] /site-livestream overflow=0 main=true padding=96px fab=false
+SUMMARY {"routesPerMode":49,"seededPositiveRoutes":0,"emptyPositiveRoutes":0,"seededIntersections":0,"emptyIntersections":0,"responsiveSamples":10,"responsiveFailures":0}

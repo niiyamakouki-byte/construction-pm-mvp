@@ -42,6 +42,14 @@
   --sidebar-width: 260px;
   --sidebar-width-collapsed: 64px;
   --topbar-height: 56px;
+
+  /* bead 2xq0y; base 8104b67; Codex: mobile FAB footprint = nav clearance + edge gap + diameter. */
+  --assistant-fab-size: 56px;
+  --assistant-fab-edge-gap: 20px;
+  --assistant-fab-mobile-nav-clearance: 92px;
+  --assistant-fab-safe-content-bottom: calc(
+    var(--assistant-fab-mobile-nav-clearance) + var(--assistant-fab-edge-gap) + var(--assistant-fab-size)
+  );
 }
 
 :root[data-theme="dark"] {
@@ -188,6 +196,17 @@ textarea::placeholder {
 /* Safe area for bottom tab bar on iPhone */
 .safe-bottom {
   padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Keep the final content row above the fixed AI assistant FAB on mobile. */
+.assistant-fab-safe-content {
+  padding-bottom: var(--assistant-fab-safe-content-bottom);
+}
+
+@media (min-width: 768px) {
+  .assistant-fab-safe-content {
+    padding-bottom: 6rem;
+  }
 }
 
 .responsive-table {

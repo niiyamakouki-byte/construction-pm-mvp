@@ -1,0 +1,9 @@
+{
+  "routesPerMode": 49,
+  "seededPositiveRoutes": 0,
+  "emptyPositiveRoutes": 0,
+  "seededIntersections": 0,
+  "emptyIntersections": 0,
+  "responsiveSamples": 10,
+  "responsiveFailures": 0
+}

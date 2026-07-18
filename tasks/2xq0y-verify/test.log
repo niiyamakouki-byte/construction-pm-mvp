@@ -1,0 +1,974 @@
+
+> construction-pm-mvp@1.0.0 test /Users/koki/construction-pm-mvp
+> vitest run
+
+11:08:37 PM [vite] warning: `esbuild` option was specified by "vitest" plugin. This option is deprecated, please use `oxc` instead.
+
+ RUN  v3.2.6 /Users/koki/construction-pm-mvp
+
+(node:99161) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:99160) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:99158) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:99169) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/lib/local-seo/__tests__/local-seo-store.test.ts (15 tests) 566ms
+   ✓ LocalSeoStore — FIFO 1000件 > 1000件超で古いものが削除される  562ms
+(node:99159) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/__tests__/contractors-page.test.tsx (16 tests) 421ms
+ ✓ src/components/DocumentsPageImpl.test.tsx (13 tests) 434ms
+ ✓ src/__tests__/onboarding.test.tsx (16 tests) 512ms
+ ✓ src/lib/inquiry-responder/__tests__/inquiry-store.test.ts (13 tests) 769ms
+   ✓ InquiryStore — FIFO 1000件 > 1001件追加したとき最初の1件が削除される  764ms
+ ✓ src/pages/FinishingSchedulePage.test.tsx (21 tests) 732ms
+stderr | src/__tests__/today-dashboard.test.tsx > TodayDashboardPage > HTML日報出力ボタンから日報をエクスポートできる
+Not implemented: navigation to another Document
+
+ ✓ src/components/FreeeAuthPage.test.tsx (9 tests) 901ms
+ ✓ src/__tests__/onboarding-extended.test.tsx (13 tests) 733ms
+ ✓ src/pages/ProjectDetailPage.test.tsx (11 tests) 685ms
+ ✓ src/__tests__/photo-inspection-page.test.tsx (16 tests) 830ms
+ ✓ src/__tests__/today-dashboard.test.tsx (16 tests) 569ms
+ ✓ src/components/PdfCanvasPreview.test.tsx (8 tests) 953ms
+   ✓ PdfCanvasPreview > ペン切替時にペン先ミニプレビューが一瞬表示されてから消える  728ms
+ ✓ src/pages/SiteEntryPage.test.tsx (15 tests) 260ms
+ ✓ src/lib/crew-optimizer/__tests__/CrewOptimizerPage.test.tsx (5 tests) 392ms
+ ✓ src/__tests__/project-list.test.tsx (11 tests | 1 skipped) 1362ms
+   ✓ ProjectListPage > 開始日未入力時はローカル日付がデフォルトで使われる  423ms
+ ✓ src/__tests__/estimate-page-takeoff-inject.test.tsx (4 tests) 301ms
+ ✓ src/components/NotificationBanner.test.tsx (10 tests) 391ms
+(node:99206) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/pages/EstimatePage/__tests__/PDFDraftTab.test.tsx (7 tests) 369ms
+ ✓ src/__tests__/AssistantChatPanel.test.tsx (18 tests) 266ms
+ ✓ src/pages/ClientViewerPage.test.tsx (16 tests) 257ms
+ ✓ src/lib/handover-package/__tests__/handover-package-store.test.ts (15 tests) 338ms
+   ✓ HandoverPackageStore FIFO > 1000件を超えると古いものが削除される  327ms
+ ✓ src/__tests__/phase-template-library-page.test.tsx (12 tests) 338ms
+ ✓ src/pages/SelectionBoardPage.test.tsx (20 tests) 311ms
+ ✓ src/__tests__/pricing.test.tsx (16 tests) 300ms
+ ✓ src/lib/sales-pipeline/__tests__/deal-store.test.ts (15 tests) 524ms
+   ✓ DealStore FIFO 1000件 > 1001件以上追加すると古いものが削除される  520ms
+ ✓ src/__tests__/estimate-page.test.tsx (16 tests) 2280ms
+   ✓ EstimatePage > 初期表示で見積作成フォームと品目カタログが表示される  318ms
+   ✓ EstimatePage > 選択品目が空の状態では見積書を生成ボタンごと非表示になる  318ms
+   ✓ EstimatePage > 入力内容から見積を生成して結果画面を表示する  389ms
+(node:99215) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/__tests__/gantt-page.test.tsx (24 tests) 2363ms
+(node:99214) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:99221) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+stderr | src/components/DrawingViewer.test.tsx > DrawingViewer > switches to calibrate mode on button click
+Not implemented: HTMLCanvasElement's getContext() method: without installing the canvas npm package
+
+stderr | src/components/DrawingViewer.test.tsx > DrawingViewer > switches back to pin mode
+Not implemented: HTMLCanvasElement's getContext() method: without installing the canvas npm package
+
+stderr | src/components/DrawingViewer.test.tsx > DrawingViewer > allows adjusting the first measurement point after distance is created
+Not implemented: HTMLCanvasElement's getContext() method: without installing the canvas npm package
+Not implemented: HTMLCanvasElement's getContext() method: without installing the canvas npm package
+Not implemented: HTMLCanvasElement's getContext() method: without installing the canvas npm package
+Not implemented: HTMLCanvasElement's getContext() method: without installing the canvas npm package
+Not implemented: HTMLCanvasElement's getContext() method: without installing the canvas npm package
+
+stderr | src/components/DrawingViewer.test.tsx > DrawingViewer > snaps the second measurement point to the first point axis
+Not implemented: HTMLCanvasElement's getContext() method: without installing the canvas npm package
+Not implemented: HTMLCanvasElement's getContext() method: without installing the canvas npm package
+Not implemented: HTMLCanvasElement's getContext() method: without installing the canvas npm package
+
+ ✓ src/pages/TakeoffPage.test.tsx (4 tests) 357ms
+   ✓ TakeoffPage > 空状態でアップロード説明を表示する  342ms
+stderr | src/components/DrawingViewer.test.tsx > DrawingViewer > shows snapped measurement preview before the second point is confirmed
+Not implemented: HTMLCanvasElement's getContext() method: without installing the canvas npm package
+Not implemented: HTMLCanvasElement's getContext() method: without installing the canvas npm package
+Not implemented: HTMLCanvasElement's getContext() method: without installing the canvas npm package
+
+(node:99231) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+stderr | src/components/DrawingViewer.test.tsx > DrawingViewer > updates the snapped preview while adjusting an existing measurement point
+Not implemented: HTMLCanvasElement's getContext() method: without installing the canvas npm package
+Not implemented: HTMLCanvasElement's getContext() method: without installing the canvas npm package
+Not implemented: HTMLCanvasElement's getContext() method: without installing the canvas npm package
+Not implemented: HTMLCanvasElement's getContext() method: without installing the canvas npm package
+Not implemented: HTMLCanvasElement's getContext() method: without installing the canvas npm package
+
+ ✓ src/lib/change-order/__tests__/change-order-store.test.ts (11 tests) 278ms
+ ✓ src/__tests__/mobile-nav.test.tsx (3 tests) 207ms
+ ✓ src/lib/meeting-runner/__tests__/meeting-store.test.ts (13 tests) 256ms
+ ✓ src/__tests__/cost-management-page.test.tsx (7 tests) 293ms
+stderr | src/components/DrawingViewer.test.tsx > DrawingViewer > pickup mode pen input > renders pickup mode without crashing
+Not implemented: HTMLCanvasElement's getContext() method: without installing the canvas npm package
+
+stderr | src/components/DrawingViewer.test.tsx > DrawingViewer > pickup mode pen input > ignores pen events when no scale is set (no crash)
+Not implemented: HTMLCanvasElement's getContext() method: without installing the canvas npm package
+
+stderr | src/components/DrawingViewer.test.tsx > DrawingViewer > pickup mode pen input > applies touchAction:none to overlay canvas in pickup mode
+Not implemented: HTMLCanvasElement's getContext() method: without installing the canvas npm package
+
+ ✓ src/components/DrawingViewer.test.tsx (23 tests) 232ms
+ ✓ src/pages/OrderManagementPage.test.tsx (3 tests) 232ms
+ ✓ src/__tests__/cost-loss-dashboard-page.test.tsx (10 tests) 193ms
+ ✓ src/__tests__/navigation.test.tsx (3 tests) 201ms
+(node:99235) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/components/__tests__/InquiryInboxPage.test.tsx (18 tests) 240ms
+ ✓ src/pages/ProgressReviewPage.test.tsx (7 tests) 214ms
+ ✓ src/__tests__/cross-project-gantt-page.test.tsx (9 tests) 259ms
+ ✓ src/__tests__/chaos-distill-batch.test.ts (129 tests) 324ms
+ ✓ src/__tests__/executive-dashboard-page.test.tsx (15 tests) 308ms
+ ✓ src/__tests__/field-mode-view.test.tsx (11 tests) 228ms
+ ✓ src/lib/site-entry-qr.test.ts (15 tests) 180ms
+ ✓ src/components/ContractChecklistPanel.test.tsx (6 tests) 203ms
+ ✓ src/__tests__/delay-predictor/DelayPredictionPage.test.tsx (10 tests) 160ms
+ ✓ src/__tests__/notifications-page.test.tsx (7 tests) 191ms
+ ✓ src/components/__tests__/OwnerShareTokenPanel.test.tsx (12 tests) 201ms
+ ✓ src/pages/InvoiceReconcilePage.test.tsx (8 tests) 217ms
+ ✓ src/lib/margin-watch/__tests__/MarginWatchPage.test.tsx (6 tests) 225ms
+ ✓ src/pages/ContractorPortalPage.test.tsx (7 tests) 248ms
+ ✓ src/__tests__/vendor-rating-page.test.tsx (11 tests) 209ms
+stderr | src/__tests__/auth/AuthContext.test.tsx > AuthContext > getSupabaseClient が失敗しても loading=false になりクラッシュしない
+Failed to initialize auth context: Error: connection failed
+    at /Users/koki/construction-pm-mvp/src/__tests__/auth/AuthContext.test.tsx:290:41
+    at file:///Users/koki/construction-pm-mvp/node_modules/.pnpm/@vitest+runner@3.2.6/node_modules/@vitest/runner/dist/chunk-hooks.js:155:11
+    at file:///Users/koki/construction-pm-mvp/node_modules/.pnpm/@vitest+runner@3.2.6/node_modules/@vitest/runner/dist/chunk-hooks.js:752:26
+    at file:///Users/koki/construction-pm-mvp/node_modules/.pnpm/@vitest+runner@3.2.6/node_modules/@vitest/runner/dist/chunk-hooks.js:1897:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///Users/koki/construction-pm-mvp/node_modules/.pnpm/@vitest+runner@3.2.6/node_modules/@vitest/runner/dist/chunk-hooks.js:1863:10)
+    at runTest (file:///Users/koki/construction-pm-mvp/node_modules/.pnpm/@vitest+runner@3.2.6/node_modules/@vitest/runner/dist/chunk-hooks.js:1574:12)
+    at runSuite (file:///Users/koki/construction-pm-mvp/node_modules/.pnpm/@vitest+runner@3.2.6/node_modules/@vitest/runner/dist/chunk-hooks.js:1729:8)
+    at runSuite (file:///Users/koki/construction-pm-mvp/node_modules/.pnpm/@vitest+runner@3.2.6/node_modules/@vitest/runner/dist/chunk-hooks.js:1729:8)
+    at runFiles (file:///Users/koki/construction-pm-mvp/node_modules/.pnpm/@vitest+runner@3.2.6/node_modules/@vitest/runner/dist/chunk-hooks.js:1787:3)
+
+stderr | src/__tests__/auth/AuthContext.test.tsx > AuthContext > 初期化エラーは error として Context に公開される
+Failed to initialize auth context: Error: connection failed
+    at /Users/koki/construction-pm-mvp/src/__tests__/auth/AuthContext.test.tsx:307:41
+    at file:///Users/koki/construction-pm-mvp/node_modules/.pnpm/@vitest+runner@3.2.6/node_modules/@vitest/runner/dist/chunk-hooks.js:155:11
+    at file:///Users/koki/construction-pm-mvp/node_modules/.pnpm/@vitest+runner@3.2.6/node_modules/@vitest/runner/dist/chunk-hooks.js:752:26
+    at file:///Users/koki/construction-pm-mvp/node_modules/.pnpm/@vitest+runner@3.2.6/node_modules/@vitest/runner/dist/chunk-hooks.js:1897:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///Users/koki/construction-pm-mvp/node_modules/.pnpm/@vitest+runner@3.2.6/node_modules/@vitest/runner/dist/chunk-hooks.js:1863:10)
+    at runTest (file:///Users/koki/construction-pm-mvp/node_modules/.pnpm/@vitest+runner@3.2.6/node_modules/@vitest/runner/dist/chunk-hooks.js:1574:12)
+    at runSuite (file:///Users/koki/construction-pm-mvp/node_modules/.pnpm/@vitest+runner@3.2.6/node_modules/@vitest/runner/dist/chunk-hooks.js:1729:8)
+    at runSuite (file:///Users/koki/construction-pm-mvp/node_modules/.pnpm/@vitest+runner@3.2.6/node_modules/@vitest/runner/dist/chunk-hooks.js:1729:8)
+    at runFiles (file:///Users/koki/construction-pm-mvp/node_modules/.pnpm/@vitest+runner@3.2.6/node_modules/@vitest/runner/dist/chunk-hooks.js:1787:3)
+
+ ✓ src/pages/InvoiceManagementPage.test.tsx (3 tests) 212ms
+ ✓ src/__tests__/auth/AuthContext.test.tsx (10 tests) 159ms
+ ✓ src/components/gantt/QuickAddForm.test.tsx (8 tests) 184ms
+(node:99266) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/pages/ScheduleFromEstimatePage.test.tsx (22 tests) 175ms
+ ✓ src/components/DigitalBlackboard.test.tsx (14 tests) 142ms
+ ✓ src/lib/owner-app/__tests__/owner-store.test.ts (18 tests) 166ms
+ ✓ src/pages/LoginPage.test.tsx (3 tests) 158ms
+ ✓ src/components/__tests__/OwnerAppPage.test.tsx (17 tests) 180ms
+(node:99287) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/components/SalesPipelinePage.test.tsx (1 test) 152ms
+ ✓ src/__tests__/site-assistant-page.test.tsx (11 tests) 145ms
+ ✓ src/pages/InvoicePage.test.tsx (3 tests) 159ms
+ ✓ src/components/EmptyState.test.tsx (6 tests) 126ms
+stdout | src/pages/EstimatePage/__tests__/pdf-upload-smoke.test.ts > PDF upload golden path (real PDF → estimate draft) > extracts a DrawingModel and composes a sane estimate
+Warning: UnknownErrorException: Ensure that the `standardFontDataUrl` API parameter is provided.
+
+ ✓ src/lib/profit-ranking/__tests__/ProfitRankingPage.test.tsx (5 tests) 102ms
+stdout | src/pages/EstimatePage/__tests__/pdf-upload-smoke.test.ts > PDF upload golden path (real PDF → estimate draft) > extracts a DrawingModel and composes a sane estimate
+[smoke] lines= 4 texts= 3 scale_mm_per_pt= 17.638888888888886
+[smoke] elements= 6
+[smoke] estimate lines= 6 total(excl tax)= 788112
+  - IN-045 LGS65 ボード両面張り qty=59.27 unit=4800 amt=284496
+  - IN-005 クロス張り（量産品） qty=62.23 unit=1200 amt=74676
+  - IN-011 フロアタイル qty=38.46 unit=5500 amt=211530
+  - IN-015 石膏ボード天井 qty=37.34 unit=4500 amt=168030
+  - IN-012 巾木（ビニル） qty=24.69 unit=800 amt=19752
+  - IN-024 廻り縁 qty=24.69 unit=1200 amt=29628
+
+ ✓ src/pages/EstimatePage/__tests__/pdf-upload-smoke.test.ts (1 test) 91ms
+ ✓ src/__tests__/gantt-dependency-drag.test.tsx (12 tests) 219ms
+ ✓ src/components/common/ConfirmDialog.test.tsx (2 tests) 176ms
+ ✓ src/components/InstallPrompt.test.tsx (8 tests) 129ms
+(node:99295) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/pages/SignupPage.test.tsx (4 tests) 204ms
+ ✓ src/__tests__/estimate-assistant-page.test.tsx (11 tests) 163ms
+ ✓ src/__tests__/weather-page.test.tsx (2 tests) 110ms
+(node:99305) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/components/AuthGuard.test.tsx (6 tests) 77ms
+ ✓ src/__tests__/monitor-page.test.tsx (8 tests) 78ms
+ ✓ src/components/VoiceInput.test.tsx (7 tests) 74ms
+ ✓ src/__tests__/case-store.test.ts (21 tests) 95ms
+ ✓ src/components/BudgetDashboard.test.tsx (6 tests) 155ms
+ ✓ src/lib/pdf-vector-extractor/__tests__/path-extractor.test.ts (2 tests) 124ms
+ ✓ src/lib/pdf-vector-extractor/__tests__/curve-fitter.test.ts (4 tests) 128ms
+stdout | src/lib/pdf-vector-extractor/__tests__/extract-drawing-model.test.ts > extractDrawingModel (E2E) > 4 壁の部屋 PDF から DrawingModel を生成し縮尺を検出する
+Warning: UnknownErrorException: Ensure that the `standardFontDataUrl` API parameter is provided.
+
+stdout | src/lib/pdf-vector-extractor/__tests__/extract-drawing-model.test.ts > extractDrawingModel (E2E) > classifyInteriorElements が room/floor_area を導出する
+Warning: UnknownErrorException: Ensure that the `standardFontDataUrl` API parameter is provided.
+
+stdout | src/lib/pdf-vector-extractor/__tests__/extract-drawing-model.test.ts > extractDrawingModel (E2E) > door swing bezier を PdfArc として保持し、door opening を導出する
+Warning: UnknownErrorException: Ensure that the `standardFontDataUrl` API parameter is provided.
+
+ ✓ src/lib/pdf-vector-extractor/__tests__/extract-drawing-model.test.ts (3 tests) 121ms
+ ✓ src/pages/SafetyInspectionPage.test.tsx (4 tests) 112ms
+ ✓ src/__tests__/progress-dashboard.test.tsx (7 tests) 138ms
+ ✓ src/__tests__/DashboardCard.test.tsx (9 tests) 116ms
+ ✓ src/__tests__/auth/ProtectedRoute.test.tsx (9 tests) 103ms
+ ✓ src/components/__tests__/OnboardingChecklist.test.tsx (4 tests) 128ms
+ ✓ src/components/AssigneeSelector.test.tsx (5 tests) 122ms
+ ✓ src/components/InvoiceMatchPanel.test.tsx (5 tests) 124ms
+stdout | src/pages/EstimatePage/__tests__/pdf-pipeline-robustness.test.ts > PDF pipeline robustness audit > L-shaped room: traceClosedLoop closes non-convex loop, area accurate
+Warning: UnknownErrorException: Ensure that the `standardFontDataUrl` API parameter is provided.
+
+stdout | src/pages/EstimatePage/__tests__/pdf-pipeline-robustness.test.ts > PDF pipeline robustness audit > L-shaped room: traceClosedLoop closes non-convex loop, area accurate
+
+=== L-shaped 1/50 ===
+lines= 6 texts= 2 scale_mm_per_pt= 17.638888888888886
+elements= 8 rooms= 1 floorM2= 21.001
+estimate lines= 6 total(excl tax)= 563653
+  - IN-045 LGS65 ボード両面張り qty=50.8 unit=4800 amt=243840
+  - IN-005 クロス張り（量産品） qty=53.34 unit=1200 amt=64008
+  - IN-011 フロアタイル qty=21.63 unit=5500 amt=118965
+  - IN-015 石膏ボード天井 qty=21 unit=4500 amt=94500
+  - IN-012 巾木（ビニル） qty=21.17 unit=800 amt=16936
+  - IN-024 廻り縁 qty=21.17 unit=1200 amt=25404
+
+stdout | src/pages/EstimatePage/__tests__/pdf-pipeline-robustness.test.ts > PDF pipeline robustness audit > 1/100 scale: scale_mm_per_pt≈35.28 and area scales 4x vs 1/50 same-pt room
+Warning: UnknownErrorException: Ensure that the `standardFontDataUrl` API parameter is provided.
+
+stdout | src/pages/EstimatePage/__tests__/pdf-pipeline-robustness.test.ts > PDF pipeline robustness audit > 1/100 scale: scale_mm_per_pt≈35.28 and area scales 4x vs 1/50 same-pt room
+
+=== single 1/100 ===
+lines= 4 texts= 2 scale_mm_per_pt= 35.27777777777777
+elements= 6 rooms= 1 floorM2= 49.781
+estimate lines= 6 total(excl tax)= 972883
+  - IN-045 LGS65 ボード両面張り qty=67.73 unit=4800 amt=325104
+  - IN-005 クロス張り（量産品） qty=71.12 unit=1200 amt=85344
+  - IN-011 フロアタイル qty=51.27 unit=5500 amt=281985
+  - IN-015 石膏ボード天井 qty=49.78 unit=4500 amt=224010
+  - IN-012 巾木（ビニル） qty=28.22 unit=800 amt=22576
+  - IN-024 廻り縁 qty=28.22 unit=1200 amt=33864
+
+stdout | src/pages/EstimatePage/__tests__/pdf-pipeline-robustness.test.ts > PDF pipeline robustness audit > rotated 30deg rectangle: walls detected, area within 5% of true rect
+Warning: UnknownErrorException: Ensure that the `standardFontDataUrl` API parameter is provided.
+
+stdout | src/pages/EstimatePage/__tests__/pdf-pipeline-robustness.test.ts > PDF pipeline robustness audit > rotated 30deg rectangle: walls detected, area within 5% of true rect
+
+=== rotated 1/50 ===
+lines= 4 texts= 2 scale_mm_per_pt= 17.638888888888886
+elements= 6 rooms= 1 floorM2= 11.950
+estimate lines= 6 total(excl tax)= 354948
+  - IN-045 LGS65 ボード両面張り qty=33.87 unit=4800 amt=162576
+  - IN-005 クロス張り（量産品） qty=35.56 unit=1200 amt=42672
+  - IN-011 フロアタイル qty=12.31 unit=5500 amt=67705
+  - IN-015 石膏ボード天井 qty=11.95 unit=4500 amt=53775
+  - IN-012 巾木（ビニル） qty=14.11 unit=800 amt=11288
+  - IN-024 廻り縁 qty=14.11 unit=1200 amt=16932
+
+stdout | src/pages/EstimatePage/__tests__/pdf-pipeline-robustness.test.ts > PDF pipeline robustness audit > multi-room: detects BOTH rooms and sums floor area
+Warning: UnknownErrorException: Ensure that the `standardFontDataUrl` API parameter is provided.
+
+stdout | src/pages/EstimatePage/__tests__/pdf-pipeline-robustness.test.ts > PDF pipeline robustness audit > multi-room: detects BOTH rooms and sums floor area
+
+=== multi-room 1/50 ===
+lines= 8 texts= 3 scale_mm_per_pt= 17.638888888888886
+elements= 12 rooms= 2 floorM2= 24.890
+estimate lines= 6 total(excl tax)= 719913
+  - IN-045 LGS65 ボード両面張り qty=67.73 unit=4800 amt=325104
+  - IN-005 クロス張り（量産品） qty=71.12 unit=1200 amt=85344
+  - IN-011 フロアタイル qty=25.64 unit=5500 amt=141020
+  - IN-015 石膏ボード天井 qty=24.89 unit=4500 amt=112005
+  - IN-012 巾木（ビニル） qty=28.22 unit=800 amt=22576
+  - IN-024 廻り縁 qty=28.22 unit=1200 amt=33864
+
+ ✓ src/pages/EstimatePage/__tests__/pdf-pipeline-robustness.test.ts (4 tests) 119ms
+ ✓ src/pages/LandingPage.test.tsx (5 tests) 115ms
+ ✓ src/pages/InsuranceAssessmentPage.test.tsx (11 tests) 83ms
+ ✓ src/components/__tests__/ProjectMapEmbed.test.tsx (8 tests) 83ms
+ ✓ src/components/card-board/CardBoardChart.test.tsx (7 tests) 62ms
+(node:99344) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/components/PhotoProgressPanel.test.tsx (10 tests) 98ms
+ ✓ src/lib/proposal-generator/__tests__/proposal-store.test.ts (10 tests) 83ms
+ ✓ src/pages/AccountSettingsPage.test.tsx (1 test) 80ms
+ ✓ src/__tests__/progress-review-page.test.tsx (4 tests) 82ms
+ ✓ src/components/PhotoGrid.test.tsx (8 tests) 83ms
+stdout | src/lib/pdf-vector-extractor/__tests__/text-extractor.test.ts > extractTextItems > 既知の 3 文字列を抽出する
+Warning: UnknownErrorException: Ensure that the `standardFontDataUrl` API parameter is provided.
+
+stdout | src/lib/pdf-vector-extractor/__tests__/text-extractor.test.ts > extractTextItems > 各項目が位置と font_size を持つ
+Warning: UnknownErrorException: Ensure that the `standardFontDataUrl` API parameter is provided.
+
+ ✓ src/lib/pdf-vector-extractor/__tests__/text-extractor.test.ts (2 tests) 120ms
+ ✓ src/estimate/pdf-estimate.test.ts (12 tests) 39ms
+ ✓ src/components/gantt/GanttChart.test.tsx (4 tests) 90ms
+(node:99363) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/components/gantt/GanttTaskBar.test.tsx (13 tests) 70ms
+ ✓ src/__tests__/photo-page.test.tsx (3 tests) 79ms
+ ✓ src/__tests__/tasks-page.test.tsx (4 tests) 77ms
+ ✓ src/__tests__/page-error-boundaries.test.tsx (3 tests) 74ms
+ ✓ src/__tests__/event-store.test.ts (17 tests) 25ms
+ ✓ src/lib/resource-leveling.test.ts (15 tests) 8ms
+ ✓ src/lib/margin-watch/__tests__/margin-alert-store.test.ts (14 tests) 31ms
+ ✓ src/lib/crew-optimizer/__tests__/craftsman-store.test.ts (8 tests) 19ms
+ ✓ src/components/__tests__/ChangeRequestAdminPanel.test.tsx (5 tests) 32ms
+(node:99378) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/pages/ProcurementPage.test.tsx (1 test) 31ms
+ ✓ src/__tests__/share-token.test.ts (40 tests) 43ms
+ ✓ src/__tests__/GreetingHeader.test.tsx (11 tests) 45ms
+(node:99386) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/__tests__/finish-inspection.test.ts (30 tests) 24ms
+ ✓ src/lib/crm-store.test.ts (21 tests) 12ms
+ ✓ src/__tests__/category-sheet.test.ts (3 tests) 14ms
+ ✓ src/__tests__/photo-exif.test.ts (23 tests) 15ms
+(node:99393) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:99396) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/lib/proposal-generator/__tests__/price-builder.test.ts (9 tests) 22ms
+ ✓ src/lib/multi-scenario-estimate.test.ts (47 tests) 18ms
+ ✓ src/__tests__/bim-takeoff.test.ts (51 tests) 19ms
+ ✓ src/__tests__/detector-rules.test.ts (44 tests) 13ms
+ ✓ src/__tests__/work-schedule-master-ui.test.tsx (28 tests) 25ms
+(node:99404) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/lib/drawing-photo-link.test.ts (26 tests) 19ms
+ ✓ src/__tests__/assembly-estimator.test.ts (39 tests) 28ms
+(node:99407) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/__tests__/e-contract-finance.test.ts (54 tests) 20ms
+ ✓ src/__tests__/chaos-new-features.test.ts (32 tests) 25ms
+stderr | src/components/PdfAnnotationLayer.test.tsx > PdfAnnotationLayer > 描画中に2本目のポインタ(掌/別指)が触れても1本目のストロークのサンプル列は乗っ取られない
+Not implemented: HTMLCanvasElement's getContext() method: without installing the canvas npm package
+Not implemented: HTMLCanvasElement's getContext() method: without installing the canvas npm package
+Not implemented: HTMLCanvasElement's getContext() method: without installing the canvas npm package
+Not implemented: HTMLCanvasElement's getContext() method: without installing the canvas npm package
+
+stderr | src/components/PdfAnnotationLayer.test.tsx > PdfAnnotationLayer > 描画中に別ポインタのpointerupが1本目のストローク終了を誤って早期発火させない
+Not implemented: HTMLCanvasElement's getContext() method: without installing the canvas npm package
+Not implemented: HTMLCanvasElement's getContext() method: without installing the canvas npm package
+Not implemented: HTMLCanvasElement's getContext() method: without installing the canvas npm package
+Not implemented: HTMLCanvasElement's getContext() method: without installing the canvas npm package
+
+stderr | src/components/PdfAnnotationLayer.test.tsx > PdfAnnotationLayer > ズームで viewport サイズが変わって再描画されても、確定済みストロークは保持される
+Not implemented: HTMLCanvasElement's getContext() method: without installing the canvas npm package
+Not implemented: HTMLCanvasElement's getContext() method: without installing the canvas npm package
+Not implemented: HTMLCanvasElement's getContext() method: without installing the canvas npm package
+Not implemented: HTMLCanvasElement's getContext() method: without installing the canvas npm package
+Not implemented: HTMLCanvasElement's getContext() method: without installing the canvas npm package
+
+ ✓ src/components/PdfAnnotationLayer.test.tsx (4 tests) 42ms
+ ✓ src/__tests__/discord-estimate.test.ts (30 tests) 15ms
+ ✓ src/__tests__/solution-engine.test.ts (20 tests) 13ms
+ ✓ src/__tests__/supabase-repository.test.ts (15 tests) 22ms
+ ✓ src/lib/measurement-to-estimate-link.test.ts (15 tests) 9ms
+ ✓ src/lib/owner-ambassador/__tests__/reward-calculator.test.ts (12 tests) 12ms
+ ✓ src/__tests__/notifications.test.ts (8 tests) 13ms
+ ✓ src/lib/__tests__/schedule-risk-forecaster.test.ts (19 tests) 23ms
+ ✓ src/__tests__/bugakari-management.test.ts (16 tests) 22ms
+ ✓ src/lib/drawing-pins.test.ts (17 tests) 14ms
+(node:99432) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/__tests__/anomaly-detector.test.ts (8 tests) 10ms
+ ✓ src/__tests__/loss-aggregator.test.ts (16 tests) 17ms
+ ✓ src/__tests__/portfolio-aggregator.test.ts (15 tests) 11ms
+ ✓ src/lib/gantt-pdf-export.test.ts (24 tests) 10ms
+ ✓ src/lib/cockpit-dashboard.test.ts (16 tests) 3ms
+(node:99445) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:99443) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/lib/proposal-generator/__tests__/proposal-generator.test.ts (23 tests) 22ms
+ ✓ src/__tests__/multi-site-manager.test.ts (38 tests) 19ms
+ ✓ src/__tests__/inspection-pipeline.test.ts (48 tests) 37ms
+ ✓ src/__tests__/nl-estimate-parser.test.ts (55 tests) 22ms
+(node:99452) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/__tests__/useTheme.test.tsx (4 tests) 31ms
+ ✓ src/lib/photo-classifier.test.ts (86 tests) 6ms
+(node:99456) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/__tests__/progress-tracker.test.ts (13 tests) 14ms
+ ✓ src/__tests__/safety-doc-reuse.test.ts (22 tests) 23ms
+ ✓ src/i18n/formatters/__tests__/date.test.ts (15 tests) 13ms
+ ✓ src/lib/insurance_ai_drone/__tests__/pricing.test.ts (13 tests) 21ms
+ ✓ src/lib/__tests__/share-token-jwt.test.ts (23 tests) 37ms
+ ✓ src/__tests__/report-pdf-renderer.test.ts (18 tests) 14ms
+ ✓ src/i18n/formatters/__tests__/units.test.ts (31 tests) 12ms
+ ✓ src/lib/insurance_ai_drone/__tests__/drone_assessor.test.ts (9 tests) 19ms
+stderr | src/lib/pdf-to-estimate/__tests__/estimate-composer.test.ts > composeEstimate — WallTypeMap（部屋ごと壁タイプ） > WallTypeMap で存在しない roomId は LGS65 にフォールバックする（警告ログ）
+[composeEstimate] roomId "unknownRoom" not found in WallTypeMap — fallback to LGS65
+
+ ✓ src/lib/pdf-to-estimate/__tests__/estimate-composer.test.ts (24 tests) 7ms
+ ✓ src/__tests__/loss-store.test.ts (14 tests) 10ms
+ ✓ src/__tests__/document-approval.test.ts (26 tests) 13ms
+ ✓ src/__tests__/correction-workflow.test.ts (52 tests) 59ms
+ ✓ src/lib/invoice-vision.test.ts (18 tests) 9ms
+ ✓ src/__tests__/blackboard-templates.test.ts (17 tests) 7ms
+ ✓ src/lib/progress-tracker.test.ts (3 tests) 6ms
+ ✓ src/__tests__/takeoff-to-estimate.test.ts (10 tests) 23ms
+ ✓ src/__tests__/estimate-generator.test.ts (18 tests) 14ms
+ ✓ src/lib/safety-documents.test.ts (33 tests) 13ms
+ ✓ src/__tests__/photo-ledger.test.ts (49 tests) 6ms
+ ✓ src/lib/profit-ranking/__tests__/profit-ranking-store.test.ts (9 tests) 5ms
+ ✓ src/lib/freee-webhook.test.ts (12 tests) 12ms
+(node:99498) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/__tests__/edge-cases.test.ts (28 tests) 15ms
+ ✓ src/__tests__/remote-inspection.test.ts (43 tests) 15ms
+ ✓ src/lib/integration.test.ts (12 tests) 14ms
+ ✓ src/lib/deal-profit-tracker.test.ts (39 tests) 14ms
+ ✓ src/i18n/formatters/__tests__/currency.test.ts (20 tests) 11ms
+(node:99504) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/lib/report-generator.test.ts (40 tests) 12ms
+ ✓ src/__tests__/dekigata-management.test.ts (20 tests) 25ms
+ ✓ src/__tests__/ccus-integration.test.ts (26 tests) 41ms
+ ✓ src/lib/site-entry-log.test.ts (28 tests) 12ms
+ ✓ src/lib/proposal-generator/__tests__/proposal-renderer.test.ts (14 tests) 32ms
+ ✓ src/lib/project-analytics.test.ts (23 tests) 26ms
+ ✓ src/__tests__/defect-detector.test.ts (21 tests) 4ms
+ ✓ src/lib/handover-package/__tests__/portfolio-handover-metrics.test.ts (14 tests) 4ms
+ ✓ src/domain/__tests__/schemas-moodboard-selection-crm.test.ts (33 tests) 6ms
+ ✓ src/__tests__/keyboard-shortcuts.test.ts (10 tests) 21ms
+ ✓ src/__tests__/request-timeout.test.ts (3 tests) 5ms
+ ✓ src/lib/document-templates.test.ts (6 tests) 17ms
+(node:99530) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/infra/supabase-adapter/document-file-storage.test.ts (16 tests) 9ms
+ ✓ src/lib/owner-app/__tests__/snapshot-builder.test.ts (14 tests) 9ms
+ ✓ src/lib/proposal-generator/__tests__/proposal-composer.test.ts (14 tests) 12ms
+ ✓ src/lib/freee/__tests__/deal-sync.test.ts (5 tests) 3ms
+ ✓ src/lib/__tests__/schedule-chat-editor-p5.test.ts (43 tests) 51ms
+ ✓ src/__tests__/ai-schedule-generator.test.ts (50 tests) 43ms
+ ✓ src/lib/__tests__/photo-ai-scene.test.ts (80 tests) 12ms
+ ✓ src/__tests__/takeoff-session.test.ts (63 tests) 13ms
+ ✓ src/lib/__tests__/schedule-chat-editor-wave2.test.ts (19 tests) 6ms
+ ✓ src/lib/change-request.test.ts (26 tests) 19ms
+ ✓ src/lib/safety-documents.chaos.test.ts (9 tests) 12ms
+ ✓ src/lib/contractor-scheduler.test.ts (10 tests) 8ms
+ ✓ src/lib/earned-value.test.ts (8 tests) 6ms
+ ✓ src/lib/change-order/__tests__/change-order-renderer.test.ts (15 tests) 10ms
+ ✓ src/lib/submittals-tracker.test.ts (5 tests) 7ms
+(node:99562) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/__tests__/store-repository.test.ts (15 tests) 4ms
+ ✓ src/lib/change-order-tracker.test.ts (22 tests) 10ms
+(node:99564) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/lib/payment-tracker.test.ts (7 tests) 10ms
+ ✓ src/lib/insurance_ai_drone/__tests__/assessor.test.ts (9 tests) 27ms
+ ✓ src/lib/collaborative-markup.test.ts (37 tests) 10ms
+ ✓ src/lib/budget-calculator.test.ts (10 tests) 15ms
+ ✓ src/__tests__/monitor-aggregator.test.ts (24 tests) 17ms
+(node:99577) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/lib/photo-organizer.test.ts (15 tests) 8ms
+ ✓ src/lib/proposal-generator/__tests__/strength-selector.test.ts (5 tests) 8ms
+ ✓ src/lib/custom-template-engine.test.ts (61 tests) 9ms
+(node:99578) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/__tests__/portfolio-aggregator-loss.test.ts (10 tests) 5ms
+ ✓ src/__tests__/intent-parser.test.ts (36 tests) 6ms
+ ✓ src/lib/order-management.test.ts (20 tests) 3ms
+ ✓ src/__tests__/assistant-chat.test.ts (11 tests) 7ms
+ ✓ src/lib/supabase-adapter/PhaseCascadeRepository.supabase.test.ts (5 tests) 26ms
+ ✓ src/lib/supabase-adapter/PhaseStatus.supabase.test.ts (9 tests) 16ms
+ ✓ src/lib/photo-upload.test.ts (21 tests) 10ms
+ ✓ src/infra/supabase-adapter/__tests__/photo-repository.test.ts (15 tests) 17ms
+ ✓ src/lib/local-seo/__tests__/local-seo-facade.test.ts (22 tests) 13ms
+ ✓ src/lib/google-calendar.test.ts (5 tests) 10ms
+ ✓ src/lib/milestone-tracker.test.ts (31 tests) 9ms
+ ✓ src/lib/owner-suggestion/__tests__/owner-suggestion-facade.test.ts (16 tests) 8ms
+ ✓ src/__tests__/blackboard-batch.test.ts (21 tests) 4ms
+stdout | src/lib/site-livestream/__tests__/owner-notifier.test.ts > dispatchNotifications — immediate > quietHours 外の場合は全チャネルを dispatched に含む
+[owner-notifier] EMAIL → 田中施主: 新しい投稿「解体作業」が届きました。
+[owner-notifier] DISCORD → 田中施主: 新しい投稿「解体作業」が届きました。
+
+stdout | src/lib/site-livestream/__tests__/owner-notifier.test.ts > dispatchNotifications — immediate > dispatched に2チャネルが含まれる
+[owner-notifier] EMAIL → 田中施主: 新しい投稿「解体作業」が届きました。
+[owner-notifier] DISCORD → 田中施主: 新しい投稿「解体作業」が届きました。
+
+stdout | src/lib/site-livestream/__tests__/owner-notifier.test.ts > dispatchNotifications — 単一チャネル > push のみのとき dispatched に push が含まれる
+[owner-notifier] PUSH → 田中施主: 新しい投稿「解体作業」が届きました。
+
+ ✓ src/lib/site-livestream/__tests__/owner-notifier.test.ts (6 tests) 4ms
+ ✓ src/lib/project-tasks-store.test.ts (10 tests) 7ms
+ ✓ src/__tests__/e2e/csv-import.test.ts (10 tests) 4ms
+(node:99618) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/lib/__tests__/schedule-chat-editor.test.ts (34 tests) 7ms
+ ✓ src/lib/__tests__/receipt-ocr-parser.test.ts (33 tests) 4ms
+ ✓ src/lib/invoice-store.test.ts (20 tests) 8ms
+ ✓ src/__tests__/portfolio-store.test.ts (12 tests) 11ms
+ ✓ src/lib/sample-project.test.ts (2 tests) 8ms
+ ✓ src/lib/phase-template/storage.test.ts (13 tests) 26ms
+ ✓ src/lib/site-livestream/__tests__/livestream-store.test.ts (10 tests) 8ms
+ ✓ src/lib/estimate-review/__tests__/contract-checker.test.ts (4 tests) 1ms
+ ✓ src/lib/e-contract.test.ts (29 tests) 6ms
+ ✓ src/domain/__tests__/schemas.test.ts (47 tests) 37ms
+ ✓ src/lib/rfi-manager.test.ts (5 tests) 23ms
+ ✓ src/__tests__/e2e/project-flow.test.ts (9 tests) 8ms
+ ✓ src/lib/owner-ambassador/__tests__/ambassador-facade.test.ts (17 tests) 4ms
+(node:99640) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/lib/card-schedule-converter.test.ts (2 tests) 15ms
+ ✓ src/__tests__/repository.test.ts (14 tests) 7ms
+ ✓ src/__tests__/e2e/persona-switch.test.ts (11 tests) 2ms
+ ✓ src/lib/inquiry-responder/__tests__/portfolio-aggregator-inquiry.test.ts (6 tests) 3ms
+ ✓ src/__tests__/safety-records.test.ts (7 tests) 9ms
+ ✓ src/lib/photo-pin-measure.test.ts (19 tests) 4ms
+ ✓ src/lib/phase-template-master.test.ts (19 tests) 8ms
+ ✓ src/__tests__/receipt-ocr.test.ts (59 tests) 7ms
+ ✓ src/lib/work-breakdown/expansion.test.ts (16 tests) 13ms
+ ✓ src/lib/proposal-generator/__tests__/case-matcher.test.ts (6 tests) 10ms
+ ✓ src/__tests__/delay-predictor/prediction-store.test.ts (11 tests) 11ms
+ ✓ src/__tests__/api-gateway.test.ts (24 tests) 9ms
+ ✓ src/lib/repeat-predictor/__tests__/prediction-store.test.ts (10 tests) 3ms
+ ✓ src/__tests__/rule-based-fallback.test.ts (14 tests) 3ms
+ ✓ src/__tests__/score-calculator.test.ts (27 tests) 3ms
+ ✓ src/lib/estimate-to-tasks.test.ts (28 tests) 3ms
+ ✓ src/lib/repeat-predictor/__tests__/signal-extractor.test.ts (9 tests) 7ms
+ ✓ src/lib/crew-optimizer/__tests__/task-store.test.ts (6 tests) 6ms
+ ✓ src/lib/freee/__tests__/expense-reporter.test.ts (6 tests) 4ms
+ ✓ src/lib/supabase-adapter/ChatRepository.supabase.test.ts (5 tests) 12ms
+ ✓ src/lib/local-seo/__tests__/hp-publisher.test.ts (5 tests) 3ms
+ ✓ src/__tests__/electronic-delivery.test.ts (34 tests) 11ms
+(node:99688) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/lib/supabase-adapter/SelectionRepository.test.ts (11 tests) 2ms
+(node:99687) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/lib/freee-oauth-handler.test.ts (4 tests) 4ms
+ ✓ src/lib/chat-store.test.ts (23 tests) 4ms
+ ✓ src/lib/__tests__/site-safety-incident.test.ts (20 tests) 4ms
+ ✓ src/__tests__/in-memory-repository.test.ts (11 tests) 5ms
+ ✓ src/lib/local-seo/__tests__/article-generator.test.ts (14 tests) 3ms
+ ✓ src/lib/margin-watch/__tests__/margin-calculator.test.ts (13 tests) 4ms
+ ✓ src/lib/local-seo/__tests__/gbp-syncer.test.ts (12 tests) 3ms
+ ✓ src/lib/resource-analysis.test.ts (19 tests) 3ms
+ ✓ src/contexts/PersonaContext.test.tsx (1 test) 6ms
+ ✓ src/lib/share-file.test.ts (2 tests) 28ms
+ ✓ src/lib/freee-api.test.ts (12 tests) 6ms
+ ✓ src/lib/digital-blackboard.test.ts (8 tests) 4ms
+(node:99711) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/lib/profit-ranking/__tests__/ranking-builder.test.ts (8 tests) 2ms
+ ✓ src/lib/supabase-adapter/SafetyRepository.supabase.test.ts (3 tests) 3ms
+ ✓ src/__tests__/danger-signals.test.ts (28 tests) 3ms
+(node:99720) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/__tests__/share-token-store.test.ts (12 tests) 5ms
+ ✓ src/__tests__/cascade-service.test.ts (5 tests) 2ms
+ ✓ src/domain/__tests__/schemas-procurement-order.test.ts (39 tests) 11ms
+ ✓ src/lib/inquiry-responder/__tests__/slot-proposer.test.ts (13 tests) 5ms
+stdout | src/lib/sw-registration.test.ts > registerServiceWorker > calls updateSW(true) when onNeedRefresh fires
+[SW] New content available, updating...
+
+stdout | src/lib/sw-registration.test.ts > registerServiceWorker > does not throw when onOfflineReady fires
+[SW] App ready to work offline.
+
+stdout | src/lib/sw-registration.test.ts > registerServiceWorker > does not throw when onRegistered fires with undefined
+[SW] Service worker registered: undefined
+
+stderr | src/lib/sw-registration.test.ts > registerServiceWorker > does not throw when onRegisterError fires
+[SW] Service worker registration failed: Error: fail
+    at /Users/koki/construction-pm-mvp/src/lib/sw-registration.test.ts:51:42
+    at Proxy.assertThrows (file:///Users/koki/construction-pm-mvp/node_modules/.pnpm/chai@5.3.3/node_modules/chai/index.js:2767:5)
+    at Proxy.methodWrapper (file:///Users/koki/construction-pm-mvp/node_modules/.pnpm/chai@5.3.3/node_modules/chai/index.js:1686:25)
+    at Proxy.<anonymous> (file:///Users/koki/construction-pm-mvp/node_modules/.pnpm/@vitest+expect@3.2.6/node_modules/@vitest/expect/dist/index.js:1088:12)
+    at Proxy.overwritingMethodWrapper (file:///Users/koki/construction-pm-mvp/node_modules/.pnpm/chai@5.3.3/node_modules/chai/index.js:1735:33)
+    at Proxy.<anonymous> (file:///Users/koki/construction-pm-mvp/node_modules/.pnpm/@vitest+expect@3.2.6/node_modules/@vitest/expect/dist/index.js:1420:16)
+    at Proxy.<anonymous> (file:///Users/koki/construction-pm-mvp/node_modules/.pnpm/@vitest+expect@3.2.6/node_modules/@vitest/expect/dist/index.js:1029:14)
+    at Proxy.methodWrapper (file:///Users/koki/construction-pm-mvp/node_modules/.pnpm/chai@5.3.3/node_modules/chai/index.js:1686:25)
+    at /Users/koki/construction-pm-mvp/src/lib/sw-registration.test.ts:51:66
+    at file:///Users/koki/construction-pm-mvp/node_modules/.pnpm/@vitest+runner@3.2.6/node_modules/@vitest/runner/dist/chunk-hooks.js:155:11
+
+ ✓ src/lib/sw-registration.test.ts (5 tests) 4ms
+ ✓ src/lib/user-roles.test.ts (18 tests) 3ms
+ ✓ src/lib/risk-predictor.test.ts (17 tests) 3ms
+ ✓ src/lib/site-livestream/__tests__/livestream-facade.test.ts (15 tests) 8ms
+ ✓ src/__tests__/checkout-session.test.ts (8 tests) 3ms
+(node:99739) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/lib/drawing-takeoff.test.ts (62 tests) 4ms
+ ✓ src/lib/repeat-predictor/__tests__/customer-store.test.ts (9 tests) 3ms
+ ✓ src/lib/freee/__tests__/client-oauth.test.ts (16 tests) 7ms
+ ✓ src/lib/auto-estimate-row.test.ts (15 tests) 5ms
+ ✓ src/lib/phase-cascade.test.ts (24 tests) 4ms
+ ✓ src/__tests__/delay-predictor/weather-mock.test.ts (10 tests) 11ms
+ ✓ src/lib/meeting-minutes.test.ts (7 tests) 3ms
+ ✓ src/lib/supabase-adapter/SiteEntryRepository.supabase.test.ts (7 tests) 4ms
+ ✓ src/lib/longterm-followup/__tests__/portfolio-followup-metrics.test.ts (8 tests) 3ms
+ ✓ src/lib/task-categories.test.ts (18 tests) 5ms
+ ✓ src/lib/interior-photo-classifier.test.ts (24 tests) 5ms
+ ✓ src/lib/cost-management.test.ts (7 tests) 2ms
+ ✓ src/lib/daily-report-generator.test.ts (22 tests | 1 skipped) 4ms
+ ✓ src/lib/margin-watch/__tests__/margin-watcher.test.ts (9 tests) 5ms
+ ✓ src/lib/inquiry-responder/__tests__/inquiry-responder.test.ts (21 tests) 11ms
+ ✓ src/lib/drawing-trace-snap.test.ts (33 tests) 4ms
+ ✓ src/lib/pdf-to-estimate/__tests__/pdf-to-estimate-integration.test.ts (8 tests) 3ms
+ ✓ src/lib/handover-package/__tests__/types.test.ts (21 tests) 2ms
+ ✓ src/lib/pen-stroke.test.ts (11 tests) 5ms
+ ✓ src/__tests__/report-generator.test.ts (17 tests) 4ms
+ ✓ src/lib/crew-board.test.ts (33 tests) 5ms
+ ✓ src/__tests__/recommendation-engine.test.ts (16 tests) 5ms
+ ✓ src/lib/contact-webhook/auto-estimate-pipeline.test.ts (16 tests) 10ms
+(node:99786) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/lib/pdf-to-estimate/__tests__/interior-semantic.test.ts (22 tests) 4ms
+ ✓ src/__tests__/delay-predictor/portfolio-aggregator-delay.test.ts (6 tests) 4ms
+ ✓ src/lib/supabase-adapter/PhaseRepository.supabase.test.ts (8 tests) 3ms
+(node:99794) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/lib/sales-pipeline/__tests__/sales-pipeline.test.ts (27 tests) 4ms
+ ✓ src/__tests__/photo-classifier-sprint65.test.ts (34 tests) 9ms
+ ✓ src/lib/margin-watch/__tests__/action-suggester.test.ts (39 tests) 4ms
+ ✓ src/__tests__/takeoff-region.test.ts (43 tests) 7ms
+ ✓ src/lib/proposal-generator/__tests__/case-study-store.test.ts (12 tests) 3ms
+ ✓ src/lib/margin-watch/__tests__/cause-classifier.test.ts (14 tests) 4ms
+ ✓ src/lib/owner-ambassador/__tests__/ambassador-store.test.ts (16 tests) 5ms
+ ✓ src/lib/handover-package/__tests__/handover-package-facade.test.ts (24 tests) 16ms
+ ✓ src/lib/local-seo/__tests__/portfolio-local-seo-metrics.test.ts (8 tests) 4ms
+ ✓ src/__tests__/invoice.test.ts (20 tests) 5ms
+ ✓ src/lib/longterm-followup/__tests__/followup-store.test.ts (16 tests) 4ms
+ ✓ src/lib/invoice-ocr-handler.test.ts (8 tests) 6ms
+stderr | src/__tests__/freee-api-client.test.ts > submitJournal — dry-run モード > access_token 未設定時は ok:true, mode:dry_run を返す
+[freee-api-client] freee env 未設定（access_token なし）。dry-run で記録します。 {
+  draft: {
+    issue_date: '2025-04-15',
+    amount: 500,
+    account_item: '旅費交通費',
+    tax_code: 10,
+    partner_name: 'JR東日本',
+    description: 'JR東日本',
+    needs_review: false
+  }
+}
+
+stderr | src/__tests__/freee-api-client.test.ts > submitJournal — dry-run モード > client_id があっても access_token がなければ dry-run
+[freee-api-client] freee env 未設定（access_token なし）。dry-run で記録します。 {
+  draft: {
+    issue_date: '2025-04-15',
+    amount: 500,
+    account_item: '旅費交通費',
+    tax_code: 10,
+    partner_name: 'JR東日本',
+    description: 'JR東日本',
+    needs_review: false
+  }
+}
+
+ ✓ src/__tests__/freee-api-client.test.ts (7 tests) 12ms
+ ✓ src/lib/crew-optimizer/__tests__/optimizer.test.ts (10 tests) 4ms
+ ✓ src/lib/supabase-adapter/WarrantyRepository.async.test.ts (7 tests) 2ms
+ ✓ src/lib/freee/__tests__/client.test.ts (11 tests) 6ms
+ ✓ src/lib/longterm-followup/__tests__/followup-facade.test.ts (18 tests) 4ms
+ ✓ src/lib/repeat-predictor/__tests__/segment-classifier.test.ts (14 tests) 2ms
+(node:99827) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/lib/rate-limiter.test.ts (5 tests) 4ms
+ ✓ src/lib/freee/FreeeRepository.test.ts (9 tests) 3ms
+(node:99833) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/__tests__/chat-mentions.test.ts (17 tests) 5ms
+ ✓ src/lib/handover-package/__tests__/handover-pdf-builder.test.ts (21 tests) 4ms
+ ✓ src/lib/supabase-adapter/RoomRepository.async.test.ts (4 tests) 2ms
+ ✓ src/lib/meeting-runner/__tests__/meeting-runner-facade.test.ts (14 tests) 5ms
+ ✓ src/lib/punch-list.test.ts (6 tests) 3ms
+ ✓ src/__tests__/cost-lookup.test.ts (16 tests) 5ms
+ ✓ src/lib/change-order/__tests__/change-order-facade.test.ts (14 tests) 4ms
+ ✓ src/lib/supabase-adapter/LaborRepository.supabase.test.ts (6 tests) 3ms
+ ✓ src/lib/owner-ambassador/__tests__/portfolio-ambassador-metrics.test.ts (8 tests) 5ms
+ ✓ src/lib/owner-app/__tests__/share-token.test.ts (16 tests) 4ms
+ ✓ src/lib/auth-helper.test.ts (6 tests) 2ms
+ ✓ src/__tests__/schedule-validator.test.ts (18 tests) 5ms
+ ✓ src/lib/freee/__tests__/invoice-matcher.test.ts (6 tests) 5ms
+ ✓ src/__tests__/inspection-store.test.ts (25 tests) 4ms
+ ✓ src/lib/owner-suggestion/__tests__/profile-analyzer.test.ts (8 tests) 2ms
+ ✓ src/lib/closeout-checklist.test.ts (7 tests) 2ms
+ ✓ src/hooks/useGoogleCalendar.test.ts (3 tests) 5ms
+ ✓ src/lib/local-seo/__tests__/serp-tracker.test.ts (12 tests) 5ms
+ ✓ src/lib/supabase-adapter/InvoiceRepository.supabase.test.ts (5 tests) 2ms
+ ✓ src/lib/export-manager.test.ts (10 tests) 4ms
+(node:99872) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/lib/handover-package/__tests__/document-collector.test.ts (15 tests) 4ms
+ ✓ src/lib/__tests__/equipment-utilization-tracker.test.ts (19 tests) 3ms
+ ✓ src/__tests__/ccus-worker-profile.test.ts (26 tests) 4ms
+ ✓ src/lib/supabase-adapter/PermitRepository.supabase.test.ts (3 tests) 2ms
+ ✓ src/lib/site-livestream/__tests__/highlight-extractor.test.ts (10 tests) 5ms
+ ✓ src/lib/inquiry-responder/__tests__/requirement-extractor.test.ts (52 tests) 7ms
+ ✓ src/lib/__tests__/photo-progress-tracker.test.ts (24 tests) 8ms
+ ✓ src/__tests__/local-storage-repository.test.ts (10 tests) 15ms
+ ✓ src/lib/schedule-conflict.test.ts (6 tests) 3ms
+ ✓ src/lib/project-health.test.ts (10 tests) 3ms
+ ✓ src/lib/drawing-measure.test.ts (18 tests) 13ms
+ ✓ src/lib/longterm-followup/__tests__/types.test.ts (8 tests) 2ms
+ ✓ src/lib/crew-optimizer/__tests__/optimization-store.test.ts (7 tests) 3ms
+ ✓ src/lib/handover-package/__tests__/maintenance-scheduler.test.ts (18 tests) 15ms
+ ✓ src/lib/inquiry-responder/__tests__/reply-drafter.test.ts (53 tests) 3ms
+ ✓ src/lib/gantt-task-filter.test.ts (14 tests) 2ms
+ ✓ src/lib/profit-calculator.chaos.test.ts (14 tests) 5ms
+ ✓ src/__tests__/node-schedule.test.ts (21 tests) 3ms
+ ✓ src/lib/change-order/__tests__/approval-flow.test.ts (20 tests) 5ms
+(node:99915) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/lib/contact-webhook/inquiry-store.test.ts (20 tests) 4ms
+ ✓ src/lib/finish-inspection-templates.test.ts (17 tests) 12ms
+ ✓ src/lib/gantt-phase-grouping.test.ts (22 tests) 3ms
+ ✓ src/lib/supabase-adapter/MeetingRepository.async.test.ts (7 tests) 2ms
+ ✓ src/lib/freee-integration.test.ts (15 tests) 4ms
+ ✓ src/lib/supabase-adapter/MoodBoardRepository.supabase.test.ts (4 tests) 2ms
+ ✓ src/lib/supabase-adapter/TaskRepository.supabase.test.ts (3 tests) 4ms
+ ✓ src/lib/proposal-generator/__tests__/schedule-builder.test.ts (20 tests) 4ms
+ ✓ src/lib/supabase-adapter/PunchListRepository.supabase.test.ts (3 tests) 3ms
+ ✓ src/lib/mood-board.test.ts (19 tests) 4ms
+ ✓ src/lib/warranty-tracker.test.ts (5 tests) 2ms
+ ✓ src/lib/proposal-generator/__tests__/strength-store.test.ts (10 tests) 3ms
+ ✓ src/__tests__/delay-predictor/weather-impact.test.ts (16 tests) 7ms
+ ✓ src/lib/owner-suggestion/__tests__/owner-suggestion-store.test.ts (10 tests) 5ms
+ ✓ src/lib/longterm-followup/__tests__/checkpoint-scheduler.test.ts (18 tests) 3ms
+ ✓ src/__tests__/delay-predictor/baseline-by-kind.test.ts (10 tests) 3ms
+ ✓ src/lib/construction-checklist.test.ts (17 tests) 3ms
+ ✓ src/__tests__/freee-journal-mapper.test.ts (25 tests) 5ms
+ ✓ src/lib/owner-suggestion/__tests__/suggestion-pdf-builder.test.ts (15 tests) 4ms
+(node:99952) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/lib/supabase-adapter/OrderRepository.test.ts (18 tests) 3ms
+ ✓ src/lib/__tests__/supabase.test.ts (15 tests) 5ms
+ ✓ src/lib/sales-pipeline/__tests__/stage-transition-engine.test.ts (12 tests) 4ms
+ ✓ src/lib/local-seo/__tests__/keyword-recommender.test.ts (13 tests) 3ms
+ ✓ src/__tests__/delay-predictor/historical-store.test.ts (10 tests) 3ms
+ ✓ src/lib/profit-calculator.test.ts (14 tests) 3ms
+ ✓ src/__tests__/p2-features.test.ts (20 tests) 5ms
+ ✓ src/lib/selection-board.test.ts (13 tests) 7ms
+ ✓ src/lib/__tests__/daily-cost-tracker.test.ts (15 tests) 3ms
+ ✓ src/lib/project-flow.test.ts (24 tests) 11ms
+ ✓ src/lib/freee-api-handler.test.ts (6 tests) 11ms
+ ✓ src/lib/project-tasks-store.integration.test.ts (5 tests) 2ms
+ ✓ src/lib/owner-suggestion/__tests__/portfolio-owner-suggestion-metrics.test.ts (12 tests) 3ms
+ ✓ src/lib/blueprint-diff.test.ts (10 tests) 10ms
+ ✓ src/lib/change-order/__tests__/dependency-resolver.test.ts (12 tests) 2ms
+stderr | src/lib/supabase-adapter/CRMRepository.supabase.test.ts > CRMRepository Phase B — Supabase routing > useSupabase=true で getCustomerAsync は customers テーブルを参照する
+[CRMRepository] deals テーブルのスキーマが Phase C 待ちのため deals は InMemory にフォールバックします
+
+ ✓ src/lib/supabase-adapter/CRMRepository.supabase.test.ts (5 tests) 7ms
+ ✓ src/lib/freee/MatchingEngine.test.ts (18 tests) 5ms
+ ✓ src/lib/meeting-runner/__tests__/minutes-recorder.test.ts (13 tests) 3ms
+ ✓ src/lib/pdf-vector-extractor/__tests__/to-drawing-model.test.ts (6 tests) 2ms
+ ✓ src/__tests__/vendor-rating-types.test.ts (18 tests) 2ms
+ ✓ src/lib/signup-funnel.test.ts (7 tests) 4ms
+ ✓ src/lib/inquiry-responder/__tests__/range-estimator.test.ts (47 tests) 4ms
+ ✓ src/lib/material-tracker.test.ts (10 tests | 1 skipped) 5ms
+ ✓ src/lib/crew-optimizer/__tests__/assignment-scorer.test.ts (9 tests) 3ms
+ ✓ src/lib/safety-inspection.test.ts (19 tests) 3ms
+ ✓ src/lib/supabase-adapter/ProjectRepository.supabase.test.ts (5 tests) 3ms
+ ✓ src/lib/claim-manager.test.ts (8 tests) 2ms
+ ✓ src/lib/unified-data-flow.test.ts (9 tests) 3ms
+ ✓ src/lib/contact-webhook/reply-draft-generator.test.ts (17 tests) 2ms
+ ✓ src/lib/proposal-generator/__tests__/differentiation-store.test.ts (10 tests) 2ms
+ ✓ src/lib/insurance_ai_drone/__tests__/insurance_clauses.test.ts (11 tests) 2ms
+ ✓ src/__tests__/sentiment-analyzer.test.ts (19 tests) 3ms
+ ✓ src/lib/site-livestream/__tests__/post-validator.test.ts (11 tests) 2ms
+ ✓ src/lib/supabase-adapter/SelectionRepository.supabase.test.ts (5 tests) 5ms
+ ✓ src/lib/pen-preview.test.ts (3 tests) 3ms
+(node:119) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/lib/timeline-analyzer.test.ts (15 tests) 3ms
+ ✓ src/lib/profit-ranking/__tests__/metrics-builder.test.ts (13 tests) 5ms
+ ✓ src/lib/supabase-adapter/SiteEntryRepository.async.test.ts (9 tests) 11ms
+ ✓ src/lib/owner-ambassador/__tests__/inquiry-tracker.test.ts (19 tests) 2ms
+ ✓ src/lib/estimate-comparison.test.ts (10 tests) 2ms
+ ✓ src/__tests__/cross-project-gantt.test.ts (15 tests) 3ms
+ ✓ src/lib/card-board-schedule.test.ts (5 tests) 13ms
+ ✓ src/lib/supabase-adapter/OrderRepository.supabase.test.ts (5 tests) 3ms
+ ✓ src/lib/work-breakdown/wbs-to-gantt.test.ts (6 tests) 4ms
+ ✓ src/__tests__/photo-inspection-types.test.ts (27 tests) 7ms
+ ✓ src/lib/change-order/__tests__/impact-analyzer.test.ts (15 tests) 3ms
+ ✓ src/lib/calendar-export.test.ts (24 tests) 3ms
+(node:153) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/lib/vendor-management.test.ts (10 tests) 3ms
+ ✓ src/__tests__/store.test.ts (15 tests) 3ms
+ ✓ src/lib/supabase-adapter/MeetingRepository.supabase.test.ts (3 tests) 3ms
+ ✓ src/lib/supabase-adapter/ClaimRepository.supabase.test.ts (4 tests) 3ms
+ ✓ src/lib/contact-webhook/contact-webhook-receiver.test.ts (16 tests) 3ms
+(node:161) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/lib/supabase-adapter/ProcurementRepository.test.ts (16 tests) 3ms
+ ✓ src/components/gantt/utils.test.ts (23 tests) 6ms
+(node:167) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/lib/supabase-adapter/ProjectRepository.async.test.ts (4 tests) 3ms
+ ✓ src/lib/longterm-followup/__tests__/degradation-analyzer.test.ts (11 tests) 5ms
+ ✓ src/lib/handover-package/__tests__/warranty-tracker.test.ts (16 tests) 3ms
+ ✓ src/lib/longterm-followup/__tests__/diagnosis-form-builder.test.ts (13 tests) 6ms
+ ✓ src/__tests__/e2e/contractor.test.ts (7 tests) 2ms
+ ✓ src/__tests__/project-list-utils.test.ts (7 tests) 7ms
+ ✓ src/lib/meeting-runner/__tests__/next-meeting-scheduler.test.ts (8 tests) 4ms
+ ✓ src/lib/meeting-runner/__tests__/agenda-builder.test.ts (14 tests) 3ms
+ ✓ src/__tests__/gantt-search.test.ts (14 tests) 2ms
+ ✓ src/lib/permit-tracker.test.ts (8 tests) 2ms
+ ✓ src/lib/sales-pipeline/__tests__/stall-detector.test.ts (16 tests) 2ms
+ ✓ src/lib/repeat-predictor/__tests__/rfm-scorer.test.ts (37 tests) 2ms
+ ✓ src/lib/compliance-tracker.test.ts (15 tests) 3ms
+ ✓ src/lib/meeting-runner/__tests__/action-tracker.test.ts (11 tests) 3ms
+ ✓ src/lib/repeat-predictor/__tests__/repeat-predictor.test.ts (15 tests) 2ms
+ ✓ src/lib/freee-client.test.ts (5 tests) 8ms
+ ✓ src/lib/supabase-adapter/EquipmentRepository.async.test.ts (7 tests) 3ms
+ ✓ src/lib/supabase-adapter/ComplianceRepository.supabase.test.ts (3 tests) 4ms
+ ✓ src/lib/pdf-annotations.test.ts (10 tests) 2ms
+ ✓ src/lib/schedule-validator.test.ts (5 tests) 2ms
+ ✓ src/lib/sales-pipeline/__tests__/portfolio-pipeline-metrics.test.ts (8 tests) 4ms
+ ✓ src/lib/pdf-to-estimate/__tests__/wall-type-inference.test.ts (11 tests) 5ms
+ ✓ src/lib/change-order/__tests__/portfolio-change-order-metrics.test.ts (12 tests) 2ms
+ ✓ src/lib/supabase-adapter/WarrantyRepository.supabase.test.ts (3 tests) 2ms
+(node:225) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/__tests__/sprint64-takeoff-enhance.test.ts (24 tests) 2ms
+ ✓ src/lib/profit-ranking/__tests__/ranker.test.ts (14 tests) 2ms
+ ✓ src/lib/longterm-followup/__tests__/renovation-lead-generator.test.ts (14 tests) 3ms
+ ✓ src/lib/supabase-adapter/EquipmentRepository.supabase.test.ts (3 tests) 2ms
+ ✓ src/__tests__/monthly-report.test.ts (15 tests) 2ms
+ ✓ src/lib/supabase-adapter/EstimateRepository.async.test.ts (4 tests) 3ms
+ ✓ src/lib/site-livestream/__tests__/portfolio-livestream-metrics.test.ts (11 tests) 3ms
+ ✓ src/lib/crew-optimizer/__tests__/conflict-detector.test.ts (9 tests) 4ms
+(node:243) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:244) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/lib/supabase-adapter/CRMRepository.async.test.ts (10 tests) 3ms
+ ✓ src/lib/supabase-adapter/ChatRepository.async.test.ts (8 tests) 9ms
+ ✓ src/lib/cost-forecaster.test.ts (19 tests) 2ms
+ ✓ src/lib/supabase-adapter/PermitRepository.async.test.ts (7 tests) 2ms
+ ✓ src/lib/phase-state-machine.test.ts (20 tests) 3ms
+ ✓ src/__tests__/cost-loss-detector-types.test.ts (15 tests) 2ms
+ ✓ src/lib/pdf-to-estimate/__tests__/quantity-takeoff-from-pdf.test.ts (12 tests) 3ms
+ ✓ src/lib/supabase-adapter/LaborRepository.async.test.ts (11 tests) 2ms
+ ✓ src/lib/alert-rules.test.ts (8 tests) 2ms
+(node:258) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/lib/weather-integration.test.ts (13 tests) 4ms
+ ✓ src/lib/supabase-adapter/MoodBoardRepository.test.ts (9 tests) 2ms
+ ✓ src/lib/order-management.chaos.test.ts (7 tests) 3ms
+ ✓ src/lib/owner-suggestion/__tests__/plan-generator.test.ts (11 tests) 2ms
+ ✓ src/lib/meeting-runner/__tests__/portfolio-meeting-metrics.test.ts (7 tests) 2ms
+ ✓ src/lib/sales-pipeline/__tests__/conversion-analyzer.test.ts (7 tests) 2ms
+ ✓ src/lib/freee/__tests__/deal_mapper.test.ts (17 tests) 2ms
+ ✓ src/lib/labor-tracker.test.ts (8 tests) 8ms
+ ✓ src/__tests__/procurement-alerts.test.ts (2 tests) 3ms
+ ✓ src/lib/qr-code.test.ts (16 tests) 2ms
+ ✓ src/lib/sales-pipeline/__tests__/pipeline-snapshotter.test.ts (6 tests) 4ms
+ ✓ src/lib/profit-ranking/__tests__/types.test.ts (5 tests) 2ms
+ ✓ src/lib/notification-system.test.ts (7 tests) 2ms
+(node:281) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/lib/invoice-store.chaos.test.ts (8 tests) 5ms
+ ✓ src/lib/supabase-adapter/InvoiceRepository.async.test.ts (7 tests) 2ms
+ ✓ src/lib/equipment-tracker.test.ts (7 tests) 6ms
+(node:287) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/lib/supabase-adapter/ContractorRepository.async.test.ts (4 tests) 2ms
+ ✓ src/lib/supabase-adapter/CostMasterRepository.async.test.ts (4 tests) 2ms
+ ✓ src/lib/supabase-adapter/ClaimRepository.async.test.ts (8 tests) 2ms
+ ✓ src/lib/site-livestream/__tests__/types.test.ts (7 tests) 1ms
+ ✓ src/lib/owner-ambassador/__tests__/referral-link-generator.test.ts (12 tests) 2ms
+ ✓ src/lib/document-generator.test.ts (5 tests) 2ms
+ ✓ src/lib/proposal-generator/__tests__/portfolio-proposal-metrics.test.ts (6 tests) 3ms
+ ✓ src/lib/meeting-runner/__tests__/distribution-builder.test.ts (15 tests) 2ms
+ ✓ src/lib/supabase-adapter/ContractorRepository.supabase.test.ts (2 tests) 5ms
+ ✓ src/lib/estimate-review/__tests__/change-order.test.ts (5 tests) 2ms
+ ✓ src/__tests__/delay-predictor/predictor.test.ts (13 tests) 5ms
+ ✓ src/lib/gantt-ics-export.test.ts (7 tests) 2ms
+ ✓ src/lib/insurance_ai_drone/__tests__/pml.test.ts (11 tests) 5ms
+ ✓ src/__tests__/assistantCommands.test.ts (12 tests) 3ms
+ ✓ src/lib/supabase-adapter/PhotoRepository.async.test.ts (4 tests) 2ms
+(node:313) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/__tests__/share-revoke.test.ts (4 tests) 2ms
+ ✓ src/__tests__/e2e/task-status.test.ts (7 tests) 4ms
+ ✓ src/lib/crew-optimizer/__tests__/types.test.ts (7 tests) 2ms
+ ✓ src/lib/sales-pipeline/__tests__/probability-model.test.ts (17 tests) 2ms
+ ✓ src/lib/sales-pipeline/__tests__/types.test.ts (4 tests) 2ms
+ ✓ src/lib/owner-suggestion/__tests__/case-study-matcher.test.ts (6 tests) 6ms
+ ✓ src/lib/project-task-scheduler.test.ts (5 tests) 4ms
+ ✓ src/lib/drawing-scale-auto.test.ts (15 tests) 2ms
+ ✓ src/lib/site-livestream/__tests__/caption-generator.test.ts (11 tests) 3ms
+ ✓ src/lib/margin-watch/__tests__/types.test.ts (7 tests) 2ms
+(node:338) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/lib/crew-optimizer/__tests__/distance-calculator.test.ts (13 tests) 2ms
+ ✓ src/__tests__/assistantParser.test.ts (8 tests) 2ms
+ ✓ src/lib/supabase-adapter/TaskRepository.async.test.ts (4 tests) 2ms
+ ✓ src/lib/inquiry-responder/__tests__/inquiry-triage.test.ts (17 tests) 2ms
+ ✓ src/lib/supabase-adapter/ComplianceRepository.async.test.ts (7 tests) 2ms
+ ✓ src/lib/supabase-adapter/PunchListRepository.async.test.ts (7 tests) 3ms
+ ✓ src/stores/task-store.test.ts (4 tests) 2ms
+ ✓ src/lib/supabase-adapter/SafetyRepository.async.test.ts (7 tests) 2ms
+ ✓ src/__tests__/issue-classifier.test.ts (23 tests) 3ms
+ ✓ src/lib/owner-ambassador/__tests__/tier-calculator.test.ts (17 tests) 3ms
+ ✓ src/lib/owner-ambassador/__tests__/types.test.ts (12 tests) 2ms
+ ✓ src/pages/ResourceAnalysisPage.test.ts (5 tests) 2ms
+(node:401) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/lib/margin-watch/__tests__/snapshot-builder.test.ts (6 tests) 2ms
+ ✓ src/lib/utils/csv-escape.test.ts (13 tests) 2ms
+ ✓ src/lib/profit-ranking/__tests__/score-explainer.test.ts (11 tests) 2ms
+ ✓ src/__tests__/confidence-scorer.test.ts (12 tests) 2ms
+ ✓ src/__tests__/cascade-scheduler.test.ts (6 tests) 2ms
+ ✓ src/lib/pen-presets.test.ts (6 tests) 2ms
+(node:424) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/lib/crm-store.chaos.test.ts (7 tests) 2ms
+ ✓ src/lib/repeat-predictor/__tests__/action-recommender.test.ts (15 tests) 2ms
+ ✓ src/__tests__/delay-predictor/labor-impact.test.ts (13 tests) 2ms
+ ✓ src/lib/crew-optimizer/__tests__/skill-matcher.test.ts (10 tests) 2ms
+ ✓ src/__tests__/master-preview.test.ts (7 tests) 3ms
+ ✓ src/lib/push.test.ts (3 tests) 1ms
+ ✓ src/lib/pdf-vector-extractor/__tests__/scale-detector.test.ts (4 tests) 1ms
+ ✓ src/__tests__/ip-allowlist.test.ts (10 tests) 2ms
+ ✓ src/minimalist-sage-guard.test.ts (2 tests) 2ms
+ ✓ src/lib/local-seo/__tests__/types.test.ts (8 tests) 3ms
+ ✓ src/__tests__/weather.test.ts (2 tests) 1ms
+ ✓ src/__tests__/rain-dialog.test.ts (4 tests) 2ms
+ ✓ src/lib/owner-suggestion/__tests__/types.test.ts (6 tests) 1ms
+ ✓ src/lib/estimate-review/__tests__/budget-variance.test.ts (4 tests) 1ms
+ ✓ src/lib/meeting-runner/__tests__/types.test.ts (5 tests) 2ms
+ ✓ src/__tests__/japanese-holidays.test.ts (3 tests) 1ms
+ ✓ src/lib/change-order/__tests__/types.test.ts (5 tests) 2ms
+ ✓ src/lib/inquiry-responder/__tests__/types.test.ts (5 tests) 1ms
+ ✓ src/components/ProjectFinancePanel.test.tsx (2 tests) 3ms
+ ✓ src/lib/proposal-generator/__tests__/types.test.ts (3 tests) 1ms
+ ✓ src/__tests__/smoke.test.ts (1 test) 1ms
+ ✓ src/__tests__/realtime-store.test.ts (11 tests) 9ms
+ ✓ src/__tests__/chat-send.test.ts (9 tests) 30ms
+ ✓ src/api/server.test.ts (52 tests) 39ms
+ ✓ src/mcp/supabase-tools.client.test.ts (1 test) 11ms
+ ✓ src/api/schedule-importer.test.ts (8 tests) 9ms
+ ✓ src/middleware.test.ts (3 tests) 4ms
+ ✓ src/app/api/cron/supabase-keepalive/route.test.ts (3 tests) 5ms
+ ✓ src/api/memo-project-parser.test.ts (14 tests) 3ms
+ ✓ src/api/supabase-store.test.ts (5 tests) 7ms
+ ✓ src/app/api/health/route.test.ts (1 test) 5ms
+ ✓ src/mcp/supabase-tools.test.ts (14 tests) 4ms
+ ✓ src/api/stress-edge-cases.test.ts (22 tests) 207ms
+ ✓ src/api/chaos.test.ts (15 tests) 279ms
+ ✓ src/api/store-factory.test.ts (5 tests) 2ms
+(node:490) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/mcp/mcp-wrappers.test.ts (6 tests) 5ms
+
+ Test Files  578 passed (578)
+      Tests  8208 passed | 3 skipped (8211)
+   Start at  23:08:37
+   Duration  38.27s (transform 14.84s, setup 117.14s, collect 40.02s, tests 34.14s, environment 233.05s, prepare 23.19s)

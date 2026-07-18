@@ -1,0 +1,12 @@
+
+> construction-pm-mvp@1.0.0 dev /Users/koki/construction-pm-mvp
+> vite "--host" "127.0.0.1" "--port" "5183"
+
+
+  VITE v8.0.16  ready in 119 ms
+
+  ➜  Local:   http://127.0.0.1:5183/
+11:07:00 PM [vite] (client) [console.warn] [CRMRepository] deals テーブルのスキーマが Phase C 待ちのため deals は InMemory にフォールバックします
+11:07:12 PM [vite] (client) [console.error] Can't perform a React state update on a component that hasn't mounted yet. This indicates that you have a side-effect in your render function that asynchronously tries to update the component. Move this work to useEffect instead.
+11:07:42 PM [vite] (client) [console.warn] [CRMRepository] deals テーブルのスキーマが Phase C 待ちのため deals は InMemory にフォールバックします
+11:07:54 PM [vite] (client) [console.error] Can't perform a React state update on a component that hasn't mounted yet. This indicates that you have a side-effect in your render function that asynchronously tries to update the component. Move this work to useEffect instead.
