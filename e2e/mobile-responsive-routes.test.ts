@@ -54,7 +54,8 @@ test.describe("390px mobile responsive routes", () => {
     expect(box).not.toBeNull();
     expect(box?.width).toBeGreaterThanOrEqual(280);
 
-    const greetingCard = page.getByText(/光輝さん/).locator("..");
+    const greetingCard = page.locator("p.font-bold.text-brand-800").first().locator("..");
+    await expect(greetingCard).not.toContainText("光輝さん");
     const greetingBox = await greetingCard.boundingBox();
     expect(greetingBox).not.toBeNull();
     expect(greetingBox?.width).toBeGreaterThanOrEqual(280);

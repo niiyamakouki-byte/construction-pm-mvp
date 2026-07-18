@@ -27,7 +27,7 @@ interface GreetingHeaderProps {
 }
 
 export function GreetingHeader({
-  userName = "光輝さん",
+  userName,
   now,
   weather = "晴れ",
 }: GreetingHeaderProps) {
@@ -57,7 +57,7 @@ export function GreetingHeader({
           wordBreak: "keep-all",
         }}
       >
-        {greeting}、{userName}
+        {userName ? `${greeting}、${userName}` : greeting}
       </p>
       <p className="mt-1 text-sm text-brand-600" style={{ writingMode: "horizontal-tb", wordBreak: "keep-all" }}>
         {dateStr} · {weather}

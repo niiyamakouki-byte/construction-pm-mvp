@@ -1,6 +1,21 @@
 import type { BaseEntity } from "../domain/types.js";
 import type { Repository } from "../domain/repository.js";
 
+export type LocalStorageRowParser<T> = (value: unknown) => T | null;
+
+function parseBaseEntity<T extends BaseEntity>(value: unknown): T | null {
+  if (typeof value !== "object" || value === null) return null;
+  const row = value as Record<string, unknown>;
+  if (
+    typeof row.id !== "string" ||
+    typeof row.createdAt !== "string" ||
+    typeof row.updatedAt !== "string"
+  ) {
+    return null;
+  }
+  return value as T;
+}
+
 /**
  * Error thrown when localStorage quota is exceeded.
  * Callers can catch this to show a user-facing message.
@@ -23,11 +38,13 @@ export class LocalStorageRepository<T extends BaseEntity>
   implements Repository<T>
 {
   private readonly key: string;
+  private readonly parseRow: LocalStorageRowParser<T>;
   /** In-memory fallback used when localStorage is completely unavailable */
   private fallbackStore: Map<string, T> | null = null;
 
-  constructor(storageKey: string) {
+  constructor(storageKey: string, parseRow: LocalStorageRowParser<T> = parseBaseEntity) {
     this.key = `genbahub:${storageKey}`;
+    this.parseRow = parseRow;
   }
 
   /** Check if localStorage is available at all */
@@ -49,8 +66,12 @@ export class LocalStorageRepository<T extends BaseEntity>
     try {
       const raw = localStorage.getItem(this.key);
       if (!raw) return new Map();
-      const arr: T[] = JSON.parse(raw);
-      return new Map(arr.map((e) => [e.id, e]));
+      const parsed: unknown = JSON.parse(raw);
+      if (!Array.isArray(parsed)) return new Map();
+      const rows = parsed
+        .map((row) => this.parseRow(row))
+        .filter((row): row is T => row !== null);
+      return new Map(rows.map((row) => [row.id, row]));
     } catch {
       return new Map();
     }

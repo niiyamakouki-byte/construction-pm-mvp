@@ -15,6 +15,7 @@ import { useOrganizationContext } from "../contexts/OrganizationContext.js";
 import { usePersona } from "../contexts/PersonaContext.js";
 import { TodayDashboardPageErrorBoundary } from "../components/PageErrorBoundaries.js";
 import { TodayDashboardSkeleton } from "../components/PageSkeletons.js";
+import { useAuth } from "../contexts/AuthContext.js";
 import { createAppRepository } from "../infra/create-app-repository.js";
 import {
   buildProjectCostRows,
@@ -227,6 +228,7 @@ function clampMinimumCount(value: number): number {
 
 function TodayDashboardPageContent() {
   const { organizationId } = useOrganizationContext();
+  const { user } = useAuth();
   const taskRepository = useMemo(
     () => createTaskRepository(() => organizationId),
     [organizationId],
@@ -956,7 +958,13 @@ function TodayDashboardPageContent() {
 
       {/* Greeting Header */}
       <h1 className="sr-only">今日のダッシュボード</h1>
-      <GreetingHeader userName="光輝さん" />
+      <GreetingHeader
+        userName={[
+          user?.user_metadata?.display_name,
+          user?.user_metadata?.full_name,
+          user?.user_metadata?.name,
+        ].find((value): value is string => typeof value === "string" && value.trim().length > 0)?.trim()}
+      />
 
       {/* Googleカレンダー個人予定とのダブり警告 (Phase A) */}
       {todayHasConflict && (

@@ -72,6 +72,49 @@ describe("LocalStorageRepository", () => {
     expect(all.length).toBe(2);
   });
 
+  it("skips invalid rows while preserving valid rows", async () => {
+    localStorage.setItem("genbahub:test-entities", JSON.stringify([
+      {
+        id: "valid",
+        name: "Valid",
+        createdAt: "2024-01-01T00:00:00Z",
+        updatedAt: "2024-01-01T00:00:00Z",
+      },
+      { id: "missing-dates", name: "Invalid" },
+      null,
+    ]));
+
+    const all = await repo.findAll();
+    expect(all.map((entity) => entity.id)).toEqual(["valid"]);
+  });
+
+  it("uses the supplied row schema and skips domain-invalid rows", async () => {
+    localStorage.setItem("genbahub:strict-entities", JSON.stringify([
+      {
+        id: "valid",
+        name: "Valid",
+        createdAt: "2024-01-01T00:00:00Z",
+        updatedAt: "2024-01-01T00:00:00Z",
+      },
+      {
+        id: "missing-name",
+        createdAt: "2024-01-01T00:00:00Z",
+        updatedAt: "2024-01-01T00:00:00Z",
+      },
+    ]));
+    const strictRepo = new LocalStorageRepository<TestEntity>(
+      "strict-entities",
+      (value) => {
+        if (typeof value !== "object" || value === null) return null;
+        const row = value as Partial<TestEntity>;
+        return typeof row.name === "string" ? row as TestEntity : null;
+      },
+    );
+
+    const all = await strictRepo.findAll();
+    expect(all.map((entity) => entity.id)).toEqual(["valid"]);
+  });
+
   it("throws on duplicate id", async () => {
     await repo.create({
       id: "dup",

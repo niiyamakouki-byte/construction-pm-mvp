@@ -38,10 +38,11 @@ describe("getGreeting()", () => {
 });
 
 describe("GreetingHeader", () => {
-  it("デフォルト userName が表示される", () => {
+  it("userName 未設定時は名前なしの挨拶を表示する", () => {
     const now = new Date("2026-04-29T09:00:00");
     render(<GreetingHeader now={now} />);
-    expect(screen.getByText(/光輝さん/)).toBeDefined();
+    expect(screen.getByText("おはようございます")).toBeDefined();
+    expect(screen.queryByText(/光輝さん/)).toBeNull();
   });
 
   it("カスタム userName が表示される", () => {

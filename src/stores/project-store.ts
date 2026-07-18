@@ -29,7 +29,10 @@ function wrapWithValidation(inner: Repository<Project>): Repository<Project> {
 export function createProjectRepository(
   getOrganizationId?: () => string | null,
 ): Repository<Project> {
-  const inner = createAppRepository<Project>("projects", getOrganizationId);
+  const inner = createAppRepository<Project>("projects", getOrganizationId, (value) => {
+    const result = ProjectSchema.safeParse(value);
+    return result.success ? result.data : null;
+  });
   // Apply schema validation only when running against Supabase (production data).
   // In test mode, createAppRepository returns InMemoryRepository; skip parse
   // to preserve vi.spyOn compatibility on the shared test singleton.

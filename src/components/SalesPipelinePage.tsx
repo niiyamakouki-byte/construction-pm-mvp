@@ -338,6 +338,7 @@ function KanbanColumn({
 
 export function SalesPipelinePage() {
   const [deals, setDeals] = useState<Deal[]>([]);
+  const [showingSampleData, setShowingSampleData] = useState(false);
   const [selectedDeal, setSelectedDeal] = useState<Deal | null>(null);
   const [funnelMetrics, setFunnelMetrics] = useState<StageMetrics[]>([]);
   const [activeTab, setActiveTab] = useState<"kanban" | "stalled" | "alerts">("kanban");
@@ -346,6 +347,7 @@ export function SalesPipelinePage() {
     dealStore.ensureSeed();
     const all = dealStore.getAll();
     setDeals(all);
+    setShowingSampleData(dealStore.isSampleData());
     setFunnelMetrics(analyzeConversionFunnel(all));
   }, []);
 
@@ -356,6 +358,11 @@ export function SalesPipelinePage() {
   }, [refresh]);
 
   const snap = snapshot(deals);
+
+  const handleStartEmpty = useCallback(() => {
+    dealStore.startEmpty();
+    refresh();
+  }, [refresh]);
 
   const handleTransition = useCallback(
     (dealId: string, toStage: DealStage) => {
@@ -387,6 +394,27 @@ export function SalesPipelinePage() {
           問合せから受注までの商談進捗を可視化
         </p>
       </div>
+
+      {showingSampleData ? (
+        <div
+          className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[#B8C9AE] bg-[#F2F6EF] px-4 py-3"
+          role="status"
+        >
+          <div className="flex items-center gap-3">
+            <span className="rounded-full bg-[#6B8E5A] px-2.5 py-1 text-xs font-bold text-white">
+              サンプルデータ
+            </span>
+            <p className="text-sm text-slate-600">操作体験用の架空の商談です</p>
+          </div>
+          <button
+            type="button"
+            onClick={handleStartEmpty}
+            className="rounded-lg border border-[#6B8E5A] bg-white px-3 py-2 text-sm font-semibold text-[#58764A] hover:bg-[#E8F0E3]"
+          >
+            空状態から始める
+          </button>
+        </div>
+      ) : null}
 
       {/* KPI */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">

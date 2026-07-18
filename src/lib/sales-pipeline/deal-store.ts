@@ -9,7 +9,24 @@
 import type { Deal, DealStage } from "./types.js";
 
 const STORAGE_KEY = "laporta.genbahub.deals";
+const SAMPLE_STATE_KEY = "laporta.genbahub.deals.sample-state";
 const MAX_RECORDS = 1000;
+
+function readSampleState(): string | null {
+  try {
+    return localStorage.getItem(SAMPLE_STATE_KEY);
+  } catch {
+    return null;
+  }
+}
+
+function writeSampleState(state: "active" | "dismissed"): void {
+  try {
+    localStorage.setItem(SAMPLE_STATE_KEY, state);
+  } catch {
+    // DealStore itself already treats unavailable localStorage as non-fatal.
+  }
+}
 
 // ── Seed data ──────────────────────────────────────────────────────────────
 
@@ -56,51 +73,51 @@ function buildSeedDeals(): Deal[] {
   }
 
   return [
-    makeDeal("deal-001", "田中商事", "inquiry", 500_000, 5, 0, 60, "新山光輝"),
-    makeDeal("deal-002", "佐藤設計事務所", "first_reply", 1_200_000, 15, 2, 55, "新山光輝"),
-    makeDeal("deal-003", "鈴木リフォーム株式会社", "site_survey", 2_500_000, 30, 5, 50, "新山光輝"),
-    makeDeal("deal-004", "高橋工業", "proposal", 3_800_000, 50, 8, 45, "新山光輝"),
-    makeDeal("deal-005", "渡辺インテリア", "contract", 6_000_000, 80, 10, 30, "新山光輝"),
-    makeDeal("deal-006", "伊藤建設", "kickoff", 4_500_000, 95, 12, 20, "新山光輝"),
-    makeDeal("deal-007", "中村リノベーション", "won", 8_000_000, 100, 15, -10, "新山光輝", {
+    makeDeal("deal-001", "田中商事", "inquiry", 500_000, 5, 0, 60, "担当者A"),
+    makeDeal("deal-002", "佐藤設計事務所", "first_reply", 1_200_000, 15, 2, 55, "担当者A"),
+    makeDeal("deal-003", "鈴木リフォーム株式会社", "site_survey", 2_500_000, 30, 5, 50, "担当者A"),
+    makeDeal("deal-004", "高橋工業", "proposal", 3_800_000, 50, 8, 45, "担当者A"),
+    makeDeal("deal-005", "渡辺インテリア", "contract", 6_000_000, 80, 10, 30, "担当者A"),
+    makeDeal("deal-006", "伊藤建設", "kickoff", 4_500_000, 95, 12, 20, "担当者A"),
+    makeDeal("deal-007", "中村リノベーション", "won", 8_000_000, 100, 15, -10, "担当者A", {
       wonAt: makeDate(50),
     }),
-    makeDeal("deal-008", "小林設計", "lost", 3_200_000, 0, 3, 40, "新山光輝", {
+    makeDeal("deal-008", "小林設計", "lost", 3_200_000, 0, 3, 40, "担当者A", {
       lossReason: "price",
       lostAt: makeDate(35),
     }),
-    makeDeal("deal-009", "加藤デザイン", "inquiry", 700_000, 5, 1, 65, "新山光輝"),
-    makeDeal("deal-010", "吉田工務店", "first_reply", 1_800_000, 15, 4, 58, "新山光輝"),
-    makeDeal("deal-011", "山田リフォーム", "site_survey", 5_000_000, 30, 6, 48, "新山光輝"),
-    makeDeal("deal-012", "松本建設", "proposal", 12_000_000, 50, 9, 42, "新山光輝"),
-    makeDeal("deal-013", "井上インテリア", "contract", 9_500_000, 80, 11, 25, "新山光輝"),
-    makeDeal("deal-014", "木村工業", "inquiry", 900_000, 5, 0, 70, "新山光輝"),
-    makeDeal("deal-015", "林建築", "first_reply", 2_200_000, 15, 3, 55, "新山光輝"),
-    makeDeal("deal-016", "清水デザイン事務所", "proposal", 7_500_000, 50, 7, 40, "新山光輝"),
-    makeDeal("deal-017", "山口リノベ", "won", 15_000_000, 100, 20, -5, "新山光輝", {
+    makeDeal("deal-009", "加藤デザイン", "inquiry", 700_000, 5, 1, 65, "担当者A"),
+    makeDeal("deal-010", "吉田工務店", "first_reply", 1_800_000, 15, 4, 58, "担当者A"),
+    makeDeal("deal-011", "山田リフォーム", "site_survey", 5_000_000, 30, 6, 48, "担当者A"),
+    makeDeal("deal-012", "松本建設", "proposal", 12_000_000, 50, 9, 42, "担当者A"),
+    makeDeal("deal-013", "井上インテリア", "contract", 9_500_000, 80, 11, 25, "担当者A"),
+    makeDeal("deal-014", "木村工業", "inquiry", 900_000, 5, 0, 70, "担当者A"),
+    makeDeal("deal-015", "林建築", "first_reply", 2_200_000, 15, 3, 55, "担当者A"),
+    makeDeal("deal-016", "清水デザイン事務所", "proposal", 7_500_000, 50, 7, 40, "担当者A"),
+    makeDeal("deal-017", "山口リノベ", "won", 15_000_000, 100, 20, -5, "担当者A", {
       wonAt: makeDate(55),
     }),
-    makeDeal("deal-018", "斉藤工務店", "lost", 5_500_000, 0, 5, 35, "新山光輝", {
+    makeDeal("deal-018", "斉藤工務店", "lost", 5_500_000, 0, 5, 35, "担当者A", {
       lossReason: "competitor",
       lostAt: makeDate(40),
     }),
-    makeDeal("deal-019", "近藤設計", "site_survey", 3_300_000, 30, 8, 44, "新山光輝"),
-    makeDeal("deal-020", "村田リフォーム", "inquiry", 600_000, 5, 2, 68, "新山光輝"),
-    makeDeal("deal-021", "福田建設", "proposal", 20_000_000, 50, 10, 38, "新山光輝"),
-    makeDeal("deal-022", "西村インテリア", "contract", 11_000_000, 80, 13, 22, "新山光輝"),
-    makeDeal("deal-023", "石川工業", "first_reply", 4_000_000, 15, 5, 53, "新山光輝"),
-    makeDeal("deal-024", "宮崎設計", "kickoff", 6_800_000, 95, 14, 15, "新山光輝"),
-    makeDeal("deal-025", "大野リノベーション", "won", 25_000_000, 100, 25, -15, "新山光輝", {
+    makeDeal("deal-019", "近藤設計", "site_survey", 3_300_000, 30, 8, 44, "担当者A"),
+    makeDeal("deal-020", "村田リフォーム", "inquiry", 600_000, 5, 2, 68, "担当者A"),
+    makeDeal("deal-021", "福田建設", "proposal", 20_000_000, 50, 10, 38, "担当者A"),
+    makeDeal("deal-022", "西村インテリア", "contract", 11_000_000, 80, 13, 22, "担当者A"),
+    makeDeal("deal-023", "石川工業", "first_reply", 4_000_000, 15, 5, 53, "担当者A"),
+    makeDeal("deal-024", "宮崎設計", "kickoff", 6_800_000, 95, 14, 15, "担当者A"),
+    makeDeal("deal-025", "大野リノベーション", "won", 25_000_000, 100, 25, -15, "担当者A", {
       wonAt: makeDate(60),
     }),
-    makeDeal("deal-026", "藤田工務店", "lost", 8_000_000, 0, 7, 30, "新山光輝", {
+    makeDeal("deal-026", "藤田工務店", "lost", 8_000_000, 0, 7, 30, "担当者A", {
       lossReason: "schedule",
       lostAt: makeDate(45),
     }),
-    makeDeal("deal-027", "後藤デザイン", "inquiry", 1_100_000, 5, 1, 72, "新山光輝"),
-    makeDeal("deal-028", "近藤建設", "site_survey", 18_000_000, 30, 9, 46, "新山光輝"),
-    makeDeal("deal-029", "村山リフォーム", "proposal", 4_200_000, 50, 6, 36, "新山光輝"),
-    makeDeal("deal-030", "福島工業", "first_reply", 30_000_000, 15, 3, 62, "新山光輝"),
+    makeDeal("deal-027", "後藤デザイン", "inquiry", 1_100_000, 5, 1, 72, "担当者A"),
+    makeDeal("deal-028", "近藤建設", "site_survey", 18_000_000, 30, 9, 46, "担当者A"),
+    makeDeal("deal-029", "村山リフォーム", "proposal", 4_200_000, 50, 6, 36, "担当者A"),
+    makeDeal("deal-030", "福島工業", "first_reply", 30_000_000, 15, 3, 62, "担当者A"),
   ];
 }
 
@@ -132,9 +149,24 @@ export class DealStore extends EventTarget {
   /** Ensure seed data exists (idempotent). */
   ensureSeed(): void {
     const existing = this._load();
-    if (existing.length === 0) {
+    if (
+      existing.length === 0 &&
+      readSampleState() !== "dismissed"
+    ) {
       this._save(buildSeedDeals());
+      writeSampleState("active");
     }
+  }
+
+  /** Whether the currently displayed records are the bundled sample data. */
+  isSampleData(): boolean {
+    return readSampleState() === "active" && this._load().length > 0;
+  }
+
+  /** Remove sample records and keep future visits empty until real data is saved. */
+  startEmpty(): void {
+    writeSampleState("dismissed");
+    this._save([]);
   }
 
   /** Return all deals. */

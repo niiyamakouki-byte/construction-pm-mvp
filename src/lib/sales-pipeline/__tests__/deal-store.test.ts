@@ -57,6 +57,23 @@ describe("DealStore#ensureSeed", () => {
     s.ensureSeed();
     expect(s.getAll()).toHaveLength(30);
   });
+
+  it("シードをサンプルとして識別し、実名を含まない", () => {
+    const s = new DealStore();
+    s.ensureSeed();
+    expect(s.isSampleData()).toBe(true);
+    expect(s.getAll().every((deal) => deal.ownerName === "担当者A")).toBe(true);
+    expect(JSON.stringify(s.getAll())).not.toContain("新山光輝");
+  });
+
+  it("空状態を選ぶと再訪時もシードを再生成しない", () => {
+    const s = new DealStore();
+    s.ensureSeed();
+    s.startEmpty();
+    s.ensureSeed();
+    expect(s.getAll()).toEqual([]);
+    expect(s.isSampleData()).toBe(false);
+  });
 });
 
 describe("DealStore#save", () => {

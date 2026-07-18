@@ -2,7 +2,7 @@ import type { Repository } from "../domain/repository.js";
 import type { BaseEntity } from "../domain/types.js";
 import { hasSupabaseEnv } from "./supabase-client.js";
 import { InMemoryRepository } from "./in-memory-repository.js";
-import { LocalStorageRepository } from "./local-storage-repository.js";
+import { LocalStorageRepository, type LocalStorageRowParser } from "./local-storage-repository.js";
 import { SupabaseRepository } from "./supabase-repository.js";
 
 // In test mode, share one InMemoryRepository instance per table name so that
@@ -16,6 +16,7 @@ function isE2EBypass(): boolean {
 export function createAppRepository<T extends BaseEntity>(
   tableName: string,
   _getOrganizationId?: () => string | null,
+  parseLocalRow?: LocalStorageRowParser<T>,
 ): Repository<T> {
   if (import.meta.env.MODE === "test" || import.meta.env.VITEST) {
     if (!testRepoCache.has(tableName)) {
@@ -29,7 +30,7 @@ export function createAppRepository<T extends BaseEntity>(
   // tables that require auth.uid(). Fall back to localStorage so E2E runs
   // against local state without hitting the DB.
   if (isE2EBypass()) {
-    return new LocalStorageRepository<T>(tableName);
+    return new LocalStorageRepository<T>(tableName, parseLocalRow);
   }
 
   if (hasSupabaseEnv()) {
@@ -37,5 +38,5 @@ export function createAppRepository<T extends BaseEntity>(
   }
 
   // Use localStorage for persistence across page reloads
-  return new LocalStorageRepository<T>(tableName);
+  return new LocalStorageRepository<T>(tableName, parseLocalRow);
 }

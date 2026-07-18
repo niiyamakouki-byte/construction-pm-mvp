@@ -115,14 +115,31 @@ export function predictCompletionDate(
   progressPct: number,
   elapsedDays: number,
 ): CompletionPrediction {
-  const start = new Date(startDate);
-  const origEnd = new Date(originalEndDate);
+  const parsedStart = new Date(startDate);
+  const parsedEnd = new Date(originalEndDate);
+  const hasValidStart = Number.isFinite(parsedStart.getTime());
+  const hasValidEnd = Number.isFinite(parsedEnd.getTime());
+  const start = hasValidStart ? parsedStart : hasValidEnd ? parsedEnd : null;
+  const origEnd = hasValidEnd ? parsedEnd : start;
+
+  if (!start || !origEnd) {
+    return {
+      originalEndDate,
+      predictedEndDate: "",
+      slippageDays: 0,
+      confidence: "low",
+      progressPct: 0.01,
+    };
+  }
+
   const plannedDuration =
     (origEnd.getTime() - start.getTime()) / (1000 * 60 * 60 * 24);
 
   // Earned schedule approach
-  const effectiveProgress = Math.max(0.01, Math.min(100, progressPct));
-  const projectedDuration = (elapsedDays / effectiveProgress) * 100;
+  const safeProgressPct = Number.isFinite(progressPct) ? progressPct : 0;
+  const safeElapsedDays = Number.isFinite(elapsedDays) ? elapsedDays : 0;
+  const effectiveProgress = Math.max(0.01, Math.min(100, safeProgressPct));
+  const projectedDuration = (safeElapsedDays / effectiveProgress) * 100;
   const slippageDays = Math.max(
     0,
     Math.round(projectedDuration - plannedDuration),
@@ -132,8 +149,8 @@ export function predictCompletionDate(
   predictedEnd.setDate(predictedEnd.getDate() + slippageDays);
 
   let confidence: "high" | "medium" | "low" = "medium";
-  if (progressPct > 70) confidence = "high";
-  else if (progressPct < 20) confidence = "low";
+  if (safeProgressPct > 70) confidence = "high";
+  else if (safeProgressPct < 20) confidence = "low";
 
   return {
     originalEndDate,

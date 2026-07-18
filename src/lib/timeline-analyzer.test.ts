@@ -72,6 +72,23 @@ describe("predictCompletionDate", () => {
     const result = predictCompletionDate("2025-01-01", "2025-07-01", 10, 20);
     expect(result.confidence).toBe("low");
   });
+
+  it("does not throw when the start date is missing at runtime", () => {
+    const result = predictCompletionDate(
+      undefined as unknown as string,
+      "2025-07-01",
+      10,
+      Number.NaN,
+    );
+    expect(result.predictedEndDate).toBe("2025-07-01");
+    expect(result.slippageDays).toBe(0);
+  });
+
+  it("returns an empty prediction when both dates are invalid", () => {
+    const result = predictCompletionDate("", "invalid", 50, 10);
+    expect(result.predictedEndDate).toBe("");
+    expect(result.confidence).toBe("low");
+  });
 });
 
 // ── generateTimelineReport ────────────────────────────
