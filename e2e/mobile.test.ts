@@ -9,7 +9,7 @@ test.describe("iPhone 14 モバイルビュー", () => {
 
   test("トップページがモバイルで表示される", async ({ page }) => {
     await page.goto("/#/app");
-    await expect(page.locator("body")).toContainText("GenbaHub");
+    await expect(page.locator("body")).toContainText("LapoSite");
   });
 
   test("ログインページがモバイルで表示される", async ({ page }) => {
@@ -52,8 +52,8 @@ test.describe("iPhone 14 モバイルビュー", () => {
   test("ログインページのフォームがモバイルで正しく表示される", async ({ page }) => {
     await page.goto("/#/login");
 
-    // ログインページが表示される（GenbaHub ロゴ）
-    await expect(page.locator("body")).toContainText("GenbaHub");
+    // ログインページが表示される（LapoSite ロゴ）
+    await expect(page.locator("body")).toContainText("LapoSite");
 
     // Google認証メインUIのため、メールフォームは開示ボタンの裏にある
     await page.getByRole("button", { name: "メールアドレスとパスワードでログイン" }).click();

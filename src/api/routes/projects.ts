@@ -120,7 +120,7 @@ function createPrintableDocument(title: string, content: string): string {
     <div style="max-width:960px;margin:0 auto;padding:32px 24px 48px;">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:24px;">
         <div>
-          <div style="font-size:12px;letter-spacing:0.12em;color:#7c5e10;text-transform:uppercase;">GenbaHub Export</div>
+          <div style="font-size:12px;letter-spacing:0.12em;color:#7c5e10;text-transform:uppercase;">LapoSite Export</div>
           <h1 style="margin:8px 0 0;font-size:30px;line-height:1.2;">${escapeHtml(title)}</h1>
         </div>
         <div style="font-size:12px;color:#52606d;text-align:right;">

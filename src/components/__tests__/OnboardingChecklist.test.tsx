@@ -68,6 +68,6 @@ describe("OnboardingChecklist", () => {
     );
     render(<OnboardingChecklist hasProjects={false} />);
     expect(screen.getByRole("region", { name: "スタートガイド" })).toBeTruthy();
-    expect(screen.getByText("すべてのステップが完了しました。GenbaHub をお使いいただきありがとうございます！")).toBeTruthy();
+    expect(screen.getByText("すべてのステップが完了しました。LapoSite をお使いいただきありがとうございます！")).toBeTruthy();
   });
 });

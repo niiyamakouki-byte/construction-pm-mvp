@@ -1373,7 +1373,7 @@ function TodayDashboardPageContent() {
 
       <section>
         <div className="mb-3 flex items-center justify-between gap-3">
-          <h2 className="text-base font-semibold text-slate-800">GenbaHub Insight</h2>
+          <h2 className="text-base font-semibold text-slate-800">LapoSite Insight</h2>
           <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
             {insightProject?.name ?? "案件なし"}
           </span>

@@ -417,7 +417,7 @@ export function ContractorPortalPage({ projectId, company = undefined }: Props) 
 
         {/* Read-only notice */}
         <p className="text-center text-xs text-slate-400">
-          このページは読み取り専用です。編集はGenbaHubにログインして行ってください。
+          このページは読み取り専用です。編集はLapoSiteにログインして行ってください。
         </p>
       </main>
     </div>

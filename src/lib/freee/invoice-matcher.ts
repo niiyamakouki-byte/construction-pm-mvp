@@ -47,7 +47,7 @@ function scoreMatch(
 
   if (!amountMatch) {
     discrepancies.push(
-      `金額不一致: GenbaHub=${genba.total}, freee=${freee.total_amount}`,
+      `金額不一致: LapoSite=${genba.total}, freee=${freee.total_amount}`,
     );
   }
 

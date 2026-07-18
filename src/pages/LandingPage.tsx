@@ -6,7 +6,7 @@ const comparisonRows = [
     feature: "内装工程テンプレ（LGS/ボード/クロス/床）",
     genbahub: true,
     generic: false,
-    note: "GenbaHub は内装工種ごとのテンプレを標準搭載",
+    note: "LapoSite は内装工種ごとのテンプレを標準搭載",
   },
   {
     feature: "PDF見積からの自動積算・拾い出し",
@@ -166,7 +166,7 @@ export function LandingPage() {
             className="flex items-center gap-2 hover:opacity-90"
           >
             <LogoIcon />
-            <span className="text-lg font-bold text-brand-800 tracking-tight">GenbaHub</span>
+            <span className="text-lg text-brand-800 tracking-tight"><span className="font-bold">Lapo</span><span className="font-normal">Site</span></span>
           </button>
           <nav className="hidden items-center gap-6 sm:flex">
             <a href="#features" className="text-sm text-slate-600 hover:text-slate-900">機能</a>
@@ -234,7 +234,7 @@ export function LandingPage() {
             <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
               <img
                 src="/lp/screen-dashboard.png"
-                alt="GenbaHub 今日のダッシュボード画面"
+                alt="LapoSite 今日のダッシュボード画面"
                 loading="lazy"
                 className="h-52 w-full object-cover object-top"
               />
@@ -246,7 +246,7 @@ export function LandingPage() {
             <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
               <img
                 src="/lp/screen-estimate.png"
-                alt="GenbaHub 見積作成画面（PDFから作成/手動で作成）"
+                alt="LapoSite 見積作成画面（PDFから作成/手動で作成）"
                 loading="lazy"
                 className="h-52 w-full object-cover object-top"
               />
@@ -331,7 +331,7 @@ export function LandingPage() {
             <h2 className="text-2xl font-bold text-slate-900 sm:text-3xl">内装工事会社に選ばれる理由</h2>
             <p className="mt-3 text-slate-500">
               汎用現場管理ツールは多業種向けのため、内装特有の工種・積算・写真管理に対応するには別途カスタマイズが必要です。
-              GenbaHub は内装工事向けに最初から設計されています。
+              LapoSite は内装工事向けに最初から設計されています。
             </p>
           </div>
 
@@ -343,7 +343,7 @@ export function LandingPage() {
                   <th className="py-4 pl-6 pr-4 font-semibold text-slate-600 w-1/2">比較ポイント</th>
                   <th className="py-4 px-4 font-semibold text-center text-brand-700 w-1/4">
                     <span className="inline-flex items-center gap-1.5">
-                      <span className="text-base">⚡</span>GenbaHub
+                      <span className="text-base">⚡</span>LapoSite
                     </span>
                   </th>
                   <th className="py-4 px-6 font-semibold text-center text-slate-500 w-1/4">
@@ -381,7 +381,7 @@ export function LandingPage() {
                 <p className="mb-3 text-sm font-semibold text-slate-800">{row.feature}</p>
                 <div className="flex items-center justify-around gap-4">
                   <div className="flex flex-col items-center gap-1 text-center">
-                    <span className="text-xs font-medium text-brand-600">GenbaHub</span>
+                    <span className="text-xs font-medium text-brand-600">LapoSite</span>
                     <CellValue value={row.genbahub} />
                   </div>
                   <div className="h-8 w-px bg-slate-200" aria-hidden="true" />
@@ -402,14 +402,14 @@ export function LandingPage() {
               <h3 className="text-2xl font-bold text-slate-900">ChatGPT等の汎用AIとの違い</h3>
               <p className="mt-3 text-slate-500">
                 汎用AIは何でもできる代わりに、何をさせるかを言葉にできる人しか使いこなせません。
-                GenbaHubは、AIを使いこなす能力が要らないAIです。
+                LapoSiteは、AIを使いこなす能力が要らないAIです。
               </p>
             </div>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 sm:gap-6">
               {[
-                ["要る能力が違う", "汎用AIは指示の上手さがそのまま成果の差になる。GenbaHubは写真を送る・喋るだけ。現場仕事をそのまま続けるだけでいい。"],
-                ["残るものが違う", "チャットの返答は流れて消える。GenbaHubは工程表・日報・請求書という会社の資産として構造化されて残る。"],
-                ["効く範囲が違う", "汎用AIは使った本人だけが楽になる。GenbaHubは全員が同じ画面を見る、会社の仕組みとして効く。"],
+                ["要る能力が違う", "汎用AIは指示の上手さがそのまま成果の差になる。LapoSiteは写真を送る・喋るだけ。現場仕事をそのまま続けるだけでいい。"],
+                ["残るものが違う", "チャットの返答は流れて消える。LapoSiteは工程表・日報・請求書という会社の資産として構造化されて残る。"],
+                ["効く範囲が違う", "汎用AIは使った本人だけが楽になる。LapoSiteは全員が同じ画面を見る、会社の仕組みとして効く。"],
               ].map(([title, desc]) => (
                 <div key={title} className="rounded-2xl border border-slate-200 bg-slate-50 p-4 sm:p-6">
                   <h4 className="mb-2 text-base font-bold text-slate-900">{title}</h4>
@@ -546,7 +546,7 @@ export function LandingPage() {
             <div>
               <div className="flex items-center gap-2">
                 <LogoIcon />
-                <span className="text-lg font-bold text-white">GenbaHub</span>
+                <span className="text-lg text-white"><span className="font-bold">Lapo</span><span className="font-normal">Site</span></span>
               </div>
               <p className="mt-1 text-sm text-brand-400">内装工事に特化した現場管理SaaS。</p>
               <p className="mt-2 text-xs text-brand-500">

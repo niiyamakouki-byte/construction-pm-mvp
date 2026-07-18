@@ -915,7 +915,7 @@ function AppShell() {
               >
                 <LogoIcon />
                 <div className="text-left hidden sm:block">
-                  <span className="block text-base font-bold tracking-tight leading-tight">{t("common:app.name")}</span>
+                  <span className="block text-base tracking-tight leading-tight"><span className="font-bold">Lapo</span><span className="font-normal">Site</span></span>
                   <span className="block text-[10px] text-slate-400 leading-tight">{t("common:app.tagline")}</span>
                 </div>
               </button>

@@ -2,7 +2,7 @@ import type { CapacitorConfig } from "@capacitor/cli";
 
 const config: CapacitorConfig = {
   appId: "jp.co.laporta.genbahub",
-  appName: "GenbaHub 現場管理",
+  appName: "LapoSite 現場管理",
   webDir: "dist",
   server: {
     androidScheme: "https",

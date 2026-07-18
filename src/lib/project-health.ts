@@ -271,7 +271,7 @@ th{background:#1f2937;color:white;padding:8px;}
 </table>
 <h2>改善提案</h2>
 <ul>${recommendationItems}</ul>
-<footer style="margin-top:24px;font-size:12px;color:#6b7280;">GenbaHub 案件ヘルスモジュールにより生成</footer>
+<footer style="margin-top:24px;font-size:12px;color:#6b7280;">LapoSite 案件ヘルスモジュールにより生成</footer>
 </body>
 </html>`;
 }

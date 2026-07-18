@@ -22,5 +22,5 @@ test("ログインフォームが表示される（AuthGuard）", async ({ page 
 
 test("アプリ入口がクラッシュせず表示される", async ({ page }) => {
   await page.goto("/#/app");
-  await expect(page.locator("body")).toContainText("GenbaHub");
+  await expect(page.locator("body")).toContainText("LapoSite");
 });

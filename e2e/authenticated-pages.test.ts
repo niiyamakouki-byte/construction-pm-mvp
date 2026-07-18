@@ -23,14 +23,14 @@ if (!fs.existsSync(screenshotsDir)) {
 }
 
 const ROUTES: Array<{ name: string; hash: string; expectText?: string }> = [
-  { name: "app", hash: "/app", expectText: "GenbaHub" },
-  { name: "gantt", hash: "/gantt", expectText: "GenbaHub" },
-  { name: "tasks", hash: "/tasks", expectText: "GenbaHub" },
-  { name: "estimate", hash: "/estimate", expectText: "GenbaHub" },
-  { name: "contractors", hash: "/contractors", expectText: "GenbaHub" },
-  { name: "safety", hash: "/safety", expectText: "GenbaHub" },
-  { name: "crm", hash: "/crm", expectText: "GenbaHub" },
-  { name: "reports", hash: "/reports", expectText: "GenbaHub" },
+  { name: "app", hash: "/app", expectText: "LapoSite" },
+  { name: "gantt", hash: "/gantt", expectText: "LapoSite" },
+  { name: "tasks", hash: "/tasks", expectText: "LapoSite" },
+  { name: "estimate", hash: "/estimate", expectText: "LapoSite" },
+  { name: "contractors", hash: "/contractors", expectText: "LapoSite" },
+  { name: "safety", hash: "/safety", expectText: "LapoSite" },
+  { name: "crm", hash: "/crm", expectText: "LapoSite" },
+  { name: "reports", hash: "/reports", expectText: "LapoSite" },
 ];
 
 test.describe("認証済みページ (auth bypass)", () => {
@@ -52,7 +52,7 @@ test.describe("認証済みページ (auth bypass)", () => {
       await page.waitForLoadState("networkidle");
 
       // Brand header must be visible (confirms app shell rendered, not login page)
-      await expect(page.locator("text=GenbaHub").first()).toBeVisible({ timeout: 10000 });
+      await expect(page.locator("text=LapoSite").first()).toBeVisible({ timeout: 10000 });
 
       // Must NOT be showing the login form (would mean AuthGuard redirected)
       await expect(page.locator("#email")).not.toBeVisible();
@@ -71,12 +71,12 @@ test.describe("認証済みページ (auth bypass)", () => {
   test("認証バイパス後に別ページへナビゲートできる", async ({ page }) => {
     await page.goto("/#/app");
     await page.waitForLoadState("networkidle");
-    await expect(page.locator("text=GenbaHub").first()).toBeVisible({ timeout: 10000 });
+    await expect(page.locator("text=LapoSite").first()).toBeVisible({ timeout: 10000 });
 
     // Navigate to tasks
     await page.goto("/#/tasks");
     await page.waitForLoadState("networkidle");
-    await expect(page.locator("text=GenbaHub").first()).toBeVisible({ timeout: 10000 });
+    await expect(page.locator("text=LapoSite").first()).toBeVisible({ timeout: 10000 });
 
     // Still not showing login form
     await expect(page.locator("#email")).not.toBeVisible();

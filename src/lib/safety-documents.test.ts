@@ -160,7 +160,7 @@ describe("safety-documents", () => {
       const html = generateDocumentHtml(doc);
       expect(html).toContain("<!DOCTYPE html>");
       expect(html).toContain("</html>");
-      expect(html).toContain("GenbaHub Safety Documents Module");
+      expect(html).toContain("LapoSite Safety Documents Module");
     });
 
     it("escapes HTML in user content", () => {

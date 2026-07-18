@@ -104,7 +104,7 @@ export default async function handler(
   webpush.setVapidDetails(vapidSubject, vapidPublic, vapidPrivate);
 
   const payload = JSON.stringify({
-    title: "GenbaHub テスト通知",
+    title: "LapoSite テスト通知",
     body: "プッシュ通知が正常に届きました。",
     url: "/",
     tag: "genbahub-test",

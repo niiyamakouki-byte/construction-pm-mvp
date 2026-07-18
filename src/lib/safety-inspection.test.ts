@@ -206,10 +206,10 @@ describe("safety-inspection", () => {
       expect(html).toContain("&lt;script&gt;");
     });
 
-    it("includes GenbaHub footer", () => {
+    it("includes LapoSite footer", () => {
       const checklist = makeChecklist({ items: [makeItem()] });
       const html = generateInspectionReport(checklist);
-      expect(html).toContain("GenbaHub 安全点検モジュールにより生成");
+      expect(html).toContain("LapoSite 安全点検モジュールにより生成");
     });
   });
 });

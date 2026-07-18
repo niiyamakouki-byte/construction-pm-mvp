@@ -1,13 +1,12 @@
 /**
  * ブランド名の単一定義。
  *
- * "GenbaHub" は商標リスクによりリブランド判断待ちの仮称。
+ * 表示ブランドは "LapoSite"。
  * 名称変更が決まった際はこの定数だけを差し替えれば、
  * このファイルを参照している箇所（料金ページ等）に反映される。
  *
- * 注意: 既存の大半のコンポーネントは移行前のため "GenbaHub" を直接埋め込んでいる。
- * それらの置き換えは本ファイル追加のスコープ外（別タスクで一括移行する）。
+ * 内部識別子は段階移行のため従来名を維持する。
  */
-export const BRAND_NAME = "GenbaHub";
+export const BRAND_NAME = "LapoSite";
 
 export const TRIAL_PERIOD_DAYS = 14;

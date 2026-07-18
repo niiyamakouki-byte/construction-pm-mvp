@@ -15,7 +15,7 @@ self.addEventListener("push", (event) => {
     payload = { body: event.data ? event.data.text() : "" };
   }
 
-  const title = payload.title || "GenbaHub";
+  const title = payload.title || "LapoSite";
   const options = {
     body: payload.body || "",
     icon: payload.icon || "/icons/icon-192.png",

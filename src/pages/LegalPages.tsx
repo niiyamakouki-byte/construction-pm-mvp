@@ -84,7 +84,7 @@ function Privacy() {
         <section>
           <h2 className="mb-2 text-base font-bold text-slate-900">1. はじめに</h2>
           <p>
-            株式会社ラポルタ（以下「当社」）は、GenbaHub（以下「本サービス」）を提供するにあたり、
+            株式会社ラポルタ（以下「当社」）は、LapoSite（以下「本サービス」）を提供するにあたり、
             お客様の個人情報の取り扱いについて、以下のとおりプライバシーポリシーを定めます。
           </p>
         </section>
@@ -171,7 +171,7 @@ function Tos() {
         <section>
           <h2 className="mb-2 text-base font-bold text-slate-900">第1条（適用）</h2>
           <p>
-            本規約は、株式会社ラポルタ（以下「当社」）が提供するクラウドサービス「GenbaHub」（以下「本サービス」）の
+            本規約は、株式会社ラポルタ（以下「当社」）が提供するクラウドサービス「LapoSite」（以下「本サービス」）の
             利用条件を定めるものです。ユーザーは本規約に同意した上で本サービスを利用するものとします。
           </p>
         </section>

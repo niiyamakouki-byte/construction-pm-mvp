@@ -333,7 +333,7 @@ function Step1({
         <Building2 className="h-12 w-12" aria-hidden="true" />
       </div>
       <h2 className="text-2xl font-bold text-slate-900">
-        GenbaHubへようこそ！
+        LapoSiteへようこそ！
       </h2>
       <p className="mt-4 text-base text-slate-600 leading-relaxed">
         建設・内装工事の現場管理をかんたんに。

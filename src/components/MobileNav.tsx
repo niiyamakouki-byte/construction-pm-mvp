@@ -113,7 +113,7 @@ export function MobileNav({
             <div className="flex items-center justify-between border-b border-slate-200 px-4 py-4">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.24em] text-brand-500">
-                  GenbaHub
+                  <span className="font-bold">Lapo</span><span className="font-normal">Site</span>
                 </p>
                 <p className="mt-1 text-sm font-medium text-slate-500">メニュー</p>
               </div>

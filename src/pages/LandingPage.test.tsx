@@ -16,9 +16,9 @@ describe("LandingPage 比較表セクション", () => {
     expect(screen.getByText("内装工事会社に選ばれる理由")).toBeTruthy();
   });
 
-  it("比較表ヘッダにGenbaHubが複数箇所に表示される（デスクトップ＋モバイル）", () => {
+  it("比較表ヘッダにLapoSiteが複数箇所に表示される（デスクトップ＋モバイル）", () => {
     render(<LandingPage />);
-    const genbaHubHeaders = screen.getAllByText(/GenbaHub/);
+    const genbaHubHeaders = screen.getAllByText(/LapoSite/);
     expect(genbaHubHeaders.length).toBeGreaterThan(0);
   });
 

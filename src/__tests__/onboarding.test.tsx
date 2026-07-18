@@ -65,7 +65,7 @@ describe("OnboardingWizard", () => {
 
   it("ステップ1: ようこそ画面が表示される", () => {
     render(<OnboardingWizard onComplete={() => {}} />);
-    expect(screen.getByText("GenbaHubへようこそ！")).toBeDefined();
+    expect(screen.getByText("LapoSiteへようこそ！")).toBeDefined();
     expect(screen.getByText("ステップ 1 / 4")).toBeDefined();
   });
 

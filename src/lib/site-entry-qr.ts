@@ -140,7 +140,7 @@ export async function generateSiteEntryPrintHtml(
 </head>
 <body>
   <div class="page">
-    <span class="site-badge">GenbaHub 現場入退場</span>
+    <span class="site-badge">LapoSite 現場入退場</span>
     <h1 class="project-name">${projectName}</h1>
     <hr />
     <div class="qr-wrapper">
@@ -152,7 +152,7 @@ export async function generateSiteEntryPrintHtml(
       名前と会社名を入力してください。
     </p>
     <p class="url-hint">${url}</p>
-    <p class="footer">Powered by GenbaHub</p>
+    <p class="footer">Powered by LapoSite</p>
   </div>
 </body>
 </html>`;
@@ -331,7 +331,7 @@ export async function generateSiteEntryPosterPdf(
   doc.setFontSize(7.5);
   doc.setTextColor(...MUTED);
   doc.text(url, centerX, footerRuleY + 12, { align: "center", maxWidth: contentWidth });
-  doc.text("Powered by GenbaHub", centerX, footerRuleY + 16, {
+  doc.text("Powered by LapoSite", centerX, footerRuleY + 16, {
     align: "center",
   });
 

@@ -49,7 +49,7 @@ function buildSeedStrengths(): LaportaStrength[] {
       id: "str-005",
       titleJa: "設計AI標準装備",
       bodyJa:
-        "独自の設計AI「GenbaHub CAD」により、ヒアリング内容から3D完成イメージを即日提示。お客様が着工前に仕上がりをリアルに体験できる唯一の内装会社です。",
+        "独自の設計AI「LapoSite CAD」により、ヒアリング内容から3D完成イメージを即日提示。お客様が着工前に仕上がりをリアルに体験できる唯一の内装会社です。",
       evidence: "AI提案導入後 受注率 +23%向上 / 変更追加工事 -35%削減",
       weight: 0.9,
     },

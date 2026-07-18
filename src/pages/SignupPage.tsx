@@ -167,7 +167,7 @@ export function SignupPage() {
             onClick={() => navigate("/")}
             className="inline-flex flex-col items-center gap-1 hover:opacity-90"
           >
-            <span className="text-3xl font-bold text-white tracking-tight">GenbaHub</span>
+            <span className="text-3xl text-white tracking-tight"><span className="font-bold">Lapo</span><span className="font-normal">Site</span></span>
             <span className="text-sm text-brand-300">現場の面倒が、消えていく。</span>
           </button>
         </div>

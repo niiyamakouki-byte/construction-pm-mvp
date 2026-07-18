@@ -324,7 +324,7 @@ ${folderRows}
     </tbody>
   </table>
   <div class="footer">
-    国土交通省 CALS/EC 電子納品 — INDEX_D.XML 対応 | GenbaHub
+    国土交通省 CALS/EC 電子納品 — INDEX_D.XML 対応 | LapoSite
   </div>
 </body>
 </html>`;

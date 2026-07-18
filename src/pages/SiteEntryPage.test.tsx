@@ -161,7 +161,7 @@ describe("SiteEntryPage", () => {
   it("renders GenbaHub back link", async () => {
     render(<SiteEntryPage projectId="proj-1" />);
     await waitFor(() => expect(mockListByProject).toHaveBeenCalled());
-    expect(screen.getByText("← GenbaHub")).toBeTruthy();
+    expect(screen.getByText("← LapoSite")).toBeTruthy();
   });
 
   it("IN button is disabled when no worker is selected", async () => {
@@ -329,7 +329,7 @@ describe("SiteEntryPage", () => {
     mockFindAllDocuments.mockRejectedValueOnce(new Error("network error"));
     render(<SiteEntryPage projectId="proj-1" />);
     await waitFor(() => expect(mockListByProject).toHaveBeenCalled());
-    expect(screen.getByText("← GenbaHub")).toBeTruthy();
+    expect(screen.getByText("← LapoSite")).toBeTruthy();
     expect(screen.queryByText("図面・資料を見る →")).toBeNull();
   });
 });

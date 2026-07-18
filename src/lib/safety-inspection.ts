@@ -209,8 +209,7 @@ ${criticalSection}
 <thead><tr><th>ステータス</th><th>内容</th><th>メモ</th></tr></thead>
 <tbody>${categoryRows}</tbody>
 </table>
-<footer style="margin-top:24px;font-size:12px;color:#6b7280;">GenbaHub 安全点検モジュールにより生成</footer>
+<footer style="margin-top:24px;font-size:12px;color:#6b7280;">LapoSite 安全点検モジュールにより生成</footer>
 </body>
 </html>`;
 }
-

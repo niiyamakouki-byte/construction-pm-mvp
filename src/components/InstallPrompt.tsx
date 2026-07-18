@@ -99,7 +99,7 @@ export function InstallPrompt() {
           </>
         ) : (
           <>
-            <p className="text-sm font-semibold text-slate-800">GenbaHub をインストール</p>
+            <p className="text-sm font-semibold text-slate-800">LapoSite をインストール</p>
             <p className="text-xs text-slate-500 mt-0.5">ホーム画面に追加してオフラインでも使えます。</p>
           </>
         )}

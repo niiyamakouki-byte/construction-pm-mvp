@@ -203,7 +203,7 @@ export function OnboardingChecklist({ hasProjects }: Props) {
       {allDone && (
         <div className="mt-4 rounded-xl bg-brand-50 border border-brand-200 px-4 py-3 text-center">
           <p className="text-sm font-semibold text-brand-800">
-            すべてのステップが完了しました。GenbaHub をお使いいただきありがとうございます！
+            すべてのステップが完了しました。LapoSite をお使いいただきありがとうございます！
           </p>
         </div>
       )}

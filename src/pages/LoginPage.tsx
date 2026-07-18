@@ -166,7 +166,7 @@ export function LoginPage() {
                 <polygon points="50,5 15,35 85,35" fill="#fbbf24" />
               </svg>
             </div>
-            <span className="text-3xl font-bold text-brand-900 tracking-tight">GenbaHub</span>
+            <span className="text-3xl text-brand-900 tracking-tight"><span className="font-bold">Lapo</span><span className="font-normal">Site</span></span>
             <span className="text-sm text-brand-700">建設・内装工事の現場管理プラットフォーム</span>
           </button>
         </div>

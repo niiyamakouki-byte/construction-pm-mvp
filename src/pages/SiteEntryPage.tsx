@@ -744,7 +744,7 @@ export function SiteEntryPage({ projectId }: { projectId: string }) {
             onClick={() => navigate("/app")}
             className="text-xs text-slate-400 hover:text-white mb-3 inline-block"
           >
-            &larr; GenbaHub
+            &larr; LapoSite
           </button>
           <div className="text-6xl font-black text-white tabular-nums leading-none">
             {pad2(now.getHours())}:{pad2(now.getMinutes())}

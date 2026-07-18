@@ -116,7 +116,7 @@ export function buildEmailHtml(
     ${actionsHtml}
     ${unresolvedHtml}
     <hr style="border-color:#d4e4c8;margin-top:24px;">
-    <p style="font-size:0.8rem;color:#666;margin-bottom:0;">この議事録はGenbaHubにより自動生成されました。</p>
+    <p style="font-size:0.8rem;color:#666;margin-bottom:0;">この議事録はLapoSiteにより自動生成されました。</p>
   </div>
 </body>
 </html>`;
