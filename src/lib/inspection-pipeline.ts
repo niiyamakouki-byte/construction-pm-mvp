@@ -196,7 +196,7 @@ const RESULT_LABELS: Record<"pass" | "fail" | "na" | "pending", string> = {
 };
 
 const RESULT_COLORS: Record<"pass" | "fail" | "na" | "pending", string> = {
-  pass: "#22c55e",
+  pass: "#6f916c",
   fail: "#ef4444",
   na: "#94a3b8",
   pending: "#f59e0b",
@@ -209,7 +209,7 @@ const OVERALL_LABELS: Record<"pass" | "conditional" | "fail", string> = {
 };
 
 const OVERALL_COLORS: Record<"pass" | "conditional" | "fail", string> = {
-  pass: "#22c55e",
+  pass: "#6f916c",
   conditional: "#f59e0b",
   fail: "#ef4444",
 };
@@ -372,7 +372,7 @@ export function generateInspectionReport(
     .summary-bar { display: flex; gap: 2em; margin-bottom: 12px; padding: 8px 14px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 4px; font-size: 0.9em; }
     .summary-item .label { color: #64748b; }
     .summary-item .value { font-weight: 700; margin-left: 4px; }
-    .summary-item.pass .value { color: #22c55e; }
+    .summary-item.pass .value { color: #6f916c; }
     .summary-item.fail .value { color: #ef4444; }
     .summary-item.na .value { color: #94a3b8; }
     .summary-item.pending .value { color: #f59e0b; }

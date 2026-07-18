@@ -173,7 +173,7 @@ describe("safety-inspection", () => {
       });
       const html = generateInspectionReport(checklist);
       expect(html).toContain("PASS");
-      expect(html).toContain("#22c55e");
+      expect(html).toContain("#6f916c");
     });
 
     it("shows FAIL result when any item fails", () => {

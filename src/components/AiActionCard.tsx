@@ -15,10 +15,10 @@ type Props = {
 
 const severityStyles = {
   info: {
-    container: "border-emerald-200 bg-emerald-50",
-    icon: "text-emerald-500",
-    badge: "bg-emerald-100 text-emerald-700",
-    button: "bg-emerald-600 hover:bg-emerald-700 text-white",
+    container: "border-brand-200 bg-brand-50",
+    icon: "text-brand-500",
+    badge: "bg-brand-100 text-brand-700",
+    button: "bg-brand-600 hover:bg-brand-700 text-white",
   },
   warning: {
     container: "border-amber-200 bg-amber-50",

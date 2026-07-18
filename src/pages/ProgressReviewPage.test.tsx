@@ -152,7 +152,7 @@ describe("ProgressReviewPage", () => {
     // 遅延検出結果または「遅延なし」メッセージが表示される
     // （タスクの期待進捗 > 0 の場合のみ遅延が出る）
     const hasDelays = document.querySelector(".bg-red-50");
-    const noDelays = document.querySelector(".bg-emerald-50");
+    const noDelays = document.querySelector(".bg-brand-50");
     expect(hasDelays !== null || noDelays !== null).toBe(true);
   });
 
@@ -194,7 +194,7 @@ describe("ProgressReviewPage", () => {
       expect(screen.getByText("適用済み変更")).toBeDefined();
     } else {
       // 遅延なし = 突合ボタン後に emerald パネルが表示
-      expect(document.querySelector(".bg-emerald-50")).toBeDefined();
+      expect(document.querySelector(".bg-brand-50")).toBeDefined();
     }
   });
 

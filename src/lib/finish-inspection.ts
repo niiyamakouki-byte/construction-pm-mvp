@@ -351,12 +351,12 @@ export function buildCrossProjectInspectionHtml(
       ? sorted
           .map((s) => {
             const pct = Math.round(s.completionRate * 100);
-            const barColor = pct >= 80 ? "#22c55e" : pct >= 50 ? "#f59e0b" : "#ef4444";
+            const barColor = pct >= 80 ? "#6f916c" : pct >= 50 ? "#f59e0b" : "#ef4444";
             return `<tr>
               <td>${escapeHtml(s.projectName)}</td>
               <td style="text-align:center">${s.roomCount}</td>
               <td style="text-align:center">${s.totalItems}</td>
-              <td style="text-align:center;color:#22c55e;font-weight:700">${s.okCount}</td>
+              <td style="text-align:center;color:#6f916c;font-weight:700">${s.okCount}</td>
               <td style="text-align:center;color:#ef4444;font-weight:700">${s.ngCount}</td>
               <td style="text-align:center;color:#94a3b8">${s.naCount}</td>
               <td style="min-width:120px">
@@ -585,7 +585,7 @@ const STATUS_COLORS: Record<RoomInspectionStatus, string> = {
   not_started: "#94a3b8",
   in_progress: "#f59e0b",
   completed: "#3b82f6",
-  approved: "#22c55e",
+  approved: "#6f916c",
 };
 
 const ITEM_STATUS_LABELS: Record<InspectionItemStatus, string> = {
@@ -595,7 +595,7 @@ const ITEM_STATUS_LABELS: Record<InspectionItemStatus, string> = {
 };
 
 const ITEM_STATUS_COLORS: Record<InspectionItemStatus, string> = {
-  ok: "#22c55e",
+  ok: "#6f916c",
   ng: "#ef4444",
   na: "#94a3b8",
 };

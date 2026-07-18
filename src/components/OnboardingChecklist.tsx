@@ -143,7 +143,7 @@ export function OnboardingChecklist({ hasProjects }: Props) {
               key={step.id}
               className={`flex items-start gap-3 rounded-xl border px-4 py-3 transition-colors ${
                 done
-                  ? "border-emerald-200 bg-emerald-50"
+                  ? "border-brand-200 bg-brand-50"
                   : index === completedCount
                     ? "border-brand-300 bg-brand-50"
                     : "border-slate-200 bg-white"
@@ -153,7 +153,7 @@ export function OnboardingChecklist({ hasProjects }: Props) {
               <span
                 className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold ${
                   done
-                    ? "bg-emerald-500 text-white"
+                    ? "bg-brand-500 text-white"
                     : index === completedCount
                       ? "bg-brand-600 text-white"
                       : "bg-slate-200 text-slate-500"
@@ -164,7 +164,7 @@ export function OnboardingChecklist({ hasProjects }: Props) {
               </span>
 
               <div className="min-w-0 flex-1">
-                <p className={`flex items-center gap-1.5 text-sm font-semibold ${done ? "text-emerald-800 line-through decoration-emerald-400" : "text-slate-800"}`}>
+                <p className={`flex items-center gap-1.5 text-sm font-semibold ${done ? "text-brand-800 line-through decoration-brand-400" : "text-slate-800"}`}>
                   {step.icon}
                   {step.title}
                 </p>
@@ -175,7 +175,7 @@ export function OnboardingChecklist({ hasProjects }: Props) {
 
               {/* CTA / done badge */}
               {done ? (
-                <span className="shrink-0 rounded-full bg-emerald-100 px-2.5 py-1 text-[10px] font-bold text-emerald-700">
+                <span className="shrink-0 rounded-full bg-brand-100 px-2.5 py-1 text-[10px] font-bold text-brand-700">
                   完了
                 </span>
               ) : (
@@ -201,8 +201,8 @@ export function OnboardingChecklist({ hasProjects }: Props) {
 
       {/* All done message */}
       {allDone && (
-        <div className="mt-4 rounded-xl bg-emerald-50 border border-emerald-200 px-4 py-3 text-center">
-          <p className="text-sm font-semibold text-emerald-800">
+        <div className="mt-4 rounded-xl bg-brand-50 border border-brand-200 px-4 py-3 text-center">
+          <p className="text-sm font-semibold text-brand-800">
             すべてのステップが完了しました。GenbaHub をお使いいただきありがとうございます！
           </p>
         </div>

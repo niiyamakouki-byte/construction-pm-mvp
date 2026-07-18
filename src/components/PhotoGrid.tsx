@@ -6,7 +6,7 @@ import { PhotoProgressPanel } from "./PhotoProgressPanel.js";
 const CATEGORY_COLORS: Record<string, string> = {
   基礎工事: "bg-amber-100 text-amber-800",
   内装: "bg-blue-100 text-blue-800",
-  外装: "bg-emerald-100 text-emerald-800",
+  外装: "bg-brand-100 text-brand-800",
   設備: "bg-purple-100 text-purple-800",
   完成: "bg-slate-100 text-slate-700",
 };
@@ -38,7 +38,7 @@ const PART_COLORS: Record<PartTag, string> = {
   建具: "bg-orange-100 text-orange-700",
   設備機器: "bg-purple-100 text-purple-700",
   基礎構造: "bg-stone-100 text-stone-700",
-  外壁: "bg-emerald-100 text-emerald-700",
+  外壁: "bg-brand-100 text-brand-700",
   屋根: "bg-teal-100 text-teal-700",
   その他: "bg-slate-100 text-slate-600",
 };
@@ -82,7 +82,7 @@ function PhotoCard({ photo }: PhotoCardProps) {
         {(showBefore || showAfter) && (
           <span
             className={`absolute left-2 top-2 rounded-full px-2 py-0.5 text-xs font-bold ${
-              showBefore ? "bg-amber-500 text-white" : "bg-emerald-500 text-white"
+              showBefore ? "bg-amber-500 text-white" : "bg-brand-500 text-white"
             }`}
           >
             {showBefore ? "Before" : "After"}

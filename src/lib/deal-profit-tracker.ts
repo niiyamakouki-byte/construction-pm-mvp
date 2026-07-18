@@ -562,7 +562,7 @@ export function buildThreeAxisDashboardHtml(
   const trendArrow =
     s.trendDirection === 'up' ? '▲' : s.trendDirection === 'down' ? '▼' : '─';
   const trendColor =
-    s.trendDirection === 'up' ? '#16a34a' : s.trendDirection === 'down' ? '#dc2626' : '#6b7280';
+    s.trendDirection === 'up' ? '#346538' : s.trendDirection === 'down' ? '#dc2626' : '#6b7280';
   const trendLabel =
     s.trendDirection === 'up'
       ? `${trendArrow} +${s.trendDiff.toFixed(1)}pt`

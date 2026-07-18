@@ -67,7 +67,7 @@ const BASE_STYLES = `
   .meta-item .label { color: #64748b; }
   .meta-item .value { font-weight: 600; }
   .badge { display: inline-block; padding: 2px 8px; border-radius: 9999px; font-size: 0.8em; font-weight: 600; }
-  .badge-green { background: #dcfce7; color: #166534; }
+  .badge-green { background: #edf3ec; color: #346538; }
   .badge-yellow { background: #fef9c3; color: #854d0e; }
   .badge-red { background: #fee2e2; color: #991b1b; }
   @media print { body { margin: 0; } }
@@ -355,7 +355,7 @@ export function buildProjectReportHtml(input: ProjectReportInput): string {
   const health: HealthScore = assessProjectHealth({ project, tasks, costRows, inspectionPassRate, asOfDate });
 
   const gradeColor: Record<string, string> = {
-    A: "#22c55e", B: "#84cc16", C: "#eab308", D: "#f97316", F: "#ef4444",
+    A: "#6f916c", B: "#93b18f", C: "#eab308", D: "#f97316", F: "#ef4444",
   };
 
   // Forecast

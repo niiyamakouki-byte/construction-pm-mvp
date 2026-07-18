@@ -41,7 +41,7 @@ function fmtAmount(n: number): string {
 }
 
 function scoreColor(score: number): string {
-  if (score >= 0.9) return "text-emerald-700 bg-emerald-50";
+  if (score >= 0.9) return "text-brand-700 bg-brand-50";
   if (score >= 0.7) return "text-amber-700 bg-amber-50";
   return "text-slate-500 bg-slate-100";
 }
@@ -96,7 +96,7 @@ function DealRow({
         <button
           type="button"
           onClick={onConfirm}
-          className="flex-1 rounded-lg bg-emerald-600 py-1.5 text-xs font-semibold text-white transition-colors duration-150 hover:bg-emerald-700 active:opacity-80"
+          className="flex-1 rounded-lg bg-brand-600 py-1.5 text-xs font-semibold text-white transition-colors duration-150 hover:bg-brand-700 active:opacity-80"
         >
           確定
         </button>
@@ -164,7 +164,7 @@ export function InvoiceMatchPanel({ matchResult, onConfirm, onReject, onAutoMatc
           <button
             type="button"
             onClick={handleAutoMatchAll}
-            className="rounded-lg bg-emerald-600 px-4 py-1.5 text-xs font-semibold text-white transition-colors duration-200 hover:bg-emerald-700 active:opacity-80"
+            className="rounded-lg bg-brand-600 px-4 py-1.5 text-xs font-semibold text-white transition-colors duration-200 hover:bg-brand-700 active:opacity-80"
           >
             一括 auto-match ({autoCandidates.length}件)
           </button>
@@ -185,7 +185,7 @@ export function InvoiceMatchPanel({ matchResult, onConfirm, onReject, onAutoMatc
               onClick={() => setSelectedInvoiceId(inv.id)}
               className={`text-left transition-shadow duration-150 ${
                 selectedInvoiceId === inv.id
-                  ? "ring-2 ring-emerald-500 ring-offset-1 rounded-xl"
+                  ? "ring-2 ring-brand-500 ring-offset-1 rounded-xl"
                   : ""
               }`}
             >
@@ -233,7 +233,7 @@ export function InvoiceMatchPanel({ matchResult, onConfirm, onReject, onAutoMatc
       <div className="flex gap-4 border-t border-slate-100 pt-3 text-xs text-slate-500">
         <span>照合済: {matchResult.matched.length}件</span>
         <span>未照合: {matchResult.unmatched.length}件</span>
-        <span className="text-emerald-600">
+        <span className="text-brand-600">
           確定推奨 (90%+): {autoCandidates.length}件
         </span>
       </div>

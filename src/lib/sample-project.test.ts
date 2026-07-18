@@ -78,4 +78,25 @@ describe("ensureFirstRunProject", () => {
     expect((await taskRepository.findAll())).toHaveLength(0);
     expect(localStorage.setItem).toHaveBeenCalledWith("genbahub:last-project-id", "recent-project");
   });
+
+  it("deduplicates concurrent first-run effects", async () => {
+    const projectRepository = makeRepository<Project>();
+    const taskRepository = makeRepository<Task>();
+    const create = vi.spyOn(projectRepository, "create");
+    const originalFindAll = projectRepository.findAll.bind(projectRepository);
+    vi.spyOn(projectRepository, "findAll").mockImplementation(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 10));
+      return originalFindAll();
+    });
+
+    const [left, right] = await Promise.all([
+      ensureFirstRunProject(projectRepository, taskRepository),
+      ensureFirstRunProject(projectRepository, taskRepository),
+    ]);
+
+    expect(left).toEqual(right);
+    expect(create).toHaveBeenCalledTimes(1);
+    expect(await projectRepository.findAll()).toHaveLength(1);
+    expect(await taskRepository.findAll()).toHaveLength(6);
+  });
 });

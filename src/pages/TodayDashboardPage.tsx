@@ -99,13 +99,13 @@ const statusIcon: Record<TaskStatus, string> = {
 
 const statusBg: Record<TaskStatus, string> = {
   todo: "bg-gray-100 text-gray-500 border-gray-200",
-  in_progress: "bg-emerald-100 text-emerald-800 border-emerald-200",
+  in_progress: "bg-brand-100 text-brand-800 border-brand-200",
   done: "bg-gray-200 text-gray-600 border-gray-300",
 };
 
 const statusButtonStyle: Record<TaskStatus, string> = {
-  done: "bg-emerald-700 text-white active:bg-emerald-800",
-  in_progress: "bg-emerald-700 text-white active:bg-emerald-800",
+  done: "bg-brand-700 text-white active:bg-brand-800",
+  in_progress: "bg-brand-700 text-white active:bg-brand-800",
   todo: "bg-amber-500 text-white active:bg-amber-600",
 };
 
@@ -116,13 +116,13 @@ const currencyFormatter = new Intl.NumberFormat("ja-JP", {
 });
 
 const budgetStatusTone = {
-  under_budget: "bg-emerald-50 text-emerald-700 border-emerald-200",
+  under_budget: "bg-brand-50 text-brand-700 border-brand-200",
   on_budget: "bg-blue-50 text-blue-700 border-blue-200",
   over_budget: "bg-red-50 text-red-700 border-red-200",
 } as const;
 
 const healthGradeTone = {
-  A: "bg-emerald-100 text-emerald-700 border-emerald-200",
+  A: "bg-brand-100 text-brand-700 border-brand-200",
   B: "bg-lime-100 text-lime-700 border-lime-200",
   C: "bg-amber-100 text-amber-700 border-amber-200",
   D: "bg-orange-100 text-orange-700 border-orange-200",
@@ -1136,7 +1136,7 @@ function TodayDashboardPageContent() {
                         ? "bg-red-100 text-red-700"
                         : risk.level === "warning"
                           ? "bg-amber-100 text-amber-700"
-                          : "bg-emerald-100 text-emerald-700"
+                          : "bg-brand-100 text-brand-700"
                     }`}
                   >
                     {risk.level === "danger" ? "延期候補" : risk.level === "warning" ? "要注意" : "施工可"}
@@ -1168,7 +1168,7 @@ function TodayDashboardPageContent() {
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
         <StatCard label="進行中案件" value={activeProjectsCount} color="text-brand-700" bgColor="bg-brand-50" />
         <StatCard label="進行中タスク" value={inProgressTasks} color="text-slate-600" bgColor="bg-slate-50" />
-        <StatCard label="完了タスク" value={completedTasks} color="text-emerald-700" bgColor="bg-emerald-50" />
+        <StatCard label="完了タスク" value={completedTasks} color="text-brand-700" bgColor="bg-brand-50" />
         <StatCard label="期限超過" value={overdueTasks} color="text-red-600" bgColor={overdueTasks > 0 ? "bg-red-50" : "bg-white"} />
       </div>
 
@@ -1320,7 +1320,7 @@ function TodayDashboardPageContent() {
                   {formatFileSize(selectedPhotoFile.size)} · {getCategoryLabel(photoCategory as import("../lib/photo-upload.js").PhotoCategory)}
                 </p>
                 {photoCategorySuggestion && (
-                  <p className="mt-1 text-xs font-semibold text-emerald-700">
+                  <p className="mt-1 text-xs font-semibold text-brand-700">
                     ファイル名から {photoCategorySuggestion.label} に設定済み ({Math.round(photoCategorySuggestion.confidence * 100)}%)
                   </p>
                 )}
@@ -1366,7 +1366,7 @@ function TodayDashboardPageContent() {
             <p className="mt-3 text-xs font-semibold text-red-600">{photoUploadError}</p>
           )}
           {photoUploadStatus && !photoUploadError && (
-            <p className="mt-3 text-xs font-semibold text-emerald-700">{photoUploadStatus}</p>
+            <p className="mt-3 text-xs font-semibold text-brand-700">{photoUploadStatus}</p>
           )}
         </div>
       </section>
@@ -1410,7 +1410,7 @@ function TodayDashboardPageContent() {
                 <div className="flex items-center justify-between gap-3 border-t border-slate-100 pt-2">
                   <span>差異</span>
                   <span className={`font-semibold tabular-nums ${
-                    budgetInsight.comparison.overallVariance > 0 ? "text-red-600" : "text-emerald-700"
+                    budgetInsight.comparison.overallVariance > 0 ? "text-red-600" : "text-brand-700"
                   }`}>
                     {budgetInsight.comparison.overallVariance > 0 ? "+" : ""}
                     {formatCurrency(budgetInsight.comparison.overallVariance)}
@@ -1427,7 +1427,7 @@ function TodayDashboardPageContent() {
                 </div>
                 <span className={`rounded-full border px-3 py-1 text-xs font-semibold ${
                   timelineInsight.onTrack
-                    ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                    ? "border-brand-200 bg-brand-50 text-brand-700"
                     : "border-amber-200 bg-amber-50 text-amber-700"
                 }`}>
                   信頼度 {confidenceLabel[
@@ -1529,7 +1529,7 @@ function TodayDashboardPageContent() {
                   <div className="flex items-center justify-between mb-1.5">
                     <span className="text-sm font-semibold text-slate-800 truncate">{p.name}</span>
                     <span className={`text-xs font-bold tabular-nums ${
-                      p.pct > 80 ? "text-emerald-700" : p.pct > 50 ? "text-blue-600" : "text-slate-500"
+                      p.pct > 80 ? "text-brand-700" : p.pct > 50 ? "text-blue-600" : "text-slate-500"
                     }`}>
                       {p.pct}%
                     </span>
@@ -1537,7 +1537,7 @@ function TodayDashboardPageContent() {
                   <div className="h-1.5 w-full rounded-full bg-slate-100 overflow-hidden">
                     <div
                       className={`h-full rounded-full transition-all ${
-                        p.pct > 80 ? "bg-emerald-500" : p.pct > 50 ? "bg-blue-500" : "bg-slate-400"
+                        p.pct > 80 ? "bg-brand-500" : p.pct > 50 ? "bg-blue-500" : "bg-slate-400"
                       }`}
                       style={{ width: `${p.pct}%` }}
                     />

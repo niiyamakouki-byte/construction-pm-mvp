@@ -235,7 +235,7 @@ export function InvoiceReconcilePage() {
         </div>
         <div className="flex items-center gap-2">
           {confirmedCount > 0 && (
-            <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
+            <span className="rounded-full bg-brand-50 px-3 py-1 text-xs font-semibold text-brand-700">
               {confirmedCount}件 確定済
             </span>
           )}
@@ -251,7 +251,7 @@ export function InvoiceReconcilePage() {
       </div>
 
       {syncMessage && (
-        <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-2 text-xs text-emerald-700">
+        <div className="rounded-lg border border-brand-200 bg-brand-50 px-4 py-2 text-xs text-brand-700">
           {syncMessage}
         </div>
       )}

@@ -1,0 +1,252 @@
+[
+  {
+    "route": "/app",
+    "legacyGreenNodes": 0,
+    "errors": []
+  },
+  {
+    "route": "/today",
+    "legacyGreenNodes": 0,
+    "errors": []
+  },
+  {
+    "route": "/tasks",
+    "legacyGreenNodes": 0,
+    "errors": []
+  },
+  {
+    "route": "/schedule",
+    "legacyGreenNodes": 0,
+    "errors": []
+  },
+  {
+    "route": "/cross-project-gantt",
+    "legacyGreenNodes": 0,
+    "errors": []
+  },
+  {
+    "route": "/finishing",
+    "legacyGreenNodes": 0,
+    "errors": []
+  },
+  {
+    "route": "/progress-review",
+    "legacyGreenNodes": 0,
+    "errors": []
+  },
+  {
+    "route": "/safety",
+    "legacyGreenNodes": 0,
+    "errors": []
+  },
+  {
+    "route": "/phase-templates",
+    "legacyGreenNodes": 0,
+    "errors": []
+  },
+  {
+    "route": "/estimate",
+    "legacyGreenNodes": 0,
+    "errors": []
+  },
+  {
+    "route": "/takeoff",
+    "legacyGreenNodes": 0,
+    "errors": []
+  },
+  {
+    "route": "/invoice",
+    "legacyGreenNodes": 0,
+    "errors": []
+  },
+  {
+    "route": "/cost-management",
+    "legacyGreenNodes": 0,
+    "errors": []
+  },
+  {
+    "route": "/reports",
+    "legacyGreenNodes": 0,
+    "errors": []
+  },
+  {
+    "route": "/freee",
+    "legacyGreenNodes": 0,
+    "errors": []
+  },
+  {
+    "route": "/crm",
+    "legacyGreenNodes": 0,
+    "errors": []
+  },
+  {
+    "route": "/contractors",
+    "legacyGreenNodes": 0,
+    "errors": []
+  },
+  {
+    "route": "/help",
+    "legacyGreenNodes": 0,
+    "errors": []
+  },
+  {
+    "route": "/account",
+    "legacyGreenNodes": 0,
+    "errors": []
+  },
+  {
+    "route": "/notifications",
+    "legacyGreenNodes": 0,
+    "errors": []
+  },
+  {
+    "route": "/weather",
+    "legacyGreenNodes": 0,
+    "errors": []
+  },
+  {
+    "route": "/photos",
+    "legacyGreenNodes": 0,
+    "errors": []
+  },
+  {
+    "route": "/procurement",
+    "legacyGreenNodes": 0,
+    "errors": []
+  },
+  {
+    "route": "/orders",
+    "legacyGreenNodes": 0,
+    "errors": []
+  },
+  {
+    "route": "/change-order",
+    "legacyGreenNodes": 0,
+    "errors": []
+  },
+  {
+    "route": "/crew-optimizer",
+    "legacyGreenNodes": 0,
+    "errors": []
+  },
+  {
+    "route": "/funnel",
+    "legacyGreenNodes": 0,
+    "errors": []
+  },
+  {
+    "route": "/handover-package",
+    "legacyGreenNodes": 0,
+    "errors": []
+  },
+  {
+    "route": "/inquiry-responder",
+    "legacyGreenNodes": 0,
+    "errors": []
+  },
+  {
+    "route": "/insurance-assessment",
+    "legacyGreenNodes": 0,
+    "errors": []
+  },
+  {
+    "route": "/invoices",
+    "legacyGreenNodes": 0,
+    "errors": []
+  },
+  {
+    "route": "/local-seo",
+    "legacyGreenNodes": 0,
+    "errors": []
+  },
+  {
+    "route": "/longterm-followup",
+    "legacyGreenNodes": 0,
+    "errors": []
+  },
+  {
+    "route": "/margin-watch",
+    "legacyGreenNodes": 0,
+    "errors": []
+  },
+  {
+    "route": "/meeting-runner",
+    "legacyGreenNodes": 0,
+    "errors": []
+  },
+  {
+    "route": "/node-schedule",
+    "legacyGreenNodes": 0,
+    "errors": []
+  },
+  {
+    "route": "/owner-ambassador",
+    "legacyGreenNodes": 0,
+    "errors": []
+  },
+  {
+    "route": "/owner-suggestion",
+    "legacyGreenNodes": 0,
+    "errors": []
+  },
+  {
+    "route": "/pricing",
+    "legacyGreenNodes": 0,
+    "errors": []
+  },
+  {
+    "route": "/profit-ranking",
+    "legacyGreenNodes": 0,
+    "errors": []
+  },
+  {
+    "route": "/proposal-generator",
+    "legacyGreenNodes": 0,
+    "errors": []
+  },
+  {
+    "route": "/repeat-predictor",
+    "legacyGreenNodes": 0,
+    "errors": []
+  },
+  {
+    "route": "/resource-analysis",
+    "legacyGreenNodes": 0,
+    "errors": []
+  },
+  {
+    "route": "/sales-pipeline",
+    "legacyGreenNodes": 0,
+    "errors": []
+  },
+  {
+    "route": "/share-tokens",
+    "legacyGreenNodes": 0,
+    "errors": []
+  },
+  {
+    "route": "/site-livestream",
+    "legacyGreenNodes": 0,
+    "errors": []
+  },
+  {
+    "route": "/login",
+    "legacyGreenNodes": 0,
+    "errors": []
+  },
+  {
+    "route": "/signup",
+    "legacyGreenNodes": 0,
+    "errors": []
+  },
+  {
+    "route": "/landing",
+    "legacyGreenNodes": 0,
+    "errors": []
+  },
+  {
+    "route": "/",
+    "legacyGreenNodes": 0,
+    "errors": []
+  }
+]

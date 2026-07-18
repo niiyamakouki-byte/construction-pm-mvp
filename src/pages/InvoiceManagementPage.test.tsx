@@ -38,6 +38,15 @@ describe("InvoiceManagementPage", () => {
     expect(screen.getByRole("heading", { name: "請求書を登録" })).toBeDefined();
   });
 
+  it("render中のstate update警告を発生させない", async () => {
+    const consoleError = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    render(<InvoiceManagementPage />);
+
+    await waitFor(() => expect(mockProjectRepository.findAll).toHaveBeenCalledTimes(1));
+    expect(consoleError.mock.calls.flat().join("\n")).not.toMatch(/render|state update/i);
+    consoleError.mockRestore();
+  });
+
   it("フィルター適用時に一致なしでフィルター解除ボタンが表示される", async () => {
     // 「未確認」の請求書を1件追加
     addInvoice({

@@ -49,7 +49,7 @@ const STAGE_COLORS: Record<DealStage, string> = {
   "現調": "bg-blue-100 text-blue-700",
   "見積提出": "bg-yellow-100 text-yellow-700",
   "商談中": "bg-orange-100 text-orange-700",
-  "受注": "bg-green-100 text-green-700",
+  "受注": "bg-brand-100 text-brand-700",
   "失注": "bg-red-100 text-red-700",
 };
 
@@ -58,7 +58,7 @@ const STAGE_BG: Record<DealStage, string> = {
   "現調": "border-l-4 border-blue-300 bg-blue-50",
   "見積提出": "border-l-4 border-yellow-300 bg-yellow-50",
   "商談中": "border-l-4 border-orange-300 bg-orange-50",
-  "受注": "border-l-4 border-green-300 bg-green-50",
+  "受注": "border-l-4 border-brand-300 bg-brand-50",
   "失注": "border-l-4 border-red-300 bg-red-50",
 };
 
@@ -548,7 +548,7 @@ function StatsView({ stats }: { stats: ReturnType<typeof getCRMStats> }) {
       {/* KPI cards */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <KpiCard label="総商談数" value={`${stats.totalDeals}件`} />
-        <KpiCard label="受注率" value={`${stats.winRate}%`} accent="text-green-700" />
+        <KpiCard label="受注率" value={`${stats.winRate}%`} accent="text-brand-700" />
         <KpiCard label="受注見込み" value={fmt(stats.totalEstimated)} />
         <KpiCard label="受注実績" value={fmt(stats.totalActual)} accent="text-blue-700" />
       </div>
@@ -582,10 +582,10 @@ function StatsView({ stats }: { stats: ReturnType<typeof getCRMStats> }) {
 
       {/* Win / Loss breakdown */}
       <div className="grid grid-cols-2 gap-3">
-        <div className="rounded-xl border border-green-200 bg-green-50 p-3">
-          <p className="text-xs font-bold text-green-700">受注</p>
-          <p className="text-2xl font-black text-green-800">{stats.wonDeals}件</p>
-          <p className="text-xs text-green-600">{fmt(stats.totalActual)}</p>
+        <div className="rounded-xl border border-brand-200 bg-brand-50 p-3">
+          <p className="text-xs font-bold text-brand-700">受注</p>
+          <p className="text-2xl font-black text-brand-800">{stats.wonDeals}件</p>
+          <p className="text-xs text-brand-600">{fmt(stats.totalActual)}</p>
         </div>
         <div className="rounded-xl border border-red-200 bg-red-50 p-3">
           <p className="text-xs font-bold text-red-700">失注</p>

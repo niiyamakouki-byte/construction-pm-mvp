@@ -554,7 +554,7 @@ function Step3({ createError, selectedTemplate, setSelectedTemplate }: Step3Prop
 function Step4() {
   return (
     <div className="text-center">
-      <div className="mx-auto mb-6 flex h-24 w-24 items-center justify-center rounded-3xl bg-emerald-50 text-emerald-500">
+      <div className="mx-auto mb-6 flex h-24 w-24 items-center justify-center rounded-3xl bg-brand-50 text-brand-500">
         <PartyPopper className="h-12 w-12" aria-hidden="true" />
       </div>
       <h2 className="text-2xl font-bold text-slate-900">準備完了！</h2>

@@ -217,8 +217,8 @@ export function generateHealthReport(input: HealthAssessmentInput): string {
   const { project } = input;
 
   const gradeColors: Record<string, string> = {
-    A: "#22c55e",
-    B: "#84cc16",
+    A: "#6f916c",
+    B: "#93b18f",
     C: "#eab308",
     D: "#f97316",
     F: "#ef4444",

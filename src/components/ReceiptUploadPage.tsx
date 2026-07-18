@@ -64,7 +64,7 @@ function DropZone({ onTextReady }: DropZoneProps) {
       className={[
         "flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed py-8 text-sm transition-colors",
         dragging
-          ? "border-emerald-400 bg-emerald-50 text-emerald-700"
+          ? "border-brand-400 bg-brand-50 text-brand-700"
           : "border-slate-300 bg-slate-50 text-slate-500",
       ].join(" ")}
     >
@@ -156,7 +156,7 @@ function Toast({ result, onClose }: ToastProps) {
   const color = result.ok
     ? isDry
       ? "bg-amber-100 text-amber-800 border border-amber-300"
-      : "bg-emerald-100 text-emerald-800 border border-emerald-300"
+      : "bg-brand-100 text-brand-800 border border-brand-300"
     : "bg-red-100 text-red-800 border border-red-300";
 
   const message = result.ok
@@ -248,7 +248,7 @@ export function ReceiptUploadPage() {
           <button
             onClick={handleParse}
             disabled={!rawText.trim()}
-            className="w-full rounded-lg bg-emerald-600 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-40"
+            className="w-full rounded-lg bg-brand-600 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-40"
           >
             内容を読み取る
           </button>
@@ -269,7 +269,7 @@ export function ReceiptUploadPage() {
             <button
               onClick={handleSubmit}
               disabled={submitting}
-              className="flex-1 rounded-lg bg-emerald-600 px-4 py-3 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-50"
+              className="flex-1 rounded-lg bg-brand-600 px-4 py-3 text-sm font-semibold text-white hover:bg-brand-700 disabled:opacity-50"
             >
               {submitting ? "送信中…" : "freee に送信"}
             </button>

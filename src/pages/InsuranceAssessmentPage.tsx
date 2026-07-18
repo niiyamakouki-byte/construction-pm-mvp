@@ -43,8 +43,8 @@ const SEGMENT_LABELS: Record<TargetSegment, string> = {
 };
 
 const RISK_STYLES: Record<string, { bg: string; text: string; label: string }> = {
-  very_low: { bg: "bg-emerald-50", text: "text-emerald-700", label: "極低リスク" },
-  low: { bg: "bg-green-50", text: "text-green-700", label: "低リスク" },
+  very_low: { bg: "bg-brand-50", text: "text-brand-700", label: "極低リスク" },
+  low: { bg: "bg-brand-50", text: "text-brand-700", label: "低リスク" },
   medium: { bg: "bg-amber-50", text: "text-amber-700", label: "中リスク" },
   high: { bg: "bg-orange-50", text: "text-orange-700", label: "高リスク" },
   very_high: { bg: "bg-red-50", text: "text-red-700", label: "超高リスク" },
@@ -148,7 +148,7 @@ function AssessmentTab() {
 
         <button
           type="submit"
-          className="w-full rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700 transition-colors"
+          className="w-full rounded-lg bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-700 transition-colors"
         >
           査定実行
         </button>
@@ -292,7 +292,7 @@ function DroneTab() {
 
         <button
           type="submit"
-          className="w-full rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700 transition-colors"
+          className="w-full rounded-lg bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-700 transition-colors"
         >
           ドローン査定実行
         </button>
@@ -479,7 +479,7 @@ function PmlTab() {
 
         <button
           type="submit"
-          className="w-full rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700 transition-colors"
+          className="w-full rounded-lg bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-700 transition-colors"
         >
           PML計算
         </button>
@@ -602,7 +602,7 @@ function PricingTab() {
 
         <button
           type="submit"
-          className="w-full rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700 transition-colors"
+          className="w-full rounded-lg bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-700 transition-colors"
         >
           推奨プランを診断
         </button>

@@ -24,7 +24,7 @@ const STATUS_STYLES: Record<ProcurementMaterialStatus, string> = {
   unordered: "bg-red-50 text-red-700 border-red-200",
   ordered: "bg-amber-50 text-amber-700 border-amber-200",
   delivered: "bg-blue-50 text-blue-700 border-blue-200",
-  accepted: "bg-emerald-50 text-emerald-700 border-emerald-200",
+  accepted: "bg-brand-50 text-brand-700 border-brand-200",
 };
 
 function alertSeverity(alert: ProcurementAlert): "high" | "medium" | "low" {
@@ -36,7 +36,7 @@ function alertSeverity(alert: ProcurementAlert): "high" | "medium" | "low" {
 const SEVERITY_STYLES: Record<"high" | "medium" | "low", { badge: string; row: string }> = {
   high: { badge: "bg-red-100 text-red-700 border-red-200", row: "border-red-200" },
   medium: { badge: "bg-amber-100 text-amber-700 border-amber-200", row: "border-amber-200" },
-  low: { badge: "bg-emerald-100 text-emerald-700 border-emerald-200", row: "border-emerald-200" },
+  low: { badge: "bg-brand-100 text-brand-700 border-brand-200", row: "border-brand-200" },
 };
 
 const SEVERITY_LABELS: Record<"high" | "medium" | "low", string> = {

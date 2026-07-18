@@ -23,7 +23,7 @@ export const PIN_STATUSES: PinStatus[] = ["未着手", "対応中", "完了"];
 export const PIN_STATUS_COLORS: Record<PinStatus, string> = {
   未着手: "#ef4444",
   対応中: "#f59e0b",
-  完了: "#22c55e",
+  完了: "#6f916c",
 };
 
 export function createPin(partial: Omit<DrawingPin, "id" | "createdAt">): DrawingPin {
@@ -86,7 +86,7 @@ export function generatePinReport(
   const STATUS_COLORS: Record<PinStatus, string> = {
     未着手: "#ef4444",
     対応中: "#f59e0b",
-    完了: "#22c55e",
+    完了: "#6f916c",
   };
 
   const rowsHtml = filtered.length > 0

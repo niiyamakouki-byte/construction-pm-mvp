@@ -151,7 +151,7 @@ export function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-brand-800 px-4">
+    <div className="flex min-h-screen items-center justify-center bg-brand-100 px-4">
       <div className="w-full max-w-sm">
         {/* Logo */}
         <div className="mb-8 text-center">
@@ -159,19 +159,19 @@ export function LoginPage() {
             onClick={() => navigate("/")}
             className="inline-flex flex-col items-center gap-2 hover:opacity-90"
           >
-            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-white/10 backdrop-blur-sm shadow-lg">
+            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-brand-200 shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
               <svg width="36" height="36" viewBox="0 0 100 100" aria-hidden="true">
                 <rect x="10" y="60" width="80" height="35" rx="3" fill="#fff" opacity="0.9" />
                 <rect x="20" y="30" width="60" height="35" rx="3" fill="#93c5fd" opacity="0.8" />
                 <polygon points="50,5 15,35 85,35" fill="#fbbf24" />
               </svg>
             </div>
-            <span className="text-3xl font-bold text-white tracking-tight">GenbaHub</span>
-            <span className="text-sm text-brand-200">建設・内装工事の現場管理プラットフォーム</span>
+            <span className="text-3xl font-bold text-brand-900 tracking-tight">GenbaHub</span>
+            <span className="text-sm text-brand-700">建設・内装工事の現場管理プラットフォーム</span>
           </button>
         </div>
 
-        <div className="rounded-2xl bg-white p-8 shadow-xl">
+        <div className="rounded-2xl border border-brand-200 bg-white p-8 shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
           <h1 className="mb-6 text-xl font-bold text-slate-900">ログイン</h1>
 
           {error && (
@@ -181,7 +181,7 @@ export function LoginPage() {
           )}
 
           {successMessage && (
-            <div className="mb-4 rounded-lg bg-emerald-50 px-4 py-3 text-sm text-emerald-700" role="status">
+            <div className="mb-4 rounded-lg bg-brand-50 px-4 py-3 text-sm text-brand-700" role="status">
               {successMessage}
             </div>
           )}
@@ -288,7 +288,7 @@ export function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full rounded-lg bg-slate-800 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-slate-900 disabled:opacity-60"
+              className="w-full rounded-lg bg-brand-700 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-brand-800 disabled:opacity-60"
             >
               {loading ? "ログイン中..." : "ログイン"}
             </button>

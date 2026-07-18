@@ -17,8 +17,8 @@ const accentStyles: Record<AccentType, { icon: string; badge: string }> = {
     badge: "bg-amber-50 text-amber-700 border-amber-200",
   },
   success: {
-    icon: "bg-emerald-50 text-emerald-600",
-    badge: "bg-emerald-50 text-emerald-700 border-emerald-200",
+    icon: "bg-brand-50 text-brand-600",
+    badge: "bg-brand-50 text-brand-700 border-brand-200",
   },
 };
 

@@ -40,7 +40,7 @@ const statusLabel: Record<ProjectPaymentPlan["status"], string> = {
 const statusBg: Record<ProjectPaymentPlan["status"], string> = {
   planned: "bg-slate-100 text-slate-700",
   invoiced: "bg-blue-100 text-blue-700",
-  paid: "bg-emerald-100 text-emerald-700",
+  paid: "bg-brand-100 text-brand-700",
   overdue: "bg-red-100 text-red-700",
   cancelled: "bg-slate-50 text-slate-400 line-through",
 };
@@ -221,7 +221,7 @@ export function ProjectFinancePanel({ projectId }: { projectId: string }) {
       )}
 
       {syncMessage && (
-        <div className="rounded-lg bg-emerald-50 border border-emerald-200 px-4 py-3 text-sm text-emerald-700">
+        <div className="rounded-lg bg-brand-50 border border-brand-200 px-4 py-3 text-sm text-brand-700">
           {syncMessage}
         </div>
       )}
@@ -244,9 +244,9 @@ export function ProjectFinancePanel({ projectId }: { projectId: string }) {
             <p className="text-[10px] text-slate-500">予定合計</p>
             <p className="text-sm font-bold text-slate-800 tabular-nums">{currency.format(totalScheduled)}</p>
           </div>
-          <div className="rounded-lg bg-emerald-50 p-2">
-            <p className="text-[10px] text-emerald-600">入金済</p>
-            <p className="text-sm font-bold text-emerald-700 tabular-nums">{currency.format(totalPaid)}</p>
+          <div className="rounded-lg bg-brand-50 p-2">
+            <p className="text-[10px] text-brand-600">入金済</p>
+            <p className="text-sm font-bold text-brand-700 tabular-nums">{currency.format(totalPaid)}</p>
           </div>
           <div className="rounded-lg bg-amber-50 p-2">
             <p className="text-[10px] text-amber-600">未収</p>
@@ -256,9 +256,9 @@ export function ProjectFinancePanel({ projectId }: { projectId: string }) {
 
         {/* 請求書ベース（freee 照合反映） */}
         <div className="grid grid-cols-2 gap-2 mb-4 text-center" data-testid="invoice-payment-summary">
-          <div className="rounded-lg border border-emerald-100 bg-white p-2">
-            <p className="text-[10px] text-emerald-600">請求書 入金済み合計</p>
-            <p className="text-sm font-bold text-emerald-700 tabular-nums">{currency.format(invoicePaidTotal)}</p>
+          <div className="rounded-lg border border-brand-100 bg-white p-2">
+            <p className="text-[10px] text-brand-600">請求書 入金済み合計</p>
+            <p className="text-sm font-bold text-brand-700 tabular-nums">{currency.format(invoicePaidTotal)}</p>
           </div>
           <div className="rounded-lg border border-amber-100 bg-white p-2">
             <p className="text-[10px] text-amber-600">請求書 未入金合計</p>
@@ -368,7 +368,7 @@ export function ProjectFinancePanel({ projectId }: { projectId: string }) {
                 const usage = budget.plannedAmount > 0
                   ? Math.round((budget.actualAmount / budget.plannedAmount) * 100)
                   : 0;
-                const barColor = usage > 100 ? "bg-red-500" : usage > 80 ? "bg-amber-500" : "bg-emerald-500";
+                const barColor = usage > 100 ? "bg-red-500" : usage > 80 ? "bg-amber-500" : "bg-brand-500";
                 return (
                   <li key={budget.id} className="rounded-lg border border-slate-100 bg-slate-50 px-3 py-2">
                     <div className="flex items-center justify-between mb-1">

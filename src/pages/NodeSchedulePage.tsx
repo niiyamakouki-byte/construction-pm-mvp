@@ -21,7 +21,7 @@ type Connection = {
 const statusColor: Record<TaskStatus, string> = {
   todo: "#94a3b8",
   in_progress: "#2563eb",
-  done: "#10b981",
+  done: "#587b56",
 };
 
 const statusLabel: Record<TaskStatus, string> = {
@@ -397,7 +397,7 @@ export function NodeSchedulePage() {
           </button>
           <button
             onClick={() => setShowCsvImport(true)}
-            className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 transition-colors"
+            className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold text-white bg-brand-600 hover:bg-brand-700 transition-colors"
           >
             CSVインポート
           </button>
@@ -591,7 +591,7 @@ export function NodeSchedulePage() {
             </p>
 
             {csvResult && (
-              <div className={`mb-3 rounded-lg px-3 py-2 text-sm ${csvResult.error === 0 ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700"}`}>
+              <div className={`mb-3 rounded-lg px-3 py-2 text-sm ${csvResult.error === 0 ? "bg-brand-50 text-brand-700" : "bg-amber-50 text-amber-700"}`}>
                 成功: {csvResult.success}件 / エラー: {csvResult.error}件
               </div>
             )}

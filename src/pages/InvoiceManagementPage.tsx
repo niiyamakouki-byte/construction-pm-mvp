@@ -32,7 +32,7 @@ const STATUS_COLORS: Record<InvoiceStatus, string> = {
   未確認: "bg-yellow-100 text-yellow-800",
   確認済: "bg-blue-100 text-blue-800",
   振込予定: "bg-orange-100 text-orange-800",
-  振込済: "bg-green-100 text-green-800",
+  振込済: "bg-brand-100 text-brand-800",
   保留: "bg-slate-100 text-slate-600",
 };
 
@@ -70,21 +70,19 @@ export function InvoiceManagementPage() {
 
   const today = new Date().toISOString().slice(0, 7); // YYYY-MM
 
-  const loadProjects = useCallback(async () => {
-    try {
-      const all = await projectRepository.findAll();
+  useEffect(() => {
+    let cancelled = false;
+    void projectRepository.findAll().then((all) => {
+      if (cancelled) return;
       setProjects(all.map((p) => ({ id: p.id, name: p.name })));
-      if (all.length > 0 && !formProjectId) setFormProjectId(all[0].id);
-    } catch {
+      if (all.length > 0) setFormProjectId((current) => current || all[0].id);
+    }).catch(() => {
       // non-critical
-    }
-  }, [projectRepository, formProjectId]);
-
-  const [loaded, setLoaded] = useState(false);
-  if (!loaded) {
-    setLoaded(true);
-    void loadProjects();
-  }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [projectRepository]);
 
   // Refresh invoice list from in-memory store
   const refreshInvoices = useCallback(() => {
@@ -214,7 +212,7 @@ export function InvoiceManagementPage() {
         <h1 className="text-xl font-bold text-slate-800">請求書管理</h1>
         <button
           onClick={() => setShowForm((v) => !v)}
-          className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700"
+          className="rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700"
         >
           {showForm ? "閉じる" : ACTION_LABELS.invoice.register}
         </button>
@@ -232,7 +230,7 @@ export function InvoiceManagementPage() {
         </div>
         <div className="rounded-xl border border-slate-200 bg-white p-4">
           <p className="text-xs text-slate-500">今月支払済み</p>
-          <p className="mt-1 text-xl font-bold text-green-600">{formatCurrency(summary.paidTotal)}</p>
+          <p className="mt-1 text-xl font-bold text-brand-600">{formatCurrency(summary.paidTotal)}</p>
         </div>
       </div>
 
@@ -352,7 +350,7 @@ export function InvoiceManagementPage() {
             <button
               onClick={() => void handleSubmit()}
               disabled={saving}
-              className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-50"
+              className="rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-50"
             >
               {saving ? ACTION_LABELS.invoice.registering : ACTION_LABELS.invoice.register}
             </button>
@@ -393,7 +391,7 @@ export function InvoiceManagementPage() {
             onClick={() => setFilterStatus(s)}
             className={`shrink-0 rounded-full px-3 py-1 text-xs font-medium ${
               filterStatus === s
-                ? "bg-emerald-600 text-white"
+                ? "bg-brand-600 text-white"
                 : "bg-slate-100 text-slate-600 hover:bg-slate-200"
             }`}
           >
@@ -414,7 +412,7 @@ export function InvoiceManagementPage() {
               <button
                 type="button"
                 onClick={() => setShowForm(true)}
-                className="mt-5 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700"
+                className="mt-5 rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-brand-700"
               >
                 {ACTION_LABELS.invoice.register}
               </button>
@@ -428,7 +426,7 @@ export function InvoiceManagementPage() {
               <button
                 type="button"
                 onClick={() => setFilterStatus("全部")}
-                className="mt-5 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700"
+                className="mt-5 rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-brand-700"
               >
                 フィルターを解除
               </button>

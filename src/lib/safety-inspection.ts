@@ -154,7 +154,7 @@ export function generateInspectionReport(checklist: InspectionChecklist): string
   const evaluation = evaluateChecklist(checklist);
   const passPercent = (evaluation.passRate * 100).toFixed(1);
   const overallResult = evaluation.criticalFailures.length > 0 || evaluation.failCount > 0 ? "FAIL" : "PASS";
-  const resultColor = overallResult === "PASS" ? "#22c55e" : "#ef4444";
+  const resultColor = overallResult === "PASS" ? "#6f916c" : "#ef4444";
 
   const categorized = new Map<string, ChecklistItem[]>();
   for (const item of checklist.items) {

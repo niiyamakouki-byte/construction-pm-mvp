@@ -36,7 +36,7 @@ const CATEGORY_COLOR: Record<MoodBoardCategory, string> = {
   床: "border-amber-400 bg-amber-50",
   壁: "border-blue-400 bg-blue-50",
   天井: "border-slate-400 bg-slate-50",
-  家具: "border-emerald-400 bg-emerald-50",
+  家具: "border-brand-400 bg-brand-50",
   照明: "border-yellow-400 bg-yellow-50",
   カーテン: "border-purple-400 bg-purple-50",
   その他: "border-rose-400 bg-rose-50",
@@ -46,7 +46,7 @@ const CATEGORY_BADGE: Record<MoodBoardCategory, string> = {
   床: "bg-amber-100 text-amber-700",
   壁: "bg-blue-100 text-blue-700",
   天井: "bg-slate-100 text-slate-700",
-  家具: "bg-emerald-100 text-emerald-700",
+  家具: "bg-brand-100 text-brand-700",
   照明: "bg-yellow-100 text-yellow-700",
   カーテン: "bg-purple-100 text-purple-700",
   その他: "bg-rose-100 text-rose-700",
@@ -224,7 +224,7 @@ function AddItemForm({
             </button>
             <button
               type="submit"
-              className="flex-1 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
+              className="flex-1 rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700"
             >
               追加
             </button>
@@ -470,7 +470,7 @@ export function MoodBoardPage({ projectId }: { projectId: string }) {
           <button
             type="button"
             onClick={() => setShowAddForm(true)}
-            className="flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
+            className="flex items-center gap-1.5 rounded-lg bg-brand-600 px-3 py-2 text-sm font-semibold text-white hover:bg-brand-700"
           >
             <span aria-hidden="true">+</span>
             アイテム追加
@@ -483,7 +483,7 @@ export function MoodBoardPage({ projectId }: { projectId: string }) {
         <button
           type="button"
           onClick={() => setFilterCategory("all")}
-          className={`rounded-full px-3 py-1 text-xs font-semibold ${filterCategory === "all" ? "bg-slate-900 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}
+          className={`rounded-full px-3 py-1 text-xs font-semibold ${filterCategory === "all" ? "bg-brand-700 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}
         >
           すべて
         </button>
@@ -492,7 +492,7 @@ export function MoodBoardPage({ projectId }: { projectId: string }) {
             key={cat}
             type="button"
             onClick={() => setFilterCategory(cat)}
-            className={`rounded-full px-3 py-1 text-xs font-semibold ${filterCategory === cat ? "bg-slate-900 text-white" : `${CATEGORY_BADGE[cat]} hover:opacity-80`}`}
+            className={`rounded-full px-3 py-1 text-xs font-semibold ${filterCategory === cat ? "bg-brand-700 text-white" : `${CATEGORY_BADGE[cat]} hover:opacity-80`}`}
           >
             {cat}
           </button>

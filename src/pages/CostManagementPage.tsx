@@ -140,19 +140,19 @@ function RemainingBudgetCard({ detail }: { detail: RemainingBudgetDetail }) {
       ? "border-red-300 bg-red-50"
       : detail.alertLevel === "warning"
         ? "border-amber-300 bg-amber-50"
-        : "border-emerald-200 bg-emerald-50";
+        : "border-brand-200 bg-brand-50";
   const valueTone =
     detail.alertLevel === "danger"
       ? "text-red-700"
       : detail.alertLevel === "warning"
         ? "text-amber-700"
-        : "text-emerald-800";
+        : "text-brand-800";
   const barColor =
     detail.alertLevel === "danger"
       ? "bg-red-500"
       : detail.alertLevel === "warning"
         ? "bg-amber-400"
-        : "bg-emerald-500";
+        : "bg-brand-500";
 
   return (
     <section className={`rounded-[28px] border p-5 shadow-sm ${alertTone}`}>
@@ -246,7 +246,7 @@ function CategoryTable({ category, rows }: { category: string; rows: CostRow[] }
                   <span
                     className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${
                       row.paymentStatus === "paid"
-                        ? "bg-emerald-50 text-emerald-700"
+                        ? "bg-brand-50 text-brand-700"
                         : "bg-amber-50 text-amber-700"
                     }`}
                   >
@@ -286,7 +286,7 @@ const STATUS_TONE: Record<ChangeRequestStatus, string> = {
   申請中: "bg-slate-100 text-slate-700",
   見積中: "bg-blue-50 text-blue-700",
   施主確認中: "bg-amber-50 text-amber-700",
-  承認済: "bg-emerald-50 text-emerald-700",
+  承認済: "bg-brand-50 text-brand-700",
   却下: "bg-red-50 text-red-700",
   実施済: "bg-purple-50 text-purple-700",
 };
@@ -384,7 +384,7 @@ function ChangeRequestTab({ projectId }: { projectId: string | null }) {
         <StatCard
           label="承認済コスト増減"
           value={(approvedTotal >= 0 ? "+" : "") + formatCurrency(approvedTotal)}
-          tone={approvedTotal > 0 ? "border-amber-200 bg-amber-50 text-amber-900" : approvedTotal < 0 ? "border-emerald-200 bg-emerald-50 text-emerald-900" : "border-slate-200 bg-white text-slate-900"}
+          tone={approvedTotal > 0 ? "border-amber-200 bg-amber-50 text-amber-900" : approvedTotal < 0 ? "border-brand-200 bg-brand-50 text-brand-900" : "border-slate-200 bg-white text-slate-900"}
         />
         <StatCard
           label="未処理件数"
@@ -475,7 +475,7 @@ function ChangeRequestTab({ projectId }: { projectId: string | null }) {
               </div>
               <div className="flex flex-col justify-end">
                 <p className="text-xs font-semibold text-slate-500">差額（リアルタイム）</p>
-                <p className={`mt-1 text-xl font-bold tabular-nums ${costDiff > 0 ? "text-amber-700" : costDiff < 0 ? "text-emerald-700" : "text-slate-500"}`}>
+                <p className={`mt-1 text-xl font-bold tabular-nums ${costDiff > 0 ? "text-amber-700" : costDiff < 0 ? "text-brand-700" : "text-slate-500"}`}>
                   {costDiff > 0 ? "+" : ""}{formatCurrency(costDiff)}
                 </p>
               </div>
@@ -522,7 +522,7 @@ function ChangeRequestTab({ projectId }: { projectId: string | null }) {
                         <span>依頼者: {req.requestedBy}</span>
                         <span>元見積: {formatCurrency(req.originalEstimate)}</span>
                         <span>変更後: {formatCurrency(req.revisedEstimate)}</span>
-                        <span className={`font-bold tabular-nums ${req.costDifference > 0 ? "text-amber-700" : req.costDifference < 0 ? "text-emerald-700" : "text-slate-500"}`}>
+                        <span className={`font-bold tabular-nums ${req.costDifference > 0 ? "text-amber-700" : req.costDifference < 0 ? "text-brand-700" : "text-slate-500"}`}>
                           差額: {req.costDifference > 0 ? "+" : ""}{formatCurrency(req.costDifference)}
                         </span>
                         {req.approvedAt && (
@@ -785,7 +785,7 @@ export function CostManagementPage() {
         <>
       <section className="grid gap-3 md:grid-cols-3">
         <StatCard label="総予算" value={formatCurrency(budgetSummary.budget)} tone="border-slate-200 bg-white text-slate-900" />
-        <StatCard label="総支出" value={formatCurrency(budgetSummary.spent)} tone="border-emerald-200 bg-emerald-50 text-emerald-900" />
+        <StatCard label="総支出" value={formatCurrency(budgetSummary.spent)} tone="border-brand-200 bg-brand-50 text-brand-900" />
         <StatCard label="残予算" value={formatCurrency(budgetSummary.remaining)} tone="border-amber-200 bg-amber-50 text-amber-900" />
       </section>
       <RemainingBudgetCard detail={remainingBudgetDetail} />
@@ -801,7 +801,7 @@ export function CostManagementPage() {
                 ? "bg-red-50 text-red-700"
                 : forecastReport?.riskLevel === "medium"
                   ? "bg-amber-50 text-amber-700"
-                  : "bg-emerald-50 text-emerald-700"
+                  : "bg-brand-50 text-brand-700"
             }`}>
               {forecastReport?.riskLevel === "high"
                 ? "高リスク"
@@ -842,7 +842,7 @@ export function CostManagementPage() {
                 <div className="flex items-center justify-between gap-3">
                   <span>予算差</span>
                   <span className={`font-semibold tabular-nums ${
-                    forecastReport.overUnder > 0 ? "text-red-600" : "text-emerald-600"
+                    forecastReport.overUnder > 0 ? "text-red-600" : "text-brand-600"
                   }`}>
                     {forecastReport.overUnder > 0 ? "+" : ""}
                     {formatCurrency(forecastReport.overUnder)}
@@ -886,7 +886,7 @@ export function CostManagementPage() {
                     </div>
                     <span className={`rounded-full px-3 py-1 text-xs font-semibold ${
                       delivery.inspectionPassed
-                        ? "bg-emerald-50 text-emerald-700"
+                        ? "bg-brand-50 text-brand-700"
                         : "bg-amber-50 text-amber-700"
                     }`}>
                       {delivery.inspectionPassed ? "検収済" : "要確認"}
@@ -998,7 +998,7 @@ export function CostManagementPage() {
                     <td className="px-5 py-4 text-center">
                       <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${
                         entry.payment.status === "paid"
-                          ? "bg-emerald-50 text-emerald-700"
+                          ? "bg-brand-50 text-brand-700"
                           : entry.payment.status === "overdue"
                             ? "bg-red-50 text-red-700"
                             : "bg-amber-50 text-amber-700"
@@ -1030,7 +1030,7 @@ export function CostManagementPage() {
         </div>
         <div className="mt-4 grid gap-3 md:grid-cols-3">
           <StatCard label="総額" value={formatCurrency(summary.total)} tone="border-slate-200 bg-slate-50 text-slate-900" />
-          <StatCard label="支払済" value={formatCurrency(summary.paid)} tone="border-emerald-200 bg-emerald-50 text-emerald-900" />
+          <StatCard label="支払済" value={formatCurrency(summary.paid)} tone="border-brand-200 bg-brand-50 text-brand-900" />
           <StatCard label="未払い" value={formatCurrency(summary.unpaid)} tone="border-amber-200 bg-amber-50 text-amber-900" />
         </div>
         <div className="mt-4 grid gap-3 md:grid-cols-4">
@@ -1047,7 +1047,7 @@ export function CostManagementPage() {
             <h2 className="mt-1 text-xl font-bold text-slate-900">EVM 進捗指標</h2>
           </div>
           <div className="grid gap-3 md:grid-cols-3">
-            <StatCard label="EV（出来高）" value={formatCurrency(earnedValueMetrics.ev)} tone="border-emerald-200 bg-emerald-50 text-emerald-900" />
+            <StatCard label="EV（出来高）" value={formatCurrency(earnedValueMetrics.ev)} tone="border-brand-200 bg-brand-50 text-brand-900" />
             <StatCard label="PV（計画出来高）" value={formatCurrency(earnedValueMetrics.pv)} tone="border-blue-200 bg-blue-50 text-blue-900" />
             <StatCard label="BAC（完成時予算）" value={formatCurrency(earnedValueMetrics.bac)} tone="border-slate-200 bg-slate-50 text-slate-900" />
           </div>
@@ -1056,7 +1056,7 @@ export function CostManagementPage() {
               <p className="text-xs text-slate-500">実績進捗率</p>
               <p className="mt-1 text-2xl font-bold text-slate-900">{earnedValueMetrics.percentComplete.toFixed(1)}%</p>
               <div className="mt-2 h-2 w-full rounded-full bg-slate-100">
-                <div className="h-full rounded-full bg-emerald-500 transition-all" style={{ width: `${earnedValueMetrics.percentComplete}%` }} />
+                <div className="h-full rounded-full bg-brand-500 transition-all" style={{ width: `${earnedValueMetrics.percentComplete}%` }} />
               </div>
             </div>
             <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3">

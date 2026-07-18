@@ -50,7 +50,7 @@ const STATUS_LABEL: Record<ProjectTask["status"], string> = {
 const STATUS_CLASS: Record<ProjectTask["status"], string> = {
   todo: "bg-slate-100 text-slate-600",
   in_progress: "bg-[#7BA88A]/15 text-[#5E8A6C]",
-  done: "bg-emerald-50 text-emerald-600",
+  done: "bg-brand-50 text-brand-600",
 };
 
 type ScheduleTaskEdit = {

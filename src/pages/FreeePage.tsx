@@ -205,7 +205,7 @@ export function FreeePage() {
             type="button"
             onClick={handleConnect}
             disabled={connectState === "loading"}
-            className="mt-4 inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700 disabled:opacity-60"
+            className="mt-4 inline-flex items-center gap-2 rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-brand-700 disabled:opacity-60"
           >
             {connectState === "loading" ? "接続中..." : "freee に接続"}
           </button>
@@ -254,7 +254,7 @@ export function FreeePage() {
                 type="button"
                 onClick={() => fetchResource("invoices")}
                 disabled={selectedCompanyId === null || fetchState === "loading"}
-                className="rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white hover:bg-slate-800 disabled:opacity-40"
+                className="rounded-lg bg-brand-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-brand-800 disabled:opacity-40"
               >
                 請求書を取得
               </button>
@@ -262,7 +262,7 @@ export function FreeePage() {
                 type="button"
                 onClick={() => fetchResource("deals")}
                 disabled={selectedCompanyId === null || fetchState === "loading"}
-                className="rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white hover:bg-slate-800 disabled:opacity-40"
+                className="rounded-lg bg-brand-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-brand-800 disabled:opacity-40"
               >
                 取引を取得
               </button>

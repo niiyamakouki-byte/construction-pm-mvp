@@ -1,3 +1,5 @@
+import type { TaxRoundingMode } from "../lib/tax-rounding.js";
+
 /** コストマスターの品目 */
 export type MasterItem = {
   code: string;
@@ -58,6 +60,7 @@ export type Estimate = {
   subtotal: number;
   tax: number;
   taxRate: number;
+  taxRounding?: TaxRoundingMode;
   total: number;
   notes: string[];
 };
@@ -76,6 +79,7 @@ export type EstimateRequest = {
   validDays?: number;
   managementFeeRate?: number;
   generalExpenseRate?: number;
+  taxRounding?: TaxRoundingMode;
   items: EstimateInput[];
   notes?: string[];
 };

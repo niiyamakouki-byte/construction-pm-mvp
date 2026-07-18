@@ -34,10 +34,10 @@ describe("estimate-generator", () => {
     expect(est.generalExpense).toBe(37895);
     // 税抜: 689000 + 68900 + 37895 = 795,795
     expect(est.subtotal).toBe(795795);
-    // 税: 795795 × 0.1 = 79,580
-    expect(est.tax).toBe(79580);
-    // 税込: 795795 + 79580 = 875,375
-    expect(est.total).toBe(875375);
+    // 税: 795795 × 0.1 = 79,579.5 → 既定の切捨てで79,579
+    expect(est.tax).toBe(79579);
+    // 税込: 795795 + 79579 = 875,374
+    expect(est.total).toBe(875374);
 
     expect(est.sections).toHaveLength(3); // demolition, interior, electrical
   });
@@ -84,6 +84,24 @@ describe("estimate-generator", () => {
     });
     expect(est.total).toBe(est.subtotal + est.tax);
     expect(est.subtotal).toBe(est.directCost + est.managementFee + est.generalExpense);
+  });
+
+  it.each([
+    ["floor", 100] as const,
+    ["round", 101] as const,
+    ["ceil", 101] as const,
+  ])("applies %s to fractional consumption tax", (taxRounding, expectedTax) => {
+    const est = generateEstimate({
+      propertyName: "端数方式検算",
+      clientName: "テスト",
+      items: [{ code: "DM-001", quantity: 0.229 }],
+      managementFeeRate: 0.1,
+      generalExpenseRate: 0,
+      taxRounding,
+    });
+    expect(est.subtotal).toBe(1008);
+    expect(est.tax).toBe(expectedTax);
+    expect(est.taxRounding).toBe(taxRounding);
   });
 
   it("throws on unknown item code", () => {

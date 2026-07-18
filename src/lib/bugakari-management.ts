@@ -249,7 +249,7 @@ export function buildBugakariReportHtml(
           variance !== null
             ? `${variance.manDaysDiff >= 0 ? "+" : ""}${variance.manDaysDiff.toFixed(1)} (${variance.varianceRate >= 0 ? "+" : ""}${variance.varianceRate}%)`
             : "—";
-        const varColor = variance === null ? "#94a3b8" : isOver ? "#ef4444" : "#22c55e";
+        const varColor = variance === null ? "#94a3b8" : isOver ? "#ef4444" : "#6f916c";
         return `<tr${rowStyle}>
           <td style="text-align:center">${idx + 1}</td>
           <td>${escapeHtml(r.taskName)}</td>

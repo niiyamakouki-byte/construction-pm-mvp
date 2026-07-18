@@ -55,7 +55,7 @@ function toLocalDateString(date: Date): string {
 
 const statusColor: Record<ProjectStatus, string> = {
   planning: "bg-gray-100 text-gray-500 border-gray-200",
-  active: "bg-emerald-100 text-emerald-700 border-emerald-200",
+  active: "bg-brand-100 text-brand-700 border-brand-200",
   completed: "bg-gray-200 text-gray-600 border-gray-300",
   on_hold: "bg-amber-100 text-amber-700 border-amber-200",
 };
@@ -63,7 +63,7 @@ const statusColor: Record<ProjectStatus, string> = {
 type ProjectCaptureMode = "memo" | "schedule" | "record";
 
 const modeColor: Record<ProjectMode, string> = {
-  memo: "bg-emerald-50 text-emerald-700 border-emerald-200",
+  memo: "bg-brand-50 text-brand-700 border-brand-200",
   normal: "bg-indigo-50 text-indigo-700 border-indigo-200",
   full: "bg-fuchsia-50 text-fuchsia-700 border-fuchsia-200",
 };
@@ -265,7 +265,7 @@ export function ProjectListPage() {
       {createdProjectName ? (
         <div
           role="status"
-          className="flex flex-col gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800 sm:flex-row sm:items-center sm:justify-between"
+          className="flex flex-col gap-3 rounded-2xl border border-brand-200 bg-brand-50 px-4 py-3 text-sm text-brand-800 sm:flex-row sm:items-center sm:justify-between"
         >
           <p className="font-semibold">
             {isFirstProject
@@ -314,7 +314,7 @@ export function ProjectListPage() {
                 setIsFirstProject(false);
                 navigate(id ? `/estimate?projectId=${encodeURIComponent(id)}` : "/estimate");
               }}
-              className="rounded-2xl bg-white px-4 py-2 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-200"
+              className="rounded-2xl bg-white px-4 py-2 text-xs font-semibold text-brand-700 ring-1 ring-brand-200"
             >
               {t("pages:project_list.created_banner_cta")}
             </button>
@@ -327,7 +327,7 @@ export function ProjectListPage() {
                 setIsFirstProject(false);
               }}
               aria-label={t("common:actions.close")}
-              className="rounded-full bg-white px-2.5 py-1 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-200"
+              className="rounded-full bg-white px-2.5 py-1 text-xs font-semibold text-brand-700 ring-1 ring-brand-200"
             >
               ×
             </button>

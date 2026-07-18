@@ -343,7 +343,7 @@ export function InvoicePage() {
           </div>
 
           {saved ? (
-            <div className="rounded-xl bg-emerald-50 border border-emerald-200 px-4 py-3 text-sm text-emerald-700 font-semibold text-center">
+            <div className="rounded-xl bg-brand-50 border border-brand-200 px-4 py-3 text-sm text-brand-700 font-semibold text-center">
               経費として保存しました
             </div>
           ) : (

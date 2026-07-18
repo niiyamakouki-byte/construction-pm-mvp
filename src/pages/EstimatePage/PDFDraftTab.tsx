@@ -16,7 +16,7 @@ const TAX_RATE = 0.1;
 
 function confidenceBadge(confidence: number): { label: string; className: string } {
   if (confidence >= 0.7) {
-    return { label: `${Math.round(confidence * 100)}%`, className: "bg-emerald-100 text-emerald-700" };
+    return { label: `${Math.round(confidence * 100)}%`, className: "bg-brand-100 text-brand-700" };
   }
   if (confidence >= 0.5) {
     return { label: `${Math.round(confidence * 100)}%`, className: "bg-yellow-100 text-yellow-700" };

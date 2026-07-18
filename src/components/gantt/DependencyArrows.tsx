@@ -33,7 +33,7 @@ type ArrowSpec = {
 const DEP_STYLE: Record<DependencyType, { stroke: string; dasharray?: string; markerId: string }> = {
   FS:   { stroke: "#94a3b8", markerId: "dep-arrow-FS" },
   FF:   { stroke: "#6366f1", dasharray: "5 3", markerId: "dep-arrow-FF" },
-  SS:   { stroke: "#10b981", dasharray: "2 2 8 2", markerId: "dep-arrow-SS" },
+  SS:   { stroke: "#587b56", dasharray: "2 2 8 2", markerId: "dep-arrow-SS" },
   SF:   { stroke: "#f59e0b", dasharray: "1 0 4 0", markerId: "dep-arrow-SF" },
   none: { stroke: "transparent", markerId: "dep-arrow-none" },
 };

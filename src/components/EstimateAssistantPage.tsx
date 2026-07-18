@@ -177,7 +177,7 @@ export function EstimateAssistantPage() {
               <div
                 className={`max-w-[75%] rounded-lg px-3 py-2 text-sm whitespace-pre-wrap ${
                   msg.role === "user"
-                    ? "bg-sage-100 text-slate-800 bg-emerald-100"
+                    ? "bg-sage-100 text-slate-800 bg-brand-100"
                     : "bg-white border border-stone-200 text-slate-700"
                 }`}
               >
@@ -200,12 +200,12 @@ export function EstimateAssistantPage() {
             onChange={(e) => dispatch({ type: "SET_INPUT", payload: e.target.value })}
             onKeyDown={handleKeyDown}
             placeholder="例: リビング 15畳、ハイグレードで壁紙張替え"
-            className="flex-1 rounded-md border border-stone-300 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-emerald-500 bg-stone-50"
+            className="flex-1 rounded-md border border-stone-300 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-brand-500 bg-stone-50"
           />
           <button
             onClick={handleSend}
             disabled={!state.input.trim()}
-            className="px-4 py-2 rounded-md bg-emerald-600 text-white text-sm font-medium disabled:opacity-40 hover:bg-emerald-700 transition-colors"
+            className="px-4 py-2 rounded-md bg-brand-600 text-white text-sm font-medium disabled:opacity-40 hover:bg-brand-700 transition-colors"
           >
             送信
           </button>
@@ -244,7 +244,7 @@ function RangeTable({ range }: { range: EstimateRange }) {
       {/* 合計サマリ */}
       <div className="grid grid-cols-3 gap-1 text-center">
         <GradeCell label="エコノミー" amount={range.taxIncludedLow} color="text-blue-600" />
-        <GradeCell label="標準" amount={range.taxIncludedMid} color="text-emerald-700" highlight />
+        <GradeCell label="標準" amount={range.taxIncludedMid} color="text-brand-700" highlight />
         <GradeCell label="ハイグレード" amount={range.taxIncludedHigh} color="text-amber-700" />
       </div>
 
@@ -262,7 +262,7 @@ function RangeTable({ range }: { range: EstimateRange }) {
                 </div>
                 <div className="grid grid-cols-3 gap-1 mt-0.5 text-[11px]">
                   <span className="text-blue-500">{formatYen(item.unitPriceLow)}</span>
-                  <span className="text-emerald-600 font-medium">{formatYen(item.unitPriceMid)}</span>
+                  <span className="text-brand-600 font-medium">{formatYen(item.unitPriceMid)}</span>
                   <span className="text-amber-600">{formatYen(item.unitPriceHigh)}</span>
                 </div>
               </div>
@@ -287,7 +287,7 @@ function GradeCell({
 }) {
   return (
     <div
-      className={`rounded-md py-2 px-1 ${highlight ? "bg-emerald-50 ring-1 ring-emerald-200" : "bg-stone-50"}`}
+      className={`rounded-md py-2 px-1 ${highlight ? "bg-brand-50 ring-1 ring-brand-200" : "bg-stone-50"}`}
     >
       <div className="text-[10px] text-slate-500">{label}</div>
       <div className={`text-sm font-bold mt-0.5 ${color}`}>{formatYen(amount)}</div>

@@ -4,7 +4,7 @@
 export const colors = {
   primary: "#0f172a",       // navy
   accent: "#2563eb",        // blue
-  success: "#10b981",       // green
+  success: "#587b56",       // green
   warning: "#f59e0b",       // amber
   danger: "#ef4444",        // red
   background: "#f8fafc",    // very light gray
@@ -18,7 +18,7 @@ export const colors = {
 export const statusColors = {
   todo: "#9ca3af",
   in_progress: "#3b82f6",
-  done: "#22c55e",
+  done: "#6f916c",
 } as const;
 
 export const spacing = {

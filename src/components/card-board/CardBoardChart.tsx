@@ -27,7 +27,7 @@ export type CardBoardChartProps = {
 const statusColor: Record<TaskStatus, string> = {
   todo: "#94a3b8",
   in_progress: "#2563eb",
-  done: "#10b981",
+  done: "#587b56",
 };
 
 const statusLabel: Record<TaskStatus, string> = {

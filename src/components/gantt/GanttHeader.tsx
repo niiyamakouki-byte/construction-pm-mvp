@@ -70,7 +70,7 @@ export function GanttHeader({
                   className="h-full rounded-full transition-all"
                   style={{
                     width: `${overallProgress}%`,
-                    backgroundColor: overallProgress >= 100 ? "#10b981" : overallProgress >= 50 ? "#2563eb" : "#94a3b8",
+                    backgroundColor: overallProgress >= 100 ? "#587b56" : overallProgress >= 50 ? "#2563eb" : "#94a3b8",
                   }}
                 />
               </div>
@@ -99,7 +99,7 @@ export function GanttHeader({
           </button>
           <button
             onClick={onOpenCsvModal}
-            className="inline-flex min-h-12 items-center rounded-xl bg-emerald-100 px-4 py-3 text-sm font-semibold text-emerald-700 hover:bg-emerald-200"
+            className="inline-flex min-h-12 items-center rounded-xl bg-brand-100 px-4 py-3 text-sm font-semibold text-brand-700 hover:bg-brand-200"
           >
             CSV取込
           </button>

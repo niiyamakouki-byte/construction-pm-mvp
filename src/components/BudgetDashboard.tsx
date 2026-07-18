@@ -35,7 +35,7 @@ type Props = {
 };
 
 const STATUS_TONE: Record<BudgetBreakdown["status"], string> = {
-  under_budget: "bg-emerald-50 text-emerald-700 ring-emerald-200",
+  under_budget: "bg-brand-50 text-brand-700 ring-brand-200",
   on_budget: "bg-blue-50 text-blue-700 ring-blue-200",
   over_budget: "bg-red-50 text-red-700 ring-red-200",
 };
@@ -48,7 +48,7 @@ const STATUS_LABEL: Record<BudgetBreakdown["status"], string> = {
 
 const CATEGORY_COLORS: Record<string, string> = {
   人件費: "bg-blue-500",
-  資材費: "bg-emerald-500",
+  資材費: "bg-brand-500",
   機材費: "bg-amber-500",
   外注費: "bg-purple-500",
   諸経費: "bg-slate-500",
@@ -59,7 +59,7 @@ function ProgressBar({ pct, over }: { pct: number; over: boolean }) {
   return (
     <div className="mt-1 h-1.5 w-full rounded-full bg-slate-100">
       <div
-        className={`h-full rounded-full transition-all ${over ? "bg-red-500" : "bg-emerald-500"}`}
+        className={`h-full rounded-full transition-all ${over ? "bg-red-500" : "bg-brand-500"}`}
         style={{ width: `${width}%` }}
       />
     </div>
@@ -86,7 +86,7 @@ function CategoryCard({ cat }: { cat: BudgetCategory }) {
       <p className="mt-2 text-lg font-bold tabular-nums text-slate-900">{fmt(cat.actualAmount)}</p>
       <p className="text-xs text-slate-500">見積: {fmt(cat.estimatedAmount)}</p>
       <ProgressBar pct={pct} over={over} />
-      <p className={`mt-1 text-right text-xs font-semibold tabular-nums ${over ? "text-red-600" : "text-emerald-600"}`}>
+      <p className={`mt-1 text-right text-xs font-semibold tabular-nums ${over ? "text-red-600" : "text-brand-600"}`}>
         {over ? "+" : ""}{fmt(diff)}
       </p>
     </div>
@@ -109,7 +109,7 @@ function CategoryTableRow({ cat }: { cat: BudgetCategory }) {
       </td>
       <td className="px-4 py-3 text-right tabular-nums">{fmt(cat.estimatedAmount)}</td>
       <td className="px-4 py-3 text-right tabular-nums">{fmt(cat.actualAmount)}</td>
-      <td className={`px-4 py-3 text-right tabular-nums font-semibold ${over ? "text-red-600" : "text-emerald-600"}`}>
+      <td className={`px-4 py-3 text-right tabular-nums font-semibold ${over ? "text-red-600" : "text-brand-600"}`}>
         {over ? "+" : ""}{fmt(diff)}
       </td>
       <td className="px-4 py-3 text-right tabular-nums text-xs text-slate-500">
@@ -179,9 +179,9 @@ export function BudgetDashboard({ projectName, categories }: Props) {
           <p className="text-xs font-semibold tracking-[0.14em] text-slate-500">総見積</p>
           <p className="mt-1 text-lg font-bold tabular-nums text-slate-900">{fmt(breakdown.totalEstimated)}</p>
         </div>
-        <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3">
-          <p className="text-xs font-semibold tracking-[0.14em] text-emerald-700">総実績</p>
-          <p className="mt-1 text-lg font-bold tabular-nums text-emerald-900">{fmt(breakdown.totalActual)}</p>
+        <div className="rounded-2xl border border-brand-200 bg-brand-50 px-4 py-3">
+          <p className="text-xs font-semibold tracking-[0.14em] text-brand-700">総実績</p>
+          <p className="mt-1 text-lg font-bold tabular-nums text-brand-900">{fmt(breakdown.totalActual)}</p>
         </div>
         <div
           className={`col-span-2 rounded-2xl border px-4 py-3 sm:col-span-1 ${
@@ -229,7 +229,7 @@ export function BudgetDashboard({ projectName, categories }: Props) {
                   <td className="px-4 py-3">合計</td>
                   <td className="px-4 py-3 text-right tabular-nums">{fmt(breakdown.totalEstimated)}</td>
                   <td className="px-4 py-3 text-right tabular-nums">{fmt(breakdown.totalActual)}</td>
-                  <td className={`px-4 py-3 text-right tabular-nums ${breakdown.variance > 0 ? "text-red-600" : "text-emerald-600"}`}>
+                  <td className={`px-4 py-3 text-right tabular-nums ${breakdown.variance > 0 ? "text-red-600" : "text-brand-600"}`}>
                     {breakdown.variance > 0 ? "+" : ""}{fmt(breakdown.variance)}
                   </td>
                   <td className="px-4 py-3 text-right tabular-nums text-xs text-slate-500">

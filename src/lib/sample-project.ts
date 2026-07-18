@@ -14,6 +14,8 @@ export type SampleProjectResult = {
   created: boolean;
 };
 
+let firstRunProjectPromise: Promise<SampleProjectResult> | null = null;
+
 export async function createSampleProject(
   projectRepository: Repository<Project>,
   taskRepository: Repository<Task>,
@@ -80,12 +82,22 @@ export async function ensureFirstRunProject(
   projectRepository: Repository<Project>,
   taskRepository: Repository<Task>,
 ): Promise<SampleProjectResult> {
-  const projects = await projectRepository.findAll();
-  if (projects.length > 0) {
-    const [project] = projects.sort((left, right) => right.updatedAt.localeCompare(left.updatedAt));
-    writeLastProjectId(project.id);
-    return { projectId: project.id, created: false };
-  }
+  if (firstRunProjectPromise) return firstRunProjectPromise;
 
-  return createSampleProject(projectRepository, taskRepository);
+  firstRunProjectPromise = (async () => {
+    const projects = await projectRepository.findAll();
+    if (projects.length > 0) {
+      const [project] = projects.sort((left, right) => right.updatedAt.localeCompare(left.updatedAt));
+      writeLastProjectId(project.id);
+      return { projectId: project.id, created: false };
+    }
+
+    return createSampleProject(projectRepository, taskRepository);
+  })();
+
+  try {
+    return await firstRunProjectPromise;
+  } finally {
+    firstRunProjectPromise = null;
+  }
 }

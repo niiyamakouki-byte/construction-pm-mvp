@@ -409,7 +409,7 @@ export function buildInspectionReportHtml(report: RemoteInspectionReport): strin
               `<tr>
                 <td>${escapeHtml(pc.location)}</td>
                 <td style="text-align:center">${pc.captures.length}</td>
-                <td style="text-align:center;color:${pc.changeDetected ? "#16a34a" : "#94a3b8"}">${pc.changeDetected ? "あり" : "なし"}</td>
+                <td style="text-align:center;color:${pc.changeDetected ? "#346538" : "#94a3b8"}">${pc.changeDetected ? "あり" : "なし"}</td>
                 <td>${escapeHtml(pc.progressNotes.join(" / ") || "—")}</td>
               </tr>`,
           )

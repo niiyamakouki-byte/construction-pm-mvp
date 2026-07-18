@@ -177,7 +177,7 @@ export function AttendanceHistoryPage({ projectId }: { projectId: string }) {
         </div>
         <div className="rounded-xl bg-white border border-slate-200 p-4 text-center shadow-sm">
           <p className="text-xs text-slate-500 mb-1">現在入場中</p>
-          <p className="text-3xl font-black text-emerald-600">{onSiteCount}</p>
+          <p className="text-3xl font-black text-brand-600">{onSiteCount}</p>
           <p className="text-xs text-slate-400 mt-0.5">名</p>
         </div>
       </div>
@@ -230,12 +230,12 @@ export function AttendanceHistoryPage({ projectId }: { projectId: string }) {
                       <span className="col-span-2 font-semibold text-slate-900 text-sm truncate">
                         {rec.workerName}
                       </span>
-                      <span className="text-center text-sm font-mono text-emerald-700">
+                      <span className="text-center text-sm font-mono text-brand-700">
                         {formatTime(rec.entryTime)}
                       </span>
                       <span className="text-center text-sm font-mono text-red-600">
                         {rec.exitTime ? formatTime(rec.exitTime) : (
-                          <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-700">
+                          <span className="rounded-full bg-brand-100 px-2 py-0.5 text-[10px] font-bold text-brand-700">
                             入場中
                           </span>
                         )}

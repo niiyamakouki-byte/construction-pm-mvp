@@ -82,7 +82,7 @@ const fieldModeStyles = {
   },
 } as const;
 
-const ACTION_COLORS = ["#059669", "#2563eb", "#d97706"] as const;
+const ACTION_COLORS = ["#587b56", "#2563eb", "#d97706"] as const;
 
 export function FieldModeView({
   projectName,

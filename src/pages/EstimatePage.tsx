@@ -25,6 +25,7 @@ import type { CompetitorEstimate, EstimateItem } from "../lib/estimate-compariso
 import costMasterRaw from "../estimate/cost-master.json";
 import { PDFDraftTab } from "./EstimatePage/PDFDraftTab.js";
 import type { CostMasterItem } from "../lib/pdf-to-estimate/types.js";
+import { readTaxRoundingMode } from "../lib/tax-rounding.js";
 
 type SelectedItem = EstimateInput & { name: string; unit: string; unitPrice: number; isLaborCost?: boolean };
 
@@ -222,7 +223,7 @@ function ComparisonTab() {
         {validEstimates.length >= 2 && (
           <button
             onClick={handleSelectBest}
-            className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700 active:bg-emerald-800 transition-colors"
+            className="rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-brand-700 active:bg-brand-800 transition-colors"
           >
             最安自動選択
           </button>
@@ -259,7 +260,7 @@ function ComparisonTab() {
                         <td
                           key={e.contractorId}
                           className={`py-2 px-3 text-right tabular-nums font-semibold ${
-                            isBest ? "text-emerald-700 bg-emerald-50" : "text-slate-600"
+                            isBest ? "text-brand-700 bg-brand-50" : "text-slate-600"
                           }`}
                         >
                           {priceEntry ? `¥${priceEntry.unitPrice.toLocaleString("ja-JP")}` : "—"}
@@ -281,7 +282,7 @@ function ComparisonTab() {
                       <td
                         key={tc.contractorId}
                         className={`py-2 px-3 text-right tabular-nums font-bold ${
-                          isBest ? "text-emerald-700" : "text-slate-700"
+                          isBest ? "text-brand-700" : "text-slate-700"
                         }`}
                       >
                         ¥{tc.totalAmount.toLocaleString("ja-JP")}
@@ -299,12 +300,12 @@ function ComparisonTab() {
 
       {/* 最安自動選択結果 */}
       {selectedBest && selectedBest.length > 0 && (
-        <div className="rounded-xl border border-emerald-200 bg-emerald-50/40 p-4 shadow-sm space-y-2">
-          <h3 className="text-sm font-bold text-emerald-800">採用結果（最安自動選択）</h3>
+        <div className="rounded-xl border border-brand-200 bg-brand-50/40 p-4 shadow-sm space-y-2">
+          <h3 className="text-sm font-bold text-brand-800">採用結果（最安自動選択）</h3>
           <div className="overflow-x-auto">
             <table className="w-full text-xs">
               <thead>
-                <tr className="border-b border-emerald-200 text-slate-500">
+                <tr className="border-b border-brand-200 text-slate-500">
                   <th className="py-1.5 text-left font-medium">品目</th>
                   <th className="py-1.5 text-left font-medium">採用業者</th>
                   <th className="py-1.5 text-right font-medium">単価</th>
@@ -314,21 +315,21 @@ function ComparisonTab() {
               </thead>
               <tbody>
                 {selectedBest.map((sel) => (
-                  <tr key={sel.itemName} className="border-b border-emerald-100">
+                  <tr key={sel.itemName} className="border-b border-brand-100">
                     <td className="py-1.5 text-slate-700 font-medium">{sel.itemName}</td>
-                    <td className="py-1.5 text-emerald-700 font-semibold">{sel.bestContractorName}</td>
+                    <td className="py-1.5 text-brand-700 font-semibold">{sel.bestContractorName}</td>
                     <td className="py-1.5 text-right tabular-nums">¥{sel.unitPrice.toLocaleString("ja-JP")}</td>
                     <td className="py-1.5 text-right tabular-nums">{sel.quantity}</td>
-                    <td className="py-1.5 text-right tabular-nums font-bold text-emerald-700">
+                    <td className="py-1.5 text-right tabular-nums font-bold text-brand-700">
                       ¥{sel.amount.toLocaleString("ja-JP")}
                     </td>
                   </tr>
                 ))}
               </tbody>
               <tfoot>
-                <tr className="border-t-2 border-emerald-200">
+                <tr className="border-t-2 border-brand-200">
                   <td colSpan={4} className="py-1.5 text-right font-semibold text-slate-500">合計</td>
-                  <td className="py-1.5 text-right font-bold text-emerald-700 tabular-nums">
+                  <td className="py-1.5 text-right font-bold text-brand-700 tabular-nums">
                     ¥{selectedBest.reduce((s, sel) => s + sel.amount, 0).toLocaleString("ja-JP")}
                   </td>
                 </tr>
@@ -467,7 +468,7 @@ function MatsubamebushiTab() {
                   <p className="text-sm font-bold tabular-nums mt-1">
                     ¥{pr.result.estimatePrice.toLocaleString("ja-JP")}
                   </p>
-                  <p className="text-[10px] text-emerald-600 tabular-nums">
+                  <p className="text-[10px] text-brand-600 tabular-nums">
                     粗利 ¥{pr.result.grossProfit.toLocaleString("ja-JP")}
                   </p>
                 </>
@@ -744,6 +745,7 @@ function EstimatePageContent() {
         propertyName: propertyName.trim(),
         clientName: clientName.trim() || "お客様",
         items: selectedItems.map((i) => ({ code: i.code, quantity: i.quantity })),
+        taxRounding: readTaxRoundingMode(),
         notes: [`目標粗利率 ${targetMargin}% で算出（粗利額: ¥${marginResult.grossProfit.toLocaleString("ja-JP")}）`],
       });
       setEstimate(est);
@@ -766,12 +768,8 @@ function EstimatePageContent() {
   };
 
   const handleQuantityChange = (code: string, qty: number) => {
-    if (qty <= 0) {
-      setSelectedItems((prev) => prev.filter((i) => i.code !== code));
-      return;
-    }
     setSelectedItems((prev) =>
-      prev.map((i) => (i.code === code ? { ...i, quantity: qty } : i)),
+      prev.map((i) => (i.code === code ? { ...i, quantity: Math.max(0, qty) } : i)),
     );
   };
 
@@ -795,6 +793,7 @@ function EstimatePageContent() {
         propertyName: propertyName.trim(),
         clientName: clientName.trim() || "お客様",
         items: selectedItems.map((i) => ({ code: i.code, quantity: i.quantity })),
+        taxRounding: readTaxRoundingMode(),
       });
       setEstimate(est);
     } catch (e) {
@@ -1129,22 +1128,16 @@ function EstimatePageContent() {
 
       <h2 className="text-base font-semibold text-slate-900">品目から手動で作成</h2>
 
-      {error && (
-        <div className="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
-          {error}
-        </div>
-      )}
-
       {takeoffInjectBanner && (
         <div
-          className="flex items-center justify-between rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800"
+          className="flex items-center justify-between rounded-lg border border-brand-200 bg-brand-50 px-4 py-3 text-sm text-brand-800"
           data-testid="takeoff-inject-banner"
         >
           <span>図面の拾い出し数量を品目に追加しました。単価を入力して見積を作成してください。</span>
           <button
             type="button"
             onClick={() => setTakeoffInjectBanner(false)}
-            className="ml-3 shrink-0 text-emerald-600 hover:text-emerald-800"
+            className="ml-3 shrink-0 text-brand-600 hover:text-brand-800"
             aria-label="閉じる"
           >
             ✕
@@ -1307,7 +1300,7 @@ function EstimatePageContent() {
               />
               <span className="text-xs text-slate-500">%</span>
               {marginResult && (
-                <span className="text-xs text-emerald-700 font-semibold tabular-nums">
+                <span className="text-xs text-brand-700 font-semibold tabular-nums">
                   → ¥{marginResult.estimatePrice.toLocaleString("ja-JP")}
                   <span className="ml-1 font-normal text-slate-400">
                     (粗利 ¥{marginResult.grossProfit.toLocaleString("ja-JP")})
@@ -1336,7 +1329,7 @@ function EstimatePageContent() {
                       <p className="text-xs font-semibold tabular-nums text-brand-700">
                         ¥{p.estimatePrice.toLocaleString("ja-JP")}
                       </p>
-                      <p className="text-[10px] text-emerald-600 tabular-nums">
+                      <p className="text-[10px] text-brand-600 tabular-nums">
                         粗利 ¥{p.grossProfit.toLocaleString("ja-JP")}
                       </p>
                     </div>
@@ -1354,7 +1347,7 @@ function EstimatePageContent() {
               {marginResult && (
                 <button
                   onClick={handleApplyMargin}
-                  className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700 active:bg-emerald-800 transition-colors"
+                  className="rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-brand-700 active:bg-brand-800 transition-colors"
                 >
                   粗利逆算で生成
                 </button>
@@ -1367,6 +1360,11 @@ function EstimatePageContent() {
               </button>
             </div>
           </div>
+          {error && (
+            <div className="mt-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">
+              {error}
+            </div>
+          )}
         </div>
       )}
 

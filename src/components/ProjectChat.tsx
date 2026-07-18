@@ -23,7 +23,7 @@ function avatarColor(name: string): string {
   const colors = [
     "#2563eb",
     "#7c3aed",
-    "#059669",
+    "#587b56",
     "#d97706",
     "#dc2626",
     "#0891b2",
@@ -97,7 +97,7 @@ const TYPE_CONFIG: Record<
 // ── Quick replies (current-field style, from Flutter) ────────────────────────
 
 const QUICK_REPLIES = [
-  { text: "了解", color: "#059669" },
+  { text: "了解", color: "#587b56" },
   { text: "完了", color: "#2563eb" },
   { text: "確認します", color: "#d97706" },
   { text: "現場到着", color: "#7c3aed" },
@@ -311,7 +311,7 @@ export function ProjectChat({
             onClick={() => setFilterType(tab.value)}
             className={`shrink-0 rounded-full px-2.5 py-0.5 text-[11px] font-medium transition-colors ${
               filterType === tab.value
-                ? "bg-emerald-600 text-white"
+                ? "bg-brand-600 text-white"
                 : "bg-white text-slate-500 border border-slate-200 hover:bg-slate-100"
             }`}
           >
@@ -513,7 +513,7 @@ export function ProjectChat({
           <button
             type="submit"
             disabled={submitting || !inputValue.trim()}
-            className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-emerald-600 text-white hover:bg-emerald-700 transition-colors disabled:opacity-40"
+            className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-brand-600 text-white hover:bg-brand-700 transition-colors disabled:opacity-40"
             aria-label="送信"
           >
             <svg

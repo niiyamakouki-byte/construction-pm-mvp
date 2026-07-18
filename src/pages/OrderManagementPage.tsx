@@ -49,7 +49,7 @@ const STATUS_COLORS: Record<PurchaseOrderStatus, string> = {
   納品済: "bg-indigo-50 text-indigo-700 border-indigo-200",
   検収済: "bg-teal-50 text-teal-700 border-teal-200",
   請求済: "bg-orange-50 text-orange-700 border-orange-200",
-  支払済: "bg-emerald-50 text-emerald-700 border-emerald-200",
+  支払済: "bg-brand-50 text-brand-700 border-brand-200",
 };
 
 const STATUS_ORDER: PurchaseOrderStatus[] = [
@@ -374,7 +374,7 @@ function OrderForm({
             </button>
             <button
               type="submit"
-              className="px-5 py-2 rounded-lg bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700"
+              className="px-5 py-2 rounded-lg bg-brand-600 text-white text-sm font-medium hover:bg-brand-700"
             >
               下書き保存
             </button>
@@ -471,7 +471,7 @@ function OrderCard({
           <button
             key={next}
             onClick={() => onTransition(order.id, next)}
-            className="px-3 py-1 rounded-lg text-xs font-medium bg-emerald-600 text-white hover:bg-emerald-700"
+            className="px-3 py-1 rounded-lg text-xs font-medium bg-brand-600 text-white hover:bg-brand-700"
           >
             → {next}
           </button>
@@ -649,7 +649,7 @@ export function OrderManagementPage({
         </div>
         <button
           onClick={() => setShowForm(true)}
-          className="px-4 py-2 rounded-lg bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700 shadow-sm"
+          className="px-4 py-2 rounded-lg bg-brand-600 text-white text-sm font-medium hover:bg-brand-700 shadow-sm"
         >
           + 発注書作成
         </button>
@@ -667,9 +667,9 @@ export function OrderManagementPage({
             {allOrders.filter((o) => !["支払済", "下書き"].includes(o.status)).length}
           </p>
         </div>
-        <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 shadow-sm">
-          <p className="text-xs text-emerald-600">支払済</p>
-          <p className="text-2xl font-bold text-emerald-700 mt-1">{summary["支払済"]}</p>
+        <div className="rounded-xl border border-brand-200 bg-brand-50 p-4 shadow-sm">
+          <p className="text-xs text-brand-600">支払済</p>
+          <p className="text-2xl font-bold text-brand-700 mt-1">{summary["支払済"]}</p>
         </div>
         <div className="rounded-xl border border-blue-200 bg-blue-50 p-4 shadow-sm">
           <p className="text-xs text-blue-600">未払合計</p>
@@ -682,13 +682,13 @@ export function OrderManagementPage({
         <div className="flex rounded-lg border border-slate-200 overflow-hidden text-sm">
           <button
             onClick={() => setViewMode("list")}
-            className={`px-3 py-1.5 ${viewMode === "list" ? "bg-emerald-600 text-white" : "bg-white text-slate-600 hover:bg-slate-50"}`}
+            className={`px-3 py-1.5 ${viewMode === "list" ? "bg-brand-600 text-white" : "bg-white text-slate-600 hover:bg-slate-50"}`}
           >
             リスト
           </button>
           <button
             onClick={() => setViewMode("kanban")}
-            className={`px-3 py-1.5 ${viewMode === "kanban" ? "bg-emerald-600 text-white" : "bg-white text-slate-600 hover:bg-slate-50"}`}
+            className={`px-3 py-1.5 ${viewMode === "kanban" ? "bg-brand-600 text-white" : "bg-white text-slate-600 hover:bg-slate-50"}`}
           >
             カンバン
           </button>

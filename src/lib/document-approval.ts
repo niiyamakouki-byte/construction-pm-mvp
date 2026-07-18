@@ -269,7 +269,7 @@ const STATUS_COLORS: Record<ApprovalStatus, string> = {
   draft: "#94a3b8",
   submitted: "#f97316",
   reviewing: "#3b82f6",
-  approved: "#22c55e",
+  approved: "#6f916c",
   rejected: "#ef4444",
   revised: "#f59e0b",
 };

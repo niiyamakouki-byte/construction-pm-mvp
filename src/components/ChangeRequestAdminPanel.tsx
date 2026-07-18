@@ -23,7 +23,7 @@ const statusLabel: Record<ChangeRequestStatus, string> = {
 const statusBg: Record<ChangeRequestStatus, string> = {
   pending: "bg-slate-100 text-slate-700",
   reviewing: "bg-amber-100 text-amber-700",
-  approved: "bg-emerald-100 text-emerald-700",
+  approved: "bg-brand-100 text-brand-700",
   rejected: "bg-red-100 text-red-700",
 };
 
@@ -119,7 +119,7 @@ export function ChangeRequestAdminPanel({ projectId }: { projectId: string }) {
                   <button
                     type="button"
                     onClick={() => handleUpdate(req, "approved")}
-                    className="rounded-lg bg-emerald-600 px-3 py-1 text-xs font-semibold text-white hover:bg-emerald-700"
+                    className="rounded-lg bg-brand-600 px-3 py-1 text-xs font-semibold text-white hover:bg-brand-700"
                   >
                     承認
                   </button>

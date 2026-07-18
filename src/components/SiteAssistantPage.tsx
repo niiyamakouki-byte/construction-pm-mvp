@@ -146,7 +146,7 @@ export function SiteAssistantPage() {
             <select
               value={state.projectId}
               onChange={(e) => dispatch({ type: "SET_PROJECT", payload: e.target.value })}
-              className="text-sm border border-stone-300 rounded-md px-2 py-1.5 bg-stone-50 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+              className="text-sm border border-stone-300 rounded-md px-2 py-1.5 bg-stone-50 focus:outline-none focus:ring-1 focus:ring-brand-500"
             >
               {DEMO_PROJECTS.map((p) => (
                 <option key={p.id} value={p.id}>
@@ -164,7 +164,7 @@ export function SiteAssistantPage() {
               onKeyDown={handleKeyDown}
               placeholder="例: 塗料が足りなくなりました。納品まで3日かかります。どうすればいいですか？"
               rows={3}
-              className="flex-1 resize-none rounded-md border border-stone-300 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-emerald-500 bg-stone-50"
+              className="flex-1 resize-none rounded-md border border-stone-300 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-brand-500 bg-stone-50"
             />
             <button
               onClick={handleSubmit}

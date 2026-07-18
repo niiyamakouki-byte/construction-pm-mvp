@@ -64,7 +64,7 @@ describe("DashboardCard", () => {
     const { container } = render(
       <DashboardCard title="A" value="1" accent="success" icon="X" />,
     );
-    expect(container.querySelector(".bg-emerald-100")).toBeDefined();
+    expect(container.querySelector(".bg-brand-100")).toBeDefined();
   });
 
   it("accent=warm で warm スタイルが適用される", () => {

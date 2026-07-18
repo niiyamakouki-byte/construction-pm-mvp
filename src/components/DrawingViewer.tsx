@@ -523,7 +523,7 @@ export function DrawingViewer({
           ctx.lineTo(points[i]!.x, points[i]!.y);
         }
         if (areaState.stage === "done") ctx.closePath();
-        ctx.strokeStyle = "#10b981";
+        ctx.strokeStyle = "#587b56";
         ctx.lineWidth = 2;
         ctx.stroke();
         if (areaState.stage === "done") {
@@ -534,7 +534,7 @@ export function DrawingViewer({
           const cy = points.reduce((s, p) => s + p.y, 0) / points.length;
           const label = `${areaState.areaSqm.toFixed(2)} ㎡`;
           ctx.font = "bold 14px sans-serif";
-          ctx.fillStyle = "#064e3b";
+          ctx.fillStyle = "#254b28";
           ctx.strokeStyle = "#fff";
           ctx.lineWidth = 4;
           ctx.strokeText(label, cx, cy);
@@ -543,7 +543,7 @@ export function DrawingViewer({
         points.forEach((p) => {
           ctx.beginPath();
           ctx.arc(p.x, p.y, 4, 0, Math.PI * 2);
-          ctx.fillStyle = "#10b981";
+          ctx.fillStyle = "#587b56";
           ctx.fill();
           ctx.strokeStyle = "#fff";
           ctx.lineWidth = 1.5;
@@ -1127,8 +1127,8 @@ export function DrawingViewer({
           </div>
         )}
         {mode === "area" && !noScaleWarning && (
-          <div className="absolute inset-0 border-2 border-emerald-400 rounded-2xl pointer-events-none flex items-start justify-center pt-3">
-            <span className="bg-emerald-500 text-white text-xs px-3 py-1 rounded-full shadow">
+          <div className="absolute inset-0 border-2 border-brand-400 rounded-2xl pointer-events-none flex items-start justify-center pt-3">
+            <span className="bg-brand-500 text-white text-xs px-3 py-1 rounded-full shadow">
               {areaState.stage === "done"
                 ? `面積: ${areaState.areaSqm.toFixed(2)} ㎡`
                 : `${areaState.points.length}点 — 3点以上で確定`}
@@ -1199,11 +1199,11 @@ export function DrawingViewer({
                     : key === "measure"
                     ? "bg-blue-600 text-white"
                     : key === "area"
-                    ? "bg-emerald-600 text-white"
+                    ? "bg-brand-600 text-white"
                     : key === "diff"
                     ? "bg-purple-600 text-white"
-                    : "bg-emerald-600 text-white"
-                  : "bg-slate-800 text-white hover:bg-slate-700"
+                    : "bg-brand-600 text-white"
+                  : "bg-brand-700 text-white hover:bg-brand-800"
               }`}
             >
               {label}
@@ -1298,7 +1298,7 @@ export function DrawingViewer({
               <button
                 type="button"
                 onClick={finalizeArea}
-                className="flex-1 rounded-2xl bg-emerald-600 py-2.5 text-sm font-bold text-white"
+                className="flex-1 rounded-2xl bg-brand-600 py-2.5 text-sm font-bold text-white"
               >
                 面積確定
               </button>
@@ -1398,7 +1398,7 @@ export function DrawingViewer({
             <button
               type="button"
               onClick={() => { setPopover(null); }}
-              className="rounded-2xl py-3 text-sm font-bold transition-colors bg-emerald-600 text-white"
+              className="rounded-2xl py-3 text-sm font-bold transition-colors bg-brand-600 text-white"
               style={{ display: "none" }}
             />
             {/* PDF report download button */}
@@ -1541,7 +1541,7 @@ function NewPinForm({ draft, onChange, onSave, onCancel }: NewPinFormProps) {
       <h3 className="text-base font-bold text-slate-800">ピンを追加</h3>
       <PinFields pin={draft} onChange={onChange} />
       <div className="flex gap-2">
-        <button type="button" onClick={onSave} className="flex-1 rounded-2xl bg-slate-800 py-2.5 text-sm font-bold text-white">
+        <button type="button" onClick={onSave} className="flex-1 rounded-2xl bg-brand-700 py-2.5 text-sm font-bold text-white">
           追加
         </button>
         <button type="button" onClick={onCancel} className="flex-1 rounded-2xl border border-slate-200 py-2.5 text-sm text-slate-600">
@@ -1573,7 +1573,7 @@ function PinDetail({ pin, editing, onEdit, onChange, onDelete, onClose }: PinDet
           <button
             type="button"
             onClick={() => { onChange(local); onClose(); }}
-            className="flex-1 rounded-2xl bg-slate-800 py-2.5 text-sm font-bold text-white"
+            className="flex-1 rounded-2xl bg-brand-700 py-2.5 text-sm font-bold text-white"
           >
             保存
           </button>
@@ -1791,7 +1791,7 @@ function PickupSidebar({
           <div className="flex items-center justify-between">
             <p className="text-xs font-semibold text-slate-700">数量集計</p>
             {totalCost > 0 && (
-              <p className="text-xs font-bold text-emerald-700">
+              <p className="text-xs font-bold text-brand-700">
                 合計 ¥{totalCost.toLocaleString("ja-JP")}
               </p>
             )}
@@ -1828,7 +1828,7 @@ function PickupSidebar({
                       {row.totalValue.toFixed(2)} {row.unit}
                     </span>
                     {row.totalCost > 0 && (
-                      <span className="text-[10px] text-emerald-600 font-semibold">
+                      <span className="text-[10px] text-brand-600 font-semibold">
                         ¥{row.totalCost.toLocaleString("ja-JP")}
                       </span>
                     )}
@@ -1852,7 +1852,7 @@ function PickupSidebar({
                           <span>
                             {seg.label ?? "—"} {seg.value.toFixed(2)} {row.unit}
                             {seg.linkedCostName && (
-                              <span className="ml-1 text-emerald-600">
+                              <span className="ml-1 text-brand-600">
                                 [{seg.linkedCostName}]
                               </span>
                             )}
@@ -1891,7 +1891,7 @@ function PickupSidebar({
                                 );
                               onExpandRow(null);
                             }}
-                            className="flex items-center justify-between rounded-lg bg-emerald-50 px-2 py-1 text-xs text-emerald-800 hover:bg-emerald-100"
+                            className="flex items-center justify-between rounded-lg bg-brand-50 px-2 py-1 text-xs text-brand-800 hover:bg-brand-100"
                           >
                             <span className="truncate">{s.name}</span>
                             <span className="ml-2 shrink-0">

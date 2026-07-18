@@ -24,7 +24,7 @@ const PROJECT_TYPE_LABELS: Record<ProjectType, string> = {
 };
 
 const STATUS_STYLES: Record<ChecklistItemStatus, { bg: string; label: string }> = {
-  pass: { bg: "bg-emerald-50 border-emerald-200 text-emerald-700", label: "合格" },
+  pass: { bg: "bg-brand-50 border-brand-200 text-brand-700", label: "合格" },
   fail: { bg: "bg-red-50 border-red-200 text-red-700", label: "不合格" },
   na: { bg: "bg-slate-50 border-slate-200 text-slate-500", label: "N/A" },
 };
@@ -56,7 +56,7 @@ const SEVERITY_LABELS: Record<NearMissReport["severity"], string> = {
 const SEVERITY_STYLES: Record<NearMissReport["severity"], string> = {
   high: "bg-red-50 text-red-700 border-red-200",
   medium: "bg-amber-50 text-amber-700 border-amber-200",
-  low: "bg-emerald-50 text-emerald-700 border-emerald-200",
+  low: "bg-brand-50 text-brand-700 border-brand-200",
 };
 
 // ── Tab type ─────────────────────────────────────────────────────────────────
@@ -159,7 +159,7 @@ function KyActivityTab() {
         >
           記録を保存
         </button>
-        {saved && <p className="text-center text-xs text-emerald-600 font-semibold">保存しました</p>}
+        {saved && <p className="text-center text-xs text-brand-600 font-semibold">保存しました</p>}
       </form>
 
       {records.length > 0 && (
@@ -303,7 +303,7 @@ function NearMissTab() {
         >
           報告を保存
         </button>
-        {saved && <p className="text-center text-xs text-emerald-600 font-semibold">保存しました</p>}
+        {saved && <p className="text-center text-xs text-brand-600 font-semibold">保存しました</p>}
       </form>
 
       {reports.length > 0 && (
@@ -465,14 +465,14 @@ function SafetyDocumentsTab({ projectId }: { projectId: string }) {
         <button
           type="submit"
           disabled={!copySourceId || !copyProjectId}
-          className="w-full rounded-xl bg-slate-700 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-slate-800 disabled:opacity-40"
+          className="w-full rounded-xl bg-brand-700 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-brand-800 disabled:opacity-40"
         >
           コピー
         </button>
       </form>
 
       {status && (
-        <p className="text-center text-xs font-semibold text-emerald-600">{status}</p>
+        <p className="text-center text-xs font-semibold text-brand-600">{status}</p>
       )}
 
       {/* 書類一覧 */}
@@ -724,9 +724,9 @@ export function SafetyInspectionPage() {
               </div>
 
               <div className="grid grid-cols-3 gap-2">
-                <div className="rounded-xl bg-emerald-50 p-3 text-center border border-emerald-100">
-                  <p className="text-lg font-bold tabular-nums text-emerald-700">{evaluation?.passCount ?? 0}</p>
-                  <p className="text-[10px] font-semibold text-emerald-600 uppercase tracking-wider">合格</p>
+                <div className="rounded-xl bg-brand-50 p-3 text-center border border-brand-100">
+                  <p className="text-lg font-bold tabular-nums text-brand-700">{evaluation?.passCount ?? 0}</p>
+                  <p className="text-[10px] font-semibold text-brand-600 uppercase tracking-wider">合格</p>
                 </div>
                 <div className="rounded-xl bg-red-50 p-3 text-center border border-red-100">
                   <p className="text-lg font-bold tabular-nums text-red-700">{evaluation?.failCount ?? 0}</p>
@@ -737,13 +737,13 @@ export function SafetyInspectionPage() {
                   return (
                     <div className={`rounded-xl p-3 text-center border ${
                       passRate >= 90
-                        ? "bg-emerald-50 border-emerald-100"
+                        ? "bg-brand-50 border-brand-100"
                         : passRate >= 70
                           ? "bg-amber-50 border-amber-100"
                           : "bg-red-50 border-red-100"
                     }`}>
                       <p className={`text-lg font-bold tabular-nums ${
-                        passRate >= 90 ? "text-emerald-700" : passRate >= 70 ? "text-amber-700" : "text-red-700"
+                        passRate >= 90 ? "text-brand-700" : passRate >= 70 ? "text-amber-700" : "text-red-700"
                       }`}>
                         {passRate}%
                       </p>
@@ -791,7 +791,7 @@ export function SafetyInspectionPage() {
                                 className={`rounded-lg px-2 py-1 text-[10px] font-bold transition-all ${
                                   item.status === status
                                     ? status === "pass"
-                                      ? "bg-emerald-600 text-white"
+                                      ? "bg-brand-600 text-white"
                                       : status === "fail"
                                         ? "bg-red-600 text-white"
                                         : "bg-slate-500 text-white"

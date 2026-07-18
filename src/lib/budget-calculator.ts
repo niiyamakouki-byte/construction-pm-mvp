@@ -115,7 +115,7 @@ export function generateBudgetReport(breakdown: BudgetBreakdown): string {
   }[breakdown.status];
 
   const statusColor = {
-    under_budget: "#22c55e",
+    under_budget: "#6f916c",
     on_budget: "#3b82f6",
     over_budget: "#ef4444",
   }[breakdown.status];

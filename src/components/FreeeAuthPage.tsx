@@ -205,7 +205,7 @@ export function FreeeAuthPage({ onConnected, onDisconnected }: FreeeAuthPageProp
       {status === "connected" ? (
         <div className="mt-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="inline-block h-2.5 w-2.5 rounded-full bg-emerald-500" />
+            <span className="inline-block h-2.5 w-2.5 rounded-full bg-brand-500" />
             <span className="text-sm font-medium text-slate-700">接続済み</span>
           </div>
           <button
@@ -229,7 +229,7 @@ export function FreeeAuthPage({ onConnected, onDisconnected }: FreeeAuthPageProp
             type="button"
             onClick={handleConnect}
             disabled={busy}
-            className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700 disabled:opacity-60"
+            className="inline-flex items-center gap-2 rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-brand-700 disabled:opacity-60"
           >
             {busy ? "接続中..." : "再接続する"}
           </button>
@@ -244,7 +244,7 @@ export function FreeeAuthPage({ onConnected, onDisconnected }: FreeeAuthPageProp
             type="button"
             onClick={handleConnect}
             disabled={busy}
-            className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700 disabled:opacity-60"
+            className="inline-flex items-center gap-2 rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-brand-700 disabled:opacity-60"
           >
             {busy ? "接続中..." : "freee と連携する"}
           </button>

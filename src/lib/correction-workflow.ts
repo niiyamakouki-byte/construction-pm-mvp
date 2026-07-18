@@ -274,7 +274,7 @@ const STATUS_COLORS: Record<CorrectionStatus, string> = {
   notified: "#f97316",
   in_progress: "#f59e0b",
   corrected: "#3b82f6",
-  approved: "#22c55e",
+  approved: "#6f916c",
   rejected: "#6b7280",
 };
 
@@ -351,7 +351,7 @@ export function buildDamageReportHtml(
     .summary-item .value { font-weight: 700; margin-left: 4px; }
     .summary-item.open .value { color: #ef4444; }
     .summary-item.in-progress .value { color: #f59e0b; }
-    .summary-item.completed .value { color: #22c55e; }
+    .summary-item.completed .value { color: #6f916c; }
     @media print { body { margin: 0; } }
   </style>
 </head>

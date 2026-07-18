@@ -440,7 +440,7 @@ export function ProgressReviewPage() {
       )}
 
       {deltas.length === 0 && progressList.length > 0 && !loading && (
-        <div className="rounded-2xl bg-emerald-50 px-4 py-4 ring-1 ring-emerald-200 text-sm text-emerald-700">
+        <div className="rounded-2xl bg-brand-50 px-4 py-4 ring-1 ring-brand-200 text-sm text-brand-700">
           遅延は検出されませんでした。
         </div>
       )}

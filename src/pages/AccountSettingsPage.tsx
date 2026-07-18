@@ -11,6 +11,12 @@ import {
   isPasswordRecoveryMode,
 } from "../lib/password-recovery.js";
 import { PushNotificationCard } from "../components/PushNotificationCard.js";
+import {
+  TAX_ROUNDING_LABELS,
+  readTaxRoundingMode,
+  writeTaxRoundingMode,
+  type TaxRoundingMode,
+} from "../lib/tax-rounding.js";
 
 function getOAuthRedirectUrl(): string | undefined {
   if (typeof window === "undefined") return undefined;
@@ -56,6 +62,7 @@ export function AccountSettingsPage() {
   const [pwLoading, setPwLoading] = useState(false);
   const [pwError, setPwError] = useState<string | null>(null);
   const [pwSuccess, setPwSuccess] = useState<string | null>(null);
+  const [taxRounding, setTaxRounding] = useState<TaxRoundingMode>(() => readTaxRoundingMode());
 
   const handlePasswordChange = async (e: FormEvent) => {
     e.preventDefault();
@@ -134,7 +141,7 @@ export function AccountSettingsPage() {
           <span
             className={`rounded-full px-3 py-1 text-xs font-semibold ${
               googleConnected
-                ? "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200"
+                ? "bg-brand-50 text-brand-700 ring-1 ring-brand-200"
                 : "bg-slate-100 text-slate-600 ring-1 ring-slate-200"
             }`}
           >
@@ -158,6 +165,28 @@ export function AccountSettingsPage() {
       {/* プッシュ通知 */}
       <PushNotificationCard />
 
+      <section className="mb-8 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+        <h2 className="mb-2 text-base font-semibold text-slate-800">見積の消費税端数</h2>
+        <p className="mb-4 text-sm text-slate-500">新しく作る見積の消費税1円未満を処理します。既定は切捨てです。</p>
+        <label htmlFor="tax-rounding" className="mb-1 block text-sm font-medium text-slate-700">
+          丸め方式
+        </label>
+        <select
+          id="tax-rounding"
+          value={taxRounding}
+          onChange={(event) => {
+            const mode = event.target.value as TaxRoundingMode;
+            setTaxRounding(mode);
+            writeTaxRoundingMode(mode);
+          }}
+          className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-slate-900 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200"
+        >
+          {Object.entries(TAX_ROUNDING_LABELS).map(([mode, label]) => (
+            <option key={mode} value={mode}>{label}</option>
+          ))}
+        </select>
+      </section>
+
       {/* パスワード変更 */}
       <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
         <h2 className="mb-4 text-base font-semibold text-slate-800">パスワード変更</h2>
@@ -174,7 +203,7 @@ export function AccountSettingsPage() {
           </div>
         )}
         {pwSuccess && (
-          <div className="mb-4 rounded-lg bg-emerald-50 px-4 py-3 text-sm text-emerald-700" role="status">
+          <div className="mb-4 rounded-lg bg-brand-50 px-4 py-3 text-sm text-brand-700" role="status">
             {pwSuccess}
           </div>
         )}

@@ -7,6 +7,7 @@ import type {
   EstimateRequest,
 } from "./types";
 import costMasterData from "./cost-master.json";
+import { applyTaxRounding } from "../lib/tax-rounding.js";
 
 const master: CostMaster = costMasterData as CostMaster;
 
@@ -60,6 +61,7 @@ export function generateEstimate(req: EstimateRequest): Estimate {
     validDays = 30,
     managementFeeRate = 0.1,
     generalExpenseRate = 0.05,
+    taxRounding = "floor",
     items,
     notes = [],
   } = req;
@@ -129,7 +131,7 @@ export function generateEstimate(req: EstimateRequest): Estimate {
     (directCost + managementFee) * generalExpenseRate,
   );
   const subtotal = directCost + managementFee + generalExpense;
-  const tax = Math.round(subtotal * master.taxRate);
+  const tax = applyTaxRounding(subtotal * master.taxRate, taxRounding);
   const total = subtotal + tax;
 
   const now = new Date();
@@ -151,6 +153,7 @@ export function generateEstimate(req: EstimateRequest): Estimate {
     subtotal,
     tax,
     taxRate: master.taxRate,
+    taxRounding,
     total,
     notes,
   };

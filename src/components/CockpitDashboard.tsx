@@ -274,10 +274,10 @@ function WorkersCard({ entries }: { entries: SiteEntryRecord[] }) {
   const companies = Object.entries(byCompany);
 
   return (
-    <div className="rounded-xl border border-emerald-100 bg-emerald-50/40 p-4 backdrop-blur-sm">
+    <div className="rounded-xl border border-brand-100 bg-brand-50/40 p-4 backdrop-blur-sm">
       <div className="flex items-center justify-between mb-2">
         <p className="text-xs font-semibold text-slate-500">本日の入場者</p>
-        <span className="text-2xl font-bold text-emerald-700">{count}<span className="text-sm font-semibold text-slate-500 ml-0.5">名</span></span>
+        <span className="text-2xl font-bold text-brand-700">{count}<span className="text-sm font-semibold text-slate-500 ml-0.5">名</span></span>
       </div>
 
       {companies.length > 0 ? (
@@ -285,7 +285,7 @@ function WorkersCard({ entries }: { entries: SiteEntryRecord[] }) {
           {companies.map(([company, n]) => (
             <span
               key={company}
-              className="rounded-full bg-white/80 border border-emerald-100 px-2 py-0.5 text-[10px] font-medium text-slate-600"
+              className="rounded-full bg-white/80 border border-brand-100 px-2 py-0.5 text-[10px] font-medium text-slate-600"
             >
               {company}: {n}名
             </span>
@@ -349,9 +349,9 @@ function alertTypeLabel(type: RiskAlert["type"]): string {
 function RiskAlertsCard({ alerts }: { alerts: RiskAlert[] }) {
   if (alerts.length === 0) {
     return (
-      <div className="rounded-xl border border-emerald-100 bg-emerald-50/40 p-4 backdrop-blur-sm">
+      <div className="rounded-xl border border-brand-100 bg-brand-50/40 p-4 backdrop-blur-sm">
         <p className="text-xs font-semibold text-slate-500">AIリスク予測</p>
-        <p className="mt-1 text-sm text-emerald-700 font-semibold">リスクなし — 順調です</p>
+        <p className="mt-1 text-sm text-brand-700 font-semibold">リスクなし — 順調です</p>
       </div>
     );
   }
@@ -440,7 +440,7 @@ function CeoOverviewCard({
       {/* Legend */}
       <div className="flex gap-3 text-[10px] text-slate-500 mb-3">
         <span className="flex items-center gap-1">
-          <span className="inline-block w-2 h-2 rounded-sm bg-emerald-500" />
+          <span className="inline-block w-2 h-2 rounded-sm bg-brand-500" />
           順調 {onTrack}
         </span>
         <span className="flex items-center gap-1">

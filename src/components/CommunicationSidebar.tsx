@@ -16,7 +16,7 @@ type StockItem = {
 
 const MOCK_STOCK_ITEMS: StockItem[] = [
   { id: "1", name: "1F平面図_v3.pdf", type: "PDF", thumbnailBg: "#dbeafe" },
-  { id: "2", name: "電気配線図.dwg", type: "CAD", thumbnailBg: "#dcfce7" },
+  { id: "2", name: "電気配線図.dwg", type: "CAD", thumbnailBg: "#edf3ec" },
   { id: "3", name: "仕上げ表_最終.xlsx", type: "Excel", thumbnailBg: "#fef9c3" },
   { id: "4", name: "外観パース.png", type: "画像", thumbnailBg: "#fce7f3" },
 ];

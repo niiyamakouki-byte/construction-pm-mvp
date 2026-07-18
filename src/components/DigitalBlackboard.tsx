@@ -216,7 +216,7 @@ export function DigitalBlackboard({ photoUrl, defaults }: Props) {
           type="button"
           onClick={handleComposite}
           disabled={!hasImage}
-          className="flex-1 rounded-2xl bg-slate-800 py-3 text-sm font-bold text-white disabled:opacity-40 active:opacity-70"
+          className="flex-1 rounded-2xl bg-brand-700 py-3 text-sm font-bold text-white disabled:opacity-40 active:opacity-70"
         >
           黒板を合成
         </button>
@@ -224,7 +224,7 @@ export function DigitalBlackboard({ photoUrl, defaults }: Props) {
           type="button"
           onClick={handleDownload}
           disabled={!composited}
-          className="flex-1 rounded-2xl bg-emerald-600 py-3 text-sm font-bold text-white disabled:opacity-40 active:opacity-70"
+          className="flex-1 rounded-2xl bg-brand-600 py-3 text-sm font-bold text-white disabled:opacity-40 active:opacity-70"
         >
           ダウンロード
         </button>

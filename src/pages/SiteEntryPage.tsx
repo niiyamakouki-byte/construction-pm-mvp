@@ -344,7 +344,7 @@ export function SiteEntryPage({ projectId }: { projectId: string }) {
       {flash && (
         <div
           className={`pointer-events-none fixed inset-0 z-50 flex flex-col items-center justify-center gap-4 ${
-            flash.type === "in" ? "bg-emerald-500/90" : "bg-red-500/90"
+            flash.type === "in" ? "bg-brand-500/90" : "bg-red-500/90"
           }`}
         >
           <span className="text-[80px] font-black text-white leading-none">
@@ -367,7 +367,7 @@ export function SiteEntryPage({ projectId }: { projectId: string }) {
             </p>
             <label className="flex flex-col items-center justify-center gap-3 border-2 border-dashed border-slate-300 rounded-xl py-8 cursor-pointer hover:border-brand-400 transition-colors">
               {startPhotoFile ? (
-                <span className="text-emerald-600 font-bold text-sm">
+                <span className="text-brand-600 font-bold text-sm">
                   ✓ {startPhotoFile.name}
                 </span>
               ) : (
@@ -405,7 +405,7 @@ export function SiteEntryPage({ projectId }: { projectId: string }) {
                 type="button"
                 disabled={!startPhotoFile}
                 onClick={() => void handleStartPhotoConfirm()}
-                className="flex-1 rounded-xl bg-emerald-600 px-4 py-3 text-base font-bold text-white disabled:opacity-50 hover:bg-emerald-700"
+                className="flex-1 rounded-xl bg-brand-600 px-4 py-3 text-base font-bold text-white disabled:opacity-50 hover:bg-brand-700"
               >
                 入場
               </button>
@@ -424,7 +424,7 @@ export function SiteEntryPage({ projectId }: { projectId: string }) {
             </p>
             <label className="flex flex-col items-center justify-center gap-3 border-2 border-dashed border-slate-300 rounded-xl py-8 cursor-pointer hover:border-brand-400 transition-colors">
               {endPhotoFile ? (
-                <span className="text-emerald-600 font-bold text-sm">
+                <span className="text-brand-600 font-bold text-sm">
                   ✓ {endPhotoFile.name}
                 </span>
               ) : (
@@ -529,7 +529,7 @@ export function SiteEntryPage({ projectId }: { projectId: string }) {
                 <button
                   type="submit"
                   disabled={!manualName.trim()}
-                  className="flex-1 rounded-xl bg-emerald-600 px-4 py-3 text-base font-bold text-white disabled:opacity-50 hover:bg-emerald-700"
+                  className="flex-1 rounded-xl bg-brand-600 px-4 py-3 text-base font-bold text-white disabled:opacity-50 hover:bg-brand-700"
                 >
                   次へ
                 </button>
@@ -786,7 +786,7 @@ export function SiteEntryPage({ projectId }: { projectId: string }) {
                 type="button"
                 disabled={!selectedWorker}
                 onClick={() => selectedWorker && handleSelectWorker(selectedWorker)}
-                className="w-full rounded-2xl bg-emerald-500 disabled:bg-slate-600 disabled:opacity-40 py-6 font-black text-4xl text-white shadow-lg hover:bg-emerald-400 active:bg-emerald-600 transition-colors mb-4"
+                className="w-full rounded-2xl bg-brand-500 disabled:bg-slate-600 disabled:opacity-40 py-6 font-black text-4xl text-white shadow-lg hover:bg-brand-400 active:bg-brand-600 transition-colors mb-4"
                 style={{ minHeight: 100 }}
               >
                 IN
@@ -878,7 +878,7 @@ export function SiteEntryPage({ projectId }: { projectId: string }) {
                   : ""}
               </span>
               {!rec.exitTime && (
-                <span className="rounded-full bg-emerald-100 px-1.5 py-0.5 text-[10px] font-bold text-emerald-700">
+                <span className="rounded-full bg-brand-100 px-1.5 py-0.5 text-[10px] font-bold text-brand-700">
                   入場中
                 </span>
               )}

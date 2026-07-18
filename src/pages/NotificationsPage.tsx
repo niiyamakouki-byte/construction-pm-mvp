@@ -12,7 +12,7 @@ const statusLabel: Record<NotificationStatus, string> = {
 
 const statusColor: Record<NotificationStatus, string> = {
   pending: "bg-amber-100 text-amber-700",
-  sent: "bg-emerald-100 text-emerald-700",
+  sent: "bg-brand-100 text-brand-700",
   failed: "bg-red-100 text-red-700",
 };
 
@@ -112,7 +112,7 @@ export function NotificationsPage() {
             <button
               onClick={() => void handleMarkAllSent()}
               disabled={loading}
-              className="rounded-lg bg-emerald-500 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-600 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+              className="rounded-lg bg-brand-500 px-3 py-1.5 text-xs font-semibold text-white hover:bg-brand-600 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
               style={{ minHeight: 36 }}
             >
               全て送信済みに
@@ -197,7 +197,7 @@ export function NotificationsPage() {
                   <button
                     onClick={() => void handleMarkSent(n.id)}
                     disabled={updating.has(n.id)}
-                    className="rounded px-2 py-1 text-xs font-medium text-emerald-600 hover:bg-emerald-50 transition-colors disabled:opacity-50"
+                    className="rounded px-2 py-1 text-xs font-medium text-brand-600 hover:bg-brand-50 transition-colors disabled:opacity-50"
                     aria-label="送信済みにする"
                   >
                     {updating.has(n.id) ? "..." : "送信済み"}

@@ -131,7 +131,7 @@ export function buildPhotoLinkReportHtml(
             const pinLinks = links.filter((l) => l.pinId === pinId);
             const hasPhoto = pinLinks.length > 0;
             const statusLabel = hasPhoto ? "撮影済" : "未撮影";
-            const statusColor = hasPhoto ? "#22c55e" : "#ef4444";
+            const statusColor = hasPhoto ? "#6f916c" : "#ef4444";
             const photoCount = pinLinks.length;
             return `<tr>
               <td style="text-align:center">${idx + 1}</td>

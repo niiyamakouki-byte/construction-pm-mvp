@@ -951,7 +951,7 @@ export function DocumentsPage({ projectId }: { projectId: string }) {
                           <p className="font-semibold text-slate-900">
                             {version.version}
                             {index === 0 ? (
-                              <span className="ml-2 rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-semibold text-emerald-700">
+                              <span className="ml-2 rounded-full bg-brand-100 px-2 py-0.5 text-[11px] font-semibold text-brand-700">
                                 現在版
                               </span>
                             ) : null}

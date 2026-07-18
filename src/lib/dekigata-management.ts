@@ -186,7 +186,7 @@ const STATUS_LABELS: Record<DekigataStatus, string> = {
 };
 
 const STATUS_COLORS: Record<DekigataStatus, string> = {
-  pass: "#22c55e",
+  pass: "#6f916c",
   fail: "#ef4444",
   pending: "#94a3b8",
 };

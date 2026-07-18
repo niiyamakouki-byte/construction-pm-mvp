@@ -143,6 +143,21 @@ describe("EstimatePage", () => {
     expect(quantityInput.value).toBe("4");
   });
 
+  it("数量入力を空にしても明細行を削除しない", async () => {
+    const user = userEvent.setup();
+    await renderEstimatePage();
+
+    await user.click(screen.getByRole("button", { name: /解体・撤去/ }));
+    await user.click(screen.getByRole("button", { name: /内装解体（木造）/ }));
+    const quantityInput = within(getSelectedRow("内装解体（木造）")).getByRole("spinbutton");
+
+    fireEvent.change(quantityInput, { target: { value: "" } });
+
+    expect(screen.getByText("選択済み品目 (1件)")).toBeDefined();
+    expect((quantityInput as HTMLInputElement).value).toBe("0");
+    expect(within(getSelectedRow("内装解体（木造）")).getByRole("button", { name: "内装解体（木造）を削除" })).toBeDefined();
+  });
+
   it("削除確認で選択済み品目の削除キャンセルと承諾を分岐する", async () => {
     const user = userEvent.setup();
     await renderEstimatePage();
@@ -175,6 +190,9 @@ describe("EstimatePage", () => {
       expect(screen.getByText("物件名を入力してください")).toBeDefined(),
     );
     expect(mocks.generateEstimate).not.toHaveBeenCalled();
+    const button = screen.getByRole("button", { name: "見積書を生成" });
+    const alert = screen.getByRole("alert");
+    expect(button.compareDocumentPosition(alert) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
   it("選択品目が空の状態では見積書を生成ボタンごと非表示になる", async () => {
@@ -232,6 +250,7 @@ describe("EstimatePage", () => {
         propertyName: "渋谷オフィス改修工事",
         clientName: "株式会社テスト",
         items: [{ code: "DM-001", quantity: 2 }],
+        taxRounding: "floor",
       }),
     );
 

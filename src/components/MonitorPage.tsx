@@ -93,7 +93,7 @@ function GanttPanel({ snapshot }: { snapshot: MonitorSnapshot | null }) {
         aria-valuemax={100}
       >
         <div
-          className="h-full rounded-full bg-emerald-500 transition-all"
+          className="h-full rounded-full bg-brand-500 transition-all"
           style={{ width: `${ganttSummary.totalProgress}%` }}
         />
       </div>
@@ -109,7 +109,7 @@ function GanttPanel({ snapshot }: { snapshot: MonitorSnapshot | null }) {
           )}
           {ganttSummary.onTrack > 0 && (
             <span className="flex items-center gap-1 text-slate-600">
-              <span className="inline-block w-2 h-2 rounded-full bg-emerald-400" />
+              <span className="inline-block w-2 h-2 rounded-full bg-brand-400" />
               順調 {ganttSummary.onTrack}
             </span>
           )}

@@ -36,7 +36,7 @@ export const TAKEOFF_CATEGORY_COLORS: Record<TakeoffSegmentCategory, string> = {
   天井: "#3b82f6",     // blue
   巾木: "#f97316",     // orange
   廻り縁: "#06b6d4",   // cyan
-  天井見切: "#10b981", // emerald
+  天井見切: "#587b56", // emerald
   床見切: "#eab308",   // yellow
   開口部: "#ec4899",   // pink
   その他: "#6b7280",   // gray

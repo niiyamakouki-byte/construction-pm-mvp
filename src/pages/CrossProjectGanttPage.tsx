@@ -21,7 +21,7 @@ const statusLabel: Record<TaskStatus, string> = {
 
 const statusBadge: Record<TaskStatus, string> = {
   todo: "bg-gray-100 text-gray-500",
-  in_progress: "bg-emerald-100 text-emerald-800",
+  in_progress: "bg-brand-100 text-brand-800",
   done: "bg-gray-200 text-gray-600",
 };
 

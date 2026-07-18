@@ -32,7 +32,7 @@ function StageStatusBadge({ status }: { status: StageProgress["status"] }) {
   const config: Record<string, { label: string; className: string }> = {
     notStarted: { label: "未着手", className: "bg-slate-100 text-slate-500" },
     inProgress: { label: "進行中", className: "bg-orange-100 text-orange-600" },
-    completed: { label: "完了", className: "bg-emerald-100 text-emerald-700" },
+    completed: { label: "完了", className: "bg-brand-100 text-brand-700" },
     blocked: { label: "ブロック", className: "bg-red-100 text-red-600" },
   };
   const { label, className } = config[status] ?? config.notStarted;
@@ -76,7 +76,7 @@ export function ProjectFlowWidget({
           </p>
         </div>
         {canAdvance && (
-          <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-700">
+          <span className="rounded-full bg-brand-100 px-2 py-0.5 text-xs font-semibold text-brand-700">
             次のステージへ進める
           </span>
         )}
@@ -95,7 +95,7 @@ export function ProjectFlowWidget({
                 key={stage}
                 className={`h-2 flex-1 rounded-sm transition-colors ${
                   isCompleted
-                    ? "bg-emerald-500"
+                    ? "bg-brand-500"
                     : isCurrent || isInProgress
                       ? "bg-orange-400"
                       : "bg-slate-200"
@@ -129,7 +129,7 @@ export function ProjectFlowWidget({
                 isCurrent
                   ? "border-orange-200 bg-orange-50"
                   : isCompleted
-                    ? "border-emerald-100 bg-emerald-50/40"
+                    ? "border-brand-100 bg-brand-50/40"
                     : "border-transparent hover:border-slate-100"
               }`}
             >
@@ -144,7 +144,7 @@ export function ProjectFlowWidget({
                 <div
                   className={`flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full text-xs font-bold ${
                     isCompleted
-                      ? "bg-emerald-500 text-white"
+                      ? "bg-brand-500 text-white"
                       : isCurrent
                         ? "bg-orange-400 text-white"
                         : "bg-slate-200 text-slate-500"
@@ -163,7 +163,7 @@ export function ProjectFlowWidget({
                       isCurrent
                         ? "text-orange-700"
                         : isCompleted
-                          ? "text-emerald-700"
+                          ? "text-brand-700"
                           : "text-slate-600"
                     }`}
                   >
@@ -211,7 +211,7 @@ export function ProjectFlowWidget({
                           <span
                             className={`flex h-5 w-5 flex-shrink-0 items-center justify-center rounded border text-xs ${
                               item.completed
-                                ? "border-emerald-500 bg-emerald-500 text-white"
+                                ? "border-brand-500 bg-brand-500 text-white"
                                 : item.required
                                   ? "border-orange-400 bg-white"
                                   : "border-slate-300 bg-white"

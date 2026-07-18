@@ -17,10 +17,10 @@ import { calculateRainDelay, type DailyForecast as WIForecast } from "../lib/wea
 
 const riskCardMap = {
   normal: {
-    border: "border-emerald-200",
-    bg: "bg-emerald-50",
-    text: "text-emerald-900",
-    badge: "bg-emerald-100 text-emerald-700",
+    border: "border-brand-200",
+    bg: "bg-brand-50",
+    text: "text-brand-900",
+    badge: "bg-brand-100 text-brand-700",
     label: "施工可",
   },
   warning: {
@@ -168,7 +168,7 @@ function SiteSelector({
             onClick={() => onSelect(site.siteId)}
             className={`min-w-[14rem] rounded-2xl border px-4 py-3 text-left transition-colors ${
               active
-                ? "border-slate-900 bg-slate-900 text-white"
+                ? "border-brand-700 bg-brand-700 text-white"
                 : "border-slate-200 bg-white text-slate-700 hover:border-slate-300"
             }`}
           >
@@ -306,10 +306,10 @@ export function WeatherPage() {
           </section>
 
           <section className="grid gap-3 md:grid-cols-3">
-            <div className="rounded-[24px] border border-emerald-200 bg-emerald-50 px-4 py-4">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700">施工可</p>
-              <p className="mt-2 text-3xl font-bold text-emerald-900">{summary.normal}</p>
-              <p className="mt-1 text-sm text-emerald-800">通常工程を維持できる日</p>
+            <div className="rounded-[24px] border border-brand-200 bg-brand-50 px-4 py-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-brand-700">施工可</p>
+              <p className="mt-2 text-3xl font-bold text-brand-900">{summary.normal}</p>
+              <p className="mt-1 text-sm text-brand-800">通常工程を維持できる日</p>
             </div>
             <div className="rounded-[24px] border border-amber-200 bg-amber-50 px-4 py-4">
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-amber-700">要注意</p>

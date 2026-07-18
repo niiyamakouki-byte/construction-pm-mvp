@@ -201,7 +201,7 @@ export function GanttChart({
     "on-track": "bg-blue-500 text-blue-700",
     "at-risk": "bg-amber-500 text-amber-700",
     missed: "bg-red-500 text-red-700",
-    completed: "bg-emerald-500 text-emerald-700",
+    completed: "bg-brand-500 text-brand-700",
   };
 
   return (

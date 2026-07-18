@@ -27,6 +27,11 @@ describe("AccountSettingsPage", () => {
       user: { id: "user-1", email: "worker@example.com" },
     });
     window.sessionStorage.clear();
+    const values = new Map<string, string>();
+    vi.stubGlobal("localStorage", {
+      getItem: (key: string) => values.get(key) ?? null,
+      setItem: (key: string, value: string) => values.set(key, value),
+    });
   });
 
   it("lets password recovery users set a new password without the current password", async () => {
@@ -59,5 +64,15 @@ describe("AccountSettingsPage", () => {
     });
     expect(signInWithPassword).not.toHaveBeenCalled();
     expect(window.sessionStorage.getItem("genbahub_password_recovery")).toBeNull();
+  });
+
+  it("消費税端数の丸め方式を選択して保存できる", () => {
+    render(<AccountSettingsPage />);
+
+    const select = screen.getByLabelText("丸め方式") as HTMLSelectElement;
+    expect(select.value).toBe("floor");
+    fireEvent.change(select, { target: { value: "ceil" } });
+    expect(select.value).toBe("ceil");
+    expect(localStorage.getItem("genbahub:estimate-tax-rounding")).toBe("ceil");
   });
 });

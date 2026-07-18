@@ -113,7 +113,7 @@ const statusLabel: Record<TaskStatus, string> = {
 
 const statusBg: Record<TaskStatus, string> = {
   todo: "bg-gray-100 text-gray-500",
-  in_progress: "bg-emerald-100 text-emerald-800",
+  in_progress: "bg-brand-100 text-brand-800",
   done: "bg-gray-200 text-gray-600",
 };
 
@@ -130,7 +130,7 @@ const projectModeLabel: Record<ProjectMode, string> = {
 };
 
 const projectModeClass: Record<ProjectMode, string> = {
-  memo: "bg-emerald-100 text-emerald-700",
+  memo: "bg-brand-100 text-brand-700",
   normal: "bg-indigo-100 text-indigo-700",
   full: "bg-fuchsia-100 text-fuchsia-700",
 };
@@ -561,7 +561,7 @@ export function ProjectDetailPage({
       ? "bg-red-500"
       : budgetUsagePercent > 50
         ? "bg-amber-400"
-        : "bg-emerald-500";
+        : "bg-brand-500";
 
   // Monthly expenses for SVG bar chart (last 6 months)
   const monthlyExpenses = (() => {
@@ -581,7 +581,7 @@ export function ProjectDetailPage({
 
   const statusColorMap: Record<string, string> = {
     planning: "bg-gray-100 text-gray-500",
-    active: "bg-emerald-100 text-emerald-800",
+    active: "bg-brand-100 text-brand-800",
     completed: "bg-gray-200 text-gray-600",
     on_hold: "bg-amber-100 text-amber-700",
   };
@@ -713,7 +713,7 @@ export function ProjectDetailPage({
           </p>
           <button
             type="button"
-            className="min-h-[44px] rounded-lg bg-slate-800 px-6 py-3 text-sm font-medium text-white hover:bg-slate-700 active:bg-slate-900"
+            className="min-h-[44px] rounded-lg bg-brand-700 px-6 py-3 text-sm font-medium text-white hover:bg-brand-800 active:bg-brand-900"
             onClick={() => window.dispatchEvent(new CustomEvent("genbahub:assistant-open"))}
           >
             AI秘書に相談する
@@ -740,15 +740,15 @@ export function ProjectDetailPage({
       {shouldShowRecordUpgradePrompt && (
         <section
           aria-label="記録案件のAI提案"
-          className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 shadow-sm"
+          className="rounded-xl border border-brand-200 bg-brand-50 p-4 shadow-sm"
         >
           <div className="flex items-start gap-3">
-            <span className="mt-0.5 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white text-sm font-bold text-emerald-700 ring-1 ring-emerald-200">
+            <span className="mt-0.5 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white text-sm font-bold text-brand-700 ring-1 ring-brand-200">
               AI
             </span>
             <div className="min-w-0 flex-1">
-              <p className="text-sm font-bold text-emerald-950">この記録から工程表を起こしますか？</p>
-              <p className="mt-1 text-xs leading-5 text-emerald-800">
+              <p className="text-sm font-bold text-brand-900">この記録から工程表を起こしますか？</p>
+              <p className="mt-1 text-xs leading-5 text-brand-800">
                 単価・職人・工期の引用元として使えるので、完了済み案件もあとから工程化できます。
               </p>
               <div className="mt-3 flex flex-wrap gap-2">
@@ -758,7 +758,7 @@ export function ProjectDetailPage({
                     type="button"
                     disabled={applyingTemplate}
                     onClick={() => void handleApplyTemplate(i)}
-                    className="rounded-lg border border-emerald-300 bg-white px-3 py-1.5 text-xs font-semibold text-emerald-800 shadow-sm transition-colors hover:bg-emerald-100 disabled:opacity-50"
+                    className="rounded-lg border border-brand-300 bg-white px-3 py-1.5 text-xs font-semibold text-brand-800 shadow-sm transition-colors hover:bg-brand-100 disabled:opacity-50"
                   >
                     {applyingTemplate ? "適用中..." : `${tpl.label}で起こす`}
                   </button>
@@ -900,7 +900,7 @@ export function ProjectDetailPage({
               <div className="flex items-center justify-between mb-1">
                 <span className="text-xs text-slate-500">予算消化率</span>
                 <span className={`text-xs font-bold tabular-nums ${
-                  budgetUsagePercent > 80 ? "text-red-600" : budgetUsagePercent > 50 ? "text-amber-600" : "text-emerald-600"
+                  budgetUsagePercent > 80 ? "text-red-600" : budgetUsagePercent > 50 ? "text-amber-600" : "text-brand-600"
                 }`}>
                   {budgetUsagePercent}%
                 </span>
@@ -1230,14 +1230,14 @@ export function ProjectDetailPage({
                 <div className="flex items-center gap-2">
                   <div className="h-2 flex-1 min-w-[80px] rounded-full bg-slate-100 overflow-hidden">
                     <div
-                      className={`h-full rounded-full transition-all duration-300 ${completion.passed ? "bg-emerald-500" : "bg-[#007AFF]"}`}
+                      className={`h-full rounded-full transition-all duration-300 ${completion.passed ? "bg-brand-500" : "bg-[#007AFF]"}`}
                       style={{ width: `${completion.percentage}%` }}
                     />
                   </div>
                   <span className="text-xs font-semibold tabular-nums text-slate-600">{completion.percentage}%</span>
                 </div>
                 <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${
-                  completion.passed ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700"
+                  completion.passed ? "bg-brand-50 text-brand-700" : "bg-amber-50 text-amber-700"
                 }`}>
                   {completion.passed ? "合格" : `必須: ${completion.requiredCompleted}/${completion.requiredTotal}`}
                 </span>
@@ -1292,9 +1292,9 @@ export function ProjectDetailPage({
           </span>
         </div>
 
-        <div className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3">
-          <p className="text-sm font-semibold text-emerald-900">まず必須にするもの</p>
-          <p className="mt-1 text-xs leading-5 text-emerald-800">
+        <div className="mt-4 rounded-xl border border-brand-200 bg-brand-50 px-4 py-3">
+          <p className="text-sm font-semibold text-brand-900">まず必須にするもの</p>
+          <p className="mt-1 text-xs leading-5 text-brand-800">
             着工前の1枚で基準を作り、完了時の1枚で差分を閉じます。中間写真は必要に応じて追加で十分です。
           </p>
         </div>
@@ -1318,10 +1318,10 @@ export function ProjectDetailPage({
           ].map((item) => (
             <div
               key={item.step}
-              className="rounded-xl border border-emerald-200 bg-emerald-50/70 p-3"
+              className="rounded-xl border border-brand-200 bg-brand-50/70 p-3"
             >
               <div className="flex items-start gap-3">
-                <span className="inline-flex shrink-0 items-center justify-center rounded-full bg-emerald-700 px-2.5 py-1 text-[11px] font-bold text-white">
+                <span className="inline-flex shrink-0 items-center justify-center rounded-full bg-brand-700 px-2.5 py-1 text-[11px] font-bold text-white">
                   {item.step}
                 </span>
                 <div className="min-w-0 flex-1">
@@ -1330,7 +1330,7 @@ export function ProjectDetailPage({
                   <button
                     type="button"
                     onClick={item.onClick}
-                    className="mt-3 inline-flex min-h-[36px] items-center rounded-lg border border-emerald-300 bg-white px-3 py-2 text-xs font-semibold text-emerald-800 transition-colors hover:bg-emerald-100"
+                    className="mt-3 inline-flex min-h-[36px] items-center rounded-lg border border-brand-300 bg-white px-3 py-2 text-xs font-semibold text-brand-800 transition-colors hover:bg-brand-100"
                   >
                     {item.action}
                   </button>
@@ -1515,7 +1515,7 @@ export function ProjectDetailPage({
                 const url = URL.createObjectURL(blob);
                 window.open(url, "_blank");
               })()}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-slate-800 px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-slate-700 active:bg-slate-900 transition-colors"
+              className="inline-flex items-center gap-1.5 rounded-lg bg-brand-700 px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-brand-800 active:bg-brand-900 transition-colors"
             >
               <Printer className="h-3.5 w-3.5" aria-hidden="true" />
               QR印刷
@@ -1572,11 +1572,11 @@ export function ProjectDetailPage({
         </div>
 
         {/* On-site count badge */}
-        <div className="mb-4 inline-flex items-center gap-2 rounded-xl bg-emerald-50 border border-emerald-200 px-3 py-2">
-          <HardHat className="h-6 w-6 text-emerald-600" aria-hidden="true" />
+        <div className="mb-4 inline-flex items-center gap-2 rounded-xl bg-brand-50 border border-brand-200 px-3 py-2">
+          <HardHat className="h-6 w-6 text-brand-600" aria-hidden="true" />
           <div>
-            <p className="text-xs font-semibold text-emerald-700">現在の入場者数</p>
-            <p className="text-2xl font-bold text-emerald-800 tabular-nums leading-tight">{onSiteCount}<span className="text-sm font-normal ml-0.5">名</span></p>
+            <p className="text-xs font-semibold text-brand-700">現在の入場者数</p>
+            <p className="text-2xl font-bold text-brand-800 tabular-nums leading-tight">{onSiteCount}<span className="text-sm font-normal ml-0.5">名</span></p>
           </div>
         </div>
 
@@ -1601,7 +1601,7 @@ export function ProjectDetailPage({
                     {record.exitTime ? (
                       <p>退: {new Date(record.exitTime).toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit" })}</p>
                     ) : (
-                      <span className="inline-block mt-0.5 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-700">入場中</span>
+                      <span className="inline-block mt-0.5 rounded-full bg-brand-100 px-2 py-0.5 text-[10px] font-bold text-brand-700">入場中</span>
                     )}
                   </div>
                 </li>

@@ -570,7 +570,7 @@ export function buildProfitReportHtml(dashboard: MultiSiteDashboard): string {
     .margin-yellow { background: #fefce8; }
     .margin-yellow .margin-label { color: #ca8a04; font-weight: bold; }
     .margin-green { background: #f0fdf4; }
-    .margin-green .margin-label { color: #16a34a; font-weight: bold; }
+    .margin-green .margin-label { color: #346538; font-weight: bold; }
     .summary { display: flex; gap: 2em; margin: 8px 0; flex-wrap: wrap; }
     .summary div { font-size: 0.95em; }
     .summary span { font-weight: bold; }

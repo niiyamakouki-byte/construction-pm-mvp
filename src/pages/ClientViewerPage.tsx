@@ -158,7 +158,7 @@ function FlowIndicator({ stage }: { stage: ProjectStage | null }) {
                   isCurrent
                     ? "bg-blue-600 text-white"
                     : isDone
-                      ? "bg-emerald-100 text-emerald-700"
+                      ? "bg-brand-100 text-brand-700"
                       : "bg-slate-100 text-slate-400",
                 ].join(" ")}
               >
@@ -209,7 +209,7 @@ function ChangeOrderSection({ projectId }: { projectId: string }) {
             <div className="flex gap-2">
               <button
                 onClick={() => handleApprove(req.id)}
-                className="flex-1 rounded-xl bg-emerald-500 py-2 text-sm font-semibold text-white"
+                className="flex-1 rounded-xl bg-brand-500 py-2 text-sm font-semibold text-white"
               >
                 承認する
               </button>
@@ -278,7 +278,7 @@ function CommentForm({ projectId }: { projectId: string }) {
         <button
           type="submit"
           disabled={!comment.trim()}
-          className="rounded-xl bg-emerald-600 py-3 text-sm font-semibold text-white disabled:opacity-40"
+          className="rounded-xl bg-brand-600 py-3 text-sm font-semibold text-white disabled:opacity-40"
         >
           送信する
         </button>

@@ -22,7 +22,7 @@ import { ConfirmDialog } from "../components/common/ConfirmDialog.js";
 const TAG_STYLE: Record<PhaseTemplateTag, string> = {
   住宅: "bg-blue-50 text-blue-700 ring-blue-200",
   店舗: "bg-amber-50 text-amber-700 ring-amber-200",
-  オフィス: "bg-emerald-50 text-emerald-700 ring-emerald-200",
+  オフィス: "bg-brand-50 text-brand-700 ring-brand-200",
 };
 
 // ─── テンプレートカード ───────────────────────────────────────────────────────

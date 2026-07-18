@@ -40,7 +40,7 @@ function computeTaskRange(tasks: ExportTask[]): { earliest: string | null; lates
 const barColors: Record<TaskStatus, { bg: string; fill: string }> = {
   todo: { bg: "#cbd5e1", fill: "#94a3b8" },
   in_progress: { bg: "#93c5fd", fill: "#2563eb" },
-  done: { bg: "#86efac", fill: "#16a34a" },
+  done: { bg: "#bfd3ba", fill: "#346538" },
 };
 
 

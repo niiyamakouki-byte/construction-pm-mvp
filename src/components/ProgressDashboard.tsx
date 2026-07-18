@@ -37,7 +37,7 @@ function getScheduleHealth(spi: number): {
   if (spi > 1.05) {
     return {
       label: "順調",
-      tone: "bg-emerald-50 text-emerald-700 ring-emerald-200",
+      tone: "bg-brand-50 text-brand-700 ring-brand-200",
       description: "計画より速いペースで工事が進んでいます。",
     };
   }
@@ -115,7 +115,7 @@ export function ProgressDashboard({
             aria-valuenow={Math.round(overallProgress)}
           >
             <div
-              className="h-full rounded-full bg-[linear-gradient(90deg,#f59e0b_0%,#2563eb_50%,#10b981_100%)] transition-all"
+              className="h-full rounded-full bg-brand-500 transition-all"
               style={{ width: `${Math.min(100, Math.max(0, overallProgress))}%` }}
             />
           </div>

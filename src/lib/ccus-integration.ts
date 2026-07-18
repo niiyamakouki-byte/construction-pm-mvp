@@ -253,7 +253,7 @@ const LEVEL_LABELS: Record<SkillLevel, string> = {
 const LEVEL_COLORS: Record<SkillLevel, string> = {
   1: "#64748b",
   2: "#2563eb",
-  3: "#16a34a",
+  3: "#346538",
   4: "#b45309",
 };
 

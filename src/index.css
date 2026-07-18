@@ -449,7 +449,7 @@ textarea::placeholder {
   gap: 6px;
   padding: 8px 18px;
   border-radius: 12px;
-  background-color: #059669;
+  background-color: #587b56;
   color: #ffffff;
   font-size: 0.875rem;
   font-weight: 600;
@@ -457,7 +457,7 @@ textarea::placeholder {
 }
 
 .ios-btn-primary:hover {
-  background-color: #047857;
+  background-color: #346538;
 }
 
 .ios-btn-primary:active {

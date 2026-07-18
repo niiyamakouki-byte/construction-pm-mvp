@@ -113,7 +113,7 @@ const projectStatusLabel: Record<ProjectStatus, string> = {
 
 const projectStatusTone: Record<ProjectStatus, string> = {
   planning: "bg-gray-100 text-gray-500 ring-gray-200",
-  active: "bg-emerald-50 text-emerald-700 ring-emerald-200",
+  active: "bg-brand-50 text-brand-700 ring-brand-200",
   completed: "bg-gray-200 text-gray-600 ring-gray-300",
   on_hold: "bg-amber-50 text-amber-700 ring-amber-200",
 };
@@ -1827,9 +1827,9 @@ function GanttPageContent({ initialProjectId = null, openMaster = false }: Gantt
         <div
           role="status"
           aria-live="polite"
-          className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-5 py-3 text-sm font-medium text-emerald-800 shadow-sm"
+          className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 flex items-center gap-2 rounded-xl border border-brand-200 bg-brand-50 px-5 py-3 text-sm font-medium text-brand-800 shadow-sm"
         >
-          <Check className="h-4 w-4 shrink-0 text-emerald-600" aria-hidden="true" />
+          <Check className="h-4 w-4 shrink-0 text-brand-600" aria-hidden="true" />
           <span>
             {masterSuccessToast.count}工程を追加しました
             {masterSuccessToast.totalDays > 0 ? `（約${masterSuccessToast.totalDays}日）` : ""}
@@ -1950,7 +1950,7 @@ function GanttPageContent({ initialProjectId = null, openMaster = false }: Gantt
               onClick={() => setShowMilestones((current) => !current)}
               className={`rounded-md px-3 py-2.5 text-sm font-semibold transition-colors ${
                 showMilestones
-                  ? "bg-slate-900 text-white"
+                  ? "bg-brand-700 text-white"
                   : "bg-white text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50"
               }`}
             >
@@ -2104,7 +2104,7 @@ function GanttPageContent({ initialProjectId = null, openMaster = false }: Gantt
                   <h2 className="mt-1 text-sm font-bold text-slate-900">工程上の主要マイルストーン</h2>
                 </div>
                 <div className="flex flex-wrap items-center gap-2 text-xs font-semibold">
-                  <span className="rounded-full bg-emerald-50 px-3 py-1 text-emerald-700">
+                  <span className="rounded-full bg-brand-50 px-3 py-1 text-brand-700">
                     完了 {milestoneSummary.completed}
                   </span>
                   <span className="rounded-full bg-blue-50 px-3 py-1 text-blue-700">
@@ -2125,7 +2125,7 @@ function GanttPageContent({ initialProjectId = null, openMaster = false }: Gantt
                       key={milestone.id}
                       className={`rounded-full px-3 py-1.5 text-xs font-semibold ${
                         milestone.status === "completed"
-                          ? "bg-emerald-50 text-emerald-700"
+                          ? "bg-brand-50 text-brand-700"
                           : milestone.status === "at-risk"
                             ? "bg-amber-50 text-amber-700"
                             : milestone.status === "missed"
@@ -2188,7 +2188,7 @@ function GanttPageContent({ initialProjectId = null, openMaster = false }: Gantt
                   onClick={() => handleProjectSelect(project.id)}
                   className={`rounded-full px-4 py-2 text-sm font-semibold transition-colors ${
                     active
-                      ? "bg-slate-900 text-white"
+                      ? "bg-brand-700 text-white"
                       : "bg-white text-slate-600 ring-1 ring-slate-200"
                   }`}
                 >

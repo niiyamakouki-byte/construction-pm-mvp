@@ -31,8 +31,8 @@ export function PricingSuccessPage() {
 
   return (
     <div className="mx-auto max-w-lg px-4 py-16">
-      <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-8 text-center">
-        <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-emerald-500 text-white">
+      <div className="rounded-2xl border border-brand-200 bg-brand-50 p-8 text-center">
+        <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-brand-500 text-white">
           <svg
             className="h-6 w-6"
             fill="none"
@@ -48,23 +48,23 @@ export function PricingSuccessPage() {
             />
           </svg>
         </div>
-        <h1 className="text-xl font-bold text-emerald-900">
+        <h1 className="text-xl font-bold text-brand-900">
           お申し込みありがとうございます
         </h1>
-        <p className="mt-2 text-sm text-emerald-800">
+        <p className="mt-2 text-sm text-brand-800">
           Stripe でのお支払い手続きが完了しました。
           <br />
           プランの反映まで数秒かかる場合があります。
         </p>
         {sessionId && (
-          <p className="mt-3 text-xs text-emerald-700">
+          <p className="mt-3 text-xs text-brand-700">
             セッション ID:{" "}
             <code className="rounded bg-white px-1.5 py-0.5 font-mono">
               {sessionId}
             </code>
           </p>
         )}
-        <p className="mt-4 text-xs text-emerald-700">
+        <p className="mt-4 text-xs text-brand-700">
           {countdown} 秒後にアプリへ戻ります…
         </p>
       </div>

@@ -17,7 +17,7 @@ const MAJOR_CATEGORY_COLORS: Record<string, string> = {
   "空調・換気": "#c084fc",
   造作家具: "#f472b6",
   塗装工事: "#2dd4bf",
-  クリーニング: "#86efac",
+  クリーニング: "#bfd3ba",
   検査: "#e879f9",
 };
 

@@ -61,7 +61,7 @@ const STATUS_COLOR: Record<ReferralStatus, string> = {
   contacted: "#3b82f6",
   quoted: "#8b5cf6",
   contracted: SAGE,
-  completed: "#059669",
+  completed: "#587b56",
   expired: "#9ca3af",
 };
 
@@ -458,7 +458,7 @@ export function OwnerAmbassadorPage() {
                     <td style={{ padding: "8px 12px", fontWeight: 600, color: SAGE }}>¥{r.amountJpy.toLocaleString("ja-JP")}</td>
                     <td style={{ padding: "8px 12px" }}>{(r.rewardRate * 100).toFixed(0)}%</td>
                     <td style={{ padding: "8px 12px" }}>
-                      <span style={{ color: r.isPaid ? "#059669" : DANGER, fontSize: 12 }}>
+                      <span style={{ color: r.isPaid ? "#587b56" : DANGER, fontSize: 12 }}>
                         {r.isPaid ? "支払済" : "未払い"}
                       </span>
                     </td>
