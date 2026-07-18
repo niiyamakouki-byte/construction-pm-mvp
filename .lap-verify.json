@@ -1,0 +1,10 @@
+{
+  "protected": [
+    "src/estimate/",
+    "src/resources/cost-master.json",
+    "src/__tests__/discord-estimate.test.ts",
+    "src/__tests__/estimate-generator.test.ts",
+    "src/__tests__/nl-estimate-parser.test.ts",
+    ".beads/interactions.jsonl"
+  ]
+}
