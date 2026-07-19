@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import type { Contractor, Project, ProjectStatus } from "../domain/types.js";
 import { createProjectRepository } from "../stores/project-store.js";
 import { createTaskRepository } from "../stores/task-store.js";
@@ -10,6 +11,8 @@ import { useOrganizationContext } from "../contexts/OrganizationContext.js";
 import { GanttPageErrorBoundary } from "../components/PageErrorBoundaries.js";
 import { GanttPageSkeleton } from "../components/PageSkeletons.js";
 import { GanttChart } from "../components/gantt/GanttChart.js";
+import { MobileTaskList } from "../components/gantt/MobileTaskList.js";
+import { useIsNarrow } from "../hooks/useIsNarrow.js";
 import { QuickAddForm } from "../components/gantt/QuickAddForm.js";
 import { TaskEditModal } from "../components/gantt/TaskEditModal.js";
 import { TaskDrilldownModal } from "../components/gantt/TaskDrilldownModal.js";
@@ -77,7 +80,7 @@ import {
 } from "../lib/gantt-task-filter.js";
 import { ConfirmDialog } from "../components/common/ConfirmDialog.js";
 import { ACTION_LABELS } from "../lib/action-labels.js";
-import { BarChart2, Check, FolderKanban } from "lucide-react";
+import { BarChart2, Check, ChevronLeft, FolderKanban } from "lucide-react";
 import { EmptyState } from "../components/EmptyState.js";
 
 const MAX_CHART_DAYS = 240;
@@ -463,6 +466,9 @@ function GanttPageContent({ initialProjectId = null, openMaster = false }: Gantt
   const [canUndo, setCanUndo] = useState(() => undoStack.canUndo());
   const [showMilestones, setShowMilestones] = useState(true);
   const [showChanges, setShowChanges] = useState(false);
+  // ftaqp: 390px以下では既定を7日縦リストにし、横タイムライン(ガント)は全画面トグルへ分離する
+  const isNarrow = useIsNarrow();
+  const [showTimeline, setShowTimeline] = useState(false);
   const [rainDialogOpen, setRainDialogOpen] = useState(false);
   const [rainDate, setRainDate] = useState("");
   const [rainAffected, setRainAffected] = useState<Map<string, { startDate: string; endDate: string }> | null>(null);
@@ -1481,6 +1487,40 @@ function GanttPageContent({ initialProjectId = null, openMaster = false }: Gantt
     );
   }
 
+  // ftaqp: GanttChart 本体を一度だけ組み立て、デスクトップはインライン、
+  // モバイル(390px以下)は「ガントを見る」トグル時の全画面表示で再利用する
+  const ganttChartNode = chartLayout ? (
+    <GanttChart
+      ganttTasks={filteredProjectTasks}
+      visibleRows={ganttVisibleRows}
+      chartLayout={chartLayout}
+      dragState={dragState}
+      dragRef={dragRef}
+      cascadePreview={cascadePreview}
+      connectMode={connectMode}
+      connectState={connectState}
+      milestones={milestoneIndicators}
+      showMilestones={showMilestones}
+      today={today}
+      scrollRef={scrollRef}
+      phaseProgress={phaseProgress}
+      onTaskDragStart={startTaskDrag}
+      onTaskResizeStart={startTaskResize}
+      onOpenTaskDetail={openTaskDetail}
+      onMoveTask={(task, direction) => void handleMoveTask(task, direction)}
+      onOpenQuickAdd={openQuickAdd}
+      onTogglePhase={handleTogglePhase}
+      onSetConnectState={setConnectState}
+      onConnectTask={(toTaskId) => void handleConnectTask(toTaskId)}
+      onConnectTasks={(fromTaskId, toTaskId) => void connectTasks(fromTaskId, toTaskId)}
+      onRemoveDependency={(fromTaskId, toTaskId) => void removeDependencyEdge(fromTaskId, toTaskId)}
+      onTimelineTouchStart={handleTimelineTouchStart}
+      onTimelineTouchMove={handleTimelineTouchMove}
+      onTimelineTouchEnd={handleTimelineTouchEnd}
+      personalEventLabelsByDate={googleCalendar.connected ? personalEventLabelsByDate : undefined}
+    />
+  ) : null;
+
   return (
     <div className="mx-auto max-w-[1320px] space-y-4 pb-24">
       {quickAdd ? (
@@ -2365,36 +2405,35 @@ function GanttPageContent({ initialProjectId = null, openMaster = false }: Gantt
             </button>
           )}
         </div>
-      ) : (
-        <GanttChart
-          ganttTasks={filteredProjectTasks}
-          visibleRows={ganttVisibleRows}
-          chartLayout={chartLayout}
-          dragState={dragState}
-          dragRef={dragRef}
-          cascadePreview={cascadePreview}
-          connectMode={connectMode}
-          connectState={connectState}
-          milestones={milestoneIndicators}
-          showMilestones={showMilestones}
+      ) : isNarrow && !showTimeline ? (
+        <MobileTaskList
+          tasks={filteredProjectTasks}
           today={today}
-          scrollRef={scrollRef}
-          phaseProgress={phaseProgress}
-          onTaskDragStart={startTaskDrag}
-          onTaskResizeStart={startTaskResize}
           onOpenTaskDetail={openTaskDetail}
-          onMoveTask={(task, direction) => void handleMoveTask(task, direction)}
-          onOpenQuickAdd={openQuickAdd}
-          onTogglePhase={handleTogglePhase}
-          onSetConnectState={setConnectState}
-          onConnectTask={(toTaskId) => void handleConnectTask(toTaskId)}
-          onConnectTasks={(fromTaskId, toTaskId) => void connectTasks(fromTaskId, toTaskId)}
-          onRemoveDependency={(fromTaskId, toTaskId) => void removeDependencyEdge(fromTaskId, toTaskId)}
-          onTimelineTouchStart={handleTimelineTouchStart}
-          onTimelineTouchMove={handleTimelineTouchMove}
-          onTimelineTouchEnd={handleTimelineTouchEnd}
-          personalEventLabelsByDate={googleCalendar.connected ? personalEventLabelsByDate : undefined}
+          onShowTimeline={() => setShowTimeline(true)}
         />
+      ) : isNarrow ? (
+        // 全画面ガントは document.body へポータルし、main の変形(page-enter)による
+        // stacking context 閉じ込めと下部タブバーの被りを避ける
+        createPortal(
+          <div data-testid="gantt-timeline-fullscreen" className="fixed inset-0 z-[60] flex flex-col bg-white">
+            <div className="flex items-center justify-between border-b border-slate-200 px-3 py-2.5">
+              <p className="text-sm font-bold text-slate-900">工程ガント</p>
+              <button
+                type="button"
+                onClick={() => setShowTimeline(false)}
+                className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 transition-colors hover:bg-slate-50 active:bg-slate-100"
+              >
+                <ChevronLeft className="h-4 w-4" aria-hidden="true" />
+                リストに戻る
+              </button>
+            </div>
+            <div className="min-h-0 flex-1 overflow-auto p-2">{ganttChartNode}</div>
+          </div>,
+          document.body,
+        )
+      ) : (
+        ganttChartNode
       )}
 
       {(showRiskPanel || showChatPanel) && chatSchedule && (
