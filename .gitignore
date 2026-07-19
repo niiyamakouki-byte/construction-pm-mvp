@@ -24,3 +24,8 @@ playwright/.cache/
 *.db
 .beads-credential-key
 .beads/
+
+# Test artifacts (verify-ui, wave audit, screenshots)
+tasks/
+.codegraph/
+.playwright-mcp/
