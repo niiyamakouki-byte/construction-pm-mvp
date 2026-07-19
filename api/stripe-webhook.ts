@@ -55,6 +55,12 @@ function planFromPriceId(priceId: string | null | undefined): "standard" | "pro"
   return null;
 }
 
+// Stripe API バージョン変更 (basil系) で current_period_end は Subscription 直下から
+// 各 SubscriptionItem 側へ移動した。先頭アイテムの値を代表値として扱う。
+function subscriptionCurrentPeriodEnd(sub: Stripe.Subscription): number | null {
+  return sub.items.data[0]?.current_period_end ?? null;
+}
+
 async function handleCheckoutCompleted(
   supabase: SupabaseClient,
   stripe: Stripe,
@@ -83,7 +89,7 @@ async function handleCheckoutCompleted(
   if (subscriptionId) {
     try {
       const sub = await stripe.subscriptions.retrieve(subscriptionId);
-      currentPeriodEnd = toIsoOrNull(sub.current_period_end);
+      currentPeriodEnd = toIsoOrNull(subscriptionCurrentPeriodEnd(sub));
       if (!plan) {
         plan = planFromPriceId(sub.items.data[0]?.price.id);
       }
@@ -136,7 +142,7 @@ async function handleSubscriptionUpdated(
   const plan = planFromPriceId(sub.items.data[0]?.price.id);
   const update: Record<string, unknown> = {
     status: sub.status,
-    current_period_end: toIsoOrNull(sub.current_period_end),
+    current_period_end: toIsoOrNull(subscriptionCurrentPeriodEnd(sub)),
   };
   if (plan) update.plan = plan;
 
@@ -158,7 +164,7 @@ async function handleSubscriptionDeleted(
     .from("subscriptions")
     .update({
       status: "canceled",
-      current_period_end: toIsoOrNull(sub.current_period_end),
+      current_period_end: toIsoOrNull(subscriptionCurrentPeriodEnd(sub)),
     })
     .eq("stripe_subscription_id", sub.id);
   if (error) {
@@ -171,10 +177,13 @@ async function handleInvoicePaymentFailed(
   supabase: SupabaseClient,
   invoice: Stripe.Invoice,
 ): Promise<void> {
+  // Stripe API バージョン変更 (basil系) で invoice.subscription は
+  // invoice.parent.subscription_details.subscription へ移動した。
+  const subscriptionRef = invoice.parent?.subscription_details?.subscription;
   const subscriptionId =
-    typeof invoice.subscription === "string"
-      ? invoice.subscription
-      : invoice.subscription?.id ?? null;
+    typeof subscriptionRef === "string"
+      ? subscriptionRef
+      : subscriptionRef?.id ?? null;
   if (!subscriptionId) return;
 
   const { error } = await supabase
