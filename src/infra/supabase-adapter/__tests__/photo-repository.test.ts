@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { MAX_PHOTO_FILE_SIZE, PHOTO_BUCKET, PhotoRepository } from "../photo-repository.js";
+import { MAX_PHOTO_FILE_SIZE, PHOTO_BUCKET, PhotoRepository, type UploadedPhoto } from "../photo-repository.js";
 import type { SupabaseClientLike } from "../../supabase-client.js";
+import { InMemoryRepository } from "../../in-memory-repository.js";
 
 const fixedId = "11111111-1111-4111-8111-111111111111";
 const fixedDate = new Date("2026-04-19T10:00:00.000Z");
@@ -228,6 +229,76 @@ describe("PhotoRepository", () => {
           confidence: 0.5,
         }),
       ).rejects.toThrow("rls denied");
+    });
+  });
+
+  describe("E2E bypass fallback (bead pb9)", () => {
+    function makeBypassRepo(localRepository = new InMemoryRepository<UploadedPhoto>()) {
+      const getClient = vi.fn(() => {
+        throw new Error("getClient should not be called when E2E bypass is active");
+      });
+      const repo = new PhotoRepository({
+        getClient,
+        idGenerator: () => fixedId,
+        now: () => fixedDate,
+        isE2EBypass: () => true,
+        localRepository,
+      });
+      return { repo, getClient, localRepository };
+    }
+
+    beforeEach(() => {
+      (URL as unknown as { createObjectURL: (file: File) => string }).createObjectURL = vi.fn(() => "blob:e2e-photo");
+    });
+
+    it("uploads via object URL + local repository, never touches supabase", async () => {
+      const { repo, getClient } = makeBypassRepo();
+      const result = await repo.uploadPhoto(makeFile(), "project-1", "task-1", { category: "safety" });
+      expect(getClient).not.toHaveBeenCalled();
+      expect(result.url).toBe("blob:e2e-photo");
+      expect(result.projectId).toBe("project-1");
+      expect(result.taskId).toBe("task-1");
+      expect(result.category).toBe("safety");
+    });
+
+    it("lists uploaded photos by project without touching supabase, newest first", async () => {
+      const { repo, getClient, localRepository } = makeBypassRepo();
+      await localRepository.create({
+        id: "photo-a", url: "blob:a", projectId: "project-1", storagePath: "project-1/a.jpg",
+        fileName: "a.jpg", contentType: "image/jpeg", fileSize: 10,
+        takenAt: "2026-01-01T00:00:00.000Z", createdAt: "2026-01-01T00:00:00.000Z", updatedAt: "2026-01-01T00:00:00.000Z",
+      });
+      await localRepository.create({
+        id: "photo-b", url: "blob:b", projectId: "project-1", storagePath: "project-1/b.jpg",
+        fileName: "b.jpg", contentType: "image/jpeg", fileSize: 10,
+        takenAt: "2026-02-01T00:00:00.000Z", createdAt: "2026-02-01T00:00:00.000Z", updatedAt: "2026-02-01T00:00:00.000Z",
+      });
+      await localRepository.create({
+        id: "photo-c", url: "blob:c", projectId: "project-2", storagePath: "project-2/c.jpg",
+        fileName: "c.jpg", contentType: "image/jpeg", fileSize: 10,
+        takenAt: "2026-03-01T00:00:00.000Z", createdAt: "2026-03-01T00:00:00.000Z", updatedAt: "2026-03-01T00:00:00.000Z",
+      });
+      const result = await repo.listPhotosByProject("project-1");
+      expect(getClient).not.toHaveBeenCalled();
+      expect(result.map((p) => p.id)).toEqual(["photo-b", "photo-a"]);
+    });
+
+    it("updates AI classification locally without touching supabase", async () => {
+      const { repo, getClient, localRepository } = makeBypassRepo();
+      await localRepository.create({
+        id: fixedId, url: "blob:a", projectId: "project-1", storagePath: "project-1/a.jpg",
+        fileName: "a.jpg", contentType: "image/jpeg", fileSize: 10,
+        takenAt: fixedDate.toISOString(), createdAt: fixedDate.toISOString(), updatedAt: fixedDate.toISOString(),
+      });
+      const result = await repo.updatePhotoClassification(fixedId, { category: "framing", confidence: 0.8 });
+      expect(getClient).not.toHaveBeenCalled();
+      expect(result.aiClassification?.category).toBe("framing");
+    });
+
+    it("still rejects unsupported file types before hitting the local repository", async () => {
+      const { repo, getClient } = makeBypassRepo();
+      await expect(repo.uploadPhoto(makeFile("memo.pdf", "application/pdf"), "project-1")).rejects.toThrow("非対応");
+      expect(getClient).not.toHaveBeenCalled();
     });
   });
 });

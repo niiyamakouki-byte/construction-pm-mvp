@@ -1,4 +1,6 @@
 import { getSupabaseClient, type SupabaseClientLike } from "../supabase-client.js";
+import { createAppRepository } from "../create-app-repository.js";
+import type { Repository } from "../../domain/repository.js";
 
 export const PHOTO_BUCKET = "construction-photos";
 export const MAX_PHOTO_FILE_SIZE = 10 * 1024 * 1024;
@@ -66,7 +68,13 @@ export type PhotoRepositoryDeps = {
   getClient?: () => Promise<SupabaseClientLike>;
   idGenerator?: () => string;
   now?: () => Date;
+  isE2EBypass?: () => boolean;
+  localRepository?: Repository<UploadedPhoto>;
 };
+
+function defaultIsE2EBypass(): boolean {
+  return typeof window !== "undefined" && (window as { __E2E_BYPASS_AUTH__?: boolean }).__E2E_BYPASS_AUTH__ === true;
+}
 
 function assertNoSupabaseError(error: SupabaseError, fallback: string): void {
   if (error) {
@@ -138,11 +146,15 @@ export class PhotoRepository {
   private readonly getClient: () => Promise<SupabaseClientLike>;
   private readonly idGenerator: () => string;
   private readonly now: () => Date;
+  private readonly isE2EBypass: () => boolean;
+  private readonly localRepo: Repository<UploadedPhoto>;
 
   constructor(deps: PhotoRepositoryDeps = {}) {
     this.getClient = deps.getClient ?? getSupabaseClient;
     this.idGenerator = deps.idGenerator ?? defaultIdGenerator;
     this.now = deps.now ?? (() => new Date());
+    this.isE2EBypass = deps.isE2EBypass ?? defaultIsE2EBypass;
+    this.localRepo = deps.localRepository ?? createAppRepository<UploadedPhoto>("photos");
   }
 
   private async createSignedUrl(client: SupabaseClientLike, path: string): Promise<string> {
@@ -166,6 +178,27 @@ export class PhotoRepository {
     validateUploadFile(file);
     if (!projectId) {
       throw new Error("アップロード先の案件がありません");
+    }
+
+    if (this.isE2EBypass()) {
+      const id = this.idGenerator();
+      const takenAt = this.now().toISOString();
+      const photo: UploadedPhoto = {
+        id,
+        url: URL.createObjectURL(file),
+        projectId,
+        taskId,
+        storagePath: `${projectId}/${id}.${getPhotoExtension(file)}`,
+        fileName: file.name,
+        contentType: file.type,
+        fileSize: file.size,
+        category: options.category,
+        caption: options.caption,
+        takenAt,
+        createdAt: takenAt,
+        updatedAt: takenAt,
+      };
+      return this.localRepo.create(photo);
     }
 
     const client = await this.getClient();
@@ -227,6 +260,16 @@ export class PhotoRepository {
     ) {
       throw new Error("confidence は 0.0 〜 1.0 の数値で指定してください");
     }
+
+    if (this.isE2EBypass()) {
+      const updated = await this.localRepo.update(photoId, {
+        aiClassification: classification,
+        updatedAt: this.now().toISOString(),
+      });
+      if (!updated) throw new Error("対象の写真が見つかりません");
+      return updated;
+    }
+
     const client = await this.getClient();
     const patch = {
       ai_category: classification.category,
@@ -253,6 +296,14 @@ export class PhotoRepository {
 
   async listPhotosByProject(projectId: string): Promise<UploadedPhoto[]> {
     if (!projectId) return [];
+
+    if (this.isE2EBypass()) {
+      const all = await this.localRepo.findAll();
+      return all
+        .filter((photo) => photo.projectId === projectId)
+        .sort((a, b) => (a.takenAt < b.takenAt ? 1 : a.takenAt > b.takenAt ? -1 : 0));
+    }
+
     const client = await this.getClient();
     const { data, error } = await client
       .from("photos")
