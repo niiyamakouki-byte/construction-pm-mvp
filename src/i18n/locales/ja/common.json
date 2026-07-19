@@ -34,7 +34,12 @@
     "progress_management": "進捗管理",
     "safety_management": "安全管理",
     "partner_companies": "業者",
-    "invoices_nav": "請求書"
+    "invoices_nav": "請求書",
+    "process": "工程",
+    "projects": "案件",
+    "money_hub": "お金",
+    "field_hub": "現場を進める",
+    "profile_hub": "プロフィール・設定"
   },
   "actions": {
     "save": "保存",

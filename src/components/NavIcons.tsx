@@ -33,6 +33,8 @@ import {
   MoreHorizontal,
   Home,
   LayoutGrid,
+  Wallet,
+  Layers,
 } from "lucide-react";
 
 const SIZE = 18;
@@ -70,6 +72,8 @@ export const navIconMap: Record<string, React.ReactNode> = {
   account: <Settings size={SIZE} strokeWidth={STROKE} />,
   more: <MoreHorizontal size={SIZE} strokeWidth={STROKE} />,
   "partner-companies": <Handshake size={SIZE} strokeWidth={STROKE} />,
+  "money-hub": <Wallet size={SIZE} strokeWidth={STROKE} />,
+  "field-hub": <Layers size={SIZE} strokeWidth={STROKE} />,
 };
 
 /** アイコンキーからlucide SVGを返す。未知のキーはFileTextにフォールバック */

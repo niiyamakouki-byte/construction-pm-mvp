@@ -118,26 +118,31 @@ type SidebarItem = {
   icon: string;
   path: string;
   active: boolean;
-  group: "today" | "field" | "money" | "growth" | "system";
+  group: "primary" | "money" | "field" | "system";
   aiHint: string;
 };
 
-const sidebarGroupLabels: Record<SidebarItem["group"], string> = {
-  today: "今日見る",
+// 一次ナビ(今日/案件/工程/写真)以外を畳む折りたたみグループのラベル。
+// primary は常時表示のため見出し不要 (フィルタで除外する)。
+const sidebarGroupLabels: Record<Exclude<SidebarItem["group"], "primary">, string> = {
+  money: "お金",
   field: "現場を進める",
-  money: "お金を守る",
-  growth: "売上を作る",
-  system: "設定・ヘルプ",
+  system: "プロフィール・設定",
 };
 
-// Moreドロワーのタブをサイドバーと同じグループに分類する
+const sidebarGroupIcon: Record<Exclude<SidebarItem["group"], "primary">, string> = {
+  money: "money-hub",
+  field: "field-hub",
+  system: "account",
+};
+
+// その他ドロワー・ハンバーガーのタブをサイドバーと同じグループに分類する
+// (見積・請求・原価は「お金」、設定・実験機能は「プロフィール・設定」へ集約。sol-ultra #1)
 const moreTabGroup: Record<string, SidebarItem["group"]> = {
-  today: "today",
-  notifications: "today",
-  weather: "today",
+  notifications: "field",
+  weather: "field",
   "cross-gantt": "field",
   "progress-review": "field",
-  photos: "field",
   safety: "field",
   procurement: "field",
   orders: "field",
@@ -146,13 +151,15 @@ const moreTabGroup: Record<string, SidebarItem["group"]> = {
   schedule: "field",
   "phase-templates": "field",
   node: "field",
+  cards: "field",
+  tasks: "field",
+  crm: "field",
   estimate: "money",
   takeoff: "money",
   cost: "money",
   invoice: "money",
   freee: "money",
   reports: "money",
-  crm: "growth",
   help: "system",
 };
 
@@ -189,6 +196,8 @@ function AppShell() {
   const [showShortcutHelp, setShowShortcutHelp] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [moreDrawerOpen, setMoreDrawerOpen] = useState(false);
+  // その他ドロワー・サイドバーで折りたたむグループ (sol-ultra #1: その他は最大6項目に抑える)
+  const [expandedNavGroup, setExpandedNavGroup] = useState<SidebarItem["group"] | null>(null);
   const [keyboardOpen, setKeyboardOpen] = useState(false);
   const [firstRunBootstrapping, setFirstRunBootstrapping] = useState(false);
   const [firstRunError, setFirstRunError] = useState<string | null>(null);
@@ -242,45 +251,15 @@ function AppShell() {
 
   const ganttPath = lastProjectId ? `/gantt/${lastProjectId}` : "/gantt";
 
-  const primaryTabs: TabDef[] = [
-    {
-      key: "home",
-      label: t("common:nav.home"),
-      icon: "home",
-      path: "/app",
-      matchRoute: (currentRoute) => currentRoute === "/app" || currentRoute === "/" || currentRoute === "",
-    },
-    {
-      key: "gantt",
-      label: t("common:nav.gantt"),
-      icon: "gantt",
-      path: ganttPath,
-      matchRoute: (currentRoute) => currentRoute === "/gantt" || currentRoute.startsWith("/gantt/"),
-    },
+  // sol-ultra #1: 一次ナビは 今日/案件/工程/写真 の4つに固定する (bead 7fctp)。
+  // 見積・請求・原価等は「その他」ドロワー配下の「お金」グループへ、タスク等の現場系は「現場を進める」グループへ集約。
+  const secondaryTabs: TabDef[] = [
     {
       key: "tasks",
       label: t("common:nav.tasks"),
       icon: "tasks",
       path: "/tasks",
       matchRoute: (currentRoute) => currentRoute === "/tasks",
-    },
-    {
-      key: "more",
-      label: t("common:nav.more"),
-      icon: "more",
-      path: "/notifications",
-      matchRoute: (currentRoute) =>
-        ["/today", "/invoice", "/estimate", "/takeoff", "/contractors", "/notifications", "/help", "/node-schedule", "/cards", "/cost-management", "/weather", "/safety", "/procurement", "/orders", "/crm", "/reports", "/invoices", "/invoices/reconcile", "/cross-project-gantt", "/progress-review", "/photos", "/freee", "/finishing", "/schedule", "/phase-templates"].includes(currentRoute) || currentRoute.startsWith("/reports/") || currentRoute.startsWith("/freee?") || currentRoute.startsWith("/finishing") || currentRoute.startsWith("/estimate?") || currentRoute.startsWith("/cards/"),
-    },
-  ];
-
-  const secondaryTabs: TabDef[] = [
-    {
-      key: "today",
-      label: t("common:nav.today"),
-      icon: "today",
-      path: "/today",
-      matchRoute: (currentRoute) => currentRoute === "/today",
     },
     {
       key: "notifications",
@@ -320,7 +299,6 @@ function AppShell() {
     },
     { key: "cross-gantt", label: t("common:nav.cross_gantt"), icon: "cross-gantt", path: "/cross-project-gantt", matchRoute: (currentRoute) => currentRoute === "/cross-project-gantt" },
     { key: "progress-review", label: t("common:nav.progress_review"), icon: "progress-review", path: "/progress-review", matchRoute: (currentRoute) => currentRoute === "/progress-review" },
-    { key: "photos", label: t("common:nav.photos"), icon: "photos", path: "/photos", matchRoute: (currentRoute) => currentRoute === "/photos" },
     { key: "safety", label: t("common:nav.safety"), icon: "safety", path: "/safety", matchRoute: (currentRoute) => currentRoute === "/safety" },
     { key: "procurement", label: t("common:nav.procurement"), icon: "procurement", path: "/procurement", matchRoute: (currentRoute) => currentRoute === "/procurement" },
     { key: "orders", label: t("common:nav.orders"), icon: "orders", path: "/orders", matchRoute: (currentRoute) => currentRoute === "/orders" },
@@ -391,10 +369,50 @@ function AppShell() {
     },
   ];
 
+  // 一次ナビ本体: 今日 / 案件 / 工程 / 写真 の4つに固定 + その他(ドロワーを開く)
+  const primaryTabs: TabDef[] = [
+    {
+      key: "today",
+      label: t("common:nav.today"),
+      icon: "today",
+      path: "/today",
+      matchRoute: (currentRoute) => currentRoute === "/today",
+    },
+    {
+      key: "projects",
+      label: t("common:nav.projects"),
+      icon: "project-list",
+      path: "/app",
+      matchRoute: (currentRoute) => currentRoute === "/app" || currentRoute === "/" || currentRoute === "",
+    },
+    {
+      key: "gantt",
+      label: t("common:nav.process"),
+      icon: "gantt",
+      path: ganttPath,
+      matchRoute: (currentRoute) => currentRoute === "/gantt" || currentRoute.startsWith("/gantt/"),
+    },
+    {
+      key: "photos",
+      label: t("common:nav.photos"),
+      icon: "photos",
+      path: "/photos",
+      matchRoute: (currentRoute) => currentRoute === "/photos",
+    },
+    {
+      key: "more",
+      label: t("common:nav.more"),
+      icon: "more",
+      path: "/notifications",
+      matchRoute: (currentRoute) => secondaryTabs.some((tab) => tab.matchRoute(currentRoute)),
+    },
+  ];
+
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- ルート変化でナビを閉じる意図的な同期
     setMobileNavOpen(false);
     setMoreDrawerOpen(false);
+    setExpandedNavGroup(null);
   }, [route]);
 
   useKeyboardShortcuts({
@@ -863,31 +881,37 @@ function AppShell() {
     );
   };
 
+  // sol-ultra #1: 一次ナビは 今日/案件/工程/写真 の4つに固定 (bead 7fctp)。
+  // 見積・請求・原価は「お金」、業者・CRM等の実験機能は「現場を進める/プロフィール・設定」へ集約する。
   const allSidebarItems: SidebarItem[] = [
-    { key: "today", label: t("common:nav.dashboard"), icon: "dashboard", path: "/today", active: route === "/today", group: "today", aiHint: "今日の遅延・予算・現場リスクを見る" },
-    { key: "app", label: t("common:nav.project_list"), icon: "project-list", path: "/app", active: route === "/app" || route === "/" || route === "", group: "today", aiHint: "案件一覧から次に触る現場を選ぶ" },
-    { key: "tasks", label: t("common:nav.tasks"), icon: "tasks", path: "/tasks", active: route === "/tasks", group: "today", aiHint: "未完了タスクと担当の穴を見る" },
+    { key: "today", label: t("common:nav.dashboard"), icon: "dashboard", path: "/today", active: route === "/today", group: "primary", aiHint: "今日の遅延・予算・現場リスクを見る" },
+    { key: "app", label: t("common:nav.project_list"), icon: "project-list", path: "/app", active: route === "/app" || route === "/" || route === "", group: "primary", aiHint: "案件一覧から次に触る現場を選ぶ" },
+    { key: "gantt", label: t("common:nav.process"), icon: "gantt", path: ganttPath, active: route === "/gantt" || route.startsWith("/gantt/"), group: "primary", aiHint: "工程の遅れとタスクを見る" },
+    { key: "photos", label: t("common:nav.photos"), icon: "photos", path: "/photos", active: route === "/photos", group: "primary", aiHint: "現場写真を撮影・整理する" },
+    { key: "tasks", label: t("common:nav.tasks"), icon: "tasks", path: "/tasks", active: route === "/tasks", group: "field", aiHint: "未完了タスクと担当の穴を見る" },
     { key: "cross-gantt", label: t("common:nav.cross_gantt"), icon: "cross-gantt", path: "/cross-project-gantt", active: route === "/cross-project-gantt", group: "field", aiHint: "全案件の工程ずれを比較する" },
     { key: "schedule", label: "見積から工程作成", icon: "schedule", path: "/schedule", active: route === "/schedule", group: "field", aiHint: "見積から工程を組む" },
     { key: "finishing", label: "仕上表", icon: "finishing", path: "/finishing", active: route === "/finishing" || route.startsWith("/finishing/"), group: "field", aiHint: "部屋別の仕様と未決を整理する" },
     { key: "progress-review", label: t("common:nav.progress_review"), icon: "progress-review", path: "/progress-review", active: route === "/progress-review", group: "field", aiHint: "写真から進捗と不足証跡を見る" },
     { key: "safety", label: t("common:nav.safety_management"), icon: "safety", path: "/safety", active: route === "/safety", group: "field", aiHint: "安全確認と是正漏れを見る" },
     { key: "phase-templates", label: "テンプレライブラリ", icon: "phase-templates", path: "/phase-templates", active: route === "/phase-templates", group: "field", aiHint: "標準工程テンプレートを探す" },
+    { key: "crm", label: t("common:nav.crm"), icon: "crm", path: "/crm", active: route === "/crm", group: "field", aiHint: "見込み客と次回接触を整理する" },
+    { key: "contractors", label: t("common:nav.partner_companies"), icon: "partner-companies", path: "/contractors", active: route === "/contractors", group: "field", aiHint: "業者と発注先候補を見る" },
     { key: "estimate", label: t("common:nav.estimate"), icon: "estimate", path: "/estimate", active: route === "/estimate" || route.startsWith("/estimate?"), group: "money", aiHint: "見積作成と粗利の前提を確認する" },
     { key: "takeoff", label: "拾い出し", icon: "takeoff", path: "/takeoff", active: route === "/takeoff", group: "money", aiHint: "図面をなぞって数量を拾い見積へ送る" },
     { key: "invoice", label: t("common:nav.invoices_nav"), icon: "invoice", path: "/invoice", active: route === "/invoice", group: "money", aiHint: "請求漏れと入金予定を見る" },
     { key: "cost", label: t("common:nav.cost"), icon: "cost", path: "/cost-management", active: route === "/cost-management", group: "money", aiHint: "予算超過と原価差異を見る" },
     { key: "reports", label: t("common:nav.reports"), icon: "reports", path: "/reports", active: route === "/reports" || route.startsWith("/reports/"), group: "money", aiHint: "報告書と経営向け集計を出す" },
     { key: "freee", label: t("common:nav.freee"), icon: "freee", path: "/freee", active: route === "/freee" || route.startsWith("/freee?"), group: "money", aiHint: "会計連携と仕訳候補を見る" },
-    { key: "crm", label: t("common:nav.crm"), icon: "crm", path: "/crm", active: route === "/crm", group: "growth", aiHint: "見込み客と次回接触を整理する" },
-    { key: "contractors", label: t("common:nav.partner_companies"), icon: "partner-companies", path: "/contractors", active: route === "/contractors", group: "growth", aiHint: "業者と発注先候補を見る" },
     { key: "help", label: t("common:nav.help"), icon: "help", path: "/help", active: route === "/help", group: "system", aiHint: "使い方とショートカットを見る" },
     { key: "account", label: "アカウント設定", icon: "account", path: "/account", active: route === "/account", group: "system", aiHint: "ユーザー・組織・表示設定を変える" },
   ];
-  const sidebarGroups = (Object.keys(sidebarGroupLabels) as SidebarItem["group"][])
+  const primarySidebarItems = allSidebarItems.filter((item) => item.group === "primary");
+  const sidebarGroups = (Object.keys(sidebarGroupLabels) as Exclude<SidebarItem["group"], "primary">[])
     .map((group) => ({
       group,
       label: sidebarGroupLabels[group],
+      icon: sidebarGroupIcon[group],
       items: allSidebarItems.filter((item) => item.group === group),
     }))
     .filter((group) => group.items.length > 0);
@@ -1012,34 +1036,68 @@ function AppShell() {
               </div>
             )}
 
-            <div className="space-y-4">
-              {sidebarGroups.map((group) => (
-                <div key={group.group}>
-                  {!sidebarCollapsed && (
-                    <p className="px-3 pb-1 text-[11px] font-bold tracking-wide text-slate-400">
-                      {group.label}
-                    </p>
-                  )}
-                  <div className="space-y-0.5">
-                    {group.items.map((item) => (
-                      <button
-                        key={item.key}
-                        type="button"
-                        onClick={() => navigate(item.path)}
-                        aria-current={item.active ? "page" : undefined}
-                        aria-label={`${item.label}: ${item.aiHint}`}
-                        title={sidebarCollapsed ? item.label : undefined}
-                        className={`ios-nav-item${item.active ? " active" : ""}${sidebarCollapsed ? " justify-center px-0" : ""}`}
-                        data-ai-route={item.key}
-                        data-ai-intent={item.aiHint}
-                      >
-                        <span className="flex shrink-0 items-center justify-center" aria-hidden="true"><NavIcon id={item.icon} /></span>
-                        {!sidebarCollapsed && <span className="min-w-0 flex-1 truncate">{item.label}</span>}
-                      </button>
-                    ))}
-                  </div>
-                </div>
+            {/* 一次ナビ: 今日/案件/工程/写真 の4つを常時表示で固定 (sol-ultra #1) */}
+            <div className="space-y-0.5" data-testid="sidebar-primary-nav">
+              {primarySidebarItems.map((item) => (
+                <button
+                  key={item.key}
+                  type="button"
+                  onClick={() => navigate(item.path)}
+                  aria-current={item.active ? "page" : undefined}
+                  aria-label={`${item.label}: ${item.aiHint}`}
+                  title={sidebarCollapsed ? item.label : undefined}
+                  className={`ios-nav-item${item.active ? " active" : ""}${sidebarCollapsed ? " justify-center px-0" : ""}`}
+                  data-ai-route={item.key}
+                  data-ai-intent={item.aiHint}
+                >
+                  <span className="flex shrink-0 items-center justify-center" aria-hidden="true"><NavIcon id={item.icon} /></span>
+                  {!sidebarCollapsed && <span className="min-w-0 flex-1 truncate">{item.label}</span>}
+                </button>
               ))}
+            </div>
+
+            <div className="my-3 border-t border-[rgba(60,60,67,0.1)]" />
+
+            {/* お金・現場・プロフィール等は折りたたみグループとして表示(既定は閉)。18項目常時表示だったBeforeの解消 */}
+            <div className="space-y-1">
+              {sidebarGroups.map((group) => {
+                const isExpanded = expandedNavGroup === group.group;
+                const hasActiveItem = group.items.some((item) => item.active);
+                return (
+                  <div key={group.group}>
+                    <button
+                      type="button"
+                      onClick={() => setExpandedNavGroup(isExpanded ? null : group.group)}
+                      aria-expanded={isExpanded}
+                      title={sidebarCollapsed ? group.label : undefined}
+                      className={`ios-nav-item w-full${hasActiveItem ? " active" : ""}${sidebarCollapsed ? " justify-center px-0" : ""}`}
+                    >
+                      <span className="flex shrink-0 items-center justify-center" aria-hidden="true"><NavIcon id={group.icon} /></span>
+                      {!sidebarCollapsed && <span className="min-w-0 flex-1 truncate text-left">{group.label}</span>}
+                    </button>
+                    {isExpanded && (
+                      <div className="mt-0.5 space-y-0.5 pl-2">
+                        {group.items.map((item) => (
+                          <button
+                            key={item.key}
+                            type="button"
+                            onClick={() => navigate(item.path)}
+                            aria-current={item.active ? "page" : undefined}
+                            aria-label={`${item.label}: ${item.aiHint}`}
+                            title={sidebarCollapsed ? item.label : undefined}
+                            className={`ios-nav-item${item.active ? " active" : ""}${sidebarCollapsed ? " justify-center px-0" : ""}`}
+                            data-ai-route={item.key}
+                            data-ai-intent={item.aiHint}
+                          >
+                            <span className="flex shrink-0 items-center justify-center" aria-hidden="true"><NavIcon id={item.icon} /></span>
+                            {!sidebarCollapsed && <span className="min-w-0 flex-1 truncate">{item.label}</span>}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </div>
           {user && !sidebarCollapsed ? (
@@ -1073,6 +1131,7 @@ function AppShell() {
 
         {/* ── Mobile bottom tab bar ── */}
         <nav
+          data-testid="mobile-bottom-nav"
           className={`safe-bottom fixed inset-x-0 bottom-0 z-40 flex border-t border-[rgba(60,60,67,0.12)] bg-white/80 backdrop-blur shadow-[0_-1px_0_rgba(60,60,67,0.12)] md:hidden transition-transform duration-200 ${keyboardOpen ? "translate-y-full" : ""}`}
           aria-label={t("common:nav.home")}
         >
@@ -1105,7 +1164,7 @@ function AppShell() {
         {moreDrawerOpen ? (
           <div className="fixed inset-0 z-30 md:hidden" onClick={() => setMoreDrawerOpen(false)}>
             <div className="absolute inset-0 bg-slate-950/30" />
-            <div className="safe-bottom absolute bottom-16 inset-x-0 rounded-t-2xl bg-white px-4 pb-6 pt-4 shadow-2xl" onClick={(event) => event.stopPropagation()}>
+            <div data-testid="more-drawer" className="safe-bottom absolute bottom-16 inset-x-0 rounded-t-2xl bg-white px-4 pb-6 pt-4 shadow-2xl" onClick={(event) => event.stopPropagation()}>
               <div className="mb-3 flex items-center justify-between">
                 <p className="text-sm font-bold text-slate-700">{t("common:nav.more")}</p>
                 <button type="button" onClick={() => setMoreDrawerOpen(false)} className="p-1 text-slate-400">
@@ -1114,35 +1173,54 @@ function AppShell() {
                   </svg>
                 </button>
               </div>
-              <div className="max-h-[60vh] space-y-4 overflow-y-auto">
-                {(Object.keys(sidebarGroupLabels) as SidebarItem["group"][]).map((group) => {
+              {/* sol-ultra #1: その他は最大6項目に抑える。既定はカテゴリ見出しのみ表示、タップで展開 */}
+              <div className="max-h-[60vh] space-y-2 overflow-y-auto">
+                {(Object.keys(sidebarGroupLabels) as Exclude<SidebarItem["group"], "primary">[]).map((group) => {
                   const itemsInGroup = secondaryTabs.filter((tab) => moreTabGroup[tab.key] === group);
                   if (itemsInGroup.length === 0) return null;
+                  const isExpanded = expandedNavGroup === group;
+                  const hasActiveItem = itemsInGroup.some((tab) => tab.matchRoute(route));
                   return (
                     <div key={group}>
-                      <p className="mb-2 px-1 text-[11px] font-bold uppercase tracking-wider text-slate-400">
-                        {sidebarGroupLabels[group]}
-                      </p>
-                      <div className="grid grid-cols-2 gap-2">
-                        {itemsInGroup.map((tab) => (
-                          <button
-                            key={tab.key}
-                            type="button"
-                            onClick={() => {
-                              navigate(tab.path);
-                              setMoreDrawerOpen(false);
-                            }}
-                            className={`flex items-center gap-3 rounded-xl border px-4 py-3 text-sm font-semibold ${
-                              tab.matchRoute(route)
-                                ? "border-[#007AFF]/30 bg-[#007AFF]/8 text-[#007AFF]"
-                                : "border-slate-200 bg-white text-slate-700"
-                            }`}
-                          >
-                            <span className="flex items-center justify-center" aria-hidden="true"><NavIcon id={tab.icon} /></span>
-                            {tab.label}
-                          </button>
-                        ))}
-                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setExpandedNavGroup(isExpanded ? null : group)}
+                        aria-expanded={isExpanded}
+                        className={`flex w-full items-center justify-between gap-3 rounded-xl border px-4 py-3 text-sm font-semibold ${
+                          hasActiveItem
+                            ? "border-[#007AFF]/30 bg-[#007AFF]/8 text-[#007AFF]"
+                            : "border-slate-200 bg-white text-slate-700"
+                        }`}
+                      >
+                        <span className="flex items-center gap-3">
+                          <span className="flex items-center justify-center" aria-hidden="true"><NavIcon id={sidebarGroupIcon[group]} /></span>
+                          {sidebarGroupLabels[group]}
+                        </span>
+                        <span className="text-xs text-slate-400">{isExpanded ? "閉じる" : `${itemsInGroup.length}件`}</span>
+                      </button>
+                      {isExpanded && (
+                        <div className="mt-2 grid grid-cols-2 gap-2">
+                          {itemsInGroup.map((tab) => (
+                            <button
+                              key={tab.key}
+                              type="button"
+                              onClick={() => {
+                                navigate(tab.path);
+                                setMoreDrawerOpen(false);
+                              }}
+                              data-tour={tab.dataTour}
+                              className={`flex items-center gap-3 rounded-xl border px-4 py-3 text-sm font-semibold ${
+                                tab.matchRoute(route)
+                                  ? "border-[#007AFF]/30 bg-[#007AFF]/8 text-[#007AFF]"
+                                  : "border-slate-200 bg-white text-slate-700"
+                              }`}
+                            >
+                              <span className="flex items-center justify-center" aria-hidden="true"><NavIcon id={tab.icon} /></span>
+                              {tab.label}
+                            </button>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   );
                 })}
