@@ -17,6 +17,7 @@ import { filterScheduleTasks } from "../lib/cost-management.js";
 import { resolveDependencyDrop } from "../components/gantt/utils.js";
 import { computeConnectScheduleUpdates } from "../lib/card-board-schedule.js";
 import { CardBoardChart } from "../components/card-board/CardBoardChart.js";
+import { ProjectViewSwitch } from "../components/gantt/ProjectViewSwitch.js";
 import { readLastProjectId, writeLastProjectId } from "../lib/last-project.js";
 
 type CardBoardPageProps = {
@@ -159,17 +160,19 @@ export function CardBoardPage({ initialProjectId = null }: CardBoardPageProps) {
   }
 
   return (
-    <div className="flex flex-col h-[calc(100vh-140px)] min-h-[500px]">
+    <div data-testid="card-board-page" className="flex flex-col h-[calc(100vh-140px)] min-h-[500px]">
       <div className="flex items-center justify-between gap-3 px-4 py-2 bg-white border-b border-slate-200 shrink-0 flex-wrap">
         <div className="flex items-center gap-3">
           <h1 className="text-sm font-bold text-slate-800">工程カードビュー</h1>
           {selectedProjectId && (
-            <button
-              onClick={() => navigate(`/gantt/${selectedProjectId}`)}
-              className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors"
-            >
-              ガント表示
-            </button>
+            <ProjectViewSwitch
+              active="cards"
+              onSelect={(view) => {
+                if (view === "cards") return;
+                const query = view === "gantt" ? "" : `?view=${view}`;
+                navigate(`/gantt/${selectedProjectId}${query}`);
+              }}
+            />
           )}
         </div>
         <select

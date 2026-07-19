@@ -377,7 +377,7 @@ function AppShell() {
     },
     {
       key: "schedule",
-      label: "工程表",
+      label: "見積から工程作成",
       icon: "schedule",
       path: "/schedule",
       matchRoute: (currentRoute) => currentRoute === "/schedule",
@@ -429,6 +429,9 @@ function AppShell() {
   const ganttProjectId = ganttMatch?.[1] ? decodeURIComponent(ganttMatch[1]) : null;
   // Extract openMaster flag from hash query string: /#/gantt/xxx?openMaster=1
   const ganttOpenMaster = ganttMatch ? /[?&]openMaster=1/.test(window.location.hash) : false;
+  // pe4m1: 工程ビュー(今日/一覧/ガント)を hash query から受け取る: /#/gantt/xxx?view=today
+  const ganttViewMatch = ganttMatch ? window.location.hash.match(/[?&]view=(today|list|gantt)/) : null;
+  const ganttInitialView = (ganttViewMatch?.[1] ?? undefined) as "today" | "list" | "gantt" | undefined;
   const cardBoardProjectId = cardBoardMatch?.[1] ? decodeURIComponent(cardBoardMatch[1]) : null;
   const entryProjectId = entryMatch?.[1] ? decodeURIComponent(entryMatch[1]) : null;
   const historyProjectId = historyMatch?.[1] ? decodeURIComponent(historyMatch[1]) : null;
@@ -698,7 +701,7 @@ function AppShell() {
       );
     }
     if (ganttMatch) {
-      return <GanttPage initialProjectId={ganttProjectId} openMaster={ganttOpenMaster} />;
+      return <GanttPage initialProjectId={ganttProjectId} openMaster={ganttOpenMaster} initialView={ganttInitialView} />;
     }
     if (cardBoardMatch) {
       return (
@@ -864,8 +867,8 @@ function AppShell() {
     { key: "today", label: t("common:nav.dashboard"), icon: "dashboard", path: "/today", active: route === "/today", group: "today", aiHint: "今日の遅延・予算・現場リスクを見る" },
     { key: "app", label: t("common:nav.project_list"), icon: "project-list", path: "/app", active: route === "/app" || route === "/" || route === "", group: "today", aiHint: "案件一覧から次に触る現場を選ぶ" },
     { key: "tasks", label: t("common:nav.tasks"), icon: "tasks", path: "/tasks", active: route === "/tasks", group: "today", aiHint: "未完了タスクと担当の穴を見る" },
-    { key: "cross-gantt", label: t("common:nav.gantt_chart"), icon: "cross-gantt", path: "/cross-project-gantt", active: route === "/cross-project-gantt", group: "field", aiHint: "全案件の工程ずれを比較する" },
-    { key: "schedule", label: "工程表", icon: "schedule", path: "/schedule", active: route === "/schedule", group: "field", aiHint: "見積から工程を組む" },
+    { key: "cross-gantt", label: t("common:nav.cross_gantt"), icon: "cross-gantt", path: "/cross-project-gantt", active: route === "/cross-project-gantt", group: "field", aiHint: "全案件の工程ずれを比較する" },
+    { key: "schedule", label: "見積から工程作成", icon: "schedule", path: "/schedule", active: route === "/schedule", group: "field", aiHint: "見積から工程を組む" },
     { key: "finishing", label: "仕上表", icon: "finishing", path: "/finishing", active: route === "/finishing" || route.startsWith("/finishing/"), group: "field", aiHint: "部屋別の仕様と未決を整理する" },
     { key: "progress-review", label: t("common:nav.progress_review"), icon: "progress-review", path: "/progress-review", active: route === "/progress-review", group: "field", aiHint: "写真から進捗と不足証跡を見る" },
     { key: "safety", label: t("common:nav.safety_management"), icon: "safety", path: "/safety", active: route === "/safety", group: "field", aiHint: "安全確認と是正漏れを見る" },

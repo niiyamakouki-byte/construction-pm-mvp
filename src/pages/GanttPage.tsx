@@ -12,6 +12,8 @@ import { GanttPageErrorBoundary } from "../components/PageErrorBoundaries.js";
 import { GanttPageSkeleton } from "../components/PageSkeletons.js";
 import { GanttChart } from "../components/gantt/GanttChart.js";
 import { MobileTaskList } from "../components/gantt/MobileTaskList.js";
+import { ProjectTaskList } from "../components/gantt/ProjectTaskList.js";
+import { ProjectViewSwitch, type ProjectView } from "../components/gantt/ProjectViewSwitch.js";
 import { useIsNarrow } from "../hooks/useIsNarrow.js";
 import { QuickAddForm } from "../components/gantt/QuickAddForm.js";
 import { TaskEditModal } from "../components/gantt/TaskEditModal.js";
@@ -436,9 +438,10 @@ function buildProjectPeriod(project: Project, tasks: GanttTask[]) {
 type GanttPageProps = {
   initialProjectId?: string | null;
   openMaster?: boolean;
+  initialView?: ProjectView;
 };
 
-function GanttPageContent({ initialProjectId = null, openMaster = false }: GanttPageProps) {
+function GanttPageContent({ initialProjectId = null, openMaster = false, initialView }: GanttPageProps) {
   const { organizationId } = useOrganizationContext();
   const projectRepository = useMemo(() => createProjectRepository(() => organizationId), [organizationId]);
   const taskRepository = useMemo(() => createTaskRepository(() => organizationId), [organizationId]);
@@ -469,6 +472,8 @@ function GanttPageContent({ initialProjectId = null, openMaster = false }: Gantt
   // ftaqp: 390px以下では既定を7日縦リストにし、横タイムライン(ガント)は全画面トグルへ分離する
   const isNarrow = useIsNarrow();
   const [showTimeline, setShowTimeline] = useState(false);
+  // pe4m1: 案件内を 今日/一覧/ガント/カード のビューで束ねる。既定はガント。
+  const [projectView, setProjectView] = useState<ProjectView>(initialView ?? "gantt");
   const [rainDialogOpen, setRainDialogOpen] = useState(false);
   const [rainDate, setRainDate] = useState("");
   const [rainAffected, setRainAffected] = useState<Map<string, { startDate: string; endDate: string }> | null>(null);
@@ -2376,7 +2381,37 @@ function GanttPageContent({ initialProjectId = null, openMaster = false }: Gantt
           secondaryActionLabel="1件ずつ追加"
           onSecondaryAction={() => openQuickAdd(selectedProject.id, selectedProject.name)}
         />
-      ) : filteredProjectTasks.length === 0 ? (
+      ) : (
+      <>
+        {/* pe4m1: 工程を 今日/一覧/ガント/カード で束ねるビュー切替（狭幅はftaqpの縦リスト既定に委譲） */}
+        {!isNarrow ? (
+          <div className="mb-3">
+            <ProjectViewSwitch
+              active={projectView}
+              onSelect={(view) => {
+                if (view === "cards") {
+                  navigate(`/cards/${selectedProject.id}`);
+                } else {
+                  setProjectView(view);
+                }
+              }}
+            />
+          </div>
+        ) : null}
+        {projectView === "today" ? (
+          <div className="mx-auto max-w-2xl">
+            <MobileTaskList
+              tasks={filteredProjectTasks}
+              today={today}
+              onOpenTaskDetail={openTaskDetail}
+              onShowTimeline={() => setProjectView("gantt")}
+            />
+          </div>
+        ) : projectView === "list" ? (
+          <div className="mx-auto max-w-3xl">
+            <ProjectTaskList tasks={filteredProjectTasks} today={today} onOpenTaskDetail={openTaskDetail} />
+          </div>
+        ) : filteredProjectTasks.length === 0 ? (
         // P3: 検索/フィルタで 0 件になった時の空状態（案件自体には工程がある場合）
         <div className="rounded-2xl bg-white p-8 text-center ring-1 ring-slate-200">
           <p className="text-sm font-semibold text-slate-700">
@@ -2434,6 +2469,8 @@ function GanttPageContent({ initialProjectId = null, openMaster = false }: Gantt
         )
       ) : (
         ganttChartNode
+      )}
+      </>
       )}
 
       {(showRiskPanel || showChatPanel) && chatSchedule && (
@@ -2616,10 +2653,10 @@ function GanttPageContent({ initialProjectId = null, openMaster = false }: Gantt
   );
 }
 
-export function GanttPage({ initialProjectId = null, openMaster = false }: GanttPageProps) {
+export function GanttPage({ initialProjectId = null, openMaster = false, initialView }: GanttPageProps) {
   return (
     <GanttPageErrorBoundary>
-      <GanttPageContent initialProjectId={initialProjectId} openMaster={openMaster} />
+      <GanttPageContent initialProjectId={initialProjectId} openMaster={openMaster} initialView={initialView} />
     </GanttPageErrorBoundary>
   );
 }

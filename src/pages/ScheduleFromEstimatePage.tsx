@@ -700,7 +700,7 @@ export function ScheduleFromEstimatePage({
   if (!resolvedProjectId && hasSupabaseEnv()) {
     return (
       <div className="mx-auto max-w-2xl px-4 py-12 text-center">
-        <h1 className="text-xl font-bold text-slate-800">工程表</h1>
+        <h1 className="text-xl font-bold text-slate-800">見積から工程作成</h1>
         <p className="mt-3 text-sm text-slate-500">先に案件を作成すると、工程タスクを保存できます。</p>
       </div>
     );
@@ -711,7 +711,7 @@ export function ScheduleFromEstimatePage({
       <header className="sticky top-0 z-10 border-b border-slate-200 bg-white px-4 py-4">
         <div className="mx-auto max-w-6xl flex items-start justify-between gap-4 flex-wrap">
           <div>
-            <h1 className="text-xl font-bold text-slate-800">工程表</h1>
+            <h1 className="text-xl font-bold text-slate-800">見積から工程作成</h1>
             <p className="mt-0.5 text-sm text-slate-500">
               {activeProjectName}
               <span className="mx-1.5 text-slate-300">|</span>

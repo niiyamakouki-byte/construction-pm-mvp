@@ -46,9 +46,9 @@ function renderPage(props?: Partial<React.ComponentProps<typeof ScheduleFromEsti
 // ── 基本レンダリング ──────────────────────────────────────────────────────────
 
 describe("ScheduleFromEstimatePage — 基本レンダリング", () => {
-  it("ヘッダーに「工程表」と案件名が表示される", () => {
+  it("ヘッダーに「見積から工程作成」と案件名が表示される", () => {
     renderPage();
-    expect(screen.getByText("工程表")).toBeDefined();
+    expect(screen.getByText("見積から工程作成")).toBeDefined();
     expect(screen.getByText(/テスト案件/)).toBeDefined();
   });
 
