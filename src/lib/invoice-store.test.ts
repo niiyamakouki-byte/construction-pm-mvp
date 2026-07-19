@@ -27,7 +27,7 @@ const baseInvoice = {
   registrationNumber: "T1234567890123",
   invoiceDate: "2026-04-01",
   dueDate: "2026-04-30",
-  status: "未確認" as const,
+  status: "確認待ち" as const,
 };
 
 describe("invoice-store", () => {
@@ -55,33 +55,33 @@ describe("invoice-store", () => {
 
   it("filters by status", () => {
     addInvoice(baseInvoice);
-    addInvoice({ ...baseInvoice, status: "振込予定" });
-    expect(getInvoicesByStatus("未確認")).toHaveLength(1);
-    expect(getInvoicesByStatus("振込予定")).toHaveLength(1);
-    expect(getInvoicesByStatus("振込済")).toHaveLength(0);
+    addInvoice({ ...baseInvoice, status: "支払予定" });
+    expect(getInvoicesByStatus("確認待ち")).toHaveLength(1);
+    expect(getInvoicesByStatus("支払予定")).toHaveLength(1);
+    expect(getInvoicesByStatus("支払済み")).toHaveLength(0);
   });
 
-  it("updates status to 振込済 and sets paidDate", () => {
+  it("updates status to 支払済み and sets paidDate", () => {
     const inv = addInvoice(baseInvoice);
-    const updated = updateInvoiceStatus(inv.id, "振込済", "2026-04-30");
-    expect(updated?.status).toBe("振込済");
+    const updated = updateInvoiceStatus(inv.id, "支払済み", "2026-04-30");
+    expect(updated?.status).toBe("支払済み");
     expect(updated?.paidDate).toBe("2026-04-30");
   });
 
-  it("auto-sets paidDate when updating to 振込済 without explicit date", () => {
+  it("auto-sets paidDate when updating to 支払済み without explicit date", () => {
     const inv = addInvoice(baseInvoice);
-    const updated = updateInvoiceStatus(inv.id, "振込済");
+    const updated = updateInvoiceStatus(inv.id, "支払済み");
     expect(updated?.paidDate).toBeDefined();
   });
 
   it("preserves paidDate when updating to non-paid status", () => {
-    const inv = addInvoice({ ...baseInvoice, status: "振込済", paidDate: "2026-04-15" });
-    const updated = updateInvoiceStatus(inv.id, "保留");
+    const inv = addInvoice({ ...baseInvoice, status: "支払済み", paidDate: "2026-04-15" });
+    const updated = updateInvoiceStatus(inv.id, "確認待ち");
     expect(updated?.paidDate).toBe("2026-04-15");
   });
 
   it("returns undefined for unknown invoice status update", () => {
-    expect(updateInvoiceStatus("nonexistent", "確認済")).toBeUndefined();
+    expect(updateInvoiceStatus("nonexistent", "確認待ち")).toBeUndefined();
   });
 
   it("updates invoice fields", () => {
@@ -102,17 +102,17 @@ describe("invoice-store", () => {
 
   describe("getMonthlyInvoiceSummary", () => {
     it("calculates unpaid total", () => {
-      addInvoice({ ...baseInvoice, status: "未確認", total: 110000 });
-      addInvoice({ ...baseInvoice, status: "振込予定", total: 220000 });
-      addInvoice({ ...baseInvoice, status: "振込済", paidDate: "2026-04-15", total: 330000 });
+      addInvoice({ ...baseInvoice, status: "確認待ち", total: 110000 });
+      addInvoice({ ...baseInvoice, status: "支払予定", total: 220000 });
+      addInvoice({ ...baseInvoice, status: "支払済み", paidDate: "2026-04-15", total: 330000 });
       const summary = getMonthlyInvoiceSummary("2026-04");
       expect(summary.unpaidTotal).toBe(330000);
       expect(summary.paidTotal).toBe(330000);
     });
 
     it("calculates this month due total", () => {
-      addInvoice({ ...baseInvoice, status: "振込予定", dueDate: "2026-04-30", total: 110000 });
-      addInvoice({ ...baseInvoice, status: "振込予定", dueDate: "2026-05-31", total: 220000 });
+      addInvoice({ ...baseInvoice, status: "支払予定", dueDate: "2026-04-30", total: 110000 });
+      addInvoice({ ...baseInvoice, status: "支払予定", dueDate: "2026-05-31", total: 220000 });
       const summary = getMonthlyInvoiceSummary("2026-04");
       expect(summary.thisMonthDueTotal).toBe(110000);
     });
@@ -143,9 +143,9 @@ describe("invoice-store", () => {
 
   describe("buildPaymentSchedule", () => {
     it("returns pending invoices sorted by scheduled date", () => {
-      addInvoice({ ...baseInvoice, status: "振込予定", dueDate: "2026-05-10", total: 110000 });
-      addInvoice({ ...baseInvoice, status: "未確認", dueDate: "2026-04-30", total: 220000 });
-      addInvoice({ ...baseInvoice, status: "振込済", total: 330000 });
+      addInvoice({ ...baseInvoice, status: "支払予定", dueDate: "2026-05-10", total: 110000 });
+      addInvoice({ ...baseInvoice, status: "確認待ち", dueDate: "2026-04-30", total: 220000 });
+      addInvoice({ ...baseInvoice, status: "支払済み", total: 330000 });
       const schedule = buildPaymentSchedule();
       expect(schedule).toHaveLength(2);
       expect(schedule[0].scheduledDate).toBe("2026-04-30");
@@ -153,7 +153,7 @@ describe("invoice-store", () => {
     });
 
     it("uses computeScheduledDate when no dueDate", () => {
-      addInvoice({ ...baseInvoice, status: "振込予定", dueDate: undefined, invoiceDate: "2026-04-01" });
+      addInvoice({ ...baseInvoice, status: "支払予定", dueDate: undefined, invoiceDate: "2026-04-01" });
       const schedule = buildPaymentSchedule("月末締め翌月払い");
       expect(schedule[0].scheduledDate).toBe("2026-05-31");
     });

@@ -18,7 +18,7 @@ const baseGenba: GenbaInvoice = {
   total: 330_000,
   items: [],
   invoiceDate: "2025-04-10",
-  status: "未確認",
+  status: "確認待ち",
 };
 
 function mockClient(invoices: object[]): FreeeClient {

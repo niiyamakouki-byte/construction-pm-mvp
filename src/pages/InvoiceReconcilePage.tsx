@@ -3,7 +3,7 @@
  *
  * GenbaHub の請求書一覧と freee キャッシュ取引を照合して表示する。
  * 「同期」ボタンで `/api/freee/deals` を叩いて取引を取得し、MatchingEngine で候補を再計算する。
- * 確定時は invoice-store の status を「振込済」に更新する（永続化）。
+ * 確定時は invoice-store の status を「支払済み」に更新する（永続化）。
  * freee 未連携・認証切れは「freee 連携が必要です」案内を表示する。
  */
 
@@ -149,8 +149,8 @@ export function InvoiceReconcilePage() {
           action.reason,
           action.by,
         );
-        // 請求書 status を「振込済」に更新（永続化）
-        updateInvoiceStatus(action.invoiceId, "振込済");
+        // 請求書 status を「支払済み」に更新（永続化）
+        updateInvoiceStatus(action.invoiceId, "支払済み");
         // 入金確定通知を通知パネルに流す
         const invoice = getInvoice(action.invoiceId);
         if (invoice) {

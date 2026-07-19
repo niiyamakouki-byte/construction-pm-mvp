@@ -2,7 +2,12 @@
  * Invoice store — manage invoices linked to projects, with status tracking and monthly summaries.
  */
 
-export type InvoiceStatus = "未確認" | "確認済" | "振込予定" | "振込済" | "保留";
+// p94s2: 請求書ハブの単一パイプライン。OCR・手入力とも「確認待ち」で合流し、
+// 受領 → 確認待ち → 支払予定 → 支払済み の順で流れる。
+export type InvoiceStatus = "受領" | "確認待ち" | "支払予定" | "支払済み";
+
+/** 未払い(=支払済み以外)とみなすステータス。集計・支払予定表で共用する。 */
+export const UNPAID_STATUSES: readonly InvoiceStatus[] = ["受領", "確認待ち", "支払予定"];
 
 export type InvoiceItem = {
   description: string;
@@ -79,7 +84,7 @@ export function updateInvoiceStatus(
   const updated: Invoice = {
     ...invoice,
     status,
-    paidDate: status === "振込済" ? (paidDate ?? new Date().toISOString().slice(0, 10)) : invoice.paidDate,
+    paidDate: status === "支払済み" ? (paidDate ?? new Date().toISOString().slice(0, 10)) : invoice.paidDate,
   };
   invoices.set(id, updated);
   return updated;
@@ -108,19 +113,15 @@ export function clearInvoices(): void {
 export function getMonthlyInvoiceSummary(yearMonth: string): MonthlyInvoiceSummary {
   const all = Array.from(invoices.values());
   const unpaidTotal = all
-    .filter((inv) => inv.status === "未確認" || inv.status === "確認済" || inv.status === "振込予定")
+    .filter((inv) => UNPAID_STATUSES.includes(inv.status))
     .reduce((sum, inv) => sum + inv.total, 0);
 
   const thisMonthDueTotal = all
-    .filter(
-      (inv) =>
-        inv.dueDate?.startsWith(yearMonth) &&
-        (inv.status === "振込予定" || inv.status === "確認済" || inv.status === "未確認"),
-    )
+    .filter((inv) => inv.dueDate?.startsWith(yearMonth) && UNPAID_STATUSES.includes(inv.status))
     .reduce((sum, inv) => sum + inv.total, 0);
 
   const paidTotal = all
-    .filter((inv) => inv.status === "振込済" && inv.paidDate?.startsWith(yearMonth))
+    .filter((inv) => inv.status === "支払済み" && inv.paidDate?.startsWith(yearMonth))
     .reduce((sum, inv) => sum + inv.total, 0);
 
   return { unpaidTotal, thisMonthDueTotal, paidTotal };
@@ -157,9 +158,7 @@ export function computeScheduledDate(invoiceDate: string, term: PaymentTerm): st
  */
 export function buildPaymentSchedule(term: PaymentTerm = "月末締め翌月払い"): PaymentScheduleEntry[] {
   return Array.from(invoices.values())
-    .filter(
-      (inv) => inv.status === "振込予定" || inv.status === "確認済" || inv.status === "未確認",
-    )
+    .filter((inv) => UNPAID_STATUSES.includes(inv.status))
     .map((inv) => ({
       invoice: inv,
       scheduledDate: inv.dueDate ?? computeScheduledDate(inv.invoiceDate, term),

@@ -48,7 +48,7 @@ describe("InvoiceManagementPage", () => {
   });
 
   it("フィルター適用時に一致なしでフィルター解除ボタンが表示される", async () => {
-    // 「未確認」の請求書を1件追加
+    // 「確認待ち」の請求書を1件追加
     addInvoice({
       projectId: "proj-1",
       vendorName: "テスト業者",
@@ -57,20 +57,20 @@ describe("InvoiceManagementPage", () => {
       total: 110000,
       items: [],
       invoiceDate: "2024-04-01",
-      status: "未確認",
+      status: "確認待ち",
     });
 
     render(<InvoiceManagementPage />);
 
-    // 「振込済」フィルターをクリック（結果0件になるはず）
+    // 「支払済み」フィルターをクリック（結果0件になるはず）
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: "振込済" })).toBeDefined();
+      expect(screen.getByRole("button", { name: "支払済み" })).toBeDefined();
     });
-    fireEvent.click(screen.getByRole("button", { name: "振込済" }));
+    fireEvent.click(screen.getByRole("button", { name: "支払済み" }));
 
     // フィルター適用時の空状態が表示される
     await waitFor(() => {
-      expect(screen.getByRole("heading", { name: "「振込済」の請求書がありません" })).toBeDefined();
+      expect(screen.getByRole("heading", { name: "「支払済み」の請求書がありません" })).toBeDefined();
     });
 
     // 「フィルターを解除」ボタンが表示される
@@ -86,16 +86,16 @@ describe("InvoiceManagementPage", () => {
       total: 55000,
       items: [],
       invoiceDate: "2024-04-01",
-      status: "未確認",
+      status: "確認待ち",
     });
 
     render(<InvoiceManagementPage />);
 
-    // 「振込済」フィルターを適用して0件にする
+    // 「支払済み」フィルターを適用して0件にする
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: "振込済" })).toBeDefined();
+      expect(screen.getByRole("button", { name: "支払済み" })).toBeDefined();
     });
-    fireEvent.click(screen.getByRole("button", { name: "振込済" }));
+    fireEvent.click(screen.getByRole("button", { name: "支払済み" }));
 
     await waitFor(() => {
       expect(screen.getByRole("button", { name: "フィルターを解除" })).toBeDefined();

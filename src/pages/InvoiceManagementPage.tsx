@@ -26,14 +26,14 @@ function formatCurrency(value: number): string {
   return currencyFormatter.format(value);
 }
 
-const STATUS_OPTIONS: InvoiceStatus[] = ["未確認", "確認済", "振込予定", "振込済", "保留"];
+// p94s2: 受領 → 確認待ち → 支払予定 → 支払済み の単一パイプライン。
+const STATUS_OPTIONS: InvoiceStatus[] = ["受領", "確認待ち", "支払予定", "支払済み"];
 
 const STATUS_COLORS: Record<InvoiceStatus, string> = {
-  未確認: "bg-yellow-100 text-yellow-800",
-  確認済: "bg-blue-100 text-blue-800",
-  振込予定: "bg-orange-100 text-orange-800",
-  振込済: "bg-brand-100 text-brand-800",
-  保留: "bg-slate-100 text-slate-600",
+  受領: "bg-slate-100 text-slate-600",
+  確認待ち: "bg-amber-100 text-amber-800",
+  支払予定: "bg-brand-50 text-brand-700",
+  支払済み: "bg-brand-600 text-white",
 };
 
 type FilterStatus = "全部" | InvoiceStatus;
@@ -181,7 +181,7 @@ export function InvoiceManagementPage() {
         registrationNumber: form.registrationNumber.trim() || undefined,
         invoiceDate: form.invoiceDate,
         dueDate: form.dueDate || undefined,
-        status: "未確認",
+        status: "確認待ち",
         pdfPath: form.pdfPath.trim() || undefined,
       });
       setForm(EMPTY_FORM);
@@ -193,7 +193,7 @@ export function InvoiceManagementPage() {
   }, [form, formProjectId, refreshInvoices]);
 
   return (
-    <div className="space-y-6">
+    <div data-testid="invoice-management-page" className="space-y-6">
       <ConfirmDialog
         open={deleteTarget !== null}
         title="請求書を削除"

@@ -17,7 +17,7 @@ export function summarizeInvoicePayments(invoices: Invoice[]): {
   let paidTotal = 0;
   let unpaidTotal = 0;
   for (const inv of invoices) {
-    if (inv.status === "振込済") paidTotal += inv.total;
+    if (inv.status === "支払済み") paidTotal += inv.total;
     else unpaidTotal += inv.total;
   }
   return { paidTotal, unpaidTotal };

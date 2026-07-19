@@ -12,7 +12,7 @@ function makeInvoice(overrides: Partial<Invoice>): Invoice {
     total: 110_000,
     items: [],
     invoiceDate: "2026-06-01",
-    status: "未確認",
+    status: "確認待ち",
     ...overrides,
   };
 }
@@ -22,14 +22,14 @@ describe("summarizeInvoicePayments", () => {
     expect(summarizeInvoicePayments([])).toEqual({ paidTotal: 0, unpaidTotal: 0 });
   });
 
-  it("振込済 は入金済み合計、それ以外は未入金合計に積み上げる", () => {
+  it("支払済み は入金済み合計、それ以外は未入金合計に積み上げる", () => {
     const invoices: Invoice[] = [
-      makeInvoice({ id: "a", status: "振込済", total: 100_000 }),
-      makeInvoice({ id: "b", status: "未確認", total: 50_000 }),
-      makeInvoice({ id: "c", status: "確認済", total: 30_000 }),
-      makeInvoice({ id: "d", status: "振込予定", total: 20_000 }),
-      makeInvoice({ id: "e", status: "保留", total: 10_000 }),
-      makeInvoice({ id: "f", status: "振込済", total: 70_000 }),
+      makeInvoice({ id: "a", status: "支払済み", total: 100_000 }),
+      makeInvoice({ id: "b", status: "確認待ち", total: 50_000 }),
+      makeInvoice({ id: "c", status: "受領", total: 30_000 }),
+      makeInvoice({ id: "d", status: "支払予定", total: 20_000 }),
+      makeInvoice({ id: "e", status: "確認待ち", total: 10_000 }),
+      makeInvoice({ id: "f", status: "支払済み", total: 70_000 }),
     ];
     expect(summarizeInvoicePayments(invoices)).toEqual({
       paidTotal: 170_000,

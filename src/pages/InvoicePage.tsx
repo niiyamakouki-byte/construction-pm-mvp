@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { Expense } from "../domain/types.js";
-import { createAppRepository } from "../infra/create-app-repository.js";
 import { createProjectRepository } from "../stores/project-store.js";
+// p94s2: OCR結果は経費ではなく請求書ハブの「確認待ち」レコードへ合流させる
+import { addInvoice } from "../lib/invoice-store.js";
+import { navigate } from "../hooks/useHashRouter.js";
 import { useOrganizationContext } from "../contexts/OrganizationContext.js";
 import {
   extractInvoiceFromFile,
@@ -37,10 +38,6 @@ function toOcrResult(extraction: InvoiceExtraction): OcrResult {
 
 export function InvoicePage() {
   const { organizationId } = useOrganizationContext();
-  const expenseRepository = useMemo(
-    () => createAppRepository<Expense>("expenses", () => organizationId),
-    [organizationId],
-  );
   const projectRepository = useMemo(
     () => createProjectRepository(() => organizationId),
     [organizationId],
@@ -176,26 +173,25 @@ export function InvoicePage() {
       setError("金額が小さすぎます（100円未満）。金額は円単位で入力してください。万円単位の場合は末尾に0000を付けてください。");
       return;
     }
-    // expenses.project_id は projects への外部キー必須。案件が1件も無いまま
-    // INSERT すると生のFK違反エラー(英語)がそのまま表示されるため先に案内する。
+    // 請求書は案件に紐づく。案件が1件も無いまま登録できないため先に案内する。
     if (!projectId) {
-      setError("経費の保存先となる案件がありません。先に案件一覧から案件を作成してください");
+      setError("請求書の保存先となる案件がありません。先に案件一覧から案件を作成してください");
       return;
     }
     setSaving(true);
     setError(null);
     try {
-      const now = new Date().toISOString();
-      await expenseRepository.create({
-        id: crypto.randomUUID(),
+      // p94s2: OCR結果を請求書ハブの「確認待ち」レコードとして登録（手入力と合流）。
+      // 以前は経費(expenses)へ保存され請求書管理に流れず、支払漏れ・二重登録の原因だった。
+      addInvoice({
         projectId,
-        expenseDate: invoiceDate,
-        description: `請求書: ${vendorName}`,
+        vendorName: vendorName.trim(),
         amount: parsedAmount,
-        category: "請求書",
-        approvalStatus: "pending",
-        createdAt: now,
-        updatedAt: now,
+        tax: 0,
+        total: parsedAmount,
+        items: [],
+        invoiceDate,
+        status: "確認待ち",
       });
       setSaved(true);
     } catch (err) {
@@ -203,7 +199,7 @@ export function InvoicePage() {
     } finally {
       setSaving(false);
     }
-  }, [expenseRepository, vendorName, amount, invoiceDate, projectId]);
+  }, [vendorName, amount, invoiceDate, projectId]);
 
   const handleReset = useCallback(() => {
     setOcrResult(null);
@@ -217,7 +213,7 @@ export function InvoicePage() {
   }, []);
 
   return (
-    <div className="mx-auto max-w-2xl space-y-4 px-4 pb-24">
+    <div data-testid="invoice-ocr-page" className="mx-auto max-w-2xl space-y-4 px-4 pb-24">
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-bold text-slate-900">請求書OCR</h1>
         {ocrResult && (
@@ -343,8 +339,15 @@ export function InvoicePage() {
           </div>
 
           {saved ? (
-            <div className="rounded-xl bg-brand-50 border border-brand-200 px-4 py-3 text-sm text-brand-700 font-semibold text-center">
-              経費として保存しました
+            <div className="rounded-xl bg-brand-50 border border-brand-200 px-4 py-3 text-center">
+              <p className="text-sm font-semibold text-brand-700">請求書管理の「確認待ち」に登録しました</p>
+              <button
+                type="button"
+                onClick={() => navigate("/invoices")}
+                className="mt-2 inline-flex items-center gap-1 rounded-lg border border-brand-200 bg-white px-3 py-1.5 text-xs font-semibold text-brand-700 transition-colors hover:bg-brand-50"
+              >
+                請求書管理を開く
+              </button>
             </div>
           ) : (
             <button
@@ -352,7 +355,7 @@ export function InvoicePage() {
               disabled={saving}
               className="w-full rounded-xl bg-brand-600 px-4 py-3 text-sm font-semibold text-white shadow-sm hover:bg-brand-700 disabled:opacity-50 transition-colors"
             >
-              {saving ? "保存中..." : "経費として保存"}
+              {saving ? "登録中..." : "請求書として登録"}
             </button>
           )}
         </div>

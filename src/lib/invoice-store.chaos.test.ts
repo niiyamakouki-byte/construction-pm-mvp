@@ -19,7 +19,7 @@ const base = {
   items: [{ description: "内装工事", quantity: 1, unitPrice: 100000, amount: 100000 }],
   invoiceDate: "2026-04-01",
   dueDate: "2026-04-30",
-  status: "未確認" as const,
+  status: "確認待ち" as const,
 };
 
 describe("invoice-store: カオステスト", () => {
@@ -67,12 +67,12 @@ describe("invoice-store: カオステスト", () => {
 
   // ── ステータス遷移（不正スキップ） ────────────────────────────────────────
 
-  it("updateInvoiceStatusは未確認→振込済を制限なく更新する（ステータス遷移バリデーション未実装確認）", () => {
+  it("updateInvoiceStatusは確認待ち→支払済みを制限なく更新する（ステータス遷移バリデーション未実装確認）", () => {
     // 現在の実装はステータス遷移チェックなし
-    const inv = addInvoice({ ...base, status: "未確認" });
-    const updated = updateInvoiceStatus(inv.id, "振込済");
+    const inv = addInvoice({ ...base, status: "確認待ち" });
+    const updated = updateInvoiceStatus(inv.id, "支払済み");
     // バリデーションがないためスキップ遷移が通ってしまう
-    expect(updated?.status).toBe("振込済");
+    expect(updated?.status).toBe("支払済み");
   });
 
   // ── 重複登録 ─────────────────────────────────────────────────────────────

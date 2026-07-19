@@ -18,7 +18,7 @@ function makeInvoice(overrides: Partial<Invoice> = {}): Invoice {
     total: 330_000,
     items: [],
     invoiceDate: "2025-04-01",
-    status: "未確認",
+    status: "確認待ち",
     ...overrides,
   };
 }

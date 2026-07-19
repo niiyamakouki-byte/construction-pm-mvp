@@ -3,16 +3,15 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { InvoicePage } from "./InvoicePage.js";
 
 const mockProjectFindAll = vi.fn();
-const mockExpenseCreate = vi.fn();
+const mockAddInvoice = vi.fn();
 
 vi.mock("../contexts/OrganizationContext.js", () => ({
   useOrganizationContext: () => ({ organizationId: "test-org" }),
 }));
 
-vi.mock("../infra/create-app-repository.js", () => ({
-  createAppRepository: () => ({
-    create: mockExpenseCreate,
-  }),
+// p94s2: OCR結果は請求書ハブ(invoice-store)の「確認待ち」レコードへ合流する
+vi.mock("../lib/invoice-store.js", () => ({
+  addInvoice: (...args: unknown[]) => mockAddInvoice(...args),
 }));
 
 vi.mock("../stores/project-store.js", () => ({
@@ -57,7 +56,7 @@ describe("InvoicePage", () => {
     expect(screen.queryByRole("alert")).toBeNull();
   });
 
-  it("案件が1件も無いとき保存でFK違反の代わりに日本語の案内を出す", async () => {
+  it("案件が1件も無いとき登録で日本語の案内を出す", async () => {
     mockProjectFindAll.mockResolvedValue([]);
     const { container } = render(<InvoicePage />);
     const input = container.querySelector('input[type="file"]') as HTMLInputElement;
@@ -66,17 +65,16 @@ describe("InvoicePage", () => {
       target: { files: [new File(["pdf"], "invoice.pdf", { type: "application/pdf" })] },
     });
 
-    const saveButton = await screen.findByRole("button", { name: "経費として保存" });
+    const saveButton = await screen.findByRole("button", { name: "請求書として登録" });
     fireEvent.click(saveButton);
 
     const alert = await screen.findByRole("alert");
-    expect(alert.textContent).toContain("経費の保存先となる案件がありません");
-    expect(mockExpenseCreate).not.toHaveBeenCalled();
+    expect(alert.textContent).toContain("請求書の保存先となる案件がありません");
+    expect(mockAddInvoice).not.toHaveBeenCalled();
   });
 
-  it("案件があるとき保存は先頭案件に紐づけてcreateされる", async () => {
+  it("案件があるとき OCR結果を請求書ハブの確認待ちレコードとして登録する", async () => {
     mockProjectFindAll.mockResolvedValue([{ id: "proj-1", name: "テスト案件" }]);
-    mockExpenseCreate.mockResolvedValue(undefined);
     const { container } = render(<InvoicePage />);
     const input = container.querySelector('input[type="file"]') as HTMLInputElement;
 
@@ -84,11 +82,16 @@ describe("InvoicePage", () => {
       target: { files: [new File(["pdf"], "invoice.pdf", { type: "application/pdf" })] },
     });
 
-    const saveButton = await screen.findByRole("button", { name: "経費として保存" });
+    const saveButton = await screen.findByRole("button", { name: "請求書として登録" });
     fireEvent.click(saveButton);
 
-    await screen.findByText("経費として保存しました");
-    expect(mockExpenseCreate).toHaveBeenCalledTimes(1);
-    expect(mockExpenseCreate.mock.calls[0][0]).toMatchObject({ projectId: "proj-1" });
+    await screen.findByText("請求書管理の「確認待ち」に登録しました");
+    expect(mockAddInvoice).toHaveBeenCalledTimes(1);
+    expect(mockAddInvoice.mock.calls[0][0]).toMatchObject({
+      projectId: "proj-1",
+      vendorName: "テスト工務店",
+      total: 12000,
+      status: "確認待ち",
+    });
   });
 });

@@ -174,7 +174,7 @@ describe("InvoiceReconcilePage", () => {
       total: 330_000,
       items: [],
       invoiceDate: "2026-06-01",
-      status: "振込予定" as const,
+      status: "支払予定" as const,
     };
     // getAllInvoices が請求書1件を返す
     const { getAllInvoices } = await import("../lib/invoice-store.js");
@@ -222,7 +222,7 @@ describe("InvoiceReconcilePage", () => {
       total: 110_000,
       items: [],
       invoiceDate: "2026-06-01",
-      status: "振込予定" as const,
+      status: "支払予定" as const,
     };
     const { getAllInvoices } = await import("../lib/invoice-store.js");
     vi.mocked(getAllInvoices).mockReturnValue([testInvoice]);
