@@ -50,6 +50,10 @@
   --assistant-fab-safe-content-bottom: calc(
     var(--assistant-fab-mobile-nav-clearance) + var(--assistant-fab-edge-gap) + var(--assistant-fab-size)
   );
+
+  /* bead 9ke: fixed mobile bottom tab bar height + gap, so scroll-into-view targets
+     (form action rows) never land underneath it. */
+  --mobile-nav-scroll-clearance: calc(52px + env(safe-area-inset-bottom, 0px) + 16px);
 }
 
 :root[data-theme="dark"] {
@@ -196,6 +200,13 @@ textarea::placeholder {
 /* Safe area for bottom tab bar on iPhone */
 .safe-bottom {
   padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Keep a form's action row from scrolling under the fixed mobile bottom tab bar. bead 9ke. */
+@media (max-width: 767px) {
+  .form-actions-nav-safe {
+    scroll-margin-bottom: var(--mobile-nav-scroll-clearance);
+  }
 }
 
 /* Keep the final content row above the fixed AI assistant FAB on mobile. */

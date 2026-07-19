@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { BookOpen, CalendarDays, FileText } from "lucide-react";
 import type { Project, ProjectMode, ProjectStatus, Task } from "../domain/types.js";
@@ -86,6 +86,7 @@ export function ProjectListPage() {
   const [startDate, setStartDate] = useState("");
   const [captureMode, setCaptureMode] = useState<ProjectCaptureMode>("memo");
   const [showForm, setShowForm] = useState(false);
+  const createFormActionsRef = useRef<HTMLDivElement>(null);
   const [showDetails, setShowDetails] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [sampleCreating, setSampleCreating] = useState(false);
@@ -119,6 +120,20 @@ export function ProjectListPage() {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- プロジェクト一覧の取得トリガー
     void loadProjects();
   }, [loadProjects]);
+
+  useEffect(() => {
+    // 案件作成フォームを開いた直後、送信ボタンが固定下部ナビの裏に隠れタップ不能に
+    // なる不具合(bead 9ke)。scroll-margin-bottom(form-actions-nav-safe)分の
+    // クリアランスを確保してスクロールする。
+    if (!showForm) return;
+    const id = requestAnimationFrame(() => {
+      const el = createFormActionsRef.current;
+      if (el && typeof el.scrollIntoView === "function") {
+        el.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      }
+    });
+    return () => cancelAnimationFrame(id);
+  }, [showForm]);
 
   const validateName = (value: string): boolean => {
     if (!value.trim()) {
@@ -553,7 +568,7 @@ export function ProjectListPage() {
               </div>
             ) : null}
 
-            <div className="flex items-center gap-3 pt-2">
+            <div ref={createFormActionsRef} className="form-actions-nav-safe flex items-center gap-3 pt-2">
               <button
                 type="submit"
                 disabled={submitting}

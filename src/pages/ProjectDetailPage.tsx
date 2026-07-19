@@ -286,6 +286,7 @@ export function ProjectDetailPage({
   const [weather, setWeather] = useState<WeatherData | null>(null);
   const [loading, setLoading] = useState(true);
   const [showTaskForm, setShowTaskForm] = useState(false);
+  const taskFormActionsRef = useRef<HTMLDivElement>(null);
   const [taskName, setTaskName] = useState("");
   const [taskStartDate, setTaskStartDate] = useState("");
   const [taskDueDate, setTaskDueDate] = useState("");
@@ -365,6 +366,20 @@ export function ProjectDetailPage({
     setSiteEntryNotesDraft(project?.siteEntryNotes ?? DEFAULT_SITE_ENTRY_NOTES);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- project?.id のみを見て再同期する意図的な依存配列
   }, [project?.id]);
+
+  useEffect(() => {
+    // タスク追加フォームを開いた直後、送信ボタンが固定下部ナビ(mobile-bottom-nav)の
+    // 裏に隠れタップ不能になる不具合(bead 9ke)。scroll-margin-bottom(form-actions-nav-safe)
+    // 分のクリアランスを確保してスクロールする。
+    if (!showTaskForm) return;
+    const id = requestAnimationFrame(() => {
+      const el = taskFormActionsRef.current;
+      if (el && typeof el.scrollIntoView === "function") {
+        el.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      }
+    });
+    return () => cancelAnimationFrame(id);
+  }, [showTaskForm]);
 
   const handleSaveSiteEntryNotes = async () => {
     if (!project) return;
@@ -1073,7 +1088,7 @@ export function ProjectDetailPage({
                 className="rounded-lg border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-[#007AFF]/20 focus:border-[#007AFF] focus:outline-none resize-none"
               />
               {/* Row 5: actions */}
-              <div className="flex justify-end gap-2">
+              <div ref={taskFormActionsRef} className="form-actions-nav-safe flex justify-end gap-2">
                 <button
                   type="button"
                   onClick={() => { resetTaskForm(); setShowTaskForm(false); }}
