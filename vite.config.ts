@@ -118,7 +118,6 @@ export default defineConfig({
           if (id.includes("node_modules/html2canvas")) return "html2canvas";
           if (id.includes("node_modules/canvg")) return "canvg";
           if (id.includes("node_modules/dompurify")) return "dompurify";
-          if (id.includes("node_modules/jspdf")) return "jspdf";
           if (id.includes("src/estimate/pdf-estimate")) return "pdf-estimate";
           if (id.includes("src/estimate/noto-sans-jp-font")) return "pdf-font";
           if (id.includes("node_modules/xlsx")) return "xlsx";

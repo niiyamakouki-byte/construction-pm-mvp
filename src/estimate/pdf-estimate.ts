@@ -1,4 +1,4 @@
-import { jsPDF } from "jspdf";
+import type { jsPDF } from "jspdf";
 import type { Estimate } from "./types.js";
 
 /** 金額を日本円フォーマット */
@@ -24,6 +24,7 @@ async function setupJapaneseFont(doc: jsPDF): Promise<void> {
  * バンドルサイズへの影響が最小限。
  */
 export async function generateEstimatePdf(estimate: Estimate): Promise<Blob> {
+  const { jsPDF } = await import("jspdf");
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
 
   await setupJapaneseFont(doc);
