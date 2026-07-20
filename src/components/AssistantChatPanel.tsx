@@ -572,6 +572,9 @@ export function AssistantChatPanel({ userId = "demo-user" }: Props) {
               <div className="flex items-end gap-2">
                 <textarea
                   ref={inputRef}
+                  id="assistant-chat-input"
+                  name="assistantChatInput"
+                  autoComplete="off"
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={handleKeyDown}

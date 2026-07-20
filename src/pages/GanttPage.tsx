@@ -360,7 +360,10 @@ function ChatEditorPanel({ schedule, onScheduleChange }: ChatEditorPanelProps) {
 
       <form onSubmit={handleSubmit} className="mt-3 flex gap-2">
         <input
+          id="gantt-ai-command"
+          name="ganttAiCommand"
           type="text"
+          autoComplete="off"
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
@@ -1744,6 +1747,8 @@ function GanttPageContent({ initialProjectId = null, openMaster = false, initial
                           {/* 中項目 (Level 2) */}
                           <label className="flex cursor-pointer items-center gap-2 py-1">
                             <input
+                              id={`master-group-${group.id}`}
+                              name={`master-group-${group.id}`}
                               type="checkbox"
                               checked={groupAllChecked}
                               onChange={() => {
@@ -1772,6 +1777,8 @@ function GanttPageContent({ initialProjectId = null, openMaster = false, initial
                                   <li key={entry.id}>
                                     <label className="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1 hover:bg-white">
                                       <input
+                                        id={`master-entry-${entry.id}`}
+                                        name={`master-entry-${entry.id}`}
                                         type="checkbox"
                                         checked={checked}
                                         onChange={() => {
@@ -1903,6 +1910,8 @@ function GanttPageContent({ initialProjectId = null, openMaster = false, initial
                     className="flex cursor-pointer items-center gap-3 rounded-xl px-3 py-2 hover:bg-slate-50"
                   >
                     <input
+                      id={`wbs-major-${major}`}
+                      name={`wbs-major-${major}`}
                       type="checkbox"
                       checked={checked}
                       onChange={() => {
@@ -2248,7 +2257,10 @@ function GanttPageContent({ initialProjectId = null, openMaster = false, initial
         <div className="mt-3 flex items-center gap-2">
           <div className="relative flex-1">
             <input
+              id="gantt-task-search"
+              name="ganttTaskSearch"
               type="search"
+              autoComplete="off"
               value={taskSearchQuery}
               onChange={(e) => setTaskSearchQuery(e.target.value)}
               placeholder="工程名・業者・工種・案件名で検索"
@@ -2551,6 +2563,8 @@ function GanttPageContent({ initialProjectId = null, openMaster = false, initial
                   {(["住宅", "店舗", "オフィス"] as const).map((tag) => (
                     <label key={tag} className="flex items-center gap-1.5 cursor-pointer">
                       <input
+                        id={`template-tag-${tag}`}
+                        name={`template-tag-${tag}`}
                         type="checkbox"
                         checked={templateSaveTags.has(tag)}
                         onChange={() => {

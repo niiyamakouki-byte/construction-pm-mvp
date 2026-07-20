@@ -148,14 +148,21 @@ function ComparisonTab() {
           >
             <div className="flex items-center justify-between gap-2">
               <input
+                id={`contractor-name-${form.contractorId}`}
+                name={`contractor-name-${form.contractorId}`}
                 type="text"
+                autoComplete="organization"
                 value={form.contractorName}
                 onChange={(e) => updateForm(formIdx, { contractorName: e.target.value })}
                 placeholder={`業者名 ${formIdx + 1}`}
                 className="flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 focus:outline-none font-semibold"
               />
               <input
+                id={`contractor-submitted-${form.contractorId}`}
+                name={`contractor-submitted-${form.contractorId}`}
                 type="date"
+                autoComplete="off"
+                aria-label="見積提出日"
                 value={form.submittedDate}
                 onChange={(e) => updateForm(formIdx, { submittedDate: e.target.value })}
                 className="rounded-lg border border-slate-300 px-2 py-2 text-xs focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 focus:outline-none"
@@ -176,15 +183,21 @@ function ComparisonTab() {
               {form.itemInputs.map((item, itemIdx) => (
                 <div key={itemIdx} className="flex items-center gap-1.5">
                   <input
+                    id={`contractor-${form.contractorId}-item-${itemIdx}-name`}
+                    name={`contractor-${form.contractorId}-item-${itemIdx}-name`}
                     type="text"
+                    autoComplete="off"
                     value={item.name}
                     onChange={(e) => updateItemInput(formIdx, itemIdx, "name", e.target.value)}
                     placeholder="品目名"
                     className="flex-1 rounded-lg border border-slate-200 px-2 py-1.5 text-xs focus:ring-1 focus:ring-brand-500/20 focus:border-brand-500 focus:outline-none"
                   />
                   <input
+                    id={`contractor-${form.contractorId}-item-${itemIdx}-unit-price`}
+                    name={`contractor-${form.contractorId}-item-${itemIdx}-unit-price`}
                     type="number"
                     inputMode="numeric"
+                    autoComplete="off"
                     value={item.unitPrice}
                     onChange={(e) => updateItemInput(formIdx, itemIdx, "unitPrice", e.target.value)}
                     placeholder="単価"
@@ -192,8 +205,11 @@ function ComparisonTab() {
                     className="w-24 rounded-lg border border-slate-200 px-2 py-1.5 text-xs text-right tabular-nums focus:ring-1 focus:ring-brand-500/20 focus:border-brand-500 focus:outline-none"
                   />
                   <input
+                    id={`contractor-${form.contractorId}-item-${itemIdx}-quantity`}
+                    name={`contractor-${form.contractorId}-item-${itemIdx}-quantity`}
                     type="number"
                     inputMode="numeric"
+                    autoComplete="off"
                     value={item.quantity}
                     onChange={(e) => updateItemInput(formIdx, itemIdx, "quantity", e.target.value)}
                     placeholder="数量"
@@ -443,6 +459,8 @@ function MatsubamebushiTab() {
       {/* Legal welfare toggle */}
       <label className="flex items-center gap-2 text-xs text-slate-600 cursor-pointer">
         <input
+          id="three-plan-legal-welfare"
+          name="threePlanLegalWelfare"
           type="checkbox"
           checked={includeLegalWelfare}
           onChange={(e) => setIncludeLegalWelfare(e.target.checked)}
@@ -512,7 +530,10 @@ function MatsubamebushiTab() {
                 <tr key={item.id} className="border-b border-slate-50">
                   <td className="py-1.5 px-3">
                     <input
+                      id={`plan-item-${item.id}-name`}
+                      name={`plan-item-${item.id}-name`}
                       type="text"
+                      autoComplete="off"
                       value={item.name}
                       onChange={(e) => updateItem(item.id, { name: e.target.value })}
                       placeholder="品目名"
@@ -521,8 +542,12 @@ function MatsubamebushiTab() {
                   </td>
                   <td className="py-1.5 px-2">
                     <input
+                      id={`plan-item-${item.id}-quantity`}
+                      name={`plan-item-${item.id}-quantity`}
                       type="number"
                       inputMode="numeric"
+                      autoComplete="off"
+                      aria-label="数量"
                       value={item.quantity}
                       onChange={(e) => updateItem(item.id, { quantity: Math.max(1, Number(e.target.value)) })}
                       min={1}
@@ -532,8 +557,11 @@ function MatsubamebushiTab() {
                   {PATTERN_LABELS.map((_, pidx) => (
                     <td key={`up-${pidx}`} className="py-1.5 px-2">
                       <input
+                        id={`plan-item-${item.id}-unit-price-${pidx}`}
+                        name={`plan-item-${item.id}-unit-price-${pidx}`}
                         type="number"
                         inputMode="numeric"
+                        autoComplete="off"
                         value={item.unitPrices[pidx]}
                         onChange={(e) => updateUnitPrice(item.id, pidx, Math.max(0, Number(e.target.value)))}
                         min={0}
@@ -1239,8 +1267,12 @@ function EstimatePageContent() {
                     -
                   </button>
                   <input
+                    id={`estimate-item-${item.code}-quantity`}
+                    name={`estimate-item-${item.code}-quantity`}
                     type="number"
                     inputMode="numeric"
+                    autoComplete="off"
+                    aria-label={`${item.name}の数量`}
                     value={item.quantity}
                     onChange={(e) =>
                       handleQuantityChange(item.code, Math.max(0, Number(e.target.value)))
@@ -1274,6 +1306,8 @@ function EstimatePageContent() {
             {/* 法定福利費チェック */}
             <label className="flex items-center gap-2 text-xs text-slate-600 cursor-pointer">
               <input
+                id="margin-legal-welfare"
+                name="marginLegalWelfare"
                 type="checkbox"
                 checked={includeLegalWelfare}
                 onChange={(e) => setIncludeLegalWelfare(e.target.checked)}

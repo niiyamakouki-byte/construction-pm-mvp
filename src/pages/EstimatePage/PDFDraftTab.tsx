@@ -271,6 +271,9 @@ export function PDFDraftTab({ costMaster, onSave }: Props) {
 
         <input
           ref={fileInputRef}
+          id="pdf-draft-file"
+          name="pdfDraftFile"
+          aria-label="見積PDF/JSONファイル"
           type="file"
           accept="application/pdf,application/json"
           className="hidden"
@@ -388,8 +391,11 @@ export function PDFDraftTab({ costMaster, onSave }: Props) {
                     <td className="py-1.5 px-2 text-right tabular-nums">
                       {editMode ? (
                         <input
+                          id={`pdf-draft-${line.code}-quantity`}
+                          name={`pdf-draft-${line.code}-quantity`}
                           type="number"
                           inputMode="decimal"
+                          autoComplete="off"
                           value={ov?.quantity ?? line.quantity}
                           onChange={(e) => setOverride(line.code, "quantity", e.target.value)}
                           className="w-full rounded border border-slate-200 px-1 py-0.5 text-right tabular-nums focus:border-brand-400 focus:outline-none"
@@ -405,8 +411,11 @@ export function PDFDraftTab({ costMaster, onSave }: Props) {
                     <td className="py-1.5 px-2 text-right tabular-nums">
                       {editMode ? (
                         <input
+                          id={`pdf-draft-${line.code}-unit-price`}
+                          name={`pdf-draft-${line.code}-unit-price`}
                           type="number"
                           inputMode="numeric"
+                          autoComplete="off"
                           value={ov?.unitPrice ?? line.unitPrice}
                           onChange={(e) => setOverride(line.code, "unitPrice", e.target.value)}
                           className="w-full rounded border border-slate-200 px-1 py-0.5 text-right tabular-nums focus:border-brand-400 focus:outline-none"
@@ -468,6 +477,9 @@ export function PDFDraftTab({ costMaster, onSave }: Props) {
         <div className="flex items-center gap-3">
           <p className="text-xs font-semibold text-slate-600 whitespace-nowrap">壁タイプ変更</p>
           <select
+            id="pdf-draft-wall-type"
+            name="pdfDraftWallType"
+            aria-label="壁タイプ変更"
             value={selectedWallType}
             onChange={(e) => setSelectedWallType(e.target.value as WallType | "auto")}
             className="flex-1 rounded border border-slate-300 bg-white px-2 py-1 text-xs text-slate-700 focus:border-brand-400 focus:outline-none"

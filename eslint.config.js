@@ -34,6 +34,16 @@ export default tseslint.config(
     },
   },
   {
+    // bead laporta-beads-058d4: フォームid/name監査スクリプト (node実行)
+    files: ["scripts/**/*.mjs"],
+    languageOptions: {
+      globals: {
+        process: "readonly",
+        console: "readonly",
+      },
+    },
+  },
+  {
     files: ["e2e/**/*.mjs"],
     languageOptions: {
       globals: {
