@@ -1,5 +1,10 @@
 /**
- * GET /api/freee/companies — freee 事業所一覧
+ * GET /api/freee/companies | /api/freee/deals | /api/freee/invoices
+ *
+ * Vercel Hobby プランの Serverless Functions 上限(12)対応で
+ * companies.ts / deals.ts / invoices.ts (旧: いずれも handleFreeeRequest への
+ * 薄いラッパーで endpoint 文字列以外差分なし) を1関数に統合。
+ * URL パスは変更なし(動的セグメント [resource] が旧ファイル名を吸収)。
  *
  * 認証: Authorization: Bearer <supabase jwt>
  * 必須 env: VITE_FREEE_CLIENT_ID / FREEE_CLIENT_SECRET /
@@ -8,7 +13,7 @@
 
 import { createClient } from "@supabase/supabase-js";
 import { asSupabaseAuthVerifier } from "../../src/lib/auth-helper.js";
-import { handleFreeeRequest } from "../../src/lib/freee-api-handler.js";
+import { handleFreeeRequest, type FreeeEndpoint } from "../../src/lib/freee-api-handler.js";
 import type { StoredFreeeToken } from "../../src/lib/freee-api.js";
 
 type Req = {
@@ -22,7 +27,21 @@ type Res = {
   setHeader: (name: string, value: string) => void;
 };
 
+const VALID_RESOURCES: readonly FreeeEndpoint[] = ["companies", "deals", "invoices"];
+
+function isFreeeEndpoint(value: string): value is FreeeEndpoint {
+  return (VALID_RESOURCES as readonly string[]).includes(value);
+}
+
 export default async function handler(req: Req, res: Res): Promise<void> {
+  const resourceRaw = req.query?.resource;
+  const resource = Array.isArray(resourceRaw) ? resourceRaw[0] : resourceRaw;
+
+  if (!resource || !isFreeeEndpoint(resource)) {
+    res.status(404).json({ error: "Not found" });
+    return;
+  }
+
   const clientId = process.env.VITE_FREEE_CLIENT_ID;
   const clientSecret = process.env.FREEE_CLIENT_SECRET;
   const supabaseUrl = process.env.SUPABASE_URL;
@@ -39,7 +58,7 @@ export default async function handler(req: Req, res: Res): Promise<void> {
   await handleFreeeRequest(
     req,
     res,
-    "companies",
+    resource,
     {
       auth: asSupabaseAuthVerifier(supabase.auth),
       async loadToken(userId) {
