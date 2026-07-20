@@ -104,3 +104,31 @@ describe("generateBudgetReport", () => {
     expect(html).toContain("設備費");
   });
 });
+
+// 予算(見積)¥0+実績あり → 「予算通り」に倒れず超過扱い (bead laporta-beads-bwylr)
+describe("zero-estimate with actual spend", () => {
+  it("calculateBudgetBreakdown marks over_budget when estimate is zero but actual exists", () => {
+    const result = calculateBudgetBreakdown("NoBudget", [
+      { name: "外注費", estimated: 0, actual: 50_000 },
+    ]);
+    expect(result.totalEstimated).toBe(0);
+    expect(result.totalActual).toBe(50_000);
+    expect(result.status).toBe("over_budget");
+  });
+
+  it("calculateBudgetBreakdown stays on_budget when both are zero", () => {
+    const result = calculateBudgetBreakdown("Empty", [
+      { name: "外注費", estimated: 0, actual: 0 },
+    ]);
+    expect(result.status).toBe("on_budget");
+  });
+
+  it("compareEstimateVsActual marks item over when estimate is zero but actual exists", () => {
+    const result = compareEstimateVsActual([
+      { category: "外注費", estimated: 0, actual: 50_000 },
+      { category: "経費", estimated: 0, actual: 0 },
+    ]);
+    expect(result.items[0].status).toBe("over");
+    expect(result.items[1].status).toBe("on_track");
+  });
+});

@@ -224,3 +224,27 @@ describe("generateForecastReport", () => {
     expect(report.remainingBudget).toBe(-100_000);
   });
 });
+
+// 予算¥0(未設定)+支出あり → 「予算内です」に倒れない (bead laporta-beads-bwylr)
+describe("zero budget with actual spend", () => {
+  it("predictFinalCost never predicts below what is already spent (no progress)", () => {
+    const result = predictFinalCost(
+      { name: "No Budget", budget: 0 },
+      makeTasks([0]),
+      makeExpenses([50_000]),
+    );
+    expect(result).toBeGreaterThanOrEqual(50_000);
+  });
+
+  it("generateForecastReport flags high risk and asks to set a budget", () => {
+    const report = generateForecastReport(
+      { name: "No Budget", budget: 0 },
+      makeTasks([50]),
+      makeExpenses([50_000]),
+    );
+    expect(report.riskLevel).toBe("high");
+    expect(report.recommendations[0]).toContain("予算が未設定");
+    expect(report.recommendations.some((r) => r.includes("予算内です"))).toBe(false);
+    expect(report.predictedFinalCost).toBeGreaterThanOrEqual(50_000);
+  });
+});

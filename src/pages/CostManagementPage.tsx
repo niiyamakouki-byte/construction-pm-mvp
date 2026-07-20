@@ -173,7 +173,11 @@ function RemainingBudgetCard({ detail }: { detail: RemainingBudgetDetail }) {
                 : "bg-amber-100 text-amber-700"
             }`}
           >
-            {detail.alertLevel === "danger" ? "残10%以下" : "残20%以下"}
+            {detail.budget <= 0
+              ? "予算未設定"
+              : detail.alertLevel === "danger"
+                ? "残10%以下"
+                : "残20%以下"}
           </span>
         )}
       </div>
@@ -661,12 +665,17 @@ export function CostManagementPage() {
         ? generateForecastReport(
           selectedProject,
           selectedProjectTasks,
-          expenses.filter((expense) => expense.projectId === selectedProject.id),
+          // 支出の実態はコスト行(コスト項目+タスク由来+経費)にあるため、経費テーブル単独ではなく
+          // 集計済みコスト行を支出実績として渡す(経費のみだと実支出があっても予測が¥0に倒れる)
+          projectCostRows.map((row) => ({
+            amount: row.amount,
+            approvalStatus: row.paymentStatus === "paid" ? "approved" as const : "pending" as const,
+          })),
           monthlyCostSeries,
         )
         : null
     ),
-    [expenses, monthlyCostSeries, selectedProject, selectedProjectTasks],
+    [monthlyCostSeries, projectCostRows, selectedProject, selectedProjectTasks],
   );
   const overheadBreakdown = useMemo<OverheadBreakdown | null>(
     () => (summary.total > 0 ? calculateOverheadCosts(summary.total) : null),
@@ -784,7 +793,7 @@ export function CostManagementPage() {
       ) : (
         <>
       <section className="grid gap-3 md:grid-cols-3">
-        <StatCard label="総予算" value={formatCurrency(budgetSummary.budget)} tone="border-slate-200 bg-white text-slate-900" />
+        <StatCard label="総予算" value={budgetSummary.budget > 0 ? formatCurrency(budgetSummary.budget) : "未設定"} tone="border-slate-200 bg-white text-slate-900" />
         <StatCard label="総支出" value={formatCurrency(budgetSummary.spent)} tone="border-brand-200 bg-brand-50 text-brand-900" />
         <StatCard label="残予算" value={formatCurrency(budgetSummary.remaining)} tone="border-amber-200 bg-amber-50 text-amber-900" />
       </section>
@@ -1040,7 +1049,7 @@ export function CostManagementPage() {
           <StatCard label="受領請求" value={formatCurrency(summary.byBreakdown.invoicesReceived)} tone="border-slate-200 bg-white text-slate-900" />
         </div>
       </section>
-      {earnedValueMetrics ? (
+      {earnedValueMetrics && earnedValueMetrics.bac > 0 ? (
         <section className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm">
           <div className="mb-4">
             <p className="text-xs font-semibold tracking-[0.18em] text-slate-500">アーンドバリュー分析</p>

@@ -130,6 +130,8 @@ export function BudgetDashboard({ projectName, categories }: Props) {
 
   const inputs = categories ?? defaultCategories;
   const breakdown = calculateBudgetBreakdown(projectName, inputs);
+  const budgetUnset = breakdown.totalEstimated <= 0 && breakdown.totalActual > 0;
+  const statusLabel = budgetUnset ? "予算未設定" : STATUS_LABEL[breakdown.status];
 
   return (
     <section className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm">
@@ -142,7 +144,7 @@ export function BudgetDashboard({ projectName, categories }: Props) {
           <span
             className={`rounded-full px-3 py-1 text-xs font-semibold ring-1 ${STATUS_TONE[breakdown.status]}`}
           >
-            {STATUS_LABEL[breakdown.status]}
+            {statusLabel}
           </span>
           <div className="flex rounded-2xl border border-slate-200 bg-slate-50 p-1">
             <button
@@ -191,7 +193,7 @@ export function BudgetDashboard({ projectName, categories }: Props) {
           }`}
         >
           <p className={`text-xs font-semibold tracking-[0.14em] ${breakdown.variance > 0 ? "text-red-700" : "text-blue-700"}`}>
-            差異 ({breakdown.variancePct > 0 ? "+" : ""}{breakdown.variancePct}%)
+            差異 ({breakdown.totalEstimated > 0 ? `${breakdown.variancePct > 0 ? "+" : ""}${breakdown.variancePct}%` : "—"})
           </p>
           <p className={`mt-1 text-lg font-bold tabular-nums ${breakdown.variance > 0 ? "text-red-900" : "text-blue-900"}`}>
             {breakdown.variance > 0 ? "+" : ""}{fmt(breakdown.variance)}
@@ -233,7 +235,7 @@ export function BudgetDashboard({ projectName, categories }: Props) {
                     {breakdown.variance > 0 ? "+" : ""}{fmt(breakdown.variance)}
                   </td>
                   <td className="px-4 py-3 text-right tabular-nums text-xs text-slate-500">
-                    {breakdown.variancePct > 0 ? "+" : ""}{breakdown.variancePct}%
+                    {breakdown.totalEstimated > 0 ? `${breakdown.variancePct > 0 ? "+" : ""}${breakdown.variancePct}%` : "—"}
                   </td>
                 </tr>
               </tfoot>

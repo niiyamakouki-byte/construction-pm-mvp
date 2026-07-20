@@ -50,6 +50,8 @@ export function calculateBudgetBreakdown(
   let status: BudgetBreakdown["status"] = "on_budget";
   if (variancePct > 5) status = "over_budget";
   else if (variancePct < -5) status = "under_budget";
+  // 見積(予算)ゼロで実績がある場合、変動率0%→「予算通り」に倒れる誤誘導を防ぐ
+  if (totalEstimated <= 0 && totalActual > 0) status = "over_budget";
 
   return {
     projectName,
@@ -79,6 +81,7 @@ export function compareEstimateVsActual(
     let status: ComparisonItem["status"] = "on_track";
     if (percentDiff > 10) status = "over";
     else if (percentDiff < -10) status = "under";
+    if (item.estimated <= 0 && item.actual > 0) status = "over";
 
     return {
       category: item.category,

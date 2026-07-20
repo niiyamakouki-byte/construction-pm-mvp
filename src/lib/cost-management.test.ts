@@ -107,3 +107,21 @@ describe("getRemainingBudgetDetail", () => {
     expect(detail.alertLevel).toBe("none");
   });
 });
+
+// 予算¥0(未設定)+支出あり → 0%・平常表示に倒れず超過扱いになる (bead laporta-beads-bwylr)
+describe("getRemainingBudgetDetail with zero budget", () => {
+  it("treats spend without budget as fully used / danger", () => {
+    const detail = getRemainingBudgetDetail({ ...PROJECT, budget: 0 }, [PAID_ROW]);
+    expect(detail.budget).toBe(0);
+    expect(detail.spent).toBe(200_000);
+    expect(detail.remaining).toBe(-200_000);
+    expect(detail.usedPct).toBe(100);
+    expect(detail.alertLevel).toBe("danger");
+  });
+
+  it("stays calm when budget is zero and nothing spent", () => {
+    const detail = getRemainingBudgetDetail({ ...PROJECT, budget: 0 }, []);
+    expect(detail.usedPct).toBe(0);
+    expect(detail.alertLevel).toBe("none");
+  });
+});

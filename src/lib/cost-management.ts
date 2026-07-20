@@ -236,13 +236,17 @@ export function getRemainingBudgetDetail(
     : 0;
 
   const remaining = budget - paid - committedUndelivered;
-  const usedPct = budget > 0 ? Math.round(((paid + committedUndelivered) / budget) * 100) : 0;
+  const used = paid + committedUndelivered;
+  // 予算未設定(¥0)で支出がある場合、0%・平常表示に倒すと誤誘導になるため超過扱いにする
+  const usedPct = budget > 0 ? Math.round((used / budget) * 100) : used > 0 ? 100 : 0;
 
   let alertLevel: RemainingBudgetDetail["alertLevel"] = "none";
   if (budget > 0) {
     const remainingPct = remaining / budget;
     if (remainingPct <= 0.1) alertLevel = "danger";
     else if (remainingPct <= 0.2) alertLevel = "warning";
+  } else if (used > 0) {
+    alertLevel = "danger";
   }
 
   return { budget, spent: paid, committedUndelivered, remaining, usedPct, alertLevel };

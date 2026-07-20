@@ -96,8 +96,8 @@ export function predictFinalCost(
       : 0;
 
   if (totalProgress <= 0) {
-    // No progress: assume budget as prediction
-    return project.budget ?? spentToDate;
+    // No progress: assume budget as prediction (never below what is already spent)
+    return Math.max(project.budget ?? 0, spentToDate);
   }
 
   // EAC = spent / progress (Estimate At Completion)
@@ -172,9 +172,14 @@ export function generateForecastReport(
   let riskLevel: ForecastReport["riskLevel"] = "low";
   if (overUnder > budget * 0.15) riskLevel = "high";
   else if (overUnder > budget * 0.05) riskLevel = "medium";
+  // 予算未設定(¥0)で支出がある場合は「予算内」と評価できない
+  if (budget <= 0 && spentToDate > 0) riskLevel = "high";
 
   // Recommendations
   const recommendations: string[] = [];
+  if (budget <= 0 && spentToDate > 0) {
+    recommendations.push("予算が未設定のまま支出が発生しています。予算を設定してください。");
+  }
   if (riskLevel === "high") {
     recommendations.push("予算超過リスクが高いです。コスト削減策を検討してください。");
   }

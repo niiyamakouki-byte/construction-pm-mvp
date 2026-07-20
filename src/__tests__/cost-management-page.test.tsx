@@ -306,6 +306,68 @@ describe("CostManagementPage", () => {
     expect(screen.queryByText("Low Risk")).toBeNull();
   });
 
+  // 予算¥0+支出ありで「予算通り/使用率0%/予算内ペース/予測¥0」に倒れない (bead laporta-beads-bwylr)
+  it("予算¥0で支出がある案件は「予算未設定/超過」系の表示になる", async () => {
+    mockProjectRepository.findAll.mockResolvedValue([
+      {
+        id: "p1",
+        name: "渋谷ワインバー",
+        description: "",
+        status: "active",
+        budget: 0,
+        startDate: "2025-04-01",
+        includeWeekends: true,
+        createdAt: now,
+        updatedAt: now,
+      },
+    ]);
+    mockTaskRepository.findAll.mockResolvedValue([
+      {
+        id: "t1",
+        projectId: "p1",
+        name: "内装工事",
+        description: "",
+        status: "in_progress",
+        progress: 60,
+        dependencies: [],
+        createdAt: now,
+        updatedAt: now,
+      },
+    ]);
+    mockCostItemRepository.findAll.mockResolvedValue([
+      {
+        id: "c1",
+        projectId: "p1",
+        description: "石膏ボード",
+        amount: 50000,
+        category: "材料費",
+        paymentStatus: "paid",
+        breakdownType: "material_cost",
+        costDate: "2025-04-02",
+        createdAt: now,
+        updatedAt: now,
+      },
+    ]);
+    mockExpenseRepository.findAll.mockResolvedValue([]);
+
+    render(<CostManagementPage />);
+
+    expect(await screen.findByRole("heading", { name: "原価集計" })).toBeDefined();
+    // 総予算は金額¥0ではなく「未設定」表示
+    expect(screen.getByText("未設定")).toBeDefined();
+    // 実行予算残カードとBudgetDashboardの両方に「予算未設定」バッジ
+    expect(screen.getAllByText("予算未設定").length).toBeGreaterThanOrEqual(2);
+    // 使用率は0%ではなく100%扱い
+    expect(screen.getByText("100%")).toBeDefined();
+    // 「予算通り」「予算内ペース」に倒れない
+    expect(screen.queryByText("予算通り")).toBeNull();
+    expect(screen.queryByText(/現在のペースは予算内/)).toBeNull();
+    expect(screen.getByText(/予算が未設定のまま支出が発生/)).toBeDefined();
+    expect(screen.getByText("高リスク")).toBeDefined();
+    // BAC¥0のEVMセクション(母数なし指標)は表示しない
+    expect(screen.queryByText("EVM 進捗指標")).toBeNull();
+  });
+
   it("コスト項目ゼロのとき「見積を作成する」CTAを表示する", async () => {
     mockProjectRepository.findAll.mockResolvedValue([
       {
