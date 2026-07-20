@@ -32,8 +32,8 @@ describe("weather helpers", () => {
 
   it("collects warning days from mock site forecasts", () => {
     const forecasts = buildMockConstructionSiteForecasts([
-      makeProject({ id: "p-1", name: "東京現場" }),
-      makeProject({ id: "p-2", name: "横浜現場" }),
+      makeProject({ id: "p-1", name: "東京現場", latitude: 35.68, longitude: 139.76 }),
+      makeProject({ id: "p-2", name: "横浜現場", latitude: 35.44, longitude: 139.64 }),
     ]);
 
     const warnings = collectWeatherWarnings(forecasts, 2);
@@ -41,5 +41,36 @@ describe("weather helpers", () => {
     expect(warnings.length).toBeGreaterThan(0);
     expect(warnings.some((warning) => warning.siteName === "横浜現場")).toBe(true);
     expect(warnings[0].risk.level === "warning" || warnings[0].risk.level === "danger").toBe(true);
+  });
+
+  // 座標未設定案件にフォールバック座標(東京)の予報を実予報として出さない (bead laporta-beads-k0ykg)
+  it("marks sites without coordinates as hasLocation=false", () => {
+    const forecasts = buildMockConstructionSiteForecasts([
+      makeProject({ id: "p-1", name: "渋谷ワインバー" }),
+      makeProject({ id: "p-2", name: "横浜現場", latitude: 35.44, longitude: 139.64 }),
+    ]);
+
+    expect(forecasts.find((site) => site.projectId === "p-1")?.hasLocation).toBe(false);
+    expect(forecasts.find((site) => site.projectId === "p-2")?.hasLocation).toBe(true);
+  });
+
+  it("excludes sites without coordinates from weather warnings", () => {
+    const forecasts = buildMockConstructionSiteForecasts([
+      makeProject({ id: "p-1", name: "渋谷ワインバー" }),
+      makeProject({ id: "p-2", name: "監査テスト案件" }),
+    ]);
+
+    expect(collectWeatherWarnings(forecasts, 7)).toEqual([]);
+  });
+
+  it("still warns for located sites when mixed with unlocated ones", () => {
+    const forecasts = buildMockConstructionSiteForecasts([
+      makeProject({ id: "p-1", name: "渋谷ワインバー" }),
+      makeProject({ id: "p-2", name: "横浜現場", latitude: 35.44, longitude: 139.64 }),
+    ]);
+
+    const warnings = collectWeatherWarnings(forecasts, 7);
+    expect(warnings.length).toBeGreaterThan(0);
+    expect(warnings.every((warning) => warning.siteName === "横浜現場")).toBe(true);
   });
 });

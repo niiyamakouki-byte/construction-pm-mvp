@@ -519,20 +519,19 @@ function TodayDashboardPageContent() {
     [dailyReportTasks, today],
   );
 
-  const dailyReportForecast = useMemo(
-    () => (
-      dailyReportProject
-        ? allSiteForecasts.find((site) => site.projectId === dailyReportProject.id) ?? allSiteForecasts[0] ?? null
-        : allSiteForecasts[0] ?? null
-    ),
-    [allSiteForecasts, dailyReportProject],
-  );
+  const dailyReportForecast = useMemo(() => {
+    // 座標未設定案件に他現場やフォールバック座標の予報を実予報として紐づけない
+    const site = dailyReportProject
+      ? allSiteForecasts.find((s) => s.projectId === dailyReportProject.id) ?? null
+      : allSiteForecasts.find((s) => s.hasLocation) ?? null;
+    return site?.hasLocation ? site : null;
+  }, [allSiteForecasts, dailyReportProject]);
 
   const dailyWeatherSummary = useMemo(() => {
     if (!dailyReportForecast) {
       return {
         title: "天候情報なし",
-        detail: "天気データを取得できません",
+        detail: "現場住所(座標)が未設定のため天気を表示できません",
         exportText: "天候情報なし",
         issues: [] as string[],
       };
@@ -1118,6 +1117,28 @@ function TodayDashboardPageContent() {
 
         <div className="mt-4 grid gap-2 sm:grid-cols-3">
           {siteForecasts.map((site) => {
+            if (!site.hasLocation) {
+              // 座標未設定案件はフォールバック座標の予報を実予報のように見せない
+              return (
+                <button
+                  key={site.siteId}
+                  type="button"
+                  onClick={() => navigate("/weather")}
+                  className="rounded-xl bg-white/10 px-3 py-3 text-left backdrop-blur-sm transition-colors hover:bg-white/15"
+                >
+                  <p className="text-2xl leading-tight">📍</p>
+                  <p className="mt-2 text-[11px] text-brand-200">
+                    住所未設定のため天候情報なし
+                  </p>
+                  <p className="mt-1.5 truncate text-[11px] font-semibold text-white">
+                    {site.siteName}
+                  </p>
+                  <p className="truncate text-[10px] text-brand-300">
+                    {site.locationLabel}
+                  </p>
+                </button>
+              );
+            }
             const todayForecast = site.forecast.daily[0];
             const risk = getDailyWeatherRisk(todayForecast);
             return (

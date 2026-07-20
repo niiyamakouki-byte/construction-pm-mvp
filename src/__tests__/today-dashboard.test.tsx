@@ -378,6 +378,31 @@ describe("TodayDashboardPage", () => {
     );
   });
 
+  // 住所(座標)未設定案件にダミー座標の天気を実予報のように出さない (bead laporta-beads-k0ykg)
+  it("座標未設定案件の概要カードは天候の代わりに住所未設定と表示する", async () => {
+    mockProjects = [makeProject({ id: "p-1", name: "渋谷ワインバー" })];
+    render(<TodayDashboardPage />);
+
+    expect(await screen.findByText("住所未設定のため天候情報なし")).toBeDefined();
+    expect(screen.queryByText("施工可")).toBeNull();
+    expect(screen.queryByText("延期候補")).toBeNull();
+    expect(screen.queryByText("要注意")).toBeNull();
+  });
+
+  it("座標設定済み案件の概要カードは天候を表示する", async () => {
+    mockProjects = [
+      makeProject({ id: "p-1", name: "横浜現場", latitude: 35.44, longitude: 139.64 }),
+    ];
+    render(<TodayDashboardPage />);
+
+    await waitFor(() =>
+      expect(
+        screen.queryByText("施工可") ?? screen.queryByText("要注意") ?? screen.queryByText("延期候補"),
+      ).not.toBeNull(),
+    );
+    expect(screen.queryByText("住所未設定のため天候情報なし")).toBeNull();
+  });
+
   it("写真は選択だけでは保存せず、確認ボタンでアップロードする", async () => {
     mockProjects = [makeProject()];
     render(<TodayDashboardPage />);

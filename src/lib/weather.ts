@@ -60,6 +60,8 @@ export type ConstructionSiteForecast = {
   projectId?: string;
   siteName: string;
   locationLabel: string;
+  /** false = 案件に座標が無くフォールバック座標で生成した参考値(実予報として扱わないこと) */
+  hasLocation: boolean;
   forecast: OpenWeatherMapForecast;
 };
 
@@ -310,20 +312,23 @@ export async function fetchConstructionSiteForecasts(
         projectId: project.id,
         siteName: project.name,
         locationLabel: project.address ?? "現場住所未設定",
+        hasLocation: project.latitude != null && project.longitude != null,
         lat: project.latitude ?? DEFAULT_SITE.lat + index * 0.03,
         lon: project.longitude ?? DEFAULT_SITE.lon + index * 0.03,
         offset: index,
       }))
-    : [{ ...DEFAULT_SITE, offset: 0 }];
+    : [{ ...DEFAULT_SITE, hasLocation: true, offset: 0 }];
 
   const results = await Promise.all(
     sites.map(async (site) => {
-      const realForecast = await fetchOpenMeteoForecast(site.lat, site.lon);
+      // 座標未設定案件はフォールバック座標での実予報取得をしない(参考値のみ)
+      const realForecast = site.hasLocation ? await fetchOpenMeteoForecast(site.lat, site.lon) : null;
       return {
         siteId: site.siteId,
         projectId: "projectId" in site ? site.projectId : undefined,
         siteName: site.siteName,
         locationLabel: site.locationLabel,
+        hasLocation: site.hasLocation,
         forecast: realForecast ?? createMockForecast(site.lat, site.lon, site.offset, baseDate),
       };
     }),
@@ -346,6 +351,7 @@ export function buildMockConstructionSiteForecasts(
         projectId: project.id,
         siteName: project.name,
         locationLabel: project.address ?? "現場住所未設定",
+        hasLocation: project.latitude != null && project.longitude != null,
         lat: project.latitude ?? DEFAULT_SITE.lat + index * 0.03,
         lon: project.longitude ?? DEFAULT_SITE.lon + index * 0.03,
         offset: index,
@@ -353,6 +359,7 @@ export function buildMockConstructionSiteForecasts(
     : [
         {
           ...DEFAULT_SITE,
+          hasLocation: true,
           offset: 0,
         },
       ];
@@ -362,6 +369,7 @@ export function buildMockConstructionSiteForecasts(
     projectId: "projectId" in site ? site.projectId : undefined,
     siteName: site.siteName,
     locationLabel: site.locationLabel,
+    hasLocation: site.hasLocation,
     forecast: createMockForecast(site.lat, site.lon, site.offset, baseDate),
   }));
 }
@@ -380,8 +388,10 @@ export function collectWeatherWarnings(
   siteForecasts: ConstructionSiteForecast[],
   dayLimit = 3,
 ): WeatherWarningItem[] {
-  return siteForecasts.flatMap((site) =>
-    site.forecast.daily.slice(0, dayLimit).flatMap((day) => {
+  return siteForecasts.flatMap((site) => {
+    // 座標未設定案件の予報はフォールバック座標由来の参考値なので警告(天候注意)を出さない
+    if (!site.hasLocation) return [];
+    return site.forecast.daily.slice(0, dayLimit).flatMap((day) => {
       const risk = getDailyWeatherRisk(day);
       if (risk.level === "normal") return [];
       return [
@@ -395,6 +405,6 @@ export function collectWeatherWarnings(
           risk,
         },
       ];
-    }),
-  );
+    });
+  });
 }
