@@ -70,6 +70,14 @@ import {
 
 // ── Helpers ────────────────────────────────────────────
 
+/**
+ * 「進行中案件」カードの件数。ホーム一覧の「進行中」バッジ(status=active)と
+ * 同じ定義に揃える。planningを含めるとラベルと件数が食い違う(bead 98b9w)。
+ */
+export function countActiveProjects(projects: Project[]): number {
+  return projects.filter((p) => p.status === "active").length;
+}
+
 function toLocalDateString(date: Date): string {
   const y = date.getFullYear();
   const m = String(date.getMonth() + 1).padStart(2, "0");
@@ -366,9 +374,7 @@ function TodayDashboardPageContent() {
   const inProgressTasks = allTasks.filter(
     (t) => t.status === "in_progress",
   ).length;
-  const activeProjectsCount = allProjects.filter(
-    (p) => p.status === "active" || p.status === "planning",
-  ).length;
+  const activeProjectsCount = countActiveProjects(allProjects);
   const completedMemoProjects = allProjects.filter(
     (p) => (p.mode ?? "normal") === "memo" && p.status === "completed",
   );
