@@ -44,7 +44,8 @@ export default tseslint.config(
     },
   },
   {
-    files: ["e2e/**/*.mjs"],
+    // dc-666t: run #650 lint失敗修正 — SaaS公開前検証スクリプト(node/playwright実行)にNode/ブラウザglobalsを許可
+    files: ["e2e/**/*.mjs", "docs/saas-launch-verify-20260721/**/*.mjs"],
     languageOptions: {
       globals: {
         process: "readonly",
