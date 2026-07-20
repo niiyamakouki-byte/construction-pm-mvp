@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatRelativeDate, computeTaskProgress } from "../pages/ProjectListPage.js";
+import { formatRelativeDate, computeTaskProgress, buildProgressMap } from "../pages/ProjectListPage.js";
 import type { Task } from "../domain/types.js";
 
 describe("formatRelativeDate", () => {
@@ -47,5 +47,51 @@ describe("computeTaskProgress", () => {
   it("混在は done のみカウント", () => {
     const tasks = [makeTask("done"), makeTask("todo"), makeTask("in_progress")];
     expect(computeTaskProgress(tasks)).toEqual({ done: 1, total: 3 });
+  });
+});
+
+describe("buildProgressMap (bead 6ro59: 工程表と同じ母数)", () => {
+  const makeTask = (
+    projectId: string,
+    status: Task["status"],
+    name = "LGS・PB",
+  ): Task => ({
+    id: crypto.randomUUID(),
+    projectId,
+    name,
+    description: "",
+    status,
+    progress: 0,
+    dependencies: [],
+    createdAt: "2026-06-01T00:00:00Z",
+    updatedAt: "2026-06-01T00:00:00Z",
+  });
+
+  it("プロジェクトごとに {done, total} を集計する", () => {
+    const tasks = [
+      makeTask("p1", "done"),
+      makeTask("p1", "todo"),
+      makeTask("p2", "done"),
+    ];
+    const map = buildProgressMap(tasks);
+    expect(map.get("p1")).toEqual({ done: 1, total: 2 });
+    expect(map.get("p2")).toEqual({ done: 1, total: 1 });
+  });
+
+  it("コスト行タスク(労務費等)は母数から除外する", () => {
+    const tasks = [
+      makeTask("p1", "done"),
+      makeTask("p1", "todo"),
+      makeTask("p1", "done", "Grow 2月 労務費"),
+      makeTask("p1", "done", "Grow 3月 労務費"),
+    ];
+    // 工程表(GanttPage)は filterScheduleTasks 適用後の 1/2 を表示するため、
+    // ホーム側も 3/4 ではなく 1/2 に揃う
+    expect(buildProgressMap(tasks).get("p1")).toEqual({ done: 1, total: 2 });
+  });
+
+  it("全タスクがコスト行のプロジェクトはエントリ自体が作られない", () => {
+    const tasks = [makeTask("p1", "done", "Grow 2月 労務費")];
+    expect(buildProgressMap(tasks).get("p1")).toBeUndefined();
   });
 });

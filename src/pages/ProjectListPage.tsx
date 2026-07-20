@@ -14,6 +14,7 @@ import {
   getTemplateIdsByMajor,
 } from "../lib/phase-template-master.js";
 import { expandWBSToPhases } from "../lib/work-breakdown/expansion.js";
+import { filterScheduleTasks } from "../lib/cost-management.js";
 
 /** Returns "今日" / "昨日" / "N日前" for a given ISO date string. Pure function. */
 export function formatRelativeDate(isoString: string, now = new Date()): string {
@@ -34,10 +35,14 @@ export function computeTaskProgress(tasks: Task[]): { done: number; total: numbe
   return { done, total };
 }
 
-/** Build a Map<projectId, {done, total}> from all tasks at once (no N+1). */
-function buildProgressMap(allTasks: Task[]): Map<string, { done: number; total: number }> {
+/**
+ * Build a Map<projectId, {done, total}> from all tasks at once (no N+1).
+ * 工程表(GanttPage)と同じ母数になるよう、コスト行タスク(労務費等)は
+ * filterScheduleTasksで除外する(bead 6ro59)。
+ */
+export function buildProgressMap(allTasks: Task[]): Map<string, { done: number; total: number }> {
   const map = new Map<string, { done: number; total: number }>();
-  for (const task of allTasks) {
+  for (const task of filterScheduleTasks(allTasks)) {
     const entry = map.get(task.projectId) ?? { done: 0, total: 0 };
     entry.total += 1;
     if (task.status === "done") entry.done += 1;
