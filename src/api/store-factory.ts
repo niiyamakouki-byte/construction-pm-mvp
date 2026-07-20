@@ -9,8 +9,10 @@ type StoreFactoryOptions = {
   supabaseClient?: SupabaseClientLike;
 };
 
+// trim() 必須: Vercel の環境変数は末尾改行付きで登録されている事故が実在する
+// (2026-07-21 実測 USE_SUPABASE="true\n" → Supabase 無効判定で json-file へ暗黙フォールバックしていた)。
 function isSupabaseEnabled(value: string | undefined): boolean {
-  return /^(1|true|yes|on)$/i.test(value ?? "");
+  return /^(1|true|yes|on)$/i.test(value?.trim() ?? "");
 }
 
 export function createApiStore(options: StoreFactoryOptions = {}): ApiStore {

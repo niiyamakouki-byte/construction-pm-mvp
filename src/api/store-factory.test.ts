@@ -69,4 +69,13 @@ describe("isSupabaseEnabled", () => {
     expect(isSupabaseEnabled("false")).toBe(false);
     expect(isSupabaseEnabled(undefined)).toBe(false);
   });
+
+  it("tolerates surrounding whitespace/newlines from env var registration", () => {
+    // Vercel 本番の USE_SUPABASE が "true\n" で登録されていた実事故の回帰門番 (2026-07-21)
+    expect(isSupabaseEnabled("true\n")).toBe(true);
+    expect(isSupabaseEnabled(" true ")).toBe(true);
+    expect(isSupabaseEnabled("1\r\n")).toBe(true);
+    expect(isSupabaseEnabled("false\n")).toBe(false);
+    expect(isSupabaseEnabled("  ")).toBe(false);
+  });
 });
