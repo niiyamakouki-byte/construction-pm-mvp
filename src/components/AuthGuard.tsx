@@ -45,8 +45,9 @@ export function AuthGuard({ children }: Props) {
     }, TIMEOUT_MS);
   }, [session]);
 
-  // E2E test bypass: only effective when explicitly set on window by test runner (localhost only)
-  const isE2EBypass = typeof window !== "undefined" && window.__E2E_BYPASS_AUTH__ === true;
+  // E2E test bypass: only effective in dev builds (vite dev / vitest), stripped from production bundles
+  const isE2EBypass =
+    import.meta.env.DEV && typeof window !== "undefined" && window.__E2E_BYPASS_AUTH__ === true;
   const isActive = !isE2EBypass && hasSupabaseEnv() && !loading && !!session;
 
   useEffect(() => {
