@@ -1,0 +1,7 @@
+### STEP 0: landing/login
+  HTTP 200 https://construction-pm-mvp.vercel.app/#/login
+  [shot] /Users/koki/construction-pm-mvp/tasks/saas-launch-20260721/evidence/probe-00-login.png
+  title: LapoSite - 建設プロジェクト管理
+  signup entry visible: true
+  inputs: []
+  buttons: ["LapoSite建設・内装工事の現場管理プラット","Google でログイン","メールアドレスとパスワードでログイン","マジックリンクでログイン","新規登録","ランディングページへ"]

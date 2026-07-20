@@ -1,0 +1,9 @@
+### STEP 1: 新規登録 (signup)
+  HTTP 200 https://construction-pm-mvp.vercel.app/#/signup
+  [shot] /Users/koki/construction-pm-mvp/tasks/saas-launch-20260721/evidence/s1-01-signup-form.png
+  [signup] url=/#/signup
+  [signup] fields=["company|text|株式会社◯◯建設","email|email|your@email.com","password|password|••••••••","password-confirm|password|••••••••"]
+  [signup] actions=["LapoSite現場の面倒が、消えていく。","無料で始める","利用規約","プライバシーポリシー","ログイン"]
+  (E2E_EMAIL/E2E_PASSWORD 未指定 — 入力はスキップし構造ダンプのみ)
+
+console errors: 0

@@ -1,0 +1,17 @@
+### STEP 1: 新規登録 (signup)
+  HTTP 200 https://construction-pm-mvp.vercel.app/#/signup
+  [shot] /Users/koki/construction-pm-mvp/tasks/saas-launch-20260721/evidence/s2-01-signup-form.png
+  [signup] url=/#/signup
+  [signup] fields=["company|text|株式会社◯◯建設","email|email|your@email.com","password|password|••••••••","password-confirm|password|••••••••"]
+  [signup] actions=["LapoSite現場の面倒が、消えていく。","無料で始める","利用規約","プライバシーポリシー","ログイン"]
+  filling email=laporta-e2e-20260721@example.com
+  password fields filled: 2
+  [shot] /Users/koki/construction-pm-mvp/tasks/saas-launch-20260721/evidence/s2-02-signup-filled.png
+  [shot] /Users/koki/construction-pm-mvp/tasks/saas-launch-20260721/evidence/s2-03-signup-result.png
+  [after-signup] url=/#/signup
+  [after-signup] fields=["company|text|株式会社◯◯建設","email|email|your@email.com","password|password|••••••••","password-confirm|password|••••••••"]
+  [after-signup] actions=["LapoSite現場の面倒が、消えていく。","無料で始める","利用規約","プライバシーポリシー","ログイン"]
+  body snippet: LapoSite 現場の面倒が、消えていく。 14日間 無料トライアル クレジットカード不要。今すぐ始める。 登録に失敗しました。入力内容を確認してもう一度お試しください。 会社名 メールアドレス パスワード（8文字以上） パスワード（確認） 無料で始める 登録することで利用規約およびプライバシーポリシーに同意したものとみなします。 すでにアカウントをお持ちの方は ログイン
+
+console errors: 1
+  console.error: Failed to load resource: the server responded with a status of 400 ()

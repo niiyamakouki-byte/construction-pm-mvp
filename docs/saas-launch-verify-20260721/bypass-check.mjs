@@ -1,0 +1,14 @@
+import { chromium } from "@playwright/test";
+const b = await chromium.launch();
+const p = await (await b.newContext()).newPage();
+await p.addInitScript(() => { window.__E2E_BYPASS_AUTH__ = true; });
+await p.goto("https://construction-pm-mvp.vercel.app/#/today", { waitUntil: "networkidle" });
+await p.waitForTimeout(6000);
+const t = (await p.locator("body").innerText()).replace(/\s+/g," ");
+const loginVisible = /Google でログイン|メールアドレスとパスワードでログイン/.test(t);
+console.log("認証画面が出るか(=バイパス失敗):", loginVisible);
+console.log("アプリ内UIに到達したか(=バイパス成功):", /ダッシュボード|案件一覧|工程/.test(t));
+console.log("実顧客名が見えるか:", /ゴディバ|渋谷ワインバー|ニチイケア/.test(t));
+await p.screenshot({ path: "docs/saas-launch-verify-20260721/evidence/bypass-01-prod.png" });
+console.log("body:", t.slice(0, 220));
+await b.close();
