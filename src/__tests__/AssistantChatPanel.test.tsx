@@ -93,11 +93,19 @@ describe("AssistantChatPanel", () => {
     });
   });
 
-  it("モバイルの FAB は下ナビを避けた位置に出る", () => {
+  it("モバイルの FAB は下ナビを避けた位置に、localStorageのドラッグ座標に関係なくCSS固定で出る", () => {
+    // 別ビューポート/別セッションで保存された「画面中腹」のドラッグ座標が残っていても
+    // 折りたたみ時のFABはそれに引きずられず常に右下固定であることを保証する回帰テスト。
+    localStorageMock.setItem("genbahub_chat_pos", JSON.stringify({ x: 120, y: 300 }));
+
     render(<AssistantChatPanel userId="test-user" />);
 
     const wrapper = screen.getByTestId("assistant-chat-fab").parentElement as HTMLElement;
-    expect(wrapper.style.top).toBe("676px");
+    expect(wrapper.style.position).toBe("fixed");
+    expect(wrapper.style.top).toBe("");
+    expect(wrapper.style.left).toBe("");
+    expect(wrapper.style.right).toContain("20px");
+    expect(wrapper.style.bottom).toContain("112px");
   });
 
   it("FAB ボタンをクリックするとチャットウィンドウが展開する", () => {

@@ -134,9 +134,14 @@ const WELCOME_MESSAGE: ChatMessage = {
 
 type Props = {
   userId?: string;
+  /** ハンバーガーメニュー/その他ドロワーなど、より優先度の高い固定オーバーレイが
+   * 開いている間、折りたたみ時のFAB(丸ボタン)だけを非表示にする。
+   * ドロワー類はz-indexがFABより低いため、表示したままだとFABがドロワーの
+   * ボタン群の上に重なって表示されてしまう(bead: menu-fab-overlap)。 */
+  hideFab?: boolean;
 };
 
-export function AssistantChatPanel({ userId = "demo-user" }: Props) {
+export function AssistantChatPanel({ userId = "demo-user", hideFab = false }: Props) {
   const [viewportWidth, setViewportWidth] = useState(() =>
     typeof window !== "undefined" ? window.innerWidth : 1280,
   );
@@ -436,12 +441,24 @@ export function AssistantChatPanel({ userId = "demo-user" }: Props) {
     }
   };
 
-  const fabStyle: React.CSSProperties = {
-    position: "fixed",
-    left: pos.x - (open ? 0 : FAB_RADIUS),
-    top: pos.y - (open ? 0 : FAB_RADIUS),
-    zIndex: 50,
-  };
+  // 展開中はドラッグ位置(pos)を尊重するが、折りたたみ時のFABは
+  // localStorageに残ったドラッグ座標(別デバイス/別ビューポートでの古い値を含む)に
+  // 依存させず、常に画面右下+セーフエリアへCSSで固定する(bead: leaf-fab-midscreen再発防止)。
+  // 過去の修正(012877f/7d89cb5)はカード側の余白確保のみでFAB自体の位置ソースは
+  // 未修正だったため、ドラッグ後の pos が再読み込みされて画面中腹に出る再発を止められなかった。
+  const fabStyle: React.CSSProperties = open
+    ? {
+        position: "fixed",
+        left: pos.x,
+        top: pos.y,
+        zIndex: 50,
+      }
+    : {
+        position: "fixed",
+        right: `calc(${FAB_EDGE_GAP}px + env(safe-area-inset-right, 0px))`,
+        bottom: `calc(${MOBILE_NAV_CLEARANCE + FAB_EDGE_GAP}px + env(safe-area-inset-bottom, 0px))`,
+        zIndex: 50,
+      };
 
   const isMac = typeof navigator !== "undefined" && navigator.platform.startsWith("Mac");
   const shortcutLabel = isMac ? "⌘K" : "Ctrl+K";
@@ -626,16 +643,15 @@ export function AssistantChatPanel({ userId = "demo-user" }: Props) {
 
       {/* FAB ボタン */}
       <AnimatePresence>
-        {!open && showFab && (
+        {!open && showFab && !hideFab && (
           <motion.button
             key="chat-fab"
             initial={{ scale: 0.8, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.8, opacity: 0 }}
             transition={{ duration: 0.2 }}
-            onMouseDown={onDragStart}
             onClick={() => { setOpen(true); setUnread(0); setPos((p) => clampPanelPos(p.x, p.y, size.w, size.h)); }}
-            className={`relative flex h-14 w-14 items-center justify-center rounded-full shadow-lg cursor-grab active:cursor-grabbing transition-opacity duration-300 ${isScrolling ? "opacity-40" : "opacity-100"}`}
+            className={`relative flex h-14 w-14 items-center justify-center rounded-full shadow-lg transition-opacity duration-300 ${isScrolling ? "opacity-40" : "opacity-100"}`}
             style={{ background: "#7BA88A", color: "#fff" }}
             aria-label={`ラポルタ秘書を開く (${shortcutLabel})`}
             data-testid="assistant-chat-fab"

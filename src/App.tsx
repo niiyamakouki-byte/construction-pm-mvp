@@ -1234,7 +1234,12 @@ function AppShell() {
         {onboardingDone && !tourDone && showTour ? <TourGuide onComplete={markTourDone} /> : null}
         {showShortcutHelp ? <KeyboardShortcutHelp onClose={() => setShowShortcutHelp(false)} /> : null}
         {/* ponytail: ganttMatch があるページは工程追加FABが右下を占有するのでAI FABを非表示 */}
-        {!ganttMatch && <AssistantChatPanel userId={user?.email ?? "anonymous"} />}
+        {!ganttMatch && (
+          <AssistantChatPanel
+            userId={user?.email ?? "anonymous"}
+            hideFab={mobileNavOpen || moreDrawerOpen}
+          />
+        )}
         <InstallPrompt />
       </div>
     </AuthGuard>

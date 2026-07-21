@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { NavIcon } from "./NavIcons.js";
 
 type MobileNavItem = {
@@ -92,7 +93,11 @@ export function MobileNav({
         <span className="text-xs font-semibold leading-none">メニュー</span>
       </button>
 
-      {open && (
+      {open && createPortal(
+        // ヘッダー(.ios-topbar)の backdrop-filter が position:fixed の containing block を
+        // 作ってしまい、ドロワーがヘッダーの高さ(56px)に閉じ込められて案件一覧カードと
+        // 重なって表示される不具合があったため、document.body へポータルして回避する
+        // (GanttPage.tsx の全画面ガントで既出の同種対策と同じパターン)。
         <div className="fixed inset-0 z-[80]">
           <button
             type="button"
@@ -186,7 +191,8 @@ export function MobileNav({
               )}
             </div>
           </aside>
-        </div>
+        </div>,
+        document.body,
       )}
     </div>
   );
