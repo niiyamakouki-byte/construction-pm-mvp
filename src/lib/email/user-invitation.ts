@@ -18,7 +18,7 @@ export async function sendUserInvitation(
 ): Promise<SendEmailResult> {
   const inviter = invitation.inviterName ? `${invitation.inviterName}さんから` : "";
   const text = [
-    `${invitation.organizationName}のGenbaHubへ${inviter}招待されました。`,
+    `${invitation.organizationName}のLapoSiteへ${inviter}招待されました。`,
     "",
     "以下のリンクから参加してください。",
     invitation.invitationUrl,
@@ -28,7 +28,7 @@ export async function sendUserInvitation(
 
   return (deps.sendEmailImpl ?? sendEmail)({
     to: invitation.email,
-    subject: `[GenbaHub] ${invitation.organizationName}への招待`,
+    subject: `[LapoSite] ${invitation.organizationName}への招待`,
     text,
   });
 }

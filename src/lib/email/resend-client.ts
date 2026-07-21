@@ -37,7 +37,7 @@ export class ResendApiError extends Error {
   }
 }
 
-const DEFAULT_FROM = "GenbaHub <onboarding@resend.dev>";
+const DEFAULT_FROM = "LapoSite <onboarding@resend.dev>";
 
 export async function sendEmail(
   input: SendEmailInput,

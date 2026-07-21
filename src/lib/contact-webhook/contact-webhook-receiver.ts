@@ -129,7 +129,7 @@ export async function receiveContactSubmissionAndNotify(
 
   const { submission } = received;
   const text = [
-    "GenbaHubに新しい問い合わせが届きました。",
+    "LapoSiteに新しい問い合わせが届きました。",
     "",
     `お名前: ${submission.name}`,
     `メール: ${submission.email}`,
@@ -144,7 +144,7 @@ export async function receiveContactSubmissionAndNotify(
 
   const email = await (deps.sendEmailImpl ?? sendEmail)({
     to: OPERATIONS_EMAIL,
-    subject: `[GenbaHub] 新しい問い合わせ: ${submission.name}`,
+    subject: `[LapoSite] 新しい問い合わせ: ${submission.name}`,
     text,
     replyTo: submission.email,
   });

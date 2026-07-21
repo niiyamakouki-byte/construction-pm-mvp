@@ -54,6 +54,6 @@ describe("sendEmail", () => {
     }) as unknown as typeof fetch;
 
     await sendEmail(baseInput, { apiKey: "re_test", fetchImpl });
-    expect(sentBody.from).toBe("GenbaHub <onboarding@resend.dev>");
+    expect(sentBody.from).toBe("LapoSite <onboarding@resend.dev>");
   });
 });

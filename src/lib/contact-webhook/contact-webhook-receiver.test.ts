@@ -170,7 +170,7 @@ describe("receiveContactSubmissionAndNotify — 運営通知", () => {
     expect(result.ok).toBe(true);
     expect(sendEmailImpl).toHaveBeenCalledWith({
       to: "niiyama@laporta.co.jp",
-      subject: "[GenbaHub] 新しい問い合わせ: 新山光輝",
+      subject: "[LapoSite] 新しい問い合わせ: 新山光輝",
       text: expect.stringContaining("LDK 20畳のリフォームを検討しています。"),
       replyTo: "test@laporta.co.jp",
     });

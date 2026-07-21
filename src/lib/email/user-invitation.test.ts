@@ -17,7 +17,7 @@ describe("sendUserInvitation", () => {
 
     expect(sendEmailImpl).toHaveBeenCalledWith({
       to: "niiyama@laporta.co.jp",
-      subject: "[GenbaHub] 株式会社ラポルタへの招待",
+      subject: "[LapoSite] 株式会社ラポルタへの招待",
       text: expect.stringContaining("https://example.com/invitations/token-123"),
     });
     expect(result).toEqual({ id: "email-invite-1" });
