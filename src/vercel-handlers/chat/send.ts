@@ -26,8 +26,6 @@ type VercelResponse = {
 };
 
 const CHANNEL_ID = process.env.DISCORD_CHAT_CHANNEL_ID ?? "1489407813230002347";
-const BOT_TOKEN = process.env.DISCORD_BOT_TOKEN ?? "";
-const WEBHOOK_URL = process.env.DISCORD_CHAT_WEBHOOK_URL ?? "";
 
 // このエンドポイントは無認証（公開デモ含む想定）。userId は `[GenbaHub:${userId}]` の形で
 // そのまま内部 Discord チャンネルへ書き込まれ、社内運用ではこのプレフィックス付きメッセージへの
@@ -54,6 +52,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     res.status(405).json({ error: "Method not allowed" });
     return;
   }
+
+  // NOTE: 環境変数はモジュールトップレベルではなくハンドラ実行時に読む。
+  // トップレベル定数だとテストが process.env を it() 内で書き換えても
+  // モジュール初回 import 時点の値に固定されてしまい反映されない
+  // （CI で DISCORD_BOT_TOKEN/DISCORD_CHAT_WEBHOOK_URL 未設定→常に500になる不具合の原因だった）。
+  const BOT_TOKEN = process.env.DISCORD_BOT_TOKEN ?? "";
+  const WEBHOOK_URL = process.env.DISCORD_CHAT_WEBHOOK_URL ?? "";
 
   if (!WEBHOOK_URL && !BOT_TOKEN) {
     res.status(500).json({ error: "DISCORD_CHAT_WEBHOOK_URL or DISCORD_BOT_TOKEN must be configured" });

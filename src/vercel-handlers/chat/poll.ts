@@ -26,7 +26,6 @@ type VercelResponse = {
 };
 
 const CHANNEL_ID = process.env.DISCORD_CHAT_CHANNEL_ID ?? "1489407813230002347";
-const BOT_TOKEN = process.env.DISCORD_BOT_TOKEN ?? "";
 const BOT_ID = "1488015940565209148";
 
 // userId は `[GenbaHub:${userId}]` という文字列プレフィックスとして Discord に
@@ -61,6 +60,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     res.status(405).json({ error: "Method not allowed" });
     return;
   }
+
+  // NOTE: 環境変数はモジュールトップレベルではなくハンドラ実行時に読む。
+  // トップレベル定数だとテストが process.env を it() 内で書き換えても
+  // モジュール初回 import 時点の値に固定されてしまい反映されない
+  // （CI で DISCORD_BOT_TOKEN 未設定→常に500になる不具合の原因だった）。
+  const BOT_TOKEN = process.env.DISCORD_BOT_TOKEN ?? "";
 
   if (!BOT_TOKEN) {
     res.status(500).json({ error: "DISCORD_BOT_TOKEN not configured" });
