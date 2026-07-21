@@ -2,8 +2,11 @@
  * contact-webhook-receiver テスト
  */
 
-import { describe, it, expect } from "vitest";
-import { receiveContactSubmission } from "./contact-webhook-receiver.js";
+import { describe, it, expect, vi } from "vitest";
+import {
+  receiveContactSubmission,
+  receiveContactSubmissionAndNotify,
+} from "./contact-webhook-receiver.js";
 import type { ContactPayload } from "./contact-webhook-receiver.js";
 
 function makePayload(overrides: Partial<ContactPayload> = {}): ContactPayload {
@@ -152,5 +155,40 @@ describe("receiveContactSubmission — サニタイズ", () => {
     if (a.ok && b.ok) {
       expect(a.submission.id).not.toBe(b.submission.id);
     }
+  });
+});
+
+describe("receiveContactSubmissionAndNotify — 運営通知", () => {
+  it("正常な問い合わせを運営宛に送信する", async () => {
+    const sendEmailImpl = vi.fn().mockResolvedValue({ id: "email-contact-1" });
+
+    const result = await receiveContactSubmissionAndNotify(
+      makePayload({ phone: "03-1234-5678", address: "東京都港区" }),
+      { sendEmailImpl },
+    );
+
+    expect(result.ok).toBe(true);
+    expect(sendEmailImpl).toHaveBeenCalledWith({
+      to: "niiyama@laporta.co.jp",
+      subject: "[GenbaHub] 新しい問い合わせ: 新山光輝",
+      text: expect.stringContaining("LDK 20畳のリフォームを検討しています。"),
+      replyTo: "test@laporta.co.jp",
+    });
+    expect(result).toMatchObject({
+      ok: true,
+      notification: { email: { id: "email-contact-1" } },
+    });
+  });
+
+  it("無効な問い合わせではメールを送信しない", async () => {
+    const sendEmailImpl = vi.fn().mockResolvedValue({ id: "unused" });
+
+    const result = await receiveContactSubmissionAndNotify(
+      makePayload({ email: "invalid" }),
+      { sendEmailImpl },
+    );
+
+    expect(result.ok).toBe(false);
+    expect(sendEmailImpl).not.toHaveBeenCalled();
   });
 });

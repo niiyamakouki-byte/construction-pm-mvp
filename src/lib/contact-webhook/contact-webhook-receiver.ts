@@ -5,6 +5,8 @@
  * ContactSubmission 型を返す。DOM / LLM 依存なし。
  */
 
+import { sendEmail, type SendEmailResult } from "../email/resend-client.js";
+
 // ── 型定義 ───────────────────────────────────────────────────────────────────
 
 export type ContactSubmission = {
@@ -37,6 +39,13 @@ export type ValidationError = {
 export type ReceiverResult =
   | { ok: true; submission: ContactSubmission }
   | { ok: false; errors: ValidationError[] };
+
+export type ContactNotificationResult = {
+  submission: ContactSubmission;
+  email: SendEmailResult;
+};
+
+const OPERATIONS_EMAIL = "niiyama@laporta.co.jp";
 
 // ── バリデーション ────────────────────────────────────────────────────────────
 
@@ -106,4 +115,39 @@ export function receiveContactSubmission(payload: ContactPayload): ReceiverResul
   };
 
   return { ok: true, submission };
+}
+
+/**
+ * 問い合わせを受信し、正常な場合だけ運営へ通知メールを送る。
+ */
+export async function receiveContactSubmissionAndNotify(
+  payload: ContactPayload,
+  deps: { sendEmailImpl?: typeof sendEmail } = {},
+): Promise<ReceiverResult | { ok: true; notification: ContactNotificationResult }> {
+  const received = receiveContactSubmission(payload);
+  if (!received.ok) return received;
+
+  const { submission } = received;
+  const text = [
+    "GenbaHubに新しい問い合わせが届きました。",
+    "",
+    `お名前: ${submission.name}`,
+    `メール: ${submission.email}`,
+    `電話: ${submission.phone ?? "未入力"}`,
+    `住所: ${submission.address ?? "未入力"}`,
+    `送信元: ${submission.source}`,
+    `受信日時: ${submission.timestamp}`,
+    "",
+    "お問い合わせ内容:",
+    submission.message,
+  ].join("\n");
+
+  const email = await (deps.sendEmailImpl ?? sendEmail)({
+    to: OPERATIONS_EMAIL,
+    subject: `[GenbaHub] 新しい問い合わせ: ${submission.name}`,
+    text,
+    replyTo: submission.email,
+  });
+
+  return { ok: true, notification: { submission, email } };
 }
