@@ -915,15 +915,9 @@ function AppShell() {
       items: allSidebarItems.filter((item) => item.group === group),
     }))
     .filter((group) => group.items.length > 0);
-  const quickActions = [
-    { key: "ai", label: "AIに相談", hint: "今の画面を見ながら相談", action: openAssistantPanel },
-    { key: "today", label: "今日の優先", hint: "遅延・予算・安全を確認", action: () => navigate("/today") },
-    { key: "estimate", label: "見積作成", hint: "案件から金額へ進める", action: () => navigate("/estimate") },
-  ];
-
   return (
     <AuthGuard>
-      <div className="min-h-screen bg-[var(--app-bg)] text-[var(--app-text)]">
+      <div className={`app-shell min-h-screen bg-[var(--app-bg)] text-[var(--app-text)] ${sidebarCollapsed ? "sidebar-collapsed" : ""}`}>
         <a
           href="#main-content"
           className="sr-only focus:not-sr-only focus:fixed focus:left-2 focus:top-2 focus:z-[100] focus:rounded-lg focus:bg-[#007AFF] focus:px-4 focus:py-2 focus:text-white"
@@ -996,7 +990,7 @@ function AppShell() {
 
         {/* ── iPadOS Sidebar (desktop only) ── */}
         <nav
-          className={`ios-sidebar hidden md:block ${sidebarCollapsed ? "collapsed" : ""}`}
+          className="ios-sidebar hidden md:block"
           aria-label={t("common:nav.home")}
         >
           <div className={sidebarCollapsed ? "px-2 py-4" : "px-3 py-4"}>
@@ -1015,26 +1009,6 @@ function AppShell() {
                 )}
               </button>
             </div>
-
-            {!sidebarCollapsed && (
-              <div className="mb-4 rounded-2xl border border-[rgba(0,122,255,0.14)] bg-[#007AFF]/6 p-3">
-                <p className="text-xs font-bold text-slate-500">次にやること</p>
-                <div className="mt-2 space-y-1">
-                  {quickActions.map((action) => (
-                    <button
-                      key={action.key}
-                      type="button"
-                      onClick={action.action}
-                      className="w-full rounded-xl px-2.5 py-2 text-left hover:bg-white/70"
-                      data-ai-action={action.key}
-                    >
-                      <span className="block text-sm font-bold text-slate-900">{action.label}</span>
-                      <span className="block text-[11px] leading-snug text-slate-500">{action.hint}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
 
             {/* 一次ナビ: 今日/案件/工程/写真 の4つを常時表示で固定 (sol-ultra #1) */}
             <div className="space-y-0.5" data-testid="sidebar-primary-nav">
@@ -1120,7 +1094,7 @@ function AppShell() {
         <main
           id="main-content"
           key={route}
-          className={`page-enter ios-main-with-sidebar assistant-fab-safe-content max-md:ml-0 px-4 py-5 sm:py-6 ${sidebarCollapsed ? "collapsed" : ""}`}
+          className="page-enter ios-main-with-sidebar assistant-fab-safe-content max-md:ml-0 px-4 py-5 sm:py-6"
         >
           <div className="mx-auto max-w-5xl">
             <Suspense fallback={pageFallback}>

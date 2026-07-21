@@ -37,6 +37,13 @@
   --app-border: #e2e8f0;
   --app-input-bg: #ffffff;
   --app-input-text: #0f172a;
+  --app-topbar-bg: rgba(255, 255, 255, 0.82);
+  --app-sidebar-bg: rgba(255, 255, 255, 0.94);
+  --app-control-bg: rgba(248, 250, 252, 0.96);
+  --app-control-hover: #edf3ec;
+  --app-separator: rgba(60, 60, 67, 0.12);
+  --app-accent-text: #346538;
+  --app-accent-muted: rgba(111, 145, 108, 0.14);
 
   /* Sidebar & TopBar dimensions */
   --sidebar-width: 260px;
@@ -66,6 +73,13 @@
   --app-border: #334155;
   --app-input-bg: #0f172a;
   --app-input-text: #e2e8f0;
+  --app-topbar-bg: rgba(15, 23, 42, 0.9);
+  --app-sidebar-bg: rgba(17, 24, 39, 0.96);
+  --app-control-bg: #1e293b;
+  --app-control-hover: #334155;
+  --app-separator: rgba(148, 163, 184, 0.24);
+  --app-accent-text: #bfd3ba;
+  --app-accent-muted: rgba(147, 177, 143, 0.18);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -79,6 +93,13 @@
     --app-border: #334155;
     --app-input-bg: #0f172a;
     --app-input-text: #e2e8f0;
+    --app-topbar-bg: rgba(15, 23, 42, 0.9);
+    --app-sidebar-bg: rgba(17, 24, 39, 0.96);
+    --app-control-bg: #1e293b;
+    --app-control-hover: #334155;
+    --app-separator: rgba(148, 163, 184, 0.24);
+    --app-accent-text: #bfd3ba;
+    --app-accent-muted: rgba(147, 177, 143, 0.18);
   }
 }
 
@@ -379,16 +400,26 @@ textarea::placeholder {
 
 /* ─── iPadOS Native Layout Shell ─────────────────────────── */
 
+/* Ticket LapoSite visual sweep 20260722 / Codex.
+   A single inherited width token keeps the fixed sidebar and content geometry in lockstep. */
+.app-shell {
+  --sidebar-active-width: var(--sidebar-width);
+}
+
+.app-shell.sidebar-collapsed {
+  --sidebar-active-width: var(--sidebar-width-collapsed);
+}
+
 /* Frosted glass TopBar */
 .ios-topbar {
   position: sticky;
   top: 0;
   z-index: 30;
   height: var(--topbar-height);
-  background-color: rgba(255, 255, 255, 0.72);
+  background-color: var(--app-topbar-bg);
   backdrop-filter: saturate(180%) blur(20px);
   -webkit-backdrop-filter: saturate(180%) blur(20px);
-  border-bottom: 1px solid rgba(60, 60, 67, 0.12);
+  border-bottom: 1px solid var(--app-separator);
 }
 
 /* Frosted glass Sidebar */
@@ -397,19 +428,15 @@ textarea::placeholder {
   top: var(--topbar-height);
   left: 0;
   bottom: 0;
-  width: var(--sidebar-width);
-  background-color: rgba(255, 255, 255, 0.88);
+  width: var(--sidebar-active-width);
+  background-color: var(--app-sidebar-bg);
   backdrop-filter: saturate(180%) blur(20px);
   -webkit-backdrop-filter: saturate(180%) blur(20px);
-  border-right: 1px solid rgba(60, 60, 67, 0.12);
+  border-right: 1px solid var(--app-separator);
   overflow-y: auto;
   overflow-x: hidden;
   z-index: 20;
   transition: width 0.15s ease;
-}
-
-.ios-sidebar.collapsed {
-  width: var(--sidebar-width-collapsed);
 }
 
 /* Main content shifted right when sidebar visible (desktop only).
@@ -417,12 +444,10 @@ textarea::placeholder {
    so shifting content would compress it into a vertical strip. */
 @media (min-width: 768px) {
   .ios-main-with-sidebar {
-    margin-left: var(--sidebar-width);
-    transition: margin-left 0.15s ease;
-  }
-
-  .ios-main-with-sidebar.collapsed {
-    margin-left: var(--sidebar-width-collapsed);
+    width: calc(100% - var(--sidebar-active-width));
+    min-width: 0;
+    margin-left: var(--sidebar-active-width);
+    transition: width 0.15s ease, margin-left 0.15s ease;
   }
 }
 
@@ -437,19 +462,29 @@ textarea::placeholder {
   border-radius: 10px;
   font-size: 0.8125rem;
   font-weight: 500;
-  color: #3c3c43;
+  color: var(--app-text-secondary);
   transition: background-color 0.15s ease, color 0.15s ease;
   text-align: left;
 }
 
 .ios-nav-item:hover {
-  background-color: rgba(0, 122, 255, 0.06);
+  background-color: var(--app-accent-muted);
 }
 
 .ios-nav-item.active {
-  background-color: rgba(0, 122, 255, 0.12);
-  color: #007AFF;
+  background-color: var(--app-accent-muted);
+  color: var(--app-accent-text);
   font-weight: 600;
+}
+
+.theme-toggle {
+  border-color: var(--app-border);
+  background-color: var(--app-control-bg);
+  color: var(--app-text);
+}
+
+.theme-toggle:hover {
+  background-color: var(--app-control-hover);
 }
 
 /* Primary button – emerald */
