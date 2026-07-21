@@ -29,6 +29,17 @@ const CHANNEL_ID = process.env.DISCORD_CHAT_CHANNEL_ID ?? "1489407813230002347";
 const BOT_TOKEN = process.env.DISCORD_BOT_TOKEN ?? "";
 const WEBHOOK_URL = process.env.DISCORD_CHAT_WEBHOOK_URL ?? "";
 
+// このエンドポイントは無認証（公開デモ含む想定）。userId は `[GenbaHub:${userId}]` の形で
+// そのまま内部 Discord チャンネルへ書き込まれ、社内運用ではこのプレフィックス付きメッセージへの
+// 返信を「本人からの指示」として扱う取り決めがある（CLAUDE.md 参照）。
+// userId に `[` `]` や改行を許すと、閉じ括弧を早期に挿入して偽の指示文を注入する
+// なりすまし攻撃が可能になるため、安全な文字種のみ許可する。
+const USER_ID_PATTERN = /^[a-zA-Z0-9_.@+-]{1,100}$/;
+
+function isValidUserId(userId: string): boolean {
+  return USER_ID_PATTERN.test(userId);
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
@@ -55,6 +66,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   if (!userId || !text) {
     res.status(400).json({ error: "userId and text are required" });
+    return;
+  }
+
+  if (!isValidUserId(userId)) {
+    res.status(400).json({ error: "userId contains invalid characters" });
     return;
   }
 

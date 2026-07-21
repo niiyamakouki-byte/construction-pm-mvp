@@ -29,6 +29,16 @@ const CHANNEL_ID = process.env.DISCORD_CHAT_CHANNEL_ID ?? "1489407813230002347";
 const BOT_TOKEN = process.env.DISCORD_BOT_TOKEN ?? "";
 const BOT_ID = "1488015940565209148";
 
+// userId は `[GenbaHub:${userId}]` という文字列プレフィックスとして Discord に
+// そのまま書き込まれる（送信は send.ts）。ここでは同じプレフィックスで検索照合するだけだが、
+// userId に `[` `]` や改行を許すと他ユーザーの発言プレフィックスを騙って検索したり、
+// 表示上のなりすましに使われうるため、安全な文字種のみ許可する（無認証エンドポイントの防御）。
+const USER_ID_PATTERN = /^[a-zA-Z0-9_.@+-]{1,100}$/;
+
+function isValidUserId(userId: string): boolean {
+  return USER_ID_PATTERN.test(userId);
+}
+
 type DiscordMessage = {
   id: string;
   content: string;
@@ -62,6 +72,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   if (!userId) {
     res.status(400).json({ error: "userId is required" });
+    return;
+  }
+
+  if (!isValidUserId(userId)) {
+    res.status(400).json({ error: "userId contains invalid characters" });
     return;
   }
 

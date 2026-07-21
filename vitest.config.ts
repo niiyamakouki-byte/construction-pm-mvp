@@ -11,7 +11,7 @@ export default defineConfig({
     "process.env.NODE_ENV": JSON.stringify("development"),
   },
   test: {
-    include: ["src/**/*.test.ts", "src/**/*.test.tsx"],
+    include: ["src/**/*.test.ts", "src/**/*.test.tsx", "middleware.test.ts"],
     environment: "jsdom",
     setupFiles: ["src/lib/pdf-vector-extractor/__tests__/vitest-pdfjs-worker.ts"],
     env: {
