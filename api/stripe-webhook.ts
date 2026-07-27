@@ -14,6 +14,7 @@
 import Stripe from "stripe";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
+// Provenance: LAPOSITE-STRIPE-IDEMPOTENCY-20260728 / Codex
 export const config = {
   api: {
     bodyParser: false,
@@ -59,6 +60,62 @@ function planFromPriceId(priceId: string | null | undefined): "standard" | "pro"
 // 各 SubscriptionItem 側へ移動した。先頭アイテムの値を代表値として扱う。
 function subscriptionCurrentPeriodEnd(sub: Stripe.Subscription): number | null {
   return sub.items.data[0]?.current_period_end ?? null;
+}
+
+type StripeEventProcessingResult = "processed" | "duplicate" | "in_progress";
+
+/**
+ * billing_events の UNIQUE 制約を使って、同じ Stripe event.id の処理権を
+ * 1リクエストだけが獲得する。完了前の競合は再送対象として扱う。
+ */
+export async function processStripeEventOnce(
+  supabase: SupabaseClient,
+  event: Stripe.Event,
+  processEvent: () => Promise<void>,
+): Promise<StripeEventProcessingResult> {
+  const { error: claimError } = await supabase.from("billing_events").insert({
+    stripe_event_id: event.id,
+    event_type: event.type,
+  });
+
+  if (claimError?.code === "23505") {
+    const { data, error: lookupError } = await supabase
+      .from("billing_events")
+      .select("processed_at")
+      .eq("stripe_event_id", event.id)
+      .maybeSingle();
+    if (lookupError) {
+      throw new Error(lookupError.message);
+    }
+    return data?.processed_at ? "duplicate" : "in_progress";
+  }
+  if (claimError) {
+    throw new Error(claimError.message);
+  }
+
+  try {
+    await processEvent();
+  } catch (err) {
+    const { error: releaseError } = await supabase
+      .from("billing_events")
+      .delete()
+      .eq("stripe_event_id", event.id)
+      .is("processed_at", null);
+    if (releaseError) {
+      console.error("[stripe-webhook] failed to release event claim:", releaseError);
+    }
+    throw err;
+  }
+
+  const { error: completeError } = await supabase
+    .from("billing_events")
+    .update({ processed_at: new Date().toISOString() })
+    .eq("stripe_event_id", event.id);
+  if (completeError) {
+    // 副作用は成功済みなので claim を保持し、再実行による重複を防ぐ。
+    throw new Error(completeError.message);
+  }
+  return "processed";
 }
 
 async function handleCheckoutCompleted(
@@ -242,38 +299,53 @@ export default async function handler(
   });
 
   try {
-    switch (event.type) {
-      case "checkout.session.completed":
-        await handleCheckoutCompleted(
-          supabase,
-          stripe,
-          event.data.object as Stripe.Checkout.Session,
-        );
-        break;
-      case "customer.subscription.updated":
-        await handleSubscriptionUpdated(
-          supabase,
-          event.data.object as Stripe.Subscription,
-        );
-        break;
-      case "customer.subscription.deleted":
-        await handleSubscriptionDeleted(
-          supabase,
-          event.data.object as Stripe.Subscription,
-        );
-        break;
-      case "invoice.payment_failed":
-        await handleInvoicePaymentFailed(
-          supabase,
-          event.data.object as Stripe.Invoice,
-        );
-        break;
-      default:
-        // 未対応イベントはログのみ
-        console.info(`[stripe-webhook] unhandled event: ${event.type} id=${event.id}`);
+    const result = await processStripeEventOnce(supabase, event, async () => {
+      switch (event.type) {
+        case "checkout.session.completed":
+          await handleCheckoutCompleted(
+            supabase,
+            stripe,
+            event.data.object as Stripe.Checkout.Session,
+          );
+          break;
+        case "customer.subscription.updated":
+          await handleSubscriptionUpdated(
+            supabase,
+            event.data.object as Stripe.Subscription,
+          );
+          break;
+        case "customer.subscription.deleted":
+          await handleSubscriptionDeleted(
+            supabase,
+            event.data.object as Stripe.Subscription,
+          );
+          break;
+        case "invoice.payment_failed":
+          await handleInvoicePaymentFailed(
+            supabase,
+            event.data.object as Stripe.Invoice,
+          );
+          break;
+        default:
+          // 未対応イベントも処理済みとして記録し、再送のたびにログを増やさない
+          console.info(`[stripe-webhook] unhandled event: ${event.type} id=${event.id}`);
+      }
+    });
+
+    if (result === "in_progress") {
+      res.status(409).json({
+        received: true,
+        type: event.type,
+        inProgress: true,
+      });
+      return;
     }
 
-    res.status(200).json({ received: true, type: event.type });
+    res.status(200).json({
+      received: true,
+      type: event.type,
+      duplicate: result === "duplicate",
+    });
   } catch (err) {
     const message = err instanceof Error ? err.message : "不明なエラー";
     console.error("[stripe-webhook] handler failed:", err);
