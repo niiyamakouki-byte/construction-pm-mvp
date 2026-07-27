@@ -152,6 +152,23 @@ describe("revokeShareToken", () => {
   });
 });
 
+describe("cross-device scenario — 別端末/別ブラウザで開く", () => {
+  it("token issued on one browser cannot be validated on another (localStorage is per-browser, no server sync)", () => {
+    // 発行側ブラウザ（PM）でトークンを発行
+    const token = generateShareToken("proj-crossdevice");
+    expect(validateShareToken(token)?.projectId).toBe("proj-crossdevice");
+
+    // 別端末/別ブラウザで同じ共有リンクを開く = localStorage が空の状態を再現
+    localStorage.clear();
+
+    expect(validateShareTokenDetailed(token)).toEqual({
+      ok: false,
+      reason: "not_found",
+    });
+    expect(validateShareToken(token)).toBeNull();
+  });
+});
+
 describe("listShareTokens", () => {
   it("returns empty array for project with no tokens", () => {
     expect(listShareTokens("empty-project")).toEqual([]);

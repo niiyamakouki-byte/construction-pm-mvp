@@ -231,6 +231,28 @@ describe("verifyJwtShareToken — signature tampering", () => {
   });
 });
 
+// ── cross-device scenario — 別端末/別ブラウザで開く ───────────────────────────
+
+describe("cross-device scenario — 別端末/別ブラウザで開く", () => {
+  it("token issued on one browser fails signature verification on another (HMAC secret lives only in localStorage, no server sync)", async () => {
+    // 発行側ブラウザ（PM）でトークンを発行。この時点で secret も生成され localStorage に保存される
+    const token = await generateJwtShareToken("proj-crossdevice");
+    const okOnSameBrowser = await verifyJwtShareToken(token);
+    expect(okOnSameBrowser.ok).toBe(true);
+
+    // 別端末/別ブラウザで同じ共有リンクを開く = localStorage が空の状態を再現。
+    // getSecretBytes() は保存済み secret が無いと「新規生成」してしまうため、
+    // 発行時と異なる鍵で署名検証することになり必ず失敗する。
+    localStorage.clear();
+
+    const result = await verifyJwtShareToken(token);
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.reason).toBe("invalid_signature");
+    }
+  });
+});
+
 // ── jwtTokenRequiresPassword ──────────────────────────────────────────────────
 
 describe("jwtTokenRequiresPassword", () => {
