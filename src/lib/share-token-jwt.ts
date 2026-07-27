@@ -1,10 +1,20 @@
 /**
- * share-token-jwt.ts — 施主向けJWTベースのshare-token
+ * share-token-jwt.ts — 施主向けJWTベースのshare-token（旧実装・現在未使用）
  *
+ * ⚠️ 2026-07-27時点でこのモジュールを使う唯一の画面 (SharePortalPage.tsx) は
+ * src/App.tsx からルーティングされておらず、かつトークン発行UIも存在しない
+ * （到達不能な孤立機能）。正本は src/lib/share-token.ts の createShareToken/
+ * verifySignedToken（サーバー専用鍵 SHARE_TOKEN_SECRET、/api/share-token）。
+ * 削除はせず参考実装として残す（bd委譲: サーバー側方式への統一、削除は別タスク）。
+ *
+ * 元の設計意図（現在は無効）:
  * HMAC-SHA256 (HS256) を Web Crypto API で自前実装。外部ライブラリ不要。
  * payload: { sub: projectId, exp: unix秒, iat: unix秒, pwd?: SHA-256ハッシュ(hex) }
  *
  * 秘密鍵は localStorage に永続化（デモ用途; 本番はサーバー側で管理する）。
+ * ※この localStorage 永続化こそが、発行端末以外でリンクを開くと必ず
+ * invalid_signature になる根本原因（別端末では秘密鍵が無いため新規生成され、
+ * 署名者と検証者の鍵が一致しない）。
  */
 
 const SECRET_STORAGE_KEY = "genbahub:jwt_secret";

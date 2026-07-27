@@ -339,3 +339,63 @@ describe("verifySignedShareToken (server, direct — sanity check that fail-clos
     expect(() => verifySignedShareToken("a.b", undefined, {})).toThrow();
   });
 });
+
+// ── cross-device scenario — 別端末/別ブラウザで開く (2026-07-27, bd委譲) ────────
+//
+// 896b81e で owner-app/share-token.ts (localStorage token) と share-token-jwt.ts
+// (localStorage secret) の両方式が別端末で必ず失敗することを再現するテストが
+// 追加された。本ファイルの createShareToken/verifySignedToken は、その修正として
+// 署名・検証を完全にサーバー(SHARE_TOKEN_SECRET)側で行う方式へ移行したもの。
+// クライアント側は何も永続化しないため、同じ検証が別端末（=localStorageが空）
+// でも成功することを確認する。
+
+describe("cross-device scenario — 別端末/別ブラウザで開く (server-signed scheme)", () => {
+  it("token issued on one browser verifies successfully on another (no client-side secret; server holds SHARE_TOKEN_SECRET)", async () => {
+    const shared = fakeServerFetcher();
+
+    // 発行側ブラウザ（PM）でトークンを発行
+    const token = await createShareToken("proj-crossdevice-signed", {
+      expiresInDays: 30,
+      getAccessToken: async () => "valid-jwt",
+      fetcher: shared,
+    });
+
+    // 別端末/別ブラウザで同じ共有リンクを開く = localStorage が空の状態を再現。
+    // 署名鍵はサーバーのプロセス環境変数(SHARE_TOKEN_SECRET)にのみ存在し、
+    // クライアントは何も保存していないため、この操作は検証結果に影響しない。
+    try {
+      localStorage.clear();
+    } catch {
+      // jsdom の一部バージョンは localStorage.clear 未実装。本テストの主張には無関係。
+    }
+
+    const result = await verifySignedToken(token, undefined, { fetcher: shared });
+    expect(result.valid).toBe(true);
+    expect(result.projectId).toBe("proj-crossdevice-signed");
+  });
+
+  it("password-protected token issued on one browser still requires (and accepts) the same password on another device", async () => {
+    const shared = fakeServerFetcher();
+
+    const token = await createShareToken("proj-crossdevice-pw", {
+      expiresInDays: 30,
+      password: "genba123",
+      getAccessToken: async () => "valid-jwt",
+      fetcher: shared,
+    });
+
+    try {
+      localStorage.clear();
+    } catch {
+      // 無関係（上記コメント参照）
+    }
+
+    const withoutPassword = await verifySignedToken(token, undefined, { fetcher: shared });
+    expect(withoutPassword.valid).toBe(false);
+    expect(withoutPassword.requiresPassword).toBe(true);
+
+    const withPassword = await verifySignedToken(token, "genba123", { fetcher: shared });
+    expect(withPassword.valid).toBe(true);
+    expect(withPassword.projectId).toBe("proj-crossdevice-pw");
+  });
+});

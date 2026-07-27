@@ -1,23 +1,33 @@
 /**
  * OwnerShareTokenPanel.test.tsx
+ *
+ * Sprint 66移行 (2026-07-27): 発行は /api/share-token（HMAC署名）経由になったため、
+ * 旧localStorageベースの発行/一覧/無効化テストは新しいサーバー発行フローに合わせて
+ * 書き換えた。永続一覧・無効化機能は廃止（署名トークンはステートレスなためサーバー側に
+ * 一覧を持たない設計。詳細はOwnerShareTokenPanel.tsx冒頭コメント参照）。
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { cleanup, render, screen, fireEvent } from "@testing-library/react";
+import { cleanup, render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { OwnerShareTokenPanel } from "../OwnerShareTokenPanel.js";
-import { generateShareToken, revokeShareToken } from "../../lib/owner-app/share-token.js";
+import {
+  handleShareTokenRequest,
+  type ShareTokenResponse,
+} from "../../lib/share-token-handler.js";
+import type { SupabaseAuthVerifier } from "../../lib/auth-helper.js";
 
-// jsdom では localStorage.clear が未実装のためモックする
-const localStorageMock = (() => {
-  let store: Record<string, string> = {};
-  return {
-    getItem: (key: string) => store[key] ?? null,
-    setItem: (key: string, value: string) => { store[key] = value; },
-    removeItem: (key: string) => { delete store[key]; },
-    clear: () => { store = {}; },
-  };
-})();
-Object.defineProperty(globalThis, "localStorage", { value: localStorageMock, writable: true });
+const TEST_ENV: NodeJS.ProcessEnv = { SHARE_TOKEN_SECRET: "test-secret-do-not-use-in-prod" };
+
+const testAuth: SupabaseAuthVerifier = {
+  getUser: async (token: string) =>
+    token === "valid-jwt"
+      ? { data: { user: { id: "user-1" } }, error: null }
+      : { data: { user: null }, error: { message: "invalid" } },
+};
+
+vi.mock("../../contexts/AuthContext.js", () => ({
+  useAuth: () => ({ session: { access_token: "valid-jwt" } }),
+}));
 
 const mockProjects = [
   { id: "proj-alpha", name: "アルファ現場", status: "active", createdAt: "2026-01-01", updatedAt: "2026-01-01" },
@@ -31,14 +41,44 @@ vi.mock("../../stores/project-store.js", () => ({
   }),
 }));
 
+function stubFetch() {
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async (_url: string, init: RequestInit) => {
+      const req = {
+        method: "POST",
+        headers: Object.fromEntries(new Headers(init.headers).entries()),
+        body: init.body,
+      };
+      let status = 200;
+      let body: unknown = null;
+      const res: ShareTokenResponse = {
+        status(code) {
+          status = code;
+          return res;
+        },
+        json(b) {
+          body = b;
+          return res;
+        },
+        setHeader() {
+          /* noop */
+        },
+      };
+      await handleShareTokenRequest(req, res, { auth: testAuth, env: TEST_ENV });
+      return new Response(JSON.stringify(body), { status });
+    }),
+  );
+}
+
 beforeEach(() => {
-  localStorage.clear();
+  stubFetch();
   cleanup();
 });
 
 afterEach(() => {
   cleanup();
-  localStorage.clear();
+  vi.unstubAllGlobals();
   vi.clearAllMocks();
 });
 
@@ -93,48 +133,33 @@ describe("OwnerShareTokenPanel", () => {
     expect(thirtyDays.getAttribute("aria-pressed")).toBe("false");
   });
 
-  it("shows existing tokens on mount", async () => {
-    generateShareToken("proj-alpha", 30);
-    const { findByText } = render(<OwnerShareTokenPanel />);
-    await findByText("アルファ現場", {}, { timeout: 3000 });
-    expect(screen.getByText("コピー")).toBeDefined();
-  });
-
-  it("shows 無効 badge for revoked token", async () => {
-    const token = generateShareToken("proj-alpha", 30);
-    revokeShareToken(token);
-    const { findByText } = render(<OwnerShareTokenPanel />);
-    await findByText("アルファ現場", {}, { timeout: 3000 });
-    expect(screen.getByText("無効")).toBeDefined();
-  });
-
-  it("shows 無効化 button for active token", async () => {
-    generateShareToken("proj-alpha", 30);
-    const { findByText } = render(<OwnerShareTokenPanel />);
-    await findByText("アルファ現場", {}, { timeout: 3000 });
-    expect(screen.getByText("無効化")).toBeDefined();
-  });
-
-  it("revoking a token updates display to 無効", async () => {
-    generateShareToken("proj-alpha", 30);
-    const { findByText } = render(<OwnerShareTokenPanel />);
-    await findByText("アルファ現場", {}, { timeout: 3000 });
-    const revokeBtn = screen.getByText("無効化");
-    fireEvent.click(revokeBtn);
-    expect(screen.getByText("無効")).toBeDefined();
-    expect(screen.queryByText("無効化")).toBeNull();
-  });
-
   it("shows description text", async () => {
     const { findByText } = render(<OwnerShareTokenPanel />);
     await findByText("施主URL管理", {}, { timeout: 3000 });
     expect(screen.getByText(/施主専用ダッシュボードのアクセスURL/)).toBeDefined();
   });
 
-  it("shows 期限切れ badge for expired token", async () => {
-    generateShareToken("proj-beta", -1); // expired
-    const { findByText } = render(<OwnerShareTokenPanel />);
-    await findByText("ベータ現場", {}, { timeout: 3000 });
-    expect(screen.getByText("期限切れ")).toBeDefined();
+  it("issuing a link calls the server API and displays a /portal/share/ URL with a copy button", async () => {
+    const { findAllByText } = render(<OwnerShareTokenPanel />);
+    const buttons = await findAllByText("共有リンクを発行", {}, { timeout: 3000 });
+    fireEvent.click(buttons[0]);
+    fireEvent.click(screen.getByText("発行する"));
+
+    await waitFor(() => expect(screen.getByText("コピー")).toBeDefined());
+    const urlEl = screen.getByText(/#\/portal\/share\//);
+    expect(urlEl.textContent).toContain("#/portal/share/");
+  });
+
+  it("shows an error message when the server rejects issuance (e.g. unauthenticated)", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => new Response(JSON.stringify({ error: "認証が必要です" }), { status: 401 })),
+    );
+    const { findAllByText } = render(<OwnerShareTokenPanel />);
+    const buttons = await findAllByText("共有リンクを発行", {}, { timeout: 3000 });
+    fireEvent.click(buttons[0]);
+    fireEvent.click(screen.getByText("発行する"));
+
+    await waitFor(() => expect(screen.getByText("認証が必要です")).toBeDefined());
   });
 });

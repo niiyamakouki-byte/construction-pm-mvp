@@ -1,105 +1,31 @@
 /**
- * OwnerShareTokenPanel — PM側: 施主用URLを生成・管理するパネル
+ * OwnerShareTokenPanel — PM側: 施主用URLを生成するパネル
  * /share-tokens
+ *
+ * Sprint 66 移行 (2026-07-27, bd委譲・クロスデバイス修正):
+ *   旧実装は owner-app/share-token.ts のトークンを localStorage にのみ保存していたため、
+ *   発行した端末以外（施主のスマホ等）でリンクを開くと必ず not_found になった
+ *   （PMと施主が同じブラウザを共有しない限り機能しない致命的な不具合。実測は
+ *   src/lib/owner-app/__tests__/share-token.test.ts の cross-device テストを参照）。
+ *   本パネルは /api/share-token（HMAC-SHA256署名、サーバー専用鍵 SHARE_TOKEN_SECRET）
+ *   経由でトークンを発行するよう変更した。署名検証はどの端末からでもサーバーが
+ *   行うため、別端末で開いても正しく検証できる。
+ *
+ *   署名トークンはステートレス（サーバーはDBを持たず署名鍵のみで検証する設計）なので、
+ *   発行済みトークンの永続一覧・無効化(revoke)機能は提供しない。これらは新しい
+ *   永続ストアの新設が必要になり、今回の委譲範囲外（「新しいストレージ層を勝手に
+ *   増やさない」の方針）。発行直後にその場でコピーできるURLのみを表示する。
  */
 
 import { useEffect, useId, useState } from "react";
-import {
-  generateShareToken,
-  listShareTokens,
-  revokeShareToken,
-} from "../lib/owner-app/share-token.js";
+import { createShareToken } from "../lib/share-token.js";
+import { useAuth } from "../contexts/AuthContext.js";
 import { createProjectRepository } from "../stores/project-store.js";
 import type { Project } from "../domain/types.js";
 
-type TokenEntry = {
-  token: string;
-  expiresAt: number;
-  revoked: boolean;
-};
-
-type ProjectRow = {
-  project: Project;
-  tokens: TokenEntry[];
-};
-
-function buildOwnerUrl(projectId: string, token: string): string {
+function buildShareUrl(token: string): string {
   const base = window.location.origin + window.location.pathname;
-  return `${base}#/owner-app/${encodeURIComponent(projectId)}?token=${token}`;
-}
-
-function ExpiryBadge({ expiresAt, revoked }: { expiresAt: number; revoked: boolean }) {
-  if (revoked) {
-    return (
-      <span className="rounded-full px-2 py-0.5 text-[10px] text-white" style={{ background: "#C53030" }}>
-        無効
-      </span>
-    );
-  }
-  const expired = Date.now() > expiresAt;
-  if (expired) {
-    return (
-      <span className="rounded-full bg-slate-300 px-2 py-0.5 text-[10px] text-white">
-        期限切れ
-      </span>
-    );
-  }
-  const days = Math.ceil((expiresAt - Date.now()) / (1000 * 60 * 60 * 24));
-  return (
-    <span
-      className="rounded-full px-2 py-0.5 text-[10px] text-white"
-      style={{ background: "#6B8E5A" }}
-    >
-      {days}日残
-    </span>
-  );
-}
-
-function TokenRow({
-  projectId,
-  entry,
-  onRevoke,
-}: {
-  projectId: string;
-  entry: TokenEntry;
-  onRevoke: (token: string) => void;
-}) {
-  const [copied, setCopied] = useState(false);
-  const url = buildOwnerUrl(projectId, entry.token);
-
-  function handleCopy() {
-    navigator.clipboard.writeText(url).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    });
-  }
-
-  const active = !entry.revoked && Date.now() <= entry.expiresAt;
-
-  return (
-    <div className="flex items-center gap-2 rounded-lg bg-slate-50 px-3 py-2 text-xs">
-      <span className="flex-1 truncate font-mono text-slate-500">{url}</span>
-      <ExpiryBadge expiresAt={entry.expiresAt} revoked={entry.revoked} />
-      {active && (
-        <button
-          onClick={handleCopy}
-          className="rounded px-2 py-1 text-white text-[10px]"
-          style={{ background: "#6B8E5A" }}
-        >
-          {copied ? "コピー済" : "コピー"}
-        </button>
-      )}
-      {active && (
-        <button
-          onClick={() => onRevoke(entry.token)}
-          className="rounded px-2 py-1 text-[10px] text-white"
-          style={{ background: "#C53030" }}
-        >
-          無効化
-        </button>
-      )}
-    </div>
-  );
+  return `${base}#/portal/share/${encodeURIComponent(token)}`;
 }
 
 const EXPIRY_OPTIONS = [
@@ -108,14 +34,20 @@ const EXPIRY_OPTIONS = [
   { label: "90日間", days: 90 },
 ];
 
+type IssuedLink = {
+  url: string;
+};
+
 function IssueForm({
-  projectId,
   onIssue,
   onCancel,
+  issuing,
+  error,
 }: {
-  projectId: string;
   onIssue: (days: number, password: string) => void;
   onCancel: () => void;
+  issuing: boolean;
+  error: string | null;
 }) {
   const [days, setDays] = useState(30);
   const [password, setPassword] = useState("");
@@ -156,14 +88,16 @@ function IssueForm({
           className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs outline-none focus:border-[#6B8E5A]"
         />
       </div>
+      {error && <p className="mb-2 text-[11px] text-red-600">{error}</p>}
       <div className="flex gap-2">
         <button
           type="button"
+          disabled={issuing}
           onClick={() => onIssue(days, password)}
-          className="rounded-lg px-3 py-1.5 text-xs text-white"
+          className="rounded-lg px-3 py-1.5 text-xs text-white disabled:opacity-60"
           style={{ background: "#6B8E5A" }}
         >
-          発行する
+          {issuing ? "発行中..." : "発行する"}
         </button>
         <button
           type="button"
@@ -179,34 +113,57 @@ function IssueForm({
 }
 
 function ProjectPanel({
-  row,
-  onGenerate,
-  onRevoke,
+  project,
+  getAccessToken,
 }: {
-  row: ProjectRow;
-  onGenerate: (projectId: string, days: number, password: string) => void;
-  onRevoke: (token: string) => void;
+  project: Project;
+  getAccessToken: () => Promise<string | null>;
 }) {
   const [showForm, setShowForm] = useState(false);
-  const active = row.tokens.filter(
-    (t) => !t.revoked && Date.now() <= t.expiresAt,
-  );
+  const [issuing, setIssuing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [issued, setIssued] = useState<IssuedLink | null>(null);
+  const [copied, setCopied] = useState(false);
 
-  function handleIssue(days: number, password: string) {
-    onGenerate(row.project.id, days, password);
-    setShowForm(false);
+  async function handleIssue(days: number, password: string) {
+    setIssuing(true);
+    setError(null);
+    try {
+      const token = await createShareToken(project.id, {
+        expiresInDays: days,
+        password: password || undefined,
+        getAccessToken,
+      });
+      setIssued({ url: buildShareUrl(token) });
+      setShowForm(false);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "発行に失敗しました");
+    } finally {
+      setIssuing(false);
+    }
+  }
+
+  function handleCopy() {
+    if (!issued) return;
+    navigator.clipboard.writeText(issued.url).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
   }
 
   return (
     <div className="rounded-xl border border-slate-100 bg-white p-4 shadow-sm">
       <div className="flex items-center justify-between mb-3">
         <div>
-          <h2 className="text-sm font-semibold text-slate-800">{row.project.name}</h2>
-          <p className="text-xs text-slate-400">ID: {row.project.id}</p>
+          <h2 className="text-sm font-semibold text-slate-800">{project.name}</h2>
+          <p className="text-xs text-slate-400">ID: {project.id}</p>
         </div>
         {!showForm && (
           <button
-            onClick={() => setShowForm(true)}
+            onClick={() => {
+              setShowForm(true);
+              setError(null);
+            }}
             className="rounded-lg px-3 py-1.5 text-xs text-white"
             style={{ background: "#6B8E5A" }}
           >
@@ -217,30 +174,32 @@ function ProjectPanel({
 
       {showForm && (
         <IssueForm
-          projectId={row.project.id}
           onIssue={handleIssue}
           onCancel={() => setShowForm(false)}
+          issuing={issuing}
+          error={error}
         />
       )}
 
-      {row.tokens.length === 0 ? (
-        <p className="mt-2 text-xs text-slate-400">URLはまだ発行されていません</p>
-      ) : (
-        <div className="mt-3 space-y-2">
-          {row.tokens.map((t) => (
-            <TokenRow
-              key={t.token}
-              projectId={row.project.id}
-              entry={t}
-              onRevoke={onRevoke}
-            />
-          ))}
+      {issued && (
+        <div className="mt-3 flex items-center gap-2 rounded-lg bg-slate-50 px-3 py-2 text-xs">
+          <span className="flex-1 truncate font-mono text-slate-500">{issued.url}</span>
+          <button
+            onClick={handleCopy}
+            className="rounded px-2 py-1 text-white text-[10px]"
+            style={{ background: "#6B8E5A" }}
+          >
+            {copied ? "コピー済" : "コピー"}
+          </button>
         </div>
       )}
 
-      {active.length > 0 && (
+      {!issued && !showForm && (
+        <p className="mt-2 text-xs text-slate-400">URLはまだ発行されていません</p>
+      )}
+      {issued && (
         <p className="mt-2 text-[10px] text-slate-400">
-          有効URL: {active.length}件
+          このURLは施主に送付してください。一覧には保存されません（再度開くと消えますが、発行済みのリンク自体は有効期限まで引き続き利用できます）。
         </p>
       )}
     </div>
@@ -248,42 +207,22 @@ function ProjectPanel({
 }
 
 export function OwnerShareTokenPanel() {
-  const [rows, setRows] = useState<ProjectRow[]>([]);
-
-  async function loadProjects() {
-    const repo = createProjectRepository();
-    const projects = await repo.findAll();
-    const next: ProjectRow[] = projects.map((p) => ({
-      project: p,
-      tokens: listShareTokens(p.id),
-    }));
-    setRows(next);
-  }
+  const [projects, setProjects] = useState<Project[]>([]);
+  const { session } = useAuth();
 
   useEffect(() => {
-    loadProjects();
+    let cancelled = false;
+    const repo = createProjectRepository();
+    repo.findAll().then((all) => {
+      if (!cancelled) setProjects(all);
+    });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
-  function handleGenerate(projectId: string, days: number, _password: string) {
-    // password is intentionally not stored in the owner-app token (stored separately in JWT flow)
-    generateShareToken(projectId, days);
-    setRows((prev) =>
-      prev.map((r) =>
-        r.project.id === projectId
-          ? { ...r, tokens: listShareTokens(projectId) }
-          : r,
-      ),
-    );
-  }
-
-  function handleRevoke(token: string) {
-    revokeShareToken(token);
-    setRows((prev) =>
-      prev.map((r) => ({
-        ...r,
-        tokens: listShareTokens(r.project.id),
-      })),
-    );
+  async function getAccessToken(): Promise<string | null> {
+    return session?.access_token ?? null;
   }
 
   return (
@@ -292,20 +231,19 @@ export function OwnerShareTokenPanel() {
         <header className="mb-6">
           <h1 className="text-xl font-bold text-slate-800">施主URL管理</h1>
           <p className="text-sm text-slate-500 mt-1">
-            施主専用ダッシュボードのアクセスURLを発行・管理します
+            施主専用ダッシュボードのアクセスURLを発行します
           </p>
         </header>
 
-        {rows.length === 0 ? (
+        {projects.length === 0 ? (
           <p className="text-sm text-slate-400">案件がありません</p>
         ) : (
           <div className="space-y-4">
-            {rows.map((row) => (
+            {projects.map((project) => (
               <ProjectPanel
-                key={row.project.id}
-                row={row}
-                onGenerate={handleGenerate}
-                onRevoke={handleRevoke}
+                key={project.id}
+                project={project}
+                getAccessToken={getAccessToken}
               />
             ))}
           </div>

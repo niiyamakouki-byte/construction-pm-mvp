@@ -7,7 +7,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Lock } from "lucide-react";
-import { validateShareTokenDetailed } from "../lib/owner-app/share-token.js";
+import { verifySignedToken } from "../lib/share-token.js";
 import { ownerStore } from "../lib/owner-app/owner-store.js";
 import type {
   ChangeRequest,
@@ -15,9 +15,7 @@ import type {
   OwnerDashboardSnapshot,
   OwnerMessage,
   OwnerPaymentMilestone,
-  OwnerSession,
 } from "../lib/owner-app/types.js";
-import type { ShareTokenValidationFailureReason } from "../lib/owner-app/share-token.js";
 import { buildOwnerSnapshot } from "../lib/owner-app/snapshot-builder.js";
 import { createProjectRepository } from "../stores/project-store.js";
 import { createPhotoStore } from "../stores/photo-store.js";
@@ -474,20 +472,25 @@ type Props = {
   token: string;
 };
 
-type AccessFailureReason = ShareTokenValidationFailureReason | "project_mismatch";
+// Sprint 66移行 (2026-07-27): トークン検証を /api/share-token（HMAC署名、サーバー専用鍵）
+// 経由の verifySignedToken に変更した。旧 owner-app/share-token.ts は localStorage に
+// しかトークン実体が無く、施主が発行端末と別の端末でリンクを開くと必ず not_found に
+// なるバグがあった（詳細は OwnerShareTokenPanel.tsx 冒頭コメント参照）。
+// 署名スキームに revoke 機能は無いため "revoked" 理由は存在しない。
+type AccessFailureReason = "not_found" | "expired" | "password_required" | "project_mismatch";
 
 const ACCESS_FAILURE_MESSAGES: Record<AccessFailureReason, { title: string; description: string }> = {
   not_found: {
     title: "リンクが正しくありません",
     description: "URLが途中で切れているか、発行済みの共有リンクではありません。担当者から送られたリンクを開き直してください。",
   },
-  revoked: {
-    title: "このリンクは無効化されています",
-    description: "共有リンクは停止されています。担当者に新しいリンクの発行をご依頼ください。",
-  },
   expired: {
     title: "リンクの有効期限が切れています",
     description: "共有リンクの期限を過ぎています。担当者に新しいリンクの発行をご依頼ください。",
+  },
+  password_required: {
+    title: "パスワードの確認が必要です",
+    description: "このリンクはパスワードで保護されています。担当者から送られた共有リンクを開き直してください。",
   },
   project_mismatch: {
     title: "リンクと案件が一致しません",
@@ -496,7 +499,7 @@ const ACCESS_FAILURE_MESSAGES: Record<AccessFailureReason, { title: string; desc
 };
 
 export function OwnerAppPage({ projectId, token }: Props) {
-  const [session, setSession] = useState<OwnerSession | null | "loading">(
+  const [session, setSession] = useState<{ projectId: string } | null | "loading">(
     "loading",
   );
   const [accessFailureReason, setAccessFailureReason] =
@@ -506,21 +509,42 @@ export function OwnerAppPage({ projectId, token }: Props) {
   const [localMessages, setLocalMessages] = useState<OwnerMessage[]>([]);
   const [localRequests, setLocalRequests] = useState<ChangeRequest[]>([]);
 
-  // Validate token
+  // Validate token (サーバーAPI経由、端末非依存)
   useEffect(() => {
-    const result = validateShareTokenDetailed(token);
-    if (!result.ok) {
-      setAccessFailureReason(result.reason);
-      setSession(null);
-      return;
+    let cancelled = false;
+
+    async function check() {
+      const result = await verifySignedToken(token);
+      if (cancelled) return;
+
+      if (result.requiresPassword) {
+        setAccessFailureReason("password_required");
+        setSession(null);
+        return;
+      }
+      if (result.expired) {
+        setAccessFailureReason("expired");
+        setSession(null);
+        return;
+      }
+      if (!result.valid || !result.projectId) {
+        setAccessFailureReason("not_found");
+        setSession(null);
+        return;
+      }
+      if (result.projectId !== projectId) {
+        setAccessFailureReason("project_mismatch");
+        setSession(null);
+        return;
+      }
+      setAccessFailureReason(null);
+      setSession({ projectId: result.projectId });
     }
-    if (result.session.projectId !== projectId) {
-      setAccessFailureReason("project_mismatch");
-      setSession(null);
-      return;
-    }
-    setAccessFailureReason(null);
-    setSession(result.session);
+
+    check();
+    return () => {
+      cancelled = true;
+    };
   }, [token, projectId]);
 
   // Load snapshot

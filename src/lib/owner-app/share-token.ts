@@ -1,6 +1,15 @@
 /**
- * owner-app/share-token.ts — 施主向け share token (30日有効)
+ * owner-app/share-token.ts — 施主向け share token (30日有効)（旧実装・現在未使用）
+ *
+ * ⚠️ 2026-07-27時点でこのモジュールはどの画面からも呼ばれていない
+ * (OwnerShareTokenPanel.tsx / OwnerAppPage.tsx はどちらも src/lib/share-token.ts の
+ * createShareToken/verifySignedToken（サーバー専用鍵 SHARE_TOKEN_SECRET）へ移行済み)。
  * localStorage: genbahub:owner-tokens
+ *
+ * 移行理由: このトークンは発行者ブラウザの localStorage にしか実体が無く、
+ * 施主が発行端末と別の端末でリンクを開くと必ず not_found になる不具合があった
+ * （クロスデバイス再現テストは src/lib/owner-app/__tests__/share-token.test.ts 参照）。
+ * 削除はせず参考実装として残す（bd委譲: サーバー側方式への統一、削除は別タスク）。
  */
 
 import type { OwnerSession } from "./types.js";

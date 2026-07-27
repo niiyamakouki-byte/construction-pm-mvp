@@ -1,7 +1,16 @@
 /**
- * SharePortalPage — 施主向けJWT share-tokenアクセスページ
- * URL: /#/portal/share/<token>
+ * SharePortalPage — 施主向けJWT share-tokenアクセスページ（旧実装・現在未ルーティング）
  *
+ * ⚠️ 2026-07-27時点でこのコンポーネントは src/App.tsx からルーティングされていない。
+ * 正本は src/pages/OwnerPortalSharePage.tsx（/#/portal/share/:token、サーバー署名HMAC
+ * 検証 = src/lib/share-token.ts）。本コンポーネントが依存する share-token-jwt.ts は
+ * 署名鍵を発行者ブラウザの localStorage(genbahub:jwt_secret) にのみ保存する設計で、
+ * 施主が別端末でリンクを開くと必ず invalid_signature になる不具合があり、かつ
+ * トークン発行UIも存在しなかった（到達不能な孤立機能）。削除はせず参考実装として残す
+ * （bd委譲: サーバー側方式への統一、削除は別タスク）。
+ *
+ * 元の設計意図（現在は無効）:
+ * URL: /#/portal/share/<token>
  * - パスワード保護トークンはパスワード入力フォームを表示
  * - 期限切れ/署名不正/不一致は明示的なエラーを表示
  * - 検証成功後は ContractorPortalPage と同じ進捗ビューを表示

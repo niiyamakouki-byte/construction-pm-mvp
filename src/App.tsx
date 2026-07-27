@@ -33,7 +33,12 @@ const ProcurementPage = lazy(() => import("./pages/ProcurementPage.js").then((m)
 const SiteEntryPage = lazy(() => import("./pages/SiteEntryPage.js").then((m) => ({ default: m.SiteEntryPage })));
 const AttendanceHistoryPage = lazy(() => import("./pages/AttendanceHistoryPage.js").then((m) => ({ default: m.AttendanceHistoryPage })));
 const ContractorPortalPage = lazy(() => import("./pages/ContractorPortalPage.js").then((m) => ({ default: m.ContractorPortalPage })));
-const SharePortalPage = lazy(() => import("./pages/SharePortalPage.js").then((m) => ({ default: m.SharePortalPage })));
+// Sprint 66移行 (2026-07-27): /portal/share/:token の正本は OwnerPortalSharePage
+// (サーバー署名HMAC検証、src/lib/share-token.js)。旧 SharePortalPage
+// (share-token-jwt.js、localStorage秘密鍵、別端末で開くと必ず invalid_signature) は
+// 発行UIが存在せず到達不能だったため本ルートから外した。ファイル自体は削除せず
+// 参考実装として残す（別タスク）。
+const OwnerPortalSharePage = lazy(() => import("./pages/OwnerPortalSharePage.js").then((m) => ({ default: m.OwnerPortalSharePage })));
 const ClientViewerPage = lazy(() => import("./pages/ClientViewerPage.js").then((m) => ({ default: m.ClientViewerPage })));
 const SelectionBoardPage = lazy(() => import("./pages/SelectionBoardPage.js").then((m) => ({ default: m.SelectionBoardPage })));
 const MoodBoardPage = lazy(() => import("./pages/MoodBoardPage.js").then((m) => ({ default: m.MoodBoardPage })));
@@ -486,7 +491,7 @@ function AppShell() {
   if (route === "/funnel") return <Suspense fallback={pageFallback}><SignupFunnelPanelLazy /></Suspense>;
   if (clientProjectId) return <Suspense fallback={pageFallback}><ClientViewerPage projectId={clientProjectId} /></Suspense>;
   if (entryProjectId) return <Suspense fallback={pageFallback}><SiteEntryPage projectId={entryProjectId} /></Suspense>;
-  if (sharePortalToken) return <Suspense fallback={pageFallback}><SharePortalPage token={sharePortalToken} /></Suspense>;
+  if (sharePortalToken) return <Suspense fallback={pageFallback}><OwnerPortalSharePage token={sharePortalToken} /></Suspense>;
   if (portalProjectId) return <Suspense fallback={pageFallback}><ContractorPortalPage projectId={portalProjectId} company={portalCompany} /></Suspense>;
   if (selectionProjectId) return <Suspense fallback={pageFallback}><SelectionBoardPage projectId={selectionProjectId} /></Suspense>;
   if (finishingMatch) return <Suspense fallback={pageFallback}><FinishingSchedulePage projectName={finishingMatch[1] ? decodeURIComponent(finishingMatch[1]) : undefined} /></Suspense>;

@@ -1,12 +1,45 @@
 /**
  * OwnerAppPage.test.tsx
+ *
+ * Sprint 66移行 (2026-07-27): トークン検証が /api/share-token（HMAC署名）経由の
+ * verifySignedToken に変わったため、旧owner-app/share-token.js(localStorage)ベースの
+ * テストは署名トークン生成(createSignedShareToken)+fetchスタブに書き換えた。
+ * 署名スキームにrevoke機能は無いため「無効化されたリンク」テストは
+ * 「改ざんされた署名」テストに置き換えている。
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { cleanup, render, screen, fireEvent } from "@testing-library/react";
 import { OwnerAppPage } from "../OwnerAppPage.js";
-import { generateShareToken, revokeShareToken } from "../../lib/owner-app/share-token.js";
+import {
+  createSignedShareToken,
+  verifySignedShareToken,
+} from "../../lib/share-token-handler.js";
 import { ownerStore } from "../../lib/owner-app/owner-store.js";
+
+const TEST_ENV: NodeJS.ProcessEnv = { SHARE_TOKEN_SECRET: "test-secret-do-not-use-in-prod" };
+
+function mintToken(projectId: string, expiresInDays = 30): string {
+  return createSignedShareToken(projectId, { expiresInDays }, TEST_ENV);
+}
+
+function stubVerifyFetch() {
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async (_url: string, init: RequestInit) => {
+      const body = JSON.parse(init.body as string) as {
+        action: string;
+        token?: string;
+        password?: string;
+      };
+      if (body.action !== "verify" || !body.token) {
+        return new Response(JSON.stringify({ error: "bad request" }), { status: 400 });
+      }
+      const result = verifySignedShareToken(body.token, body.password, TEST_ENV);
+      return new Response(JSON.stringify(result), { status: 200 });
+    }),
+  );
+}
 
 // jsdom では localStorage.clear が未実装のためモックする
 const localStorageMock = (() => {
@@ -59,51 +92,60 @@ vi.mock("../../lib/project-tasks-store.js", () => ({
 beforeEach(() => {
   localStorage.clear();
   ownerStore._reset();
+  stubVerifyFetch();
   cleanup();
 });
 
 afterEach(() => {
   cleanup();
   localStorage.clear();
+  vi.unstubAllGlobals();
   vi.clearAllMocks();
 });
 
 describe("OwnerAppPage — token validation", () => {
-  it("shows invalid-link detail for unknown token", () => {
-    render(<OwnerAppPage projectId="proj-test" token="bad-token" />);
-    expect(screen.getByText("リンクが正しくありません")).toBeDefined();
+  it("shows invalid-link detail for unknown token", async () => {
+    const { findByText } = render(<OwnerAppPage projectId="proj-test" token="bad-token" />);
+    await findByText("リンクが正しくありません", {}, { timeout: 3000 });
   });
 
-  it("shows expired detail for expired token", () => {
-    const token = generateShareToken("proj-test", -1);
-    render(<OwnerAppPage projectId="proj-test" token={token} />);
-    expect(screen.getByText("リンクの有効期限が切れています")).toBeDefined();
+  it("shows invalid-link detail for a tampered signature (no revoke concept in signed scheme)", async () => {
+    const token = mintToken("proj-test");
+    const tampered = token.slice(0, -4) + "XXXX";
+    const { findByText } = render(<OwnerAppPage projectId="proj-test" token={tampered} />);
+    await findByText("リンクが正しくありません", {}, { timeout: 3000 });
   });
 
-  it("shows revoked detail for revoked token", () => {
-    const token = generateShareToken("proj-test");
-    revokeShareToken(token);
-    render(<OwnerAppPage projectId="proj-test" token={token} />);
-    expect(screen.getByText("このリンクは無効化されています")).toBeDefined();
+  it("shows expired detail for expired token", async () => {
+    const token = mintToken("proj-test", -1);
+    const { findByText } = render(<OwnerAppPage projectId="proj-test" token={token} />);
+    await findByText("リンクの有効期限が切れています", {}, { timeout: 3000 });
   });
 
-  it("shows project mismatch detail for wrong project", () => {
-    const token = generateShareToken("other-proj");
-    render(<OwnerAppPage projectId="proj-test" token={token} />);
-    expect(screen.getByText("リンクと案件が一致しません")).toBeDefined();
+  it("shows project mismatch detail for wrong project", async () => {
+    const token = mintToken("other-proj");
+    const { findByText } = render(<OwnerAppPage projectId="proj-test" token={token} />);
+    await findByText("リンクと案件が一致しません", {}, { timeout: 3000 });
   });
 
-  it("shows loading then dashboard for valid token", async () => {
-    const token = generateShareToken("proj-test");
+  it("shows loading then dashboard for valid token", () => {
+    const token = mintToken("proj-test");
     render(<OwnerAppPage projectId="proj-test" token={token} />);
-    // Initial render shows loading
+    // Initial render shows loading (verification is async)
     expect(screen.queryByText("アクセスできません")).toBeNull();
+  });
+
+  it("verifies successfully even when localStorage is empty (cross-device: no client-side secret dependency)", async () => {
+    const token = mintToken("proj-test");
+    localStorage.clear();
+    const { findByText } = render(<OwnerAppPage projectId="proj-test" token={token} />);
+    await findByText("テスト現場", {}, { timeout: 3000 });
   });
 });
 
 describe("OwnerAppPage — snapshot display", () => {
   async function renderWithValidToken() {
-    const token = generateShareToken("proj-test");
+    const token = mintToken("proj-test");
     const { findByText } = render(
       <OwnerAppPage projectId="proj-test" token={token} />,
     );
@@ -150,7 +192,7 @@ describe("OwnerAppPage — snapshot display", () => {
 
 describe("OwnerAppPage — chat", () => {
   it("shows チャット heading", async () => {
-    const token = generateShareToken("proj-test");
+    const token = mintToken("proj-test");
     const { findByText } = render(
       <OwnerAppPage projectId="proj-test" token={token} />,
     );
@@ -159,7 +201,7 @@ describe("OwnerAppPage — chat", () => {
   });
 
   it("has a send button", async () => {
-    const token = generateShareToken("proj-test");
+    const token = mintToken("proj-test");
     const { findByText } = render(
       <OwnerAppPage projectId="proj-test" token={token} />,
     );
@@ -170,7 +212,7 @@ describe("OwnerAppPage — chat", () => {
 
 describe("OwnerAppPage — change request modal", () => {
   async function openModal() {
-    const token = generateShareToken("proj-test");
+    const token = mintToken("proj-test");
     const { findByText } = render(
       <OwnerAppPage projectId="proj-test" token={token} />,
     );
