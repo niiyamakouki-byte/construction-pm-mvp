@@ -158,7 +158,7 @@ export function EstimateAssistantPage() {
   );
 
   return (
-    <div className="flex h-screen bg-stone-50 text-slate-800">
+    <div className="flex flex-col md:flex-row h-screen bg-stone-50 text-slate-800">
       {/* 左: 会話ログ */}
       <div className="flex flex-col flex-1 border-r border-stone-200">
         {/* ヘッダー */}
@@ -177,7 +177,7 @@ export function EstimateAssistantPage() {
               <div
                 className={`max-w-[75%] rounded-lg px-3 py-2 text-sm whitespace-pre-wrap ${
                   msg.role === "user"
-                    ? "bg-sage-100 text-slate-800 bg-brand-100"
+                    ? "bg-brand-100 text-slate-800"
                     : "bg-white border border-stone-200 text-slate-700"
                 }`}
               >
@@ -213,7 +213,7 @@ export function EstimateAssistantPage() {
       </div>
 
       {/* 右: 松竹梅レンジ表 */}
-      <div className="w-80 flex flex-col bg-white">
+      <div className="w-full md:w-80 flex flex-col bg-white">
         <div className="px-4 py-3 border-b border-stone-200">
           <h2 className="text-sm font-semibold text-slate-700">概算レンジ（税込）</h2>
         </div>
