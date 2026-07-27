@@ -193,40 +193,19 @@ export function verifyShareToken(
 }
 
 // ── Sprint 66: HMAC-SHA256 署名 + パスワード保護付き share token ──────────────
+//
+// 署名・検証は /api/share-token（サーバー専用）で行う。以前はブラウザの
+// crypto.subtle + import.meta.env.VITE_SHARE_TOKEN_SECRET で署名鍵をクライアント側に
+// 持たせていたが、VITE_ 接頭辞はビルド時にクライアントJSへ埋め込まれるため鍵が露出していた
+// （ハードコードされた開発用フォールバック鍵も含む）。2026-07-27 セキュリティ監査で発覚し、
+// 実際の署名・検証ロジックは src/lib/share-token-handler.ts + api/share-token.ts へ移設した。
 
-const DEV_SECRET = "genbahub-dev-secret-change-in-production";
+const SHARE_TOKEN_API_ENDPOINT = "/api/share-token";
 
-function getSecret(): string {
-  const secret =
-    typeof import.meta !== "undefined"
-      ? (import.meta.env?.VITE_SHARE_TOKEN_SECRET as string | undefined)
-      : undefined;
-  if (!secret) {
-    if (typeof import.meta !== "undefined" && import.meta.env?.PROD) {
-      console.warn(
-        "[share-token] VITE_SHARE_TOKEN_SECRET is not set in production!",
-      );
-    }
-    return DEV_SECRET;
-  }
-  return secret;
-}
-
-async function hmacSign(data: string, secret: string): Promise<string> {
-  const enc = new TextEncoder();
-  const key = await crypto.subtle.importKey(
-    "raw",
-    enc.encode(secret),
-    { name: "HMAC", hash: "SHA-256" },
-    false,
-    ["sign"],
-  );
-  const sig = await crypto.subtle.sign("HMAC", key, enc.encode(data));
-  const bytes = new Uint8Array(sig);
-  let bin = "";
-  for (const b of bytes) bin += String.fromCharCode(b);
-  return btoa(bin).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
-}
+export type ShareTokenFetcher = (
+  url: string,
+  init: RequestInit,
+) => Promise<Response>;
 
 /**
  * SHA-256 ハッシュを base64url で返す。パスワード保存・比較に使用。
@@ -243,6 +222,10 @@ export async function hashPassword(plain: string): Promise<string> {
 export type SignedTokenOptions = {
   expiresInDays: number;
   password?: string;
+  /** Supabase アクセストークンを返す関数。/api/share-token の action=create は認証必須。 */
+  getAccessToken?: () => Promise<string | null>;
+  /** テスト注入用の fetch 実装。デフォルトは global fetch。 */
+  fetcher?: ShareTokenFetcher;
 };
 
 export type SignedTokenVerifyResult = {
@@ -253,87 +236,71 @@ export type SignedTokenVerifyResult = {
   tampered?: boolean;
 };
 
-type SignedTokenClaims = {
-  projectId: string;
-  issuedAt: number;
-  expiresAt: number;
-  passwordHash?: string;
-};
-
 /**
  * HMAC-SHA256 署名付き共有トークンを発行する。
+ * 実際の署名は /api/share-token（サーバー専用、SHARE_TOKEN_SECRET 使用）が行う。
+ *
  * @returns "claimsB64.signature" 形式の base64url トークン
+ * @throws サーバーが失敗を返した場合（未認証・鍵未設定・ネットワークエラー等）
  */
 export async function createShareToken(
   projectId: string,
   options: SignedTokenOptions,
 ): Promise<string> {
-  const { expiresInDays, password } = options;
-  const now = Date.now();
-  const expiresAt = now + expiresInDays * 24 * 60 * 60 * 1000;
+  const { expiresInDays, password, getAccessToken, fetcher } = options;
+  const doFetch = fetcher ?? (fetch.bind(globalThis) as ShareTokenFetcher);
 
-  const claims: SignedTokenClaims = { projectId, issuedAt: now, expiresAt };
-
-  if (password !== undefined && password !== "") {
-    claims.passwordHash = await hashPassword(password);
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  const accessToken = await getAccessToken?.();
+  if (accessToken) {
+    headers["Authorization"] = `Bearer ${accessToken}`;
   }
 
-  const claimsJson = JSON.stringify(claims);
-  const enc = new TextEncoder();
-  const claimsB64 = btoa(
-    String.fromCharCode(...enc.encode(claimsJson)),
-  )
-    .replace(/\+/g, "-")
-    .replace(/\//g, "_")
-    .replace(/=+$/, "");
+  const res = await doFetch(SHARE_TOKEN_API_ENDPOINT, {
+    method: "POST",
+    headers,
+    body: JSON.stringify({ action: "create", projectId, expiresInDays, password }),
+  });
 
-  const sig = await hmacSign(claimsB64, getSecret());
-  return `${claimsB64}.${sig}`;
+  if (!res.ok) {
+    const body = (await res.json().catch(() => ({}))) as { error?: string };
+    throw new Error(body.error ?? `share-token の発行に失敗しました (${res.status})`);
+  }
+
+  const { token } = (await res.json()) as { token: string };
+  return token;
 }
 
 /**
  * HMAC-SHA256 署名付きトークンを検証する。
+ * 実際の検証は /api/share-token（サーバー専用、SHARE_TOKEN_SECRET 使用）が行う。
+ *
+ * サーバーに到達できない・鍵未設定等でサーバーが失敗を返した場合は、
+ * 安全側に倒して { valid: false, tampered: true } を返す
+ * （弱い鍵にフォールバックして検証を続けることはしない）。
  */
 export async function verifySignedToken(
   token: string,
   password?: string,
+  opts?: { fetcher?: ShareTokenFetcher },
 ): Promise<SignedTokenVerifyResult> {
-  const dotIdx = token.lastIndexOf(".");
-  if (dotIdx === -1) {
-    return { valid: false, tampered: true };
-  }
+  const doFetch = opts?.fetcher ?? (fetch.bind(globalThis) as ShareTokenFetcher);
 
-  const claimsB64 = token.slice(0, dotIdx);
-  const providedSig = token.slice(dotIdx + 1);
-
-  const expectedSig = await hmacSign(claimsB64, getSecret());
-  if (expectedSig !== providedSig) {
-    return { valid: false, tampered: true };
-  }
-
-  let claims: SignedTokenClaims;
   try {
-    const json = atob(claimsB64.replace(/-/g, "+").replace(/_/g, "/"));
-    claims = JSON.parse(json) as SignedTokenClaims;
-  } catch {
+    const res = await doFetch(SHARE_TOKEN_API_ENDPOINT, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "verify", token, password }),
+    });
+
+    if (!res.ok) {
+      console.error(`[share-token] verify failed (${res.status})`);
+      return { valid: false, tampered: true };
+    }
+
+    return (await res.json()) as SignedTokenVerifyResult;
+  } catch (err) {
+    console.error("[share-token] verify request failed", err);
     return { valid: false, tampered: true };
   }
-
-  const { projectId, expiresAt, passwordHash } = claims;
-
-  if (Date.now() > expiresAt) {
-    return { valid: false, projectId, expired: true };
-  }
-
-  if (passwordHash !== undefined) {
-    if (password === undefined || password === "") {
-      return { valid: false, projectId, requiresPassword: true };
-    }
-    const inputHash = await hashPassword(password);
-    if (inputHash !== passwordHash) {
-      return { valid: false, projectId, requiresPassword: true };
-    }
-  }
-
-  return { valid: true, projectId };
 }
