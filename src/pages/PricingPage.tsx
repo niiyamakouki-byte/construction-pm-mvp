@@ -217,10 +217,12 @@ export function PricingPage() {
 
       <div className="mb-8 text-center">
         <h1 className="text-2xl font-bold text-slate-900">プランと料金</h1>
-        <p className="mt-2 text-slate-500">
-          現在のプラン:{" "}
-          <span className="font-semibold text-brand-600">{currentPlanLabel}</span>
-        </p>
+        {session && (
+          <p className="mt-2 text-slate-500">
+            現在のプラン:{" "}
+            <span className="font-semibold text-brand-600">{currentPlanLabel}</span>
+          </p>
+        )}
       </div>
 
       <div className="mb-6 rounded-2xl border border-brand-200 bg-brand-50 px-5 py-4 text-center">
