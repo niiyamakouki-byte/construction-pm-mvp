@@ -81,6 +81,7 @@ import { AuthGuard } from "./components/AuthGuard.js";
 import { OnboardingWizard, useOnboardingDone } from "./components/OnboardingWizard.js";
 import { TourGuide, useTourDone } from "./components/TourGuide.js";
 import { AuthProvider, useAuth } from "./contexts/AuthContext.js";
+import { hasSupabaseEnv } from "./infra/supabase-client.js";
 import { OrganizationProvider, useOrganizationContext } from "./contexts/OrganizationContext.js";
 import { SubscriptionProvider } from "./contexts/SubscriptionContext.js";
 import { PersonaProvider, usePersona } from "./contexts/PersonaContext.js";
@@ -191,7 +192,7 @@ function AppShell() {
   const { t } = useTranslation(["common", "pages", "errors"]);
   const route = useHashRoute();
   const { collapsed: sidebarCollapsed, toggle: toggleSidebarCollapsed } = useSidebarCollapsed(route);
-  const { user, signOut } = useAuth();
+  const { user, loading: authLoading, signOut } = useAuth();
   const { organizationId } = useOrganizationContext();
   const { persona, setPersona } = usePersona();
   const { theme, cycleTheme } = useTheme();
@@ -207,7 +208,15 @@ function AppShell() {
   const [firstRunBootstrapping, setFirstRunBootstrapping] = useState(false);
   const [firstRunError, setFirstRunError] = useState<string | null>(null);
   const lastProjectId = readLastProjectId();
-  const shouldBootstrapFirstRun = !onboardingDone && route === "/app" && !lastProjectId;
+  // ncbhf: AuthGuardが実際にchildrenを描画する条件と揃える。この判定を外すと
+  // 未認証ユーザーが "/" → "/app" へリダイレクトされる一瞬の間にこのeffectが
+  // 発火し、AuthGuardのセッションチェックより先にSupabaseへ書き込みクエリが
+  // 飛んで400になる(RLS拒否)。E2Eバイパス/Supabase未設定時は従来通り即時実行。
+  const isE2EBypass =
+    import.meta.env.DEV && typeof window !== "undefined" && window.__E2E_BYPASS_AUTH__ === true;
+  const authGuardWouldRenderChildren = isE2EBypass || !hasSupabaseEnv() || (!authLoading && !!user);
+  const shouldBootstrapFirstRun =
+    authGuardWouldRenderChildren && !onboardingDone && route === "/app" && !lastProjectId;
 
   // iOS keyboard detection via visualViewport
   useEffect(() => {
