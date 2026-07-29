@@ -22,14 +22,11 @@ interface GreetingHeaderProps {
   userName?: string;
   /** テスト用: 現在時刻を上書き */
   now?: Date;
-  /** 天気スタブ (将来 API 接続予定) */
-  weather?: string;
 }
 
 export function GreetingHeader({
   userName,
   now,
-  weather = "晴れ",
 }: GreetingHeaderProps) {
   const date = now ?? new Date();
   const hour = date.getHours();
@@ -60,7 +57,7 @@ export function GreetingHeader({
         {userName ? `${greeting}、${userName}` : greeting}
       </p>
       <p className="mt-1 text-sm text-brand-600" style={{ writingMode: "horizontal-tb", wordBreak: "keep-all" }}>
-        {dateStr} · {weather}
+        {dateStr}
       </p>
     </motion.div>
   );
