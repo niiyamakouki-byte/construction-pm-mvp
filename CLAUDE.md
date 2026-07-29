@@ -79,7 +79,6 @@
 - Lobster workflow → 最小限のAPI呼び出しで完結させる
 - taskctl CLIステップは Layer 0（コスト0）で処理
 
-
 <!-- BEGIN BEADS INTEGRATION v:1 profile:minimal hash:7510c1e2 -->
 ## Beads Issue Tracker
 
@@ -104,26 +103,31 @@ bd close <id>         # Complete work
 
 ## Session Completion
 
-**When ending a work session**, you MUST complete ALL steps below. Work is NOT complete until `git push` succeeds.
+**When ending a work session**, complete the steps below.
 
-**MANDATORY WORKFLOW:**
+**WORKFLOW:**
 
 1. **File issues for remaining work** - Create issues for anything that needs follow-up
 2. **Run quality gates** (if code changed) - Tests, linters, builds
 3. **Update issue status** - Close finished work, update in-progress items
-4. **PUSH TO REMOTE** - This is MANDATORY:
+4. **Push to remote** — **ONLY if the delegation brief permits pushing.** If the brief says push is forbidden, stop at commit and report the commit hash. Leaving work committed-but-unpushed is the correct outcome under a push-forbidden brief, not a failure.
    ```bash
    git pull --rebase
    git push
-   git status  # MUST show "up to date with origin"
+   git status
    ```
 5. **Clean up** - Clear stashes, prune remote branches
-6. **Verify** - All changes committed AND pushed
+6. **Verify** - All intended changes committed
 7. **Hand off** - Provide context for next session
-
-**CRITICAL RULES:**
-- Work is NOT complete until `git push` succeeds
-- NEVER stop before pushing - that leaves work stranded locally
-- NEVER say "ready to push when you are" - YOU must push
-- If push fails, resolve and retry until it succeeds
 <!-- END BEADS INTEGRATION -->
+
+## 命令の優先順位【2026-07-27 追加・恒久】
+
+**委譲ブリーフの「触ってはいけない」＞ このファイル。** 相反したら必ずブリーフ側に従うこと。
+
+このファイルは beads の定型ブロックを含む汎用テンプレートで、以前は「Work is NOT complete until git push succeeds」「NEVER stop before pushing」という push 強制の記述が入っていた。ラポルタの委譲ブリーフは push 禁止で回すことが多いため、これが常時ロードされた反対命令として働き、2026-07-20 ns9l4 と 2026-07-24 X サイクルの push 境界違反の構造的原因になっていた（2026-07-27 の worker-brief-digest 棚卸しで発見、worker-cwd/CLAUDE.md で是正済み）。本ファイルにも同型の記述が残存していたため、2026-07-29 の一斉掃引（friction台帳 a770c1059b79）で同じ修正を適用した。
+
+- push 禁止のブリーフ下では `git add` + `git commit` のみを使う。`claude-git-sync.sh` は commit と push の一体型なので使わない
+- push 禁止下で post-commit が drift 警告を出すのは想定内。解消しに行かないこと
+- 迷ったら push せず、commit hash を報告して判断を仰ぐ
+
