@@ -795,7 +795,7 @@ export function CostManagementPage() {
       <section className="grid gap-3 md:grid-cols-3">
         <StatCard label="総予算" value={budgetSummary.budget > 0 ? formatCurrency(budgetSummary.budget) : "未設定"} tone="border-slate-200 bg-white text-slate-900" />
         <StatCard label="総支出" value={formatCurrency(budgetSummary.spent)} tone="border-brand-200 bg-brand-50 text-brand-900" />
-        <StatCard label="残予算" value={formatCurrency(budgetSummary.remaining)} tone="border-amber-200 bg-amber-50 text-amber-900" />
+        <StatCard label="残予算" value={budgetSummary.budget > 0 ? formatCurrency(budgetSummary.remaining) : "未設定"} tone="border-amber-200 bg-amber-50 text-amber-900" />
       </section>
       <RemainingBudgetCard detail={remainingBudgetDetail} />
       <section className="grid gap-3 lg:grid-cols-2">
