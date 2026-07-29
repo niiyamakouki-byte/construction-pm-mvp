@@ -100,4 +100,17 @@ describe('SiteEntryRepository async (InMemory mode)', () => {
     expect(found?.endPhotoId).toBeUndefined();
     expect(found?.taskId).toBeUndefined();
   });
+
+  // 回帰テスト: laporta-beads-g6sf (entry_token 方式)
+  it('entryToken の往復ができる', async () => {
+    await repo.saveAsync(makeRecord({ entryToken: 'tok-abc123' }));
+    const found = await repo.getAsync('entry-1');
+    expect(found?.entryToken).toBe('tok-abc123');
+  });
+
+  it('entryToken が undefined の場合は省略される', async () => {
+    await repo.saveAsync(makeRecord());
+    const found = await repo.getAsync('entry-1');
+    expect(found?.entryToken).toBeUndefined();
+  });
 });

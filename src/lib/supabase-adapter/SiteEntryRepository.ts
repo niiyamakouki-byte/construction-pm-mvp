@@ -19,6 +19,9 @@ export type SiteEntryRecord = {
   startPhotoId?: string;
   endPhotoId?: string;
   taskId?: string;
+  // QR入場 anon RLS 用に提出する現在の projects.entry_token 値 (laporta-beads-g6sf)。
+  // DB側の verify_project_entry_token() 検証にのみ使う値で、業務上の意味は持たない。
+  entryToken?: string;
 };
 
 // DB実スキーマ: id, project_id, organization_id, worker_name, company_name, entry_at, exit_at, entry_type, notes, created_at, updated_at
@@ -37,6 +40,7 @@ type SiteEntryRow = {
   start_photo_id: string | null;
   end_photo_id: string | null;
   task_id: string | null;
+  entry_token: string | null;
 };
 
 function rowToRecord(row: SiteEntryRow): SiteEntryRecord {
@@ -52,6 +56,7 @@ function rowToRecord(row: SiteEntryRow): SiteEntryRecord {
   if (row.start_photo_id) r.startPhotoId = row.start_photo_id;
   if (row.end_photo_id) r.endPhotoId = row.end_photo_id;
   if (row.task_id) r.taskId = row.task_id;
+  if (row.entry_token) r.entryToken = row.entry_token;
   return r;
 }
 
@@ -67,6 +72,7 @@ function recordToRow(r: SiteEntryRecord): SiteEntryRow {
     start_photo_id: r.startPhotoId ?? null,
     end_photo_id: r.endPhotoId ?? null,
     task_id: r.taskId ?? null,
+    entry_token: r.entryToken ?? null,
   };
 }
 

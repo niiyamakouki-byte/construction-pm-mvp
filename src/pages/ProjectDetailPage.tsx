@@ -665,34 +665,37 @@ export function ProjectDetailPage({
       />
 
       {/* Project Header */}
-      <div className="rounded-2xl bg-brand-800 p-5 text-white shadow-sm">
+      <div className="genba-flat-card rounded-2xl bg-brand-800 p-6 text-white sm:p-8">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0 flex-1">
-            <h1 className="text-xl font-bold leading-tight">{project.name}</h1>
+            <p className="eyebrow-label text-[11px] text-brand-300 uppercase">案件</p>
+            <h1 className="hero-heading mt-1 text-2xl leading-tight text-white sm:text-3xl">{project.name}</h1>
             {project.description && (
-              <p className="mt-1 text-sm text-white/70">{project.description}</p>
+              <p className="mt-2 text-sm text-white/70">{project.description}</p>
             )}
           </div>
-          <span
-            className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold ${statusColorMap[project.status]}`}
-          >
-            {statusLabelMap[project.status]}
-          </span>
-          <span
-            className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold ${projectModeClass[mode]}`}
-          >
-            {projectModeLabel[mode]}
-          </span>
+          <div className="flex shrink-0 flex-col items-end gap-1.5">
+            <span
+              className={`rounded-full px-2.5 py-1 text-xs font-semibold ${statusColorMap[project.status]}`}
+            >
+              {statusLabelMap[project.status]}
+            </span>
+            <span
+              className={`rounded-full px-2.5 py-1 text-xs font-semibold ${projectModeClass[mode]}`}
+            >
+              {projectModeLabel[mode]}
+            </span>
+          </div>
         </div>
 
-        <div className="mt-4 flex flex-wrap gap-4 text-sm">
+        <div className="mt-5 flex flex-wrap gap-4 text-sm">
           {project.address && (
-            <span className="flex items-center gap-1 text-white/60">
+            <span className="flex items-center gap-1.5 text-white/60">
               <MapPin className="h-3.5 w-3.5" aria-hidden="true" />
               {project.address}
             </span>
           )}
-          <span className="flex items-center gap-1 text-white/60 tabular-nums">
+          <span className="figure-hero flex items-center gap-1.5 text-sm text-white/60">
             <CalendarDays className="h-4 w-4" aria-hidden="true" />
             {project.startDate}
             {project.endDate && ` 〜 ${project.endDate}`}
@@ -701,9 +704,9 @@ export function ProjectDetailPage({
 
         {/* Weather */}
         {weather && (
-          <div className="mt-4 inline-flex items-center gap-2 rounded-xl bg-white/10 px-3 py-2">
+          <div className="mt-5 inline-flex items-center gap-2 rounded-xl bg-white/10 px-3 py-2">
             <span className="inline-flex items-center">{weather.icon}</span>
-            <span className="font-bold">{weather.temperature}°C</span>
+            <span className="figure-hero font-bold">{weather.temperature}°C</span>
             <span className="text-sm text-white/60">{weather.description}</span>
           </div>
         )}
@@ -1539,6 +1542,7 @@ export function ProjectDetailPage({
                   projectId,
                   project.name,
                   window.location.origin,
+                  project.entryToken ?? undefined,
                 );
                 const blob = new Blob([html], { type: "text/html" });
                 const url = URL.createObjectURL(blob);
@@ -1557,6 +1561,7 @@ export function ProjectDetailPage({
                   project.name,
                   window.location.origin,
                   siteEntryNotesDraft,
+                  project.entryToken ?? undefined,
                 );
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement("a");

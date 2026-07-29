@@ -123,6 +123,9 @@ export const ProjectSchema = BaseEntitySchema.extend({
   // Per-project custom text shown on the site-entry QR poster (rules/notices).
   // Falls back to DEFAULT_SITE_ENTRY_NOTES (site-entry-qr.ts) when unset.
   siteEntryNotes: z.string().nullish(),
+  // QR入場 anon RLS 用のプロジェクト単位トークン (laporta-beads-g6sf)。
+  // NULL = そのプロジェクトのQR入場を無効化(失効)。db column: projects.entry_token。
+  entryToken: z.string().nullish(),
 });
 
 export type ProjectStatus = z.infer<typeof ProjectStatusSchema>;

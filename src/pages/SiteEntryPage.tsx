@@ -104,7 +104,16 @@ type Step =
   | "working"    // 入場中（タスク選択＋途中写真）
   | "end-photo"; // 完了写真撮影
 
-export function SiteEntryPage({ projectId }: { projectId: string }) {
+export function SiteEntryPage({
+  projectId,
+  entryToken,
+}: {
+  projectId: string;
+  // QR入場 anon RLS 用トークン (laporta-beads-g6sf)。URL の `?token=` から
+  // App.tsx が抽出して渡す。未設定(空文字/undefined)なら従来どおり authenticated
+  // 経路のみで動作し、anon 保存は DB 側 RLS で拒否される。
+  entryToken?: string;
+}) {
   const now = useNow();
   const [recentWorkers, setRecentWorkers] = useState<RecentWorker[]>(
     () => getRecentWorkers(),
@@ -261,6 +270,7 @@ export function SiteEntryPage({ projectId }: { projectId: string }) {
       entryTime: new Date().toISOString(),
       jobType: pendingWorker.jobType,
       startPhotoId: photoId ?? undefined,
+      entryToken: entryToken || undefined,
     };
     setSaveError(null);
     try {

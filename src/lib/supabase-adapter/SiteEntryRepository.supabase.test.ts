@@ -252,4 +252,95 @@ describe('SiteEntryRepository — Supabase routing', () => {
       expect.not.objectContaining({ organization_id: expect.anything() }),
     );
   });
+
+  // 回帰テスト: laporta-beads-g6sf (entry_token 方式)
+  // anon が RLS を通過するには、QRに埋め込まれた projects.entry_token を
+  // insert payload の entry_token 列として送信する必要がある。
+  it('entryToken 付き saveAsync (新規) は insert payload に entry_token を含める', async () => {
+    const insertSpy = vi.fn();
+    const existingCheckBuilder = makeBuilder({ data: null, error: null });
+    const projectLookupBuilder = makeBuilder({ data: null, error: null });
+    const orgFallbackBuilder = makeBuilder({ data: null, error: null });
+    const createBuilder = makeBuilder({
+      data: {
+        id: 'e-1',
+        project_id: 'p-1',
+        organization_id: null,
+        worker_name: '山田',
+        company_name: 'ラポルタ',
+        entry_at: '2026-05-13T09:00:00.000Z',
+        exit_at: null,
+        entry_token: 'tok-xyz',
+      },
+      error: null,
+    });
+    createBuilder.insert = vi.fn((item: unknown) => {
+      insertSpy(item);
+      return createBuilder;
+    });
+
+    mockFrom
+      .mockReturnValueOnce(existingCheckBuilder) // getById(site_entry_records) → 新規
+      .mockReturnValueOnce(projectLookupBuilder) // resolveOrganizationId → projects (anonは不可視でnull)
+      .mockReturnValueOnce(orgFallbackBuilder) // organizations フォールバック (anonは不可視でnull)
+      .mockReturnValueOnce(createBuilder); // create(site_entry_records)
+
+    const repo = new SiteEntryRepository(true);
+    await repo.saveAsync({
+      id: 'e-1',
+      projectId: 'p-1',
+      workerName: '山田',
+      company: 'ラポルタ',
+      entryTime: '2026-05-13T09:00:00.000Z',
+      entryToken: 'tok-xyz',
+    });
+
+    expect(insertSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ project_id: 'p-1', entry_token: 'tok-xyz' }),
+    );
+  });
+
+  it('entryToken が undefined の場合は insert payload の entry_token が null になる', async () => {
+    const insertSpy = vi.fn();
+    const existingCheckBuilder = makeBuilder({ data: null, error: null });
+    const projectLookupBuilder = makeBuilder({
+      data: { organization_id: 'org-abc' },
+      error: null,
+    });
+    const createBuilder = makeBuilder({
+      data: {
+        id: 'e-1',
+        project_id: 'p-1',
+        organization_id: 'org-abc',
+        worker_name: '山田',
+        company_name: 'ラポルタ',
+        entry_at: '2026-05-13T09:00:00.000Z',
+        exit_at: null,
+        entry_token: null,
+      },
+      error: null,
+    });
+    createBuilder.insert = vi.fn((item: unknown) => {
+      insertSpy(item);
+      return createBuilder;
+    });
+
+    mockFrom
+      .mockReturnValueOnce(existingCheckBuilder)
+      .mockReturnValueOnce(projectLookupBuilder)
+      .mockReturnValueOnce(createBuilder);
+
+    const repo = new SiteEntryRepository(true);
+    await repo.saveAsync({
+      id: 'e-1',
+      projectId: 'p-1',
+      workerName: '山田',
+      company: 'ラポルタ',
+      entryTime: '2026-05-13T09:00:00.000Z',
+    });
+
+    expect(insertSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ entry_token: null }),
+    );
+  });
 });

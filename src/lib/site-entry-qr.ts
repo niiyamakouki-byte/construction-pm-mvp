@@ -16,10 +16,20 @@ const QR_PIXEL_SIZE = 320;
  * Generate the site entry URL for a project.
  * Pass the real origin (e.g. `window.location.origin`) as baseUrl — this
  * module does not hardcode a production domain.
+ *
+ * `entryToken` embeds the project's current anon-write token (projects.entry_token,
+ * laporta-beads-g6sf) as a hash query param, following the same `?token=` pattern
+ * already used by the owner-app share link (see App.tsx ownerAppToken). Omit it
+ * (or pass an empty string) when the project has no token issued yet.
  */
-export function generateSiteEntryUrl(projectId: string, baseUrl = ""): string {
+export function generateSiteEntryUrl(
+  projectId: string,
+  baseUrl = "",
+  entryToken?: string,
+): string {
   if (!projectId) throw new Error("projectId is required");
-  return `${baseUrl}${ENTRY_PATH}/${encodeURIComponent(projectId)}`;
+  const path = `${baseUrl}${ENTRY_PATH}/${encodeURIComponent(projectId)}`;
+  return entryToken ? `${path}?token=${encodeURIComponent(entryToken)}` : path;
 }
 
 /**
@@ -30,10 +40,11 @@ export async function generateSiteEntryQR(
   projectId: string,
   projectName: string,
   baseUrl = "",
+  entryToken?: string,
 ): Promise<string> {
   if (!projectId) throw new Error("projectId is required");
 
-  const url = generateSiteEntryUrl(projectId, baseUrl);
+  const url = generateSiteEntryUrl(projectId, baseUrl, entryToken);
   // width/height must be set explicitly — without them the <svg> only has a
   // viewBox and renders at 0x0 (blank) once dropped into the print layout.
   const rawSvg = await QRCode.toString(url, { type: "svg", width: QR_PIXEL_SIZE });
@@ -53,11 +64,12 @@ export async function generateSiteEntryPrintHtml(
   projectId: string,
   projectName: string,
   baseUrl = "",
+  entryToken?: string,
 ): Promise<string> {
   if (!projectId) throw new Error("projectId is required");
 
-  const url = generateSiteEntryUrl(projectId, baseUrl);
-  const qrSvg = await generateSiteEntryQR(projectId, projectName, baseUrl);
+  const url = generateSiteEntryUrl(projectId, baseUrl, entryToken);
+  const qrSvg = await generateSiteEntryQR(projectId, projectName, baseUrl, entryToken);
 
   return `<!DOCTYPE html>
 <html lang="ja">
@@ -188,6 +200,7 @@ export async function generateSiteEntryPosterPdf(
   projectName: string,
   baseUrl = "",
   siteRules: string = DEFAULT_SITE_ENTRY_NOTES,
+  entryToken?: string,
 ): Promise<Blob> {
   if (!projectId) throw new Error("projectId is required");
 
@@ -196,7 +209,7 @@ export async function generateSiteEntryPosterPdf(
     import("../estimate/noto-sans-jp-font.js"),
   ]);
 
-  const url = generateSiteEntryUrl(projectId, baseUrl);
+  const url = generateSiteEntryUrl(projectId, baseUrl, entryToken);
   const qrDataUrl = await QRCode.toDataURL(url, {
     errorCorrectionLevel: "H",
     margin: 1,

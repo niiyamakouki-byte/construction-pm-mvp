@@ -444,7 +444,7 @@ function AppShell() {
   const projectDetailMatch = route.match(/^\/project\/([^/]+)(?:\/(.+))?$/);
   const ganttMatch = route.match(/^\/gantt(?:\/([^?]+))?/);
   const cardBoardMatch = route.match(/^\/cards(?:\/([^?]+))?/);
-  const entryMatch = route.match(/^\/entry\/(.+)$/);
+  const entryMatch = route.match(/^\/entry\/([^?]+)/);
   const historyMatch = route.match(/^\/attendance-history\/(.+)$/);
   const reportsMatch = route.match(/^\/reports(?:\/(.+))?$/);
   const sharePortalMatch = route.match(/^\/portal\/share\/(.+)$/);
@@ -466,6 +466,10 @@ function AppShell() {
   const ganttInitialView = (ganttViewMatch?.[1] ?? undefined) as "today" | "list" | "gantt" | undefined;
   const cardBoardProjectId = cardBoardMatch?.[1] ? decodeURIComponent(cardBoardMatch[1]) : null;
   const entryProjectId = entryMatch?.[1] ? decodeURIComponent(entryMatch[1]) : null;
+  // QR入場 entry_token 方式 (laporta-beads-g6sf): /#/entry/xxx?token=yyy
+  const entryToken = entryProjectId
+    ? (window.location.hash.match(/[?&]token=([^&]+)/)?.[1] ?? "")
+    : null;
   const historyProjectId = historyMatch?.[1] ? decodeURIComponent(historyMatch[1]) : null;
   const reportsProjectId = reportsMatch?.[1] ? decodeURIComponent(reportsMatch[1]) : undefined;
   const sharePortalToken = sharePortalMatch?.[1] ? decodeURIComponent(sharePortalMatch[1]) : null;
@@ -499,7 +503,7 @@ function AppShell() {
   if (route === "/share-tokens") return <Suspense fallback={pageFallback}><OwnerShareTokenPanelLazy /></Suspense>;
   if (route === "/funnel") return <Suspense fallback={pageFallback}><SignupFunnelPanelLazy /></Suspense>;
   if (clientProjectId) return <Suspense fallback={pageFallback}><ClientViewerPage projectId={clientProjectId} /></Suspense>;
-  if (entryProjectId) return <Suspense fallback={pageFallback}><SiteEntryPage projectId={entryProjectId} /></Suspense>;
+  if (entryProjectId) return <Suspense fallback={pageFallback}><SiteEntryPage projectId={entryProjectId} entryToken={entryToken ?? ""} /></Suspense>;
   if (sharePortalToken) return <Suspense fallback={pageFallback}><OwnerPortalSharePage token={sharePortalToken} /></Suspense>;
   if (portalProjectId) return <Suspense fallback={pageFallback}><ContractorPortalPage projectId={portalProjectId} company={portalCompany} /></Suspense>;
   if (selectionProjectId) return <Suspense fallback={pageFallback}><SelectionBoardPage projectId={selectionProjectId} /></Suspense>;
