@@ -21,6 +21,7 @@ import { useEffect, useId, useState } from "react";
 import { createShareToken } from "../lib/share-token.js";
 import { useAuth } from "../contexts/AuthContext.js";
 import { createProjectRepository } from "../stores/project-store.js";
+import { navigate } from "../hooks/useHashRouter.js";
 import type { Project } from "../domain/types.js";
 
 function buildShareUrl(token: string): string {
@@ -229,6 +230,13 @@ export function OwnerShareTokenPanel() {
     <div className="min-h-screen bg-slate-50 p-4">
       <div className="mx-auto max-w-3xl">
         <header className="mb-6">
+          <button
+            type="button"
+            onClick={() => navigate("/app")}
+            className="mb-3 inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium text-slate-500 hover:bg-slate-100"
+          >
+            ← 案件一覧へ戻る
+          </button>
           <h1 className="text-xl font-bold text-slate-800">施主URL管理</h1>
           <p className="text-sm text-slate-500 mt-1">
             施主専用ダッシュボードのアクセスURLを発行します

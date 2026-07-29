@@ -139,6 +139,15 @@ describe("OwnerShareTokenPanel", () => {
     expect(screen.getByText(/施主専用ダッシュボードのアクセスURL/)).toBeDefined();
   });
 
+  it("navigates back to /app when the back button is clicked", async () => {
+    const originalHash = window.location.hash;
+    const { findByRole } = render(<OwnerShareTokenPanel />);
+    const backButton = await findByRole("button", { name: "← 案件一覧へ戻る" }, { timeout: 3000 });
+    fireEvent.click(backButton);
+    expect(window.location.hash).toBe("#/app");
+    window.location.hash = originalHash;
+  });
+
   it("issuing a link calls the server API and displays a /portal/share/ URL with a copy button", async () => {
     const { findAllByText } = render(<OwnerShareTokenPanel />);
     const buttons = await findAllByText("共有リンクを発行", {}, { timeout: 3000 });

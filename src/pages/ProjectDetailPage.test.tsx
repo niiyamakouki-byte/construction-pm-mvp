@@ -324,6 +324,16 @@ describe("ProjectDetailPage", () => {
     expect(navigate).toHaveBeenNthCalledWith(4, "/project/proj-1/chat");
   });
 
+  it("navigates to /share-tokens when 施主URLを発行する is clicked", async () => {
+    const user = userEvent.setup();
+    render(<ProjectDetailPage projectId="proj-1" />);
+
+    await screen.findByText("施主共有");
+    await user.click(screen.getByRole("button", { name: "施主URLを発行する" }));
+
+    expect(navigate).toHaveBeenCalledWith("/share-tokens");
+  });
+
   it("deletes the project after confirming, and navigates back to the list", async () => {
     const user = userEvent.setup();
     render(<ProjectDetailPage projectId="proj-1" />);
