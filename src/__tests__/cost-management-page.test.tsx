@@ -353,8 +353,8 @@ describe("CostManagementPage", () => {
     render(<CostManagementPage />);
 
     expect(await screen.findByRole("heading", { name: "原価集計" })).toBeDefined();
-    // 総予算は金額¥0ではなく「未設定」表示
-    expect(screen.getByText("未設定")).toBeDefined();
+    // 総予算・残予算とも金額¥0ではなく「未設定」表示(¥0との誤読防止、bead 32b33f8)
+    expect(screen.getAllByText("未設定").length).toBeGreaterThanOrEqual(2);
     // 実行予算残カードとBudgetDashboardの両方に「予算未設定」バッジ
     expect(screen.getAllByText("予算未設定").length).toBeGreaterThanOrEqual(2);
     // 使用率は0%ではなく100%扱い
