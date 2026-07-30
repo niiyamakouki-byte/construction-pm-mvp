@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useState } from "react";
+import { FileText } from "lucide-react";
 import type { Expense, Project, Task } from "../domain/types.js";
 import { useOrganizationContext } from "../contexts/OrganizationContext.js";
 import { navigate } from "../hooks/useHashRouter.js";
 import { createProjectRepository } from "../stores/project-store.js";
 import { createTaskRepository } from "../stores/task-store.js";
+import { EmptyState } from "../components/EmptyState.js";
 import {
   buildDailyReportHtml,
   buildWeeklyReportHtml,
@@ -126,6 +128,15 @@ export function ReportsPage({ projectId }: { projectId?: string }) {
       </div>
 
       {/* Controls */}
+      {projects.length === 0 ? (
+        <EmptyState
+          icon={<FileText size={22} strokeWidth={1.75} />}
+          title="案件がまだありません"
+          description="報告書は案件に紐づいて生成されます。まず案件を作成してください。"
+          actionLabel="案件を登録する"
+          onAction={() => navigate("/app")}
+        />
+      ) : (
       <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm space-y-4">
         {/* Project select */}
         <div>
@@ -138,7 +149,6 @@ export function ReportsPage({ projectId }: { projectId?: string }) {
             onChange={(e) => setSelectedProjectId(e.target.value)}
             className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
           >
-            {projects.length === 0 && <option value="">案件なし</option>}
             {projects.map((p) => (
               <option key={p.id} value={p.id}>{p.name}</option>
             ))}
@@ -212,6 +222,7 @@ export function ReportsPage({ projectId }: { projectId?: string }) {
           </button>
         </div>
       </div>
+      )}
 
       {/* Preview */}
       {previewHtml && (

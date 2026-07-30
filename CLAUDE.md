@@ -1,3 +1,8 @@
+## ローカルdev早見表【2026-07-30 検証ループ実測・恒久】
+
+- `pnpm run dev`(vite, localhost:5173) = UI/リポ層のみ動く。`window.__E2E_BYPASS_AUTH__` + LocalStorageRepository で本番Supabase非接触のまま検証できる（既定はこちら）。
+- `api/`配下のVercel serverless関数(share-token等)は vite dev では404になる（環境制約、バグではない）。動作確認には `vercel dev` が要るが、本番DB接続リスクがあるため原則使用しない。
+
 ## コスト最適化ルール（必ず従うこと）
 
 ### 🚨 重要：API課金の現実
