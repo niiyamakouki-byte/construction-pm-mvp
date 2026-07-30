@@ -117,6 +117,12 @@ function isSupabaseEnabled(): boolean {
   return false;
 }
 
+// mt9d5: FreeeRepository(584095d)と同じくE2Eバイパス中はVITE_USE_SUPABASE=trueでも
+// 実Supabaseへ問い合わせずインメモリへフォールバックする(初回セッション直行でスキーマ未整備エラーに詰まないため)。
+function isE2EBypass(): boolean {
+  return typeof window !== 'undefined' && (window as { __E2E_BYPASS_AUTH__?: boolean }).__E2E_BYPASS_AUTH__ === true;
+}
+
 export class WarrantyRepository {
   private items = new Map<string, WarrantyItemRecord>();
   private claims = new Map<string, WarrantyClaimRecord>();
@@ -124,7 +130,7 @@ export class WarrantyRepository {
   private supabaseClaims: SupabaseRepository<ClaimRow> | null;
 
   constructor(useSupabase?: boolean) {
-    const enabled = useSupabase ?? isSupabaseEnabled();
+    const enabled = useSupabase ?? (isSupabaseEnabled() && !isE2EBypass());
     this.supabaseItems = enabled
       ? new SupabaseRepository<ItemRow>('warranty_items')
       : null;

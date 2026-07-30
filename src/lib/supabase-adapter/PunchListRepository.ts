@@ -167,6 +167,12 @@ function isSupabaseEnabled(): boolean {
   return false;
 }
 
+// mt9d5: FreeeRepository(584095d)と同じくE2Eバイパス中はVITE_USE_SUPABASE=trueでも
+// 実Supabaseへ問い合わせずインメモリへフォールバックする(初回セッション直行でスキーマ未整備エラーに詰まないため)。
+function isE2EBypass(): boolean {
+  return typeof window !== 'undefined' && (window as { __E2E_BYPASS_AUTH__?: boolean }).__E2E_BYPASS_AUTH__ === true;
+}
+
 export class PunchListRepository {
   private items = new Map<string, PunchListItemRecord>();
   private history = new Map<string, PunchListHistoryRecord>();
@@ -174,7 +180,7 @@ export class PunchListRepository {
   private supabaseHistory: SupabaseRepository<PunchListHistoryRow> | null;
 
   constructor(useSupabase?: boolean) {
-    const enabled = useSupabase ?? isSupabaseEnabled();
+    const enabled = useSupabase ?? (isSupabaseEnabled() && !isE2EBypass());
     this.supabaseItems = enabled
       ? new SupabaseRepository<PunchListItemRow>('punch_list_items')
       : null;

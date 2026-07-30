@@ -70,6 +70,12 @@ function isSupabaseEnabled(): boolean {
   return false;
 }
 
+// mt9d5: FreeeRepository(584095d)と同じくE2Eバイパス中はVITE_USE_SUPABASE=trueでも
+// 実Supabaseへ問い合わせずインメモリへフォールバックする(初回セッション直行でスキーマ未整備エラーに詰まないため)。
+function isE2EBypass(): boolean {
+  return typeof window !== 'undefined' && (window as { __E2E_BYPASS_AUTH__?: boolean }).__E2E_BYPASS_AUTH__ === true;
+}
+
 export class ChatRepository {
   private store = new Map<string, ChatMessageRecord>();
   private nextId = 1;
@@ -79,7 +85,7 @@ export class ChatRepository {
    * @param useSupabase 明示指定がなければ env を見る。テスト用に上書き可。
    */
   constructor(useSupabase?: boolean) {
-    const enabled = useSupabase ?? isSupabaseEnabled();
+    const enabled = useSupabase ?? (isSupabaseEnabled() && !isE2EBypass());
     this.supabase = enabled ? new SupabaseRepository<ChatMessageRow>('chat_messages') : null;
   }
 

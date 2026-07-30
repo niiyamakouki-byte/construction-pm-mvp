@@ -83,6 +83,12 @@ function isSupabaseEnabled(): boolean {
   return false;
 }
 
+// mt9d5: FreeeRepository(584095d)と同じくE2Eバイパス中はVITE_USE_SUPABASE=trueでも
+// 実Supabaseへ問い合わせずインメモリへフォールバックする(初回セッション直行でスキーマ未整備エラーに詰まないため)。
+function isE2EBypass(): boolean {
+  return typeof window !== 'undefined' && (window as { __E2E_BYPASS_AUTH__?: boolean }).__E2E_BYPASS_AUTH__ === true;
+}
+
 let warnedDealsSchemaMismatch = false;
 
 export class CRMRepository {
@@ -95,7 +101,7 @@ export class CRMRepository {
    * deals は DB スキーマ不一致のため useSupabase=true でも InMemory フォールバック。
    */
   constructor(useSupabase?: boolean) {
-    const enabled = useSupabase ?? isSupabaseEnabled();
+    const enabled = useSupabase ?? (isSupabaseEnabled() && !isE2EBypass());
     this.supabaseCustomers = enabled ? new SupabaseRepository<CustomerRow>('customers') : null;
     if (enabled && !warnedDealsSchemaMismatch) {
       warnedDealsSchemaMismatch = true;

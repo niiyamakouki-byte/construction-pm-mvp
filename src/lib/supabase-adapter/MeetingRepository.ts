@@ -118,6 +118,12 @@ function isSupabaseEnabled(): boolean {
   return false;
 }
 
+// mt9d5: FreeeRepository(584095d)と同じくE2Eバイパス中はVITE_USE_SUPABASE=trueでも
+// 実Supabaseへ問い合わせずインメモリへフォールバックする(初回セッション直行でスキーマ未整備エラーに詰まないため)。
+function isE2EBypass(): boolean {
+  return typeof window !== 'undefined' && (window as { __E2E_BYPASS_AUTH__?: boolean }).__E2E_BYPASS_AUTH__ === true;
+}
+
 export class MeetingRepository {
   private minutes = new Map<string, MeetingMinutesRecord>();
   private actionItems = new Map<string, MeetingActionItemRecord>();
@@ -125,7 +131,7 @@ export class MeetingRepository {
   private supabaseActionItems: SupabaseRepository<ActionItemRow> | null;
 
   constructor(useSupabase?: boolean) {
-    const enabled = useSupabase ?? isSupabaseEnabled();
+    const enabled = useSupabase ?? (isSupabaseEnabled() && !isE2EBypass());
     this.supabaseMinutes = enabled
       ? new SupabaseRepository<MinutesRow>('meeting_minutes')
       : null;

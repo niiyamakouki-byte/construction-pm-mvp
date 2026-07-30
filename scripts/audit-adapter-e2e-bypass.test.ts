@@ -30,35 +30,11 @@ describe("audit-adapter-e2e-bypass: FreeeRepository型の抜け穴(2363cf8efc03)
   });
 });
 
-// 実測(2026-07-30時点): src/lib配下には FreeeRepository.ts と同型の抜け穴(isE2EBypass無し)を持つ
-// レガシーアダプタが22件、修正前から既に存在する(src/lib/supabase-adapter/* + create-repository.ts)。
-// これらを一括修正するのは本票の範囲外(監査スクリプトの新設のみが依頼範囲)なので、
-// 「既知の負債を再増加させない」ラチェット方式で回帰を防ぐ: このリストに無い新規ファイルが
-// 非準拠で見つかったら失敗させる。負債を返したらこの配列からファイル名を削除すること。
-const KNOWN_NONCOMPLIANT_BASELINE = [
-  "src/lib/repository/create-repository.ts",
-  "src/lib/supabase-adapter/CRMRepository.ts",
-  "src/lib/supabase-adapter/ChatRepository.ts",
-  "src/lib/supabase-adapter/ClaimRepository.ts",
-  "src/lib/supabase-adapter/ComplianceRepository.ts",
-  "src/lib/supabase-adapter/ContractorRepository.ts",
-  "src/lib/supabase-adapter/EquipmentRepository.ts",
-  "src/lib/supabase-adapter/InvoiceRepository.ts",
-  "src/lib/supabase-adapter/LaborRepository.ts",
-  "src/lib/supabase-adapter/MeetingRepository.ts",
-  "src/lib/supabase-adapter/MoodBoardRepository.ts",
-  "src/lib/supabase-adapter/OrderRepository.ts",
-  "src/lib/supabase-adapter/PermitRepository.ts",
-  "src/lib/supabase-adapter/PhaseRepository.ts",
-  "src/lib/supabase-adapter/ProcurementRepository.ts",
-  "src/lib/supabase-adapter/ProjectRepository.ts",
-  "src/lib/supabase-adapter/PunchListRepository.ts",
-  "src/lib/supabase-adapter/SafetyRepository.ts",
-  "src/lib/supabase-adapter/SelectionRepository.ts",
-  "src/lib/supabase-adapter/SiteEntryRepository.ts",
-  "src/lib/supabase-adapter/TaskRepository.ts",
-  "src/lib/supabase-adapter/WarrantyRepository.ts",
-];
+// 実測(2026-07-30時点): 旧22件の負債(src/lib/supabase-adapter/* + create-repository.ts)は
+// construction_pm_mvp-9ay で isE2EBypass() 準拠を展開し、ベースラインを0にした。
+// 「既知の負債を再増加させない」ラチェット方式は維持する: 新規ファイルが非準拠で
+// 見つかったら失敗させる。
+const KNOWN_NONCOMPLIANT_BASELINE: string[] = [];
 
 describe("audit-adapter-e2e-bypass: 新規の非準拠アダプタを増やさない(ラチェット)", () => {
   it("非準拠アダプタは既知の負債リストの範囲内に留まる", () => {

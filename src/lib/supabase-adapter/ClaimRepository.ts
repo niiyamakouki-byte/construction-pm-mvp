@@ -188,6 +188,12 @@ function isSupabaseEnabled(): boolean {
   return false;
 }
 
+// mt9d5: FreeeRepository(584095d)と同じくE2Eバイパス中はVITE_USE_SUPABASE=trueでも
+// 実Supabaseへ問い合わせずインメモリへフォールバックする(初回セッション直行でスキーマ未整備エラーに詰まないため)。
+function isE2EBypass(): boolean {
+  return typeof window !== 'undefined' && (window as { __E2E_BYPASS_AUTH__?: boolean }).__E2E_BYPASS_AUTH__ === true;
+}
+
 export class ClaimRepository {
   private claims = new Map<string, InsuranceClaimRecord>();
   private documents = new Map<string, ClaimDocumentRecord>();
@@ -197,7 +203,7 @@ export class ClaimRepository {
   private supabaseDisputes: SupabaseRepository<DisputeRow> | null;
 
   constructor(useSupabase?: boolean) {
-    const enabled = useSupabase ?? isSupabaseEnabled();
+    const enabled = useSupabase ?? (isSupabaseEnabled() && !isE2EBypass());
     this.supabaseClaims = enabled
       ? new SupabaseRepository<ClaimRow>('insurance_claims')
       : null;
