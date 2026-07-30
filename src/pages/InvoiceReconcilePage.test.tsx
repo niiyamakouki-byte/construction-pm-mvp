@@ -141,6 +141,23 @@ describe("InvoiceReconcilePage", () => {
     vi.unstubAllGlobals();
   });
 
+  it("mt9d5: freee_deals_cacheテーブル未整備エラーは生エラーでなく案内付き空状態を表示する", async () => {
+    repoMocks.listCachedDeals.mockRejectedValueOnce(
+      new Error(
+        "Could not find the table 'public.freee_deals_cache' in the schema cache",
+      ),
+    );
+
+    render(<InvoiceReconcilePage />);
+
+    await waitFor(() => {
+      expect(screen.getByText("freee連携が未セットアップです")).toBeDefined();
+    });
+    // 生のSupabaseエラー文言はそのまま出さない
+    expect(screen.queryByText(/schema cache/)).toBeNull();
+    expect(screen.getByRole("button", { name: "freee連携設定へ" })).toBeDefined();
+  });
+
   it("freeeDealToMatchingDeal: Deal の必須フィールドを引き継ぐ", () => {
     const mapped = freeeDealToMatchingDeal({
       id: 1,

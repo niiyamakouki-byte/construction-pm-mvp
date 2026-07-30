@@ -75,6 +75,13 @@ function isSupabaseEnabled(): boolean {
   return false;
 }
 
+// E2E テストは AuthGuard をバイパスするが認証済み Supabase セッションを持たない。
+// 他ドメイン(createAppRepository等)と同じく、E2Eバイパス中は実Supabaseへ問い合わせず
+// インメモリへフォールバックする(初回セッション直行でスキーマ未整備エラーに詰まないため)。
+function isE2EBypass(): boolean {
+  return typeof window !== 'undefined' && (window as { __E2E_BYPASS_AUTH__?: boolean }).__E2E_BYPASS_AUTH__ === true;
+}
+
 function rowToDeal(row: FreeeDealCacheRow): FreeeDeal {
   return {
     id: row.freee_deal_id,
@@ -136,7 +143,7 @@ export class FreeeRepository {
   private memMatchNextId = 1;
 
   constructor(useSupabase?: boolean) {
-    this.useSupabase = useSupabase ?? isSupabaseEnabled();
+    this.useSupabase = useSupabase ?? (isSupabaseEnabled() && !isE2EBypass());
     if (this.useSupabase) {
       this.connections = new SupabaseRepository<FreeeConnectionRow>('freee_connections');
       this.dealsCache = new SupabaseRepository<FreeeDealCacheRow>('freee_deals_cache');

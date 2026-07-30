@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { FreeeRepository } from "./FreeeRepository.js";
 import type { FreeeDeal } from "./MatchingEngine.js";
 
@@ -19,6 +19,34 @@ function makeDeal(overrides: Partial<FreeeDeal> = {}): FreeeDeal {
     ...overrides,
   };
 }
+
+// mt9d5: E2Eバイパス中(初回セッション直行テスト等)は VITE_USE_SUPABASE=true でも
+// 実Supabaseへ問い合わせず、他ドメイン(createAppRepository経由)と同じくローカルへ
+// フォールバックすることを保証する回帰テスト。
+describe("FreeeRepository — E2E bypass", () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    delete (window as unknown as { __E2E_BYPASS_AUTH__?: boolean }).__E2E_BYPASS_AUTH__;
+  });
+
+  it("stays in-memory when __E2E_BYPASS_AUTH__ is set, even if VITE_USE_SUPABASE=true", () => {
+    vi.stubEnv("VITE_USE_SUPABASE", "true");
+    (window as unknown as { __E2E_BYPASS_AUTH__?: boolean }).__E2E_BYPASS_AUTH__ = true;
+
+    const repo = new FreeeRepository();
+
+    expect((repo as unknown as { useSupabase: boolean }).useSupabase).toBe(false);
+    expect((repo as unknown as { dealsCache: unknown }).dealsCache).toBeNull();
+  });
+
+  it("uses Supabase when VITE_USE_SUPABASE=true and no E2E bypass", () => {
+    vi.stubEnv("VITE_USE_SUPABASE", "true");
+
+    const repo = new FreeeRepository();
+
+    expect((repo as unknown as { useSupabase: boolean }).useSupabase).toBe(true);
+  });
+});
 
 describe("FreeeRepository — saveConnection", () => {
   it("saves a connection without throwing", async () => {

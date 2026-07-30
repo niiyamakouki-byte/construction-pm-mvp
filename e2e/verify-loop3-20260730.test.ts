@@ -111,3 +111,25 @@ test.describe("検証ループ3周目: /schedule 案件0件の行き詰まりを
     expect(errors).toHaveLength(0);
   });
 });
+
+test.describe("laporta-beads-mt9d5: /invoices/reconcile の生Supabaseエラーを修正", () => {
+  test("初回セッション直接遷移で生のSupabaseスキーマエラーに詰まらず通常の照合画面が開く", async ({ page }) => {
+    await bypassAuth(page);
+    const errors: string[] = [];
+    page.on("pageerror", (err) => errors.push(err.message));
+
+    await gotoFirstRun(page, "/#/invoices/reconcile");
+
+    // FreeeRepositoryがE2Eバイパス中は実Supabaseへ問い合わせないため、
+    // 「再読み込み」を押しても解消しない詰みだった生エラー文言が出ないこと
+    const bodyText = await page.locator("#root").innerText();
+    expect(bodyText).not.toContain("Could not find the table");
+    expect(bodyText).not.toContain("schema cache");
+
+    // 生エラー画面(「再読み込み」ボタンのみの詰み)ではなく通常の照合画面が開くこと
+    await expect(page.getByRole("heading", { name: "入金照合", exact: true })).toBeVisible({ timeout: 5000 });
+    await expect(page.getByRole("button", { name: /freee 同期/ })).toBeVisible();
+
+    expect(errors).toHaveLength(0);
+  });
+});

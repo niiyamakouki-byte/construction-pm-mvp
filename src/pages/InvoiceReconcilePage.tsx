@@ -8,7 +8,9 @@
  */
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { DatabaseZap } from "lucide-react";
 import { InvoiceMatchPanel } from "../components/InvoiceMatchPanel.js";
+import { EmptyState } from "../components/EmptyState.js";
 import { FreeeRepository } from "../lib/freee/FreeeRepository.js";
 import { matchInvoicesToFreeeDeals } from "../lib/freee/MatchingEngine.js";
 import { getAllInvoices, getInvoice, updateInvoiceStatus } from "../lib/invoice-store.js";
@@ -16,10 +18,19 @@ import { pushPaymentConfirmedNotification } from "../lib/notifications.js";
 import type { FreeeDeal, MatchResult } from "../lib/freee/MatchingEngine.js";
 import type { Company, Deal } from "../lib/freee/types.js";
 import { getSupabaseClient, hasSupabaseEnv } from "../infra/supabase-client.js";
+import { navigate } from "../hooks/useHashRouter.js";
 import type { MatchAction } from "../components/InvoiceMatchPanel.js";
 
-type PageState = "loading" | "ready" | "error";
+type PageState = "loading" | "ready" | "error" | "not-provisioned";
 type ConnectionState = "ok" | "disconnected" | "expired";
+
+// Supabase の freee 連携テーブル(freee_deals_cache等)が未作成/未反映のとき
+// PostgREST が返す "Could not find the table ... in the schema cache" を検出する。
+// 生のDBスキーマエラーをそのまま出さず、案内付きの空状態に置き換えるため。
+function isTableMissingError(err: unknown): boolean {
+  const message = err instanceof Error ? err.message : String(err);
+  return /Could not find the table/i.test(message);
+}
 
 async function getAuthToken(): Promise<string | null> {
   if (!hasSupabaseEnv()) return null;
@@ -68,6 +79,10 @@ export function InvoiceReconcilePage() {
       setMatchResult(result);
       setPageState("ready");
     } catch (err) {
+      if (isTableMissingError(err)) {
+        setPageState("not-provisioned");
+        return;
+      }
       setError(err instanceof Error ? err.message : "データの読み込みに失敗しました");
       setPageState("error");
     }
@@ -205,6 +220,20 @@ export function InvoiceReconcilePage() {
     return (
       <div className="flex h-64 items-center justify-center text-sm text-slate-500">
         照合データを読み込み中...
+      </div>
+    );
+  }
+
+  if (pageState === "not-provisioned") {
+    return (
+      <div className="mx-auto max-w-2xl px-4 py-12">
+        <EmptyState
+          icon={<DatabaseZap size={22} strokeWidth={1.75} />}
+          title="freee連携が未セットアップです"
+          description="この環境ではfreee連携用のデータベースがまだ準備できていません。管理者にセットアップを依頼するか、freee連携設定を確認してください。"
+          actionLabel="freee連携設定へ"
+          onAction={() => navigate("/freee")}
+        />
       </div>
     );
   }
