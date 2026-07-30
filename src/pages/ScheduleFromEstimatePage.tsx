@@ -4,12 +4,15 @@
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { FolderPlus } from "lucide-react";
 import { AssigneeSelector } from "../components/AssigneeSelector.js";
+import { EmptyState } from "../components/EmptyState.js";
 import { useOrganizationContext } from "../contexts/OrganizationContext.js";
 import type { Project, TeamMember } from "../domain/types.js";
 import type { EstimateLine } from "../estimate/types.js";
 import { createAppRepository } from "../infra/create-app-repository.js";
 import { hasSupabaseEnv } from "../infra/supabase-client.js";
+import { navigate } from "../hooks/useHashRouter.js";
 import {
   estimateToTasks,
   groupTasksByCategory,
@@ -699,9 +702,17 @@ export function ScheduleFromEstimatePage({
 
   if (!resolvedProjectId && hasSupabaseEnv()) {
     return (
-      <div className="mx-auto max-w-2xl px-4 py-12 text-center">
-        <h1 className="text-xl font-bold text-slate-800">見積から工程作成</h1>
-        <p className="mt-3 text-sm text-slate-500">先に案件を作成すると、工程タスクを保存できます。</p>
+      <div className="mx-auto max-w-2xl px-4 py-12">
+        <h1 className="text-xl font-bold text-slate-800 text-center">見積から工程作成</h1>
+        <div className="mt-6">
+          <EmptyState
+            icon={<FolderPlus size={22} strokeWidth={1.75} />}
+            title="案件がまだありません"
+            description="先に案件を作成すると、工程タスクを保存できます。"
+            actionLabel="案件を登録する"
+            onAction={() => navigate("/app")}
+          />
+        </div>
       </div>
     );
   }
