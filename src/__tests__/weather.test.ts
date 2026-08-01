@@ -63,6 +63,19 @@ describe("weather helpers", () => {
     expect(collectWeatherWarnings(forecasts, 7)).toEqual([]);
   });
 
+  // 案件0件アカウントでDEFAULT_SITEデモ予報が「天候注意」通知として残留する不具合 (bead laporta-beads-hdoeh)
+  it("excludes the demo fallback site (no projects) from weather warnings", () => {
+    const forecasts = buildMockConstructionSiteForecasts([]);
+
+    // フォールバックのデモ地点自体はhasLocation=trueで生成される(WeatherPage等のプレビュー用)
+    expect(forecasts).toHaveLength(1);
+    expect(forecasts[0].hasLocation).toBe(true);
+    expect(forecasts[0].projectId).toBeUndefined();
+
+    // しかし通知(アラートセンター)には出してはいけない
+    expect(collectWeatherWarnings(forecasts, 7)).toEqual([]);
+  });
+
   it("still warns for located sites when mixed with unlocated ones", () => {
     const forecasts = buildMockConstructionSiteForecasts([
       makeProject({ id: "p-1", name: "渋谷ワインバー" }),

@@ -391,6 +391,8 @@ export function collectWeatherWarnings(
   return siteForecasts.flatMap((site) => {
     // 座標未設定案件の予報はフォールバック座標由来の参考値なので警告(天候注意)を出さない
     if (!site.hasLocation) return [];
+    // 案件に紐づかない予報(案件0件時のデモ用DEFAULT_SITEフォールバック)は通知に出さない
+    if (!site.projectId) return [];
     return site.forecast.daily.slice(0, dayLimit).flatMap((day) => {
       const risk = getDailyWeatherRisk(day);
       if (risk.level === "normal") return [];
