@@ -15,6 +15,7 @@ import {
 } from "../lib/phase-template-master.js";
 import { expandWBSToPhases } from "../lib/work-breakdown/expansion.js";
 import { filterScheduleTasks } from "../lib/cost-management.js";
+import { toFriendlyErrorMessage } from "../lib/friendly-error.js";
 
 /** Returns "今日" / "昨日" / "N日前" for a given ISO date string. Pure function. */
 export function formatRelativeDate(isoString: string, now = new Date()): string {
@@ -115,7 +116,7 @@ export function ProjectListPage() {
       setProjects(allProjects.sort((left, right) => right.updatedAt.localeCompare(left.updatedAt)));
       setProgressMap(buildProgressMap(allTasks));
     } catch (err) {
-      setError(err instanceof Error ? err.message : t("errors:project_load_failed"));
+      setError(toFriendlyErrorMessage(err, t("errors:project_load_failed")));
     } finally {
       setLoading(false);
     }
@@ -229,7 +230,7 @@ export function ProjectListPage() {
       setCreatedCaptureModeRef(savedCaptureMode);
       await loadProjects();
     } catch (err) {
-      setError(err instanceof Error ? err.message : t("errors:create_failed"));
+      setError(toFriendlyErrorMessage(err, t("errors:create_failed")));
     } finally {
       setSubmitting(false);
     }
@@ -248,7 +249,7 @@ export function ProjectListPage() {
       await loadProjects();
       navigate(`/gantt/${projectId}`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : t("errors:sample_create_failed"));
+      setError(toFriendlyErrorMessage(err, t("errors:sample_create_failed")));
     } finally {
       setSampleCreating(false);
     }

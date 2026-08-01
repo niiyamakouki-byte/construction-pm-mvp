@@ -132,6 +132,25 @@ describe("ProjectListPage", () => {
     expect(alert.textContent).toContain("テストエラー");
   });
 
+  it("バックエンドの生エラー文言は表示されずフォールバックに置き換わる(bead f1xi2)", async () => {
+    vi.spyOn(projectRepository, "create").mockRejectedValueOnce(
+      new Error("exactly one organization membership is required when organization_id is omitted"),
+    );
+
+    const user = userEvent.setup();
+    render(<ProjectListPage />);
+
+    await screen.findByText("新規案件");
+    await user.click(screen.getByText("新規案件"));
+
+    await user.type(screen.getByPlaceholderText("例: 渋谷オフィスビル内装工事"), "工事Y");
+    await user.click(screen.getByRole("button", { name: "作成" }));
+
+    const alert = await screen.findByRole("alert");
+    expect(alert.textContent).not.toContain("organization membership");
+    expect(alert.textContent).toContain("作成に失敗しました");
+  });
+
   it("登録成功後に見積作成CTAバナーが表示される", async () => {
     const user = userEvent.setup();
     render(<ProjectListPage />);
