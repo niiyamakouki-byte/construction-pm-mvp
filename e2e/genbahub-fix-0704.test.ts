@@ -7,6 +7,7 @@ import { test, expect, type Page } from "@playwright/test";
 import * as path from "path";
 import * as url from "url";
 import * as fs from "fs";
+import { bypassAuth, bypassAuthWithSeed } from "./helpers/e2e-bypass.js";
 
 const __dirname = path.dirname(url.fileURLToPath(import.meta.url));
 const screenshotsDir = path.join(__dirname, "screenshots", "genbahub-fix-0704");
@@ -33,14 +34,10 @@ const SEED_PROJECTS = [
 ];
 
 async function seedLocalStorage(page: Page) {
-  await page.addInitScript(
-    ({ projects, pid }) => {
-      (window as unknown as Record<string, unknown>).__E2E_BYPASS_AUTH__ = true;
-      localStorage.setItem("genbahub:projects", JSON.stringify(projects));
-      localStorage.setItem("genbahub:last-project-id", pid);
-    },
-    { projects: SEED_PROJECTS, pid: PID },
-  );
+  await bypassAuthWithSeed(page, {
+    "genbahub:projects": SEED_PROJECTS,
+    "genbahub:last-project-id": PID,
+  });
 }
 
 async function screenshot(page: Page, name: string) {
@@ -120,8 +117,8 @@ test.describe("GenbaHub 修正確認", () => {
   // ── フォールバック確認: lastProjectId なし → "施工案件" 表示 ─────────────────
   test("fix2_finishing_fallback — lastProjectIdなしは施工案件フォールバック", async ({ page }) => {
     // lastProjectId を設定しない (最小seed)
+    await bypassAuth(page);
     await page.addInitScript(() => {
-      (window as unknown as Record<string, unknown>).__E2E_BYPASS_AUTH__ = true;
       localStorage.removeItem("genbahub:last-project-id");
       localStorage.removeItem("genbahub:projects");
     });

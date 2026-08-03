@@ -1,14 +1,9 @@
-import { test, expect, type Page } from "@playwright/test";
+import { test, expect } from "@playwright/test";
+import { bypassAuth as bypassAuthFreshStorage } from "./helpers/e2e-bypass.js";
 
 // laporta-beads-e254a: 新規ストレージでdev専用E2Eバイパスを有効化し /app へ進むと
 // サンプル案件の自動bootstrap成功後にTourGuideが開始されることを固定する。
 // (旧: markOnboardingDone + navigate のみでsetShowTour(true)が無く、次の一手が示されなかった)
-
-async function bypassAuthFreshStorage(page: Page) {
-  await page.addInitScript(() => {
-    window.__E2E_BYPASS_AUTH__ = true;
-  });
-}
 
 test.describe("laporta-beads-e254a: 自動bootstrap成功後にツアーガイドを開始する", () => {
   test("390px: サンプル工程表着地後にツアーガイドが表示され、スキップ後も操作できる", async ({ page }) => {

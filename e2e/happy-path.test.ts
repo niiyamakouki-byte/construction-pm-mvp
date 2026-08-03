@@ -1,11 +1,5 @@
-import { test, expect, type Page } from "@playwright/test";
-
-// Inject auth bypass before React loads — same pattern as authenticated-pages.test.ts
-async function bypassAuth(page: Page) {
-  await page.addInitScript(() => {
-    window.__E2E_BYPASS_AUTH__ = true;
-  });
-}
+import { test, expect } from "@playwright/test";
+import { bypassAuth } from "./helpers/e2e-bypass.js";
 
 test.describe("Happy Path: ログイン後 /today ダッシュボード表示", () => {
   test("ログイン → /today ダッシュボードが描画される", async ({ page }) => {

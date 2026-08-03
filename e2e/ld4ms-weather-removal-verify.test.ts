@@ -8,6 +8,7 @@ import { test, expect, type Page } from "@playwright/test";
 import * as path from "path";
 import * as url from "url";
 import * as fs from "fs";
+import { bypassAuthWithSeed } from "./helpers/e2e-bypass.js";
 
 const __dirname = path.dirname(url.fileURLToPath(import.meta.url));
 const outDir = path.join(__dirname, "screenshots", "ld4ms-weather-removal-verify");
@@ -56,16 +57,12 @@ const SEED_TASKS = [
 ];
 
 async function seedLocalStorage(page: Page) {
-  await page.addInitScript(
-    ({ projects, tasks, contractors }) => {
-      (window as unknown as Record<string, unknown>).__E2E_BYPASS_AUTH__ = true;
-      localStorage.setItem("genbahub:projects", JSON.stringify(projects));
-      localStorage.setItem("genbahub:tasks", JSON.stringify(tasks));
-      localStorage.setItem("genbahub:contractors", JSON.stringify(contractors));
-      localStorage.setItem("genbahub:last-project-id", "4b9e1234-5678-4abc-bdef-000000000001");
-    },
-    { projects: SEED_PROJECTS, tasks: SEED_TASKS, contractors: SEED_CONTRACTORS },
-  );
+  await bypassAuthWithSeed(page, {
+    "genbahub:projects": SEED_PROJECTS,
+    "genbahub:tasks": SEED_TASKS,
+    "genbahub:contractors": SEED_CONTRACTORS,
+    "genbahub:last-project-id": "4b9e1234-5678-4abc-bdef-000000000001",
+  });
 }
 
 const VIEWPORTS = [

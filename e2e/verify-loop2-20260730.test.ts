@@ -1,16 +1,18 @@
 import { test, expect, type Page } from "@playwright/test";
+import { bypassAuth } from "./helpers/e2e-bypass.js";
 
 // 検証ループ 2026-07-30 2周目: タスクステータス遷移(今日ダッシュボード)、CRM新規顧客登録、報告書(日報)プレビューの3本を実走。
 // Same auth-bypass pattern as happy-path.test.ts / e2e/verify-loop-20260730.test.ts.
-async function bypassAuth(page: Page) {
-  await page.addInitScript(() => {
-    window.__E2E_BYPASS_AUTH__ = true;
-  });
-}
 
 async function openProjectList(page: Page) {
   await page.goto("/#/app");
   await page.waitForLoadState("networkidle");
+  // laporta-beads-e254a(2026-08-03)以降、新規ストレージの自動bootstrap成功直後はTourGuideの
+  // フルスクリーンオーバーレイが出るため、サイドバー操作の前にスキップしておく。
+  const tourSkip = page.getByText("スキップ", { exact: true });
+  if (await tourSkip.isVisible({ timeout: 1000 }).catch(() => false)) {
+    await tourSkip.click();
+  }
   const navItem = page.locator("text=案件一覧").first();
   if (await navItem.isVisible({ timeout: 2000 }).catch(() => false)) {
     await navItem.click();

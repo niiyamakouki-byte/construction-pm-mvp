@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { bypassAuthWithSeed } from "./helpers/e2e-bypass.js";
 
 const MOBILE_390 = { width: 390, height: 844 };
 
@@ -17,12 +18,11 @@ const SEED_PROJECT = {
 
 async function prepareAuthenticatedMobile(page: Page) {
   await page.setViewportSize(MOBILE_390);
-  await page.addInitScript((project) => {
-    window.__E2E_BYPASS_AUTH__ = true;
-    localStorage.setItem("genbahub_onboarding_done", "1");
-    localStorage.setItem("genbahub_tour_done", "1");
-    localStorage.setItem("genbahub:projects", JSON.stringify([project]));
-  }, SEED_PROJECT);
+  await bypassAuthWithSeed(page, {
+    genbahub_onboarding_done: "1",
+    genbahub_tour_done: "1",
+    "genbahub:projects": [SEED_PROJECT],
+  });
 }
 
 async function expectNoHorizontalCollapse(page: Page) {

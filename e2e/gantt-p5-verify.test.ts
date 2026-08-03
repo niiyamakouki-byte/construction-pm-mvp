@@ -8,6 +8,7 @@ import { test, expect, type Page } from "@playwright/test";
 import * as path from "path";
 import * as url from "url";
 import * as fs from "fs";
+import { bypassAuthWithSeed } from "./helpers/e2e-bypass.js";
 
 const __dirname = path.dirname(url.fileURLToPath(import.meta.url));
 const screenshotsDir = path.join(__dirname, "screenshots", "gantt-verify-p5");
@@ -161,21 +162,12 @@ async function seedLocalStorage(
   page: Page,
   tasks: typeof SEED_TASKS_BASE = SEED_TASKS_BASE,
 ) {
-  await page.addInitScript(
-    ({ projects, tasks, contractors, pid }) => {
-      (window as { __E2E_BYPASS_AUTH__?: boolean }).__E2E_BYPASS_AUTH__ = true;
-      localStorage.setItem("genbahub:projects", JSON.stringify(projects));
-      localStorage.setItem("genbahub:tasks", JSON.stringify(tasks));
-      localStorage.setItem("genbahub:contractors", JSON.stringify(contractors));
-      localStorage.setItem("genbahub:last-project-id", pid);
-    },
-    {
-      projects: SEED_PROJECTS,
-      tasks,
-      contractors: SEED_CONTRACTORS,
-      pid: P5_PID,
-    },
-  );
+  await bypassAuthWithSeed(page, {
+    "genbahub:projects": SEED_PROJECTS,
+    "genbahub:tasks": tasks,
+    "genbahub:contractors": SEED_CONTRACTORS,
+    "genbahub:last-project-id": P5_PID,
+  });
 }
 
 async function screenshot(page: Page, name: string, scrollToChat = false) {

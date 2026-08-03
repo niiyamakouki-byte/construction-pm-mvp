@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { bypassAuthWithSeed } from "./helpers/e2e-bypass.js";
 
 // laporta-beads-z8ja5: 390px幅の初回サンプル工程表で、工程追加FABが検索件数/フィルタと重ならないことを固定する。
 // 対策: ヘッダー内「+工程追加」ボタンが画面内にある間はFABを隠し、スクロールアウトした時だけ表示する。
@@ -17,12 +18,11 @@ const SEED_PROJECT = {
 };
 
 async function seedProject(page: Page) {
-  await page.addInitScript((project) => {
-    window.__E2E_BYPASS_AUTH__ = true;
-    localStorage.setItem("genbahub_onboarding_done", "1");
-    localStorage.setItem("genbahub_tour_done", "1");
-    localStorage.setItem("genbahub:projects", JSON.stringify([project]));
-  }, SEED_PROJECT);
+  await bypassAuthWithSeed(page, {
+    genbahub_onboarding_done: "1",
+    genbahub_tour_done: "1",
+    "genbahub:projects": [SEED_PROJECT],
+  });
 }
 
 test.describe("laporta-beads-z8ja5: 工程追加FABが検索件数/フィルタと重ならない", () => {

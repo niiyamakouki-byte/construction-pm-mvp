@@ -8,6 +8,7 @@ import { test, expect, type Page } from "@playwright/test";
 import * as path from "path";
 import * as url from "url";
 import * as fs from "fs";
+import { bypassAuthWithSeed } from "./helpers/e2e-bypass.js";
 
 const __dirname = path.dirname(url.fileURLToPath(import.meta.url));
 const screenshotsDir = path.join(__dirname, "screenshots", "genbahub-audit-0704");
@@ -209,23 +210,12 @@ const SEED_TASKS = [
 
 // ─── 認証バイパス + LocalStorageシード ────────────────────────────────────────
 async function seedLocalStorage(page: Page) {
-  await page.addInitScript(
-    ({ projects, tasks, contractors }) => {
-      (window as unknown as Record<string, unknown>).__E2E_BYPASS_AUTH__ = true;
-      localStorage.setItem("genbahub:projects", JSON.stringify(projects));
-      localStorage.setItem("genbahub:tasks", JSON.stringify(tasks));
-      localStorage.setItem("genbahub:contractors", JSON.stringify(contractors));
-      localStorage.setItem(
-        "genbahub:last-project-id",
-        "4b9e1234-5678-4abc-bdef-000000000001",
-      );
-    },
-    {
-      projects: SEED_PROJECTS,
-      tasks: SEED_TASKS,
-      contractors: SEED_CONTRACTORS,
-    },
-  );
+  await bypassAuthWithSeed(page, {
+    "genbahub:projects": SEED_PROJECTS,
+    "genbahub:tasks": SEED_TASKS,
+    "genbahub:contractors": SEED_CONTRACTORS,
+    "genbahub:last-project-id": "4b9e1234-5678-4abc-bdef-000000000001",
+  });
 }
 
 // ─── スクリーンショットヘルパー ───────────────────────────────────────────────
@@ -542,11 +532,10 @@ test.describe("GenbaHub 全ページ監査", () => {
   // ⑨ 空状態: contractors — データなし時
   test("09_contractors_empty — 空状態チェック(undefinedやNaN表示なし)", async ({ page }) => {
     // データなし状態でシード
-    await page.addInitScript(() => {
-      (window as unknown as Record<string, unknown>).__E2E_BYPASS_AUTH__ = true;
-      localStorage.setItem("genbahub:projects", JSON.stringify([]));
-      localStorage.setItem("genbahub:tasks", JSON.stringify([]));
-      localStorage.setItem("genbahub:contractors", JSON.stringify([]));
+    await bypassAuthWithSeed(page, {
+      "genbahub:projects": [],
+      "genbahub:tasks": [],
+      "genbahub:contractors": [],
     });
 
     const { errors, warns } = collectConsoleErrors(page);
@@ -566,11 +555,10 @@ test.describe("GenbaHub 全ページ監査", () => {
 
   // ⑩ 空状態: tasks — データなし時
   test("10_tasks_empty — 空状態チェック(undefinedやNaN表示なし)", async ({ page }) => {
-    await page.addInitScript(() => {
-      (window as unknown as Record<string, unknown>).__E2E_BYPASS_AUTH__ = true;
-      localStorage.setItem("genbahub:projects", JSON.stringify([]));
-      localStorage.setItem("genbahub:tasks", JSON.stringify([]));
-      localStorage.setItem("genbahub:contractors", JSON.stringify([]));
+    await bypassAuthWithSeed(page, {
+      "genbahub:projects": [],
+      "genbahub:tasks": [],
+      "genbahub:contractors": [],
     });
 
     const { errors, warns } = collectConsoleErrors(page);
@@ -589,11 +577,10 @@ test.describe("GenbaHub 全ページ監査", () => {
 
   // ⑪ 空状態: /app — データなし時
   test("11_dashboard_empty — 空状態チェック(undefinedやNaN表示なし)", async ({ page }) => {
-    await page.addInitScript(() => {
-      (window as unknown as Record<string, unknown>).__E2E_BYPASS_AUTH__ = true;
-      localStorage.setItem("genbahub:projects", JSON.stringify([]));
-      localStorage.setItem("genbahub:tasks", JSON.stringify([]));
-      localStorage.setItem("genbahub:contractors", JSON.stringify([]));
+    await bypassAuthWithSeed(page, {
+      "genbahub:projects": [],
+      "genbahub:tasks": [],
+      "genbahub:contractors": [],
     });
 
     const { errors, warns } = collectConsoleErrors(page);
@@ -612,11 +599,10 @@ test.describe("GenbaHub 全ページ監査", () => {
 
   // ⑫ 進捗レビュー — 空状態
   test("12_progress_review_empty — 空状態チェック", async ({ page }) => {
-    await page.addInitScript(() => {
-      (window as unknown as Record<string, unknown>).__E2E_BYPASS_AUTH__ = true;
-      localStorage.setItem("genbahub:projects", JSON.stringify([]));
-      localStorage.setItem("genbahub:tasks", JSON.stringify([]));
-      localStorage.setItem("genbahub:contractors", JSON.stringify([]));
+    await bypassAuthWithSeed(page, {
+      "genbahub:projects": [],
+      "genbahub:tasks": [],
+      "genbahub:contractors": [],
     });
 
     const { errors, warns } = collectConsoleErrors(page);

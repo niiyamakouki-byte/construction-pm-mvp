@@ -7,19 +7,13 @@ import { test, expect, type Page } from "@playwright/test";
 import * as path from "path";
 import * as url from "url";
 import * as fs from "fs";
+import { bypassAuth, bypassAuthWithSeed } from "./helpers/e2e-bypass.js";
 
 const __dirname = path.dirname(url.fileURLToPath(import.meta.url));
 const screenshotsDir = path.join(__dirname, "screenshots", "gantt-verify-p3p4");
 
 if (!fs.existsSync(screenshotsDir)) {
   fs.mkdirSync(screenshotsDir, { recursive: true });
-}
-
-// ─── 認証バイパス ──────────────────────────────────────────────────────────────
-async function bypassAuth(page: Page) {
-  await page.addInitScript(() => {
-    window.__E2E_BYPASS_AUTH__ = true;
-  });
 }
 
 // ─── デモデータシード ─────────────────────────────────────────────────────────
@@ -223,24 +217,13 @@ async function seedLocalStorage(page: Page) {
   // 実時刻のままだと日付経過で過負荷条件(ラポルタ180%)が現在週から外れて
   // ⑤⑥が腐るため、テスト内時刻を検証日に固定する
   await page.clock.setFixedTime(new Date("2026-07-04T09:00:00+09:00"));
-  await page.addInitScript(
-    ({ projects, tasks, contractors }) => {
-      window.__E2E_BYPASS_AUTH__ = true;
-      localStorage.setItem("genbahub:projects", JSON.stringify(projects));
-      localStorage.setItem("genbahub:tasks", JSON.stringify(tasks));
-      localStorage.setItem("genbahub:contractors", JSON.stringify(contractors));
-      // 最後に使ったプロジェクトIDを設定してガントが自動選択できるようにする
-      localStorage.setItem(
-        "genbahub:last-project-id",
-        "11111111-1111-1111-1111-111111111111",
-      );
-    },
-    {
-      projects: SEED_PROJECTS,
-      tasks: SEED_TASKS,
-      contractors: SEED_CONTRACTORS,
-    },
-  );
+  // 最後に使ったプロジェクトIDを設定してガントが自動選択できるようにする
+  await bypassAuthWithSeed(page, {
+    "genbahub:projects": SEED_PROJECTS,
+    "genbahub:tasks": SEED_TASKS,
+    "genbahub:contractors": SEED_CONTRACTORS,
+    "genbahub:last-project-id": "11111111-1111-1111-1111-111111111111",
+  });
 }
 
 async function screenshot(page: Page, name: string) {

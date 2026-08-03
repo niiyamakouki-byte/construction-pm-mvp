@@ -1,17 +1,8 @@
-import { test, expect, type Page } from "@playwright/test";
+import { test, expect } from "@playwright/test";
 import * as path from "path";
 import * as url from "url";
 import * as fs from "fs";
-
-// Bypass AuthGuard by injecting window.__E2E_BYPASS_AUTH__ before any React code runs.
-// This is safe because:
-//   1. No production build includes this flag — it must be explicitly injected by the test runner.
-//   2. The check in AuthGuard is a simple window property guard with no env-var dependency.
-async function bypassAuth(page: Page) {
-  await page.addInitScript(() => {
-    window.__E2E_BYPASS_AUTH__ = true;
-  });
-}
+import { bypassAuth } from "./helpers/e2e-bypass.js";
 
 // ESM-compatible __dirname
 const __dirname = path.dirname(url.fileURLToPath(import.meta.url));

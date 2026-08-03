@@ -3,17 +3,19 @@
  * Base commit: 7d89cb5. Author: Codex.
  */
 import { expect, test, type Page } from "@playwright/test";
+import { bypassAuthWithSeed } from "./helpers/e2e-bypass.js";
 
 const EVIDENCE_DIR = "tasks/87di3-verify/after";
 
 async function prepare(page: Page, onboardingDone = true) {
-  await page.addInitScript((done) => {
-    window.__E2E_BYPASS_AUTH__ = true;
+  await page.addInitScript(() => {
     localStorage.clear();
     sessionStorage.clear();
-    if (done) localStorage.setItem("genbahub_onboarding_done", "1");
-    localStorage.setItem("genbahub_tour_done", "1");
-  }, onboardingDone);
+  });
+  await bypassAuthWithSeed(page, {
+    ...(onboardingDone ? { genbahub_onboarding_done: "1" } : {}),
+    genbahub_tour_done: "1",
+  });
 }
 
 async function openManualEstimate(page: Page) {

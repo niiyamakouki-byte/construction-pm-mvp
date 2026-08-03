@@ -1,14 +1,10 @@
-import { test, expect, type Page } from "@playwright/test";
+import { test, expect } from "@playwright/test";
+import { bypassAuth } from "./helpers/e2e-bypass.js";
 
 // construction_pm_mvp-9ay: 旧22アダプタ(src/lib/supabase-adapter/* + create-repository.ts)へ
 // isE2EBypass()準拠を展開した回帰チェック。FreeeRepository(584095d)修正前と同じ穴を持っていた
 // 代表3ルート(CRMRepository/ProcurementRepository/OrderRepository)を初回セッション直行で
 // 実走し、VITE_USE_SUPABASE=true(.env.local既定)でもconsoleに生Supabaseエラーが出ないことを見る。
-async function bypassAuth(page: Page) {
-  await page.addInitScript(() => {
-    window.__E2E_BYPASS_AUTH__ = true;
-  });
-}
 
 const ROUTES = [
   { path: "/crm", adapter: "CRMRepository" },

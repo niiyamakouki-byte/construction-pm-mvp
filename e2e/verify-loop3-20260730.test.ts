@@ -1,14 +1,10 @@
 import { test, expect, type Page } from "@playwright/test";
+import { bypassAuth } from "./helpers/e2e-bypass.js";
 
 // 検証ループ 2026-07-30 3周目: 「深リンク×初回セッション空状態」を全ルート網羅で検証する。
 // 2周目(4455c56)で /reports の詰みバグ(l4u47)を発見・修正した同族バグの一括検出。
 // 各ルートへ localStorage 完全空の状態(初回セッション)で直接遷移し、
 // (a) 白画面/JSエラーがないか (b) 恒久disabledで詰んでいないか (c) 復帰導線があるかを見る。
-async function bypassAuth(page: Page) {
-  await page.addInitScript(() => {
-    window.__E2E_BYPASS_AUTH__ = true;
-  });
-}
 
 // AuthGuard配下でauthLoading/組織コンテキスト初期化を待つための共通待機。
 async function gotoFirstRun(page: Page, route: string) {

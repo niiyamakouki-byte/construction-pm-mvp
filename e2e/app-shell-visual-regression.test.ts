@@ -3,13 +3,13 @@
  * Provenance: report laposite-visual-sweep-20260722 / author type: Codex.
  */
 import { expect, test, type Page } from "@playwright/test";
+import { bypassAuthWithSeed } from "./helpers/e2e-bypass.js";
 
 async function openAuthenticated(page: Page, route: string, theme: "light" | "dark" = "light") {
-  await page.addInitScript(({ selectedTheme }) => {
-    window.__E2E_BYPASS_AUTH__ = true;
-    localStorage.setItem("genbahub-sidebar-collapsed", "0");
-    localStorage.setItem("genbahub-theme", selectedTheme);
-  }, { selectedTheme: theme });
+  await bypassAuthWithSeed(page, {
+    "genbahub-sidebar-collapsed": "0",
+    "genbahub-theme": theme,
+  });
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto(`/#${route}`);
   await page.waitForLoadState("networkidle");
