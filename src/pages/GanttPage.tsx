@@ -2005,6 +2005,7 @@ function GanttPageContent({ initialProjectId = null, openMaster = false, initial
             {/* Primary CTA */}
             <button
               ref={headerAddTaskBtnRef}
+              data-tour="add-task-btn"
               type="button"
               onClick={() => openQuickAdd(selectedProject.id, selectedProject.name)}
               className="inline-flex items-center gap-1.5 rounded-md bg-[#111111] px-4 py-2.5 text-sm font-semibold text-white transition-all hover:bg-[#333] active:scale-[0.98]"
@@ -2099,7 +2100,7 @@ function GanttPageContent({ initialProjectId = null, openMaster = false, initial
 
             {/* 出力メニュー */}
             <details className="group relative">
-              <summary className="list-none cursor-pointer rounded-md bg-white px-3 py-2.5 text-sm font-semibold text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50 [&::-webkit-details-marker]:hidden">
+              <summary data-tour="gantt-output-menu" className="list-none cursor-pointer rounded-md bg-white px-3 py-2.5 text-sm font-semibold text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50 [&::-webkit-details-marker]:hidden">
                 出力
               </summary>
               <div className="absolute right-0 z-30 mt-1 w-44 rounded-xl border border-slate-200 bg-white p-1.5 shadow-lg">
@@ -2127,7 +2128,7 @@ function GanttPageContent({ initialProjectId = null, openMaster = false, initial
 
             {/* 分析メニュー */}
             <details className="group relative">
-              <summary className="list-none cursor-pointer rounded-md bg-white px-3 py-2.5 text-sm font-semibold text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50 [&::-webkit-details-marker]:hidden">
+              <summary data-tour="gantt-analysis-menu" className="list-none cursor-pointer rounded-md bg-white px-3 py-2.5 text-sm font-semibold text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50 [&::-webkit-details-marker]:hidden">
                 分析
               </summary>
               <div className="absolute right-0 z-30 mt-1 w-44 rounded-xl border border-slate-200 bg-white p-1.5 shadow-lg">

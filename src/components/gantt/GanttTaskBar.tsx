@@ -125,6 +125,7 @@ export function GanttTaskBar({
         role="button"
         tabIndex={0}
         data-task-id={task.id}
+        data-tour="gantt-task-bar"
         aria-label={`${task.name} ${statusLabel[task.status]} ${progress}%${overdue ? " 期限超過" : ""}`}
         className={`group/bar absolute rounded-full border border-white/70 shadow-sm transition-transform ${
           isDragging ? "cursor-grabbing opacity-90" : "cursor-pointer active:scale-[0.99]"

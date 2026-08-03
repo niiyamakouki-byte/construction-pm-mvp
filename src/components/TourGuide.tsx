@@ -1,10 +1,10 @@
-import { type ReactNode, useState, useEffect, useCallback } from "react";
+import { type ReactNode, useState, useEffect, useCallback, useRef } from "react";
 import {
   BarChart3,
   Plus,
   MoveHorizontal,
-  Building2,
-  HelpCircle,
+  Download,
+  PieChart,
 } from "lucide-react";
 
 const TOUR_KEY = "genbahub_tour_done";
@@ -71,20 +71,27 @@ const TOUR_STEPS: TourStep[] = [
   },
   {
     id: 4,
-    title: "業者管理はここ",
+    title: "PDFやカレンダーに出力",
     description:
-      "下のナビ「業者」タブから、工事に関わる業者を登録・管理できます。",
-    icon: <Building2 className="h-6 w-6" />,
-    targetAttr: "nav-contractors",
-    position: "top",
+      "「出力」からPDF印刷やカレンダー(.ics)書き出しができます。",
+    icon: <Download className="h-6 w-6" />,
+    // laporta-beads-zrkir: 旧targetAttr="nav-contractors"は業者ナビ項目自体が
+    // 折りたたみ済みの「その他」ドロワー+アコーディオン背後にあり、自動ツアー中は
+    // querySelectorで到達不能(highlightRectが実質無意味な状態)と判明したため、
+    // 常時レンダリングされるGanttPageの「出力」メニューへ差し替え。
+    targetAttr: "gantt-output-menu",
+    position: "bottom",
   },
   {
     id: 5,
-    title: "困ったときはヘルプ",
+    title: "リソースやリスクを分析",
     description:
-      "よくある質問や使い方は「ヘルプ」ページに載っています。右上のメニューからいつでも確認できます。",
-    icon: <HelpCircle className="h-6 w-6" />,
-    targetAttr: "help-link",
+      "「分析」から工程のリスク計算やリソース稼働状況を確認できます。",
+    icon: <PieChart className="h-6 w-6" />,
+    // laporta-beads-zrkir: 旧targetAttr="help-link"も同様にヘルプナビ項目が
+    // 折りたたみUI背後で自動ツアー中は到達不能だったため、常時レンダリングされる
+    // GanttPageの「分析」メニューへ差し替え。
+    targetAttr: "gantt-analysis-menu",
     position: "bottom",
   },
 ];
@@ -106,16 +113,30 @@ export function TourGuide({ onComplete }: Props) {
 
   const currentStep = TOUR_STEPS[stepIndex];
 
+  const scrolledStepRef = useRef<number | null>(null);
+
   const updateHighlight = useCallback(() => {
     if (!currentStep) return;
     const el = document.querySelector(
       `[data-tour="${currentStep.targetAttr}"]`,
     ) as HTMLElement | null;
     if (el) {
+      // laporta-beads-zrkir: 対象がスクロール可能な一覧の途中(下の方)にあると画面外のまま
+      // ポップオーバー位置も画面外になる。ステップが切り替わった最初の1回だけ画面内へ寄せる
+      // (毎回scrollIntoViewするとscrollイベント→再測定→再スクロールのループになるため
+      // ステップごとに1回に限定)。
+      if (scrolledStepRef.current !== currentStep.id) {
+        scrolledStepRef.current = currentStep.id;
+        el.scrollIntoView({ block: "center", behavior: "instant" as ScrollBehavior });
+      }
+      // laporta-beads-zrkir: ハイライト枠/ポップオーバーは fixed inset-0 の子として
+      // 描画されるため、この時点でのcontaining blockは常にビューポート。
+      // window.scrollY/Xを足すとスクロール後にビューポート座標とドキュメント座標が
+      // ずれてポップオーバーが画面外に飛ぶ(scrollIntoViewで実際に踏んだ不具合)。
       const rect = el.getBoundingClientRect();
       setHighlightRect({
-        top: rect.top + window.scrollY,
-        left: rect.left + window.scrollX,
+        top: rect.top,
+        left: rect.left,
         width: rect.width,
         height: rect.height,
       });
@@ -129,9 +150,16 @@ export function TourGuide({ onComplete }: Props) {
     updateHighlight();
     window.addEventListener("resize", updateHighlight);
     window.addEventListener("scroll", updateHighlight);
+    // laporta-beads-zrkir: TourGuideは対象ページ(GanttPage等)のデータ読込完了より先に
+    // マウントされうる。対象要素がまだDOMに無いと通常はresize/scrollが起きるまで
+    // highlightRectがnullのままになるため、マウント直後の短時間だけ再試行する。
+    const retry = window.setInterval(updateHighlight, 200);
+    const stopRetry = window.setTimeout(() => window.clearInterval(retry), 3000);
     return () => {
       window.removeEventListener("resize", updateHighlight);
       window.removeEventListener("scroll", updateHighlight);
+      window.clearInterval(retry);
+      window.clearTimeout(stopRetry);
     };
   }, [updateHighlight]);
 
@@ -244,9 +272,10 @@ function TourPopover({
       top = `${t}px`;
       left = `${l}px`;
       transform = "none";
-      // If overflows viewport bottom, flip to top
+      // If overflows viewport bottom, flip to top (laporta-beads-zrkir: top方向のclampが
+      // 無いと、対象が画面下端に近い狭幅ビューポートで負のtop=画面外に飛ぶ)
       if (t + CARD_HEIGHT > vh) {
-        top = `${highlightRect.top - CARD_HEIGHT - OFFSET}px`;
+        top = `${Math.max(highlightRect.top - CARD_HEIGHT - OFFSET, 16)}px`;
       }
     } else if (step.position === "top") {
       const t = highlightRect.top - CARD_HEIGHT - OFFSET;

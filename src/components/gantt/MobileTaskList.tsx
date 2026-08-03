@@ -44,7 +44,7 @@ export function MobileTaskList({ tasks, today, onOpenTaskDetail, onShowTimeline,
   const tasksInWindow = tasks.filter((task) => task.startDate <= windowEnd && task.endDate >= today);
 
   return (
-    <div data-testid="gantt-mobile-list" className="space-y-3">
+    <div data-testid="gantt-mobile-list" data-tour="gantt-chart" className="space-y-3">
       <div className="flex items-center justify-between gap-2">
         <div>
           <p className="text-sm font-bold text-slate-900">今日からの7日間</p>
@@ -114,6 +114,7 @@ export function MobileTaskList({ tasks, today, onOpenTaskDetail, onShowTimeline,
                         <li key={task.id}>
                           <button
                             type="button"
+                            data-tour="gantt-task-bar"
                             onClick={() => onOpenTaskDetail(task)}
                             className="flex w-full items-center gap-2.5 px-3.5 py-2.5 text-left transition-colors hover:bg-slate-50 active:bg-slate-100"
                           >

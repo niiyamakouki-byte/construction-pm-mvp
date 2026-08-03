@@ -206,6 +206,7 @@ export function GanttChart({
 
   return (
     <div
+      data-tour="gantt-chart"
       className="overflow-hidden rounded-[26px] border border-slate-200 bg-white shadow-[0_18px_50px_rgba(15,23,42,0.08)]"
       role="figure"
       aria-label={`ガントチャート: ${ganttTasks.length}タスク`}
