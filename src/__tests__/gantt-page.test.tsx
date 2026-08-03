@@ -151,6 +151,58 @@ describe("GanttPage", () => {
     expect(screen.getAllByText("配線工事").length).toBeGreaterThan(0);
   });
 
+  it("laporta-beads-z8ja5: ヘッダーの+工程追加ボタンが画面内にある間はFABを隠し、スクロールアウトしたら表示する", async () => {
+    const now = "2025-01-01T00:00:00.000Z";
+    let ioCallback: IntersectionObserverCallback | null = null;
+    class FakeIntersectionObserver {
+      constructor(cb: IntersectionObserverCallback) {
+        ioCallback = cb;
+      }
+      observe() {}
+      disconnect() {}
+      unobserve() {}
+    }
+    const originalIO = globalThis.IntersectionObserver;
+    // @ts-expect-error jsdomにIntersectionObserverが無いためテスト用フェイクを注入
+    globalThis.IntersectionObserver = FakeIntersectionObserver;
+
+    mockProjectRepository.findAll.mockResolvedValue([
+      {
+        id: "p1",
+        name: "南青山ビル改修",
+        description: "",
+        status: "active",
+        startDate: "2025-01-10",
+        includeWeekends: true,
+        createdAt: now,
+        updatedAt: now,
+      },
+    ]);
+    mockTaskRepository.findAll.mockResolvedValue([]);
+    mockContractorRepository.findAll.mockResolvedValue([]);
+
+    try {
+      render(<GanttPage initialProjectId="p1" />);
+      await screen.findByRole("heading", { name: "南青山ビル改修" });
+
+      // 初期表示(ヘッダーCTAが画面内)ではFABは非表示 = 検索件数/フィルタと重ならない
+      expect(screen.queryByRole("button", { name: "新しいタスクを追加" })).toBeNull();
+
+      // ヘッダーCTAがスクロールアウトしたらFABを表示
+      expect(ioCallback).not.toBeNull();
+      await waitFor(() => {
+        ioCallback?.(
+          [{ isIntersecting: false } as IntersectionObserverEntry],
+          {} as IntersectionObserver,
+        );
+      });
+
+      expect(screen.getByRole("button", { name: "新しいタスクを追加" })).toBeDefined();
+    } finally {
+      globalThis.IntersectionObserver = originalIO;
+    }
+  });
+
   it("案件チップを押すと表示案件が切り替わる", async () => {
     const now = "2025-01-01T00:00:00.000Z";
     mockProjectRepository.findAll.mockResolvedValue([

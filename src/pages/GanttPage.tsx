@@ -500,6 +500,22 @@ function GanttPageContent({ initialProjectId = null, openMaster = false, initial
   const [masterConflictPending, setMasterConflictPending] = useState(false);
   const [masterSuccessToast, setMasterSuccessToast] = useState<{ count: number; totalDays: number } | null>(null);
 
+  // laporta-beads-z8ja5: 工程追加FABは、同じ操作を持つヘッダー内「+工程追加」ボタンが
+  // 画面外にスクロールした時だけ表示する。初期表示(スクロール前)ではヘッダーCTAが
+  // 見えているのでFABは不要かつ、検索件数/工種フィルタと重なっていた。
+  const headerAddTaskBtnRef = useRef<HTMLButtonElement | null>(null);
+  const [showAddTaskFab, setShowAddTaskFab] = useState(false);
+  useEffect(() => {
+    const el = headerAddTaskBtnRef.current;
+    if (!el || typeof IntersectionObserver === "undefined") return; // jsdomテスト環境等の未対応フォールバック
+    const observer = new IntersectionObserver(
+      ([entry]) => setShowAddTaskFab(!entry.isIntersecting),
+      { threshold: 0 },
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [selectedProjectId, loading]); // loading: スケルトン解除でヘッダーCTAが実DOMに現れた後に観測し直す
+
   // ─── テンプレ保存モーダル ──────────────────────────────────────────────────
   const [templateSaveOpen, setTemplateSaveOpen] = useState(false);
   const [templateSaveName, setTemplateSaveName] = useState("");
@@ -1988,6 +2004,7 @@ function GanttPageContent({ initialProjectId = null, openMaster = false, initial
 
             {/* Primary CTA */}
             <button
+              ref={headerAddTaskBtnRef}
               type="button"
               onClick={() => openQuickAdd(selectedProject.id, selectedProject.name)}
               className="inline-flex items-center gap-1.5 rounded-md bg-[#111111] px-4 py-2.5 text-sm font-semibold text-white transition-all hover:bg-[#333] active:scale-[0.98]"
@@ -2506,7 +2523,11 @@ function GanttPageContent({ initialProjectId = null, openMaster = false, initial
       <button
         type="button"
         onClick={() => openQuickAdd(selectedProject.id, selectedProject.name)}
-        className="safe-bottom fixed bottom-20 right-4 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-brand-600 text-3xl text-white shadow-[0_16px_30px_rgba(37,99,235,0.35)] md:bottom-6"
+        aria-hidden={!showAddTaskFab}
+        tabIndex={showAddTaskFab ? 0 : -1}
+        className={`safe-bottom fixed bottom-20 right-4 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-brand-600 text-3xl text-white shadow-[0_16px_30px_rgba(37,99,235,0.35)] transition-[opacity,transform] duration-200 ease-out md:bottom-6 ${
+          showAddTaskFab ? "opacity-100 scale-100" : "pointer-events-none opacity-0 scale-90"
+        }`}
         aria-label="新しいタスクを追加"
       >
         +

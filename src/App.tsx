@@ -247,6 +247,10 @@ function AppShell() {
         if (cancelled) return;
         if (created) trackFunnelStep("sample_project_seeded");
         markOnboardingDone();
+        // laporta-beads-e254a: 自動bootstrap成功経路でもOnboardingWizard完了経路(handleOnboardingComplete)と
+        // 同様にTourGuideを開始する。従来はエラー時のOnboardingWizard完了経路にしかsetShowTour(true)が無く、
+        // サンプル工程表着地後に次の一手が誰にも示されなかった。
+        setShowTour(true);
         navigate(`/gantt/${projectId}`);
       } catch (err) {
         if (cancelled) return;
@@ -510,6 +514,14 @@ function AppShell() {
   if (finishingMatch) return <Suspense fallback={pageFallback}><FinishingSchedulePage projectName={finishingMatch[1] ? decodeURIComponent(finishingMatch[1]) : undefined} /></Suspense>;
   if (route === "/landing") return <Suspense fallback={pageFallback}><LandingPage /></Suspense>;
   if (route === "/" || route === "") {
+    // laporta-beads-77qyl: 未ログイン訪問は /app→/login バウンスさせず、直接LPを見せる
+    // (3秒でLapoSiteの価値と主CTA=新規登録が分かる)。ログイン済み/E2E/未設定は従来通り即 /app。
+    if (isE2EBypass || !hasSupabaseEnv()) {
+      navigate("/app");
+      return null;
+    }
+    if (authLoading) return pageFallback;
+    if (!user) return <Suspense fallback={pageFallback}><LandingPage /></Suspense>;
     navigate("/app");
     return null;
   }
