@@ -21,6 +21,7 @@ const typeLabel: Record<Notification["type"], string> = {
   schedule_changed: "工程変更",
   reminder: "リマインダー",
   alert: "アラート",
+  contractor_request: "業者依頼",
 };
 
 export function NotificationsPage() {

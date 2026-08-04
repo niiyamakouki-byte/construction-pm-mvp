@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import type { Contractor, DependencyType } from "../../domain/types.js";
+import type { SendContractorRequestResult } from "../../lib/contractor-request.js";
 import type { GanttTask, TaskDetailState } from "./types.js";
 import { addDays, hasCycle, resolveIncludeWeekends, statusLabel } from "./utils.js";
 
@@ -24,6 +25,8 @@ type Props = {
   onAddDependency?: (predecessorId: string) => void;
   /** P2.5: 先行タスクを削除する */
   onRemoveDependency?: (predecessorId: string) => void;
+  /** 割当済み協力業者へ依頼メールを送信する（保存済みの task.contractorId が対象） */
+  onSendContractorRequest?: () => Promise<SendContractorRequestResult>;
 };
 
 export function TaskEditModal({
@@ -36,6 +39,7 @@ export function TaskEditModal({
   onDelete,
   onAddDependency,
   onRemoveDependency,
+  onSendContractorRequest,
 }: Props) {
   const effectiveIncludeWeekends = resolveIncludeWeekends(
     taskDetail.task.projectIncludesWeekends,
@@ -45,6 +49,22 @@ export function TaskEditModal({
   // P2.5: 先行タスク追加用の選択状態
   const [selectedPredId, setSelectedPredId] = useState("");
   const [depError, setDepError] = useState<string | null>(null);
+
+  // 業者へ依頼を送る（share-token + resend）の送信状態
+  const [sending, setSending] = useState(false);
+  const [sendResult, setSendResult] = useState<SendContractorRequestResult | null>(null);
+
+  const handleSendContractorRequest = async () => {
+    if (!onSendContractorRequest) return;
+    setSending(true);
+    setSendResult(null);
+    try {
+      const result = await onSendContractorRequest();
+      setSendResult(result);
+    } finally {
+      setSending(false);
+    }
+  };
 
   const currentDeps = taskDetail.task.dependencies ?? [];
   // 選択可能な先行タスク候補（自分自身・既存依存・後続になるものは除外）
@@ -143,6 +163,34 @@ export function TaskEditModal({
                 </select>
               </label>
             </div>
+
+            {onSendContractorRequest && (
+              <div className="rounded-2xl bg-slate-50 px-4 py-3">
+                {taskDetail.task.contractorId ? (
+                  <button
+                    type="button"
+                    disabled={sending}
+                    onClick={() => void handleSendContractorRequest()}
+                    className="min-h-11 w-full rounded-2xl bg-brand-600 px-4 py-3 text-sm font-semibold text-white shadow-sm disabled:opacity-60"
+                  >
+                    {sending ? "送信中..." : "業者へ依頼を送る"}
+                  </button>
+                ) : (
+                  <p className="text-sm text-amber-700">
+                    業者を選択して保存すると、依頼メールを送信できます。
+                  </p>
+                )}
+                {sendResult && (
+                  <p
+                    className={`mt-2 text-xs font-medium ${sendResult.ok ? "text-emerald-700" : "text-red-600"}`}
+                  >
+                    {sendResult.ok
+                      ? `${sendResult.recipient} へ依頼メールを送信しました。`
+                      : `送信に失敗しました: ${sendResult.error}`}
+                  </p>
+                )}
+              </div>
+            )}
 
           <div className="grid gap-3 sm:grid-cols-2">
             <label className="flex flex-col gap-1.5">

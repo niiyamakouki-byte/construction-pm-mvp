@@ -130,7 +130,8 @@ export type NotificationType =
   | "schedule_confirmed"
   | "schedule_changed"
   | "reminder"
-  | "alert";
+  | "alert"
+  | "contractor_request";
 
 export type NotificationStatus = "pending" | "sent" | "failed";
 

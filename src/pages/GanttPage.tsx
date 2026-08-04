@@ -45,6 +45,8 @@ import {
 import { getHolidayName } from "../lib/japanese-holidays.js";
 import { readLastProjectId, writeLastProjectId } from "../lib/last-project.js";
 import { cascadeSchedule } from "../lib/cascade-scheduler.js";
+import { sendContractorRequest, type ContractorRequestMode } from "../lib/contractor-request.js";
+import { useAuth } from "../contexts/AuthContext.js";
 import { filterScheduleTasks } from "../lib/cost-management.js";
 import { buildGanttPdfHtml, exportGanttToPdf, type GanttPaperSize } from "../lib/gantt-pdf-export.js";
 import { downloadProjectICS } from "../lib/gantt-ics-export.js";
@@ -446,6 +448,7 @@ type GanttPageProps = {
 
 function GanttPageContent({ initialProjectId = null, openMaster = false, initialView }: GanttPageProps) {
   const { organizationId } = useOrganizationContext();
+  const { session } = useAuth();
   const projectRepository = useMemo(() => createProjectRepository(() => organizationId), [organizationId]);
   const taskRepository = useMemo(() => createTaskRepository(() => organizationId), [organizationId]);
   const contractorRepository = useMemo(() => createContractorRepository(() => organizationId), [organizationId]);
@@ -947,6 +950,54 @@ function GanttPageContent({ initialProjectId = null, openMaster = false, initial
       setTaskDetail((current) => (current ? { ...current, saving: false } : current));
     }
   }, [contractors, ganttTasks, loadData, organizationId, taskDetail, taskRepository]);
+
+  // 票laporta-beads-vj1gj: 工程バー→割当済み協力業者へ依頼メール送信
+  // 外部送信ゲート: VITE_CONTRACTOR_REQUEST_LIVE が "true" のときのみ実際の業者メール宛。既定はdry-run（自分宛）。
+  const handleSendContractorRequest = useCallback(async () => {
+    if (!taskDetail) {
+      return { ok: false as const, error: "タスクが見つかりません" };
+    }
+    const contractor = contractors.find((item) => item.id === taskDetail.task.contractorId);
+    if (!contractor) {
+      return { ok: false as const, error: "業者が未割当です" };
+    }
+    const project = projects.find((item) => item.id === taskDetail.task.projectId);
+    const mode: ContractorRequestMode =
+      import.meta.env.VITE_CONTRACTOR_REQUEST_LIVE === "true" ? "live" : "dry-run";
+
+    const result = await sendContractorRequest(
+      {
+        projectId: taskDetail.task.projectId,
+        projectName: project?.name ?? taskDetail.task.projectName,
+        taskName: taskDetail.task.name,
+        startDate: taskDetail.task.startDate,
+        endDate: taskDetail.task.endDate,
+        contractorEmail: contractor.email,
+        mode,
+      },
+      { getAccessToken: async () => session?.access_token ?? null },
+    );
+
+    const notificationRepository = createNotificationRepository(() => organizationId);
+    const now = new Date().toISOString();
+    await notificationRepository.create({
+      id: crypto.randomUUID(),
+      projectId: taskDetail.task.projectId,
+      taskId: taskDetail.task.id,
+      contractorId: contractor.id,
+      type: "contractor_request",
+      message: result.ok
+        ? `${taskDetail.task.name}の依頼メールを${result.recipient}へ送信しました。（業者: ${contractor.name}）`
+        : `${taskDetail.task.name}の依頼メール送信に失敗しました: ${result.error}（業者: ${contractor.name}）`,
+      status: result.ok ? "sent" : "failed",
+      scheduledAt: now,
+      sentAt: result.ok ? now : undefined,
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    return result;
+  }, [contractors, organizationId, projects, session, taskDetail]);
 
   // 先行(fromTaskId)→後続(toTaskId)の依存を設定する共通ハンドラ。
   // connectMode ボタン経由・バードラッグ接続の両方から呼ばれる。
@@ -1574,6 +1625,7 @@ function GanttPageContent({ initialProjectId = null, openMaster = false, initial
           onSubmit={(event) => void handleTaskDetailSave(event)}
           onChange={(updater) => setTaskDetail((current) => (current ? updater(current) : current))}
           onDelete={(taskId) => setDeleteTarget(ganttTasks.find((task) => task.id === taskId) ?? taskDetail.task)}
+          onSendContractorRequest={handleSendContractorRequest}
           onAddDependency={async (predecessorId) => {
             const toTask = taskDetail.task;
             const updated = [...(toTask.dependencies ?? []), predecessorId];
