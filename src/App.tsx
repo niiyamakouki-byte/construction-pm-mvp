@@ -90,14 +90,14 @@ import { useTheme } from "./hooks/useTheme.js";
 import { ThemeToggle } from "./components/ThemeToggle.js";
 import { MobileNav } from "./components/MobileNav.js";
 // Navigation import removed – sidebar is rendered inline in AppShell
-import { NotificationBanner } from "./components/NotificationBanner.js";
-import { readLastProjectId } from "./lib/last-project.js";
-import { ensureFirstRunProject } from "./lib/sample-project.js";
-import { trackFunnelStep } from "./lib/signup-funnel.js";
-import { createProjectRepository } from "./stores/project-store.js";
-import { createTaskRepository } from "./stores/task-store.js";
+// 票995h2: NotificationBanner/AssistantChatPanelは認証後のAppShell内でしか描画されないが、
+// eager importだと unified-data-flow(order-management)/framer-motion 等がLPの初回バンドルに
+// 巻き込まれ帯域を奪う。lazy化してLPの初回描画から切り離す(機能は変更なし、初回だけ遅延)。
+const NotificationBanner = lazy(() => import("./components/NotificationBanner.js").then((m) => ({ default: m.NotificationBanner })));
 // Sprint 3-3: v2-cozy刷新版 AssistantChatPanel (コマンド5本+framer-motion)
-import { AssistantChatPanel } from "./components/AssistantChatPanel.js";
+const AssistantChatPanel = lazy(() => import("./components/AssistantChatPanel.js").then((m) => ({ default: m.AssistantChatPanel })));
+import { readLastProjectId } from "./lib/last-project.js";
+import { trackFunnelStep } from "./lib/signup-funnel.js";
 
 function LogoIcon() {
   return (
@@ -241,6 +241,14 @@ function AppShell() {
 
     const bootstrap = async () => {
       try {
+        // 票995h2: project-store/task-store/sample-project は初回サンプル案件作成(認証後/app限定)
+        // でしか使わない。eager importだと domain/schemas(zod)がLPの初回バンドルに混入するため
+        // ここでdynamic importする(機能・挙動は同一、初回だけ遅延読み込み)。
+        const [{ createProjectRepository }, { createTaskRepository }, { ensureFirstRunProject }] = await Promise.all([
+          import("./stores/project-store.js"),
+          import("./stores/task-store.js"),
+          import("./lib/sample-project.js"),
+        ]);
         const projectRepository = createProjectRepository(() => organizationId);
         const taskRepository = createTaskRepository(() => organizationId);
         const { projectId, created } = await ensureFirstRunProject(projectRepository, taskRepository);
@@ -498,7 +506,9 @@ function AppShell() {
           <div className="font-semibold text-slate-700">{t("pages:assistant.demo_title")}</div>
           <div className="mt-1">{t("pages:assistant.demo_hint")}</div>
         </div>
-        <AssistantChatPanel userId="demo-user" />
+        <Suspense fallback={null}>
+          <AssistantChatPanel userId="demo-user" />
+        </Suspense>
       </div>
     );
   }
@@ -1117,7 +1127,9 @@ function AppShell() {
           ) : null}
         </nav>
 
-        <NotificationBanner refreshKey={route} autoExpand={route === "/today"} />
+        <Suspense fallback={null}>
+          <NotificationBanner refreshKey={route} autoExpand={route === "/today"} />
+        </Suspense>
 
         {/* ── Main content area (shifted right on desktop) ── */}
         <main
@@ -1238,10 +1250,12 @@ function AppShell() {
         {showShortcutHelp ? <KeyboardShortcutHelp onClose={() => setShowShortcutHelp(false)} /> : null}
         {/* ponytail: ganttMatch があるページは工程追加FABが右下を占有するのでAI FABを非表示 */}
         {!ganttMatch && (
-          <AssistantChatPanel
-            userId={user?.email ?? "anonymous"}
-            hideFab={mobileNavOpen || moreDrawerOpen}
-          />
+          <Suspense fallback={null}>
+            <AssistantChatPanel
+              userId={user?.email ?? "anonymous"}
+              hideFab={mobileNavOpen || moreDrawerOpen}
+            />
+          </Suspense>
         )}
         <InstallPrompt />
       </div>
