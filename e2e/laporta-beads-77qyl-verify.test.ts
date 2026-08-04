@@ -13,7 +13,7 @@ test.describe("laporta-beads-77qyl: 未ログイン / 訪問でLPを直接表示
     await expect(page.locator("#email")).not.toBeVisible();
     await expect(page.locator("h1")).toContainText("現場の面倒が");
 
-    const cta = page.getByRole("button", { name: "14日間 無料で始める" });
+    const cta = page.locator("form").getByRole("button", { name: "無料で始める" });
     await expect(cta).toBeVisible();
     const box = await cta.boundingBox();
     expect(box).not.toBeNull();
@@ -35,7 +35,7 @@ test.describe("laporta-beads-77qyl: 未ログイン / 訪問でLPを直接表示
     await expect(page.locator("#email")).not.toBeVisible();
     await expect(page.locator("h1")).toContainText("現場の面倒が");
 
-    const cta = page.getByRole("button", { name: "14日間 無料で始める" });
+    const cta = page.locator("form").getByRole("button", { name: "無料で始める" });
     await expect(cta).toBeVisible();
     const box = await cta.boundingBox();
     expect(box).not.toBeNull();
