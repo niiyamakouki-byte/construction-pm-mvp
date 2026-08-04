@@ -9,6 +9,7 @@ export type Organization = {
   stripeCustomerId: string | null;
   stripeSubscriptionId: string | null;
   planPeriodEnd: string | null;
+  trialEndsAt: string | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -63,6 +64,7 @@ async function ensureOrganization(
     stripeSubscriptionId:
       (row.stripe_subscription_id as string | null) ?? null,
     planPeriodEnd: (row.plan_period_end as string | null) ?? null,
+    trialEndsAt: (row.trial_ends_at as string | null) ?? null,
     createdAt: row.created_at as string,
     updatedAt: row.updated_at as string,
   };

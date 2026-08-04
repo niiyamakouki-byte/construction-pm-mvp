@@ -13,12 +13,21 @@ export type SubscriptionLimits = {
   maxTasks: number | null;
 };
 
+export type TrialState =
+  | "trial_active"
+  | "trial_expiring_soon"
+  | "trial_expired";
+
+const TRIAL_EXPIRING_SOON_DAYS = 3;
+
 export type SubscriptionContextValue = {
   plan: PlanId;
   limits: SubscriptionLimits;
   stripeCustomerId: string | null;
   stripeSubscriptionId: string | null;
   planPeriodEnd: string | null;
+  trialState: TrialState | null;
+  trialDaysRemaining: number | null;
   loading: boolean;
   canCreateProject: (currentCount: number) => boolean;
   canAddTask: (currentCount: number) => boolean;
@@ -36,6 +45,8 @@ const SubscriptionContext = createContext<SubscriptionContextValue>({
   stripeCustomerId: null,
   stripeSubscriptionId: null,
   planPeriodEnd: null,
+  trialState: null,
+  trialDaysRemaining: null,
   loading: true,
   canCreateProject: () => false,
   canAddTask: () => false,
@@ -48,15 +59,49 @@ const SubscriptionContext = createContext<SubscriptionContextValue>({
 function normalizePlan(raw: string | undefined | null): PlanId {
   if (raw === "standard" || raw === "pro") return raw;
   if (raw === "basic") return "standard"; // legacy mapping
-  return "free"; // trial + unknown → free
+  return "free"; // trial (resolved separately via resolveTrialState) + unknown → free
+}
+
+/**
+ * trial_ends_at を基準にトライアルの状態遷移を判定する。
+ * 設計: docs/trial-to-paid-transition.md
+ */
+export function resolveTrialState(
+  trialEndsAt: string | null | undefined,
+  now: Date = new Date(),
+): { state: TrialState; daysRemaining: number } | null {
+  if (!trialEndsAt) return null;
+  const endsAt = new Date(trialEndsAt);
+  if (Number.isNaN(endsAt.getTime())) return null;
+
+  const msRemaining = endsAt.getTime() - now.getTime();
+  if (msRemaining <= 0) return { state: "trial_expired", daysRemaining: 0 };
+
+  const daysRemaining = Math.ceil(msRemaining / (24 * 60 * 60 * 1000));
+  const state: TrialState =
+    daysRemaining <= TRIAL_EXPIRING_SOON_DAYS ? "trial_expiring_soon" : "trial_active";
+  return { state, daysRemaining };
 }
 
 export function SubscriptionProvider({ children }: { children: ReactNode }) {
   const { organization, loading } = useOrganizationContext();
 
   const value = useMemo<SubscriptionContextValue>(() => {
-    // Internal company use: treat Supabase-authenticated users as having full access
-    const plan = hasSupabaseEnv() && !organization ? "pro" : normalizePlan(organization?.plan);
+    const trial =
+      organization?.plan === "trial"
+        ? resolveTrialState(organization.trialEndsAt)
+        : null;
+    const trialGrantsFullAccess =
+      trial?.state === "trial_active" || trial?.state === "trial_expiring_soon";
+
+    // Internal company use: treat Supabase-authenticated users as having full access.
+    // Active trial: full Pro-equivalent access (課金の穴対策、trial_ends_at基準).
+    const plan =
+      hasSupabaseEnv() && !organization
+        ? "pro"
+        : trialGrantsFullAccess
+          ? "pro"
+          : normalizePlan(organization?.plan);
     const limits = PLAN_LIMITS[plan];
 
     const canCreateProject = (currentCount: number): boolean => {
@@ -75,6 +120,8 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
       stripeCustomerId: organization?.stripeCustomerId ?? null,
       stripeSubscriptionId: organization?.stripeSubscriptionId ?? null,
       planPeriodEnd: organization?.planPeriodEnd ?? null,
+      trialState: trial?.state ?? null,
+      trialDaysRemaining: trial?.daysRemaining ?? null,
       loading,
       canCreateProject,
       canAddTask,
