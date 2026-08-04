@@ -60,7 +60,7 @@ test.describe("bead 6grza critical/high regressions", () => {
     await expect(page).toHaveURL(/#\/gantt\//);
     await page.goto("/#/today");
     await closeSidebar(page);
-    const greeting = page.locator("p.font-bold.text-brand-800").first();
+    const greeting = page.getByTestId("today-greeting");
     await expect(greeting).toBeVisible();
     await expect(greeting).not.toContainText("光輝さん");
     await expect(greeting).not.toContainText("、");

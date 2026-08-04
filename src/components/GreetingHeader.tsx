@@ -47,6 +47,7 @@ export function GreetingHeader({
       {/* brand-700: brand-500 measured 3.17:1 against this card's light gradient bg, below WCAG AA (2026-07-28 contrast pass) */}
       <p className="eyebrow-label text-[11px] uppercase text-brand-700">今日の現場</p>
       <p
+        data-testid="today-greeting"
         className="hero-heading mt-1.5 text-brand-900"
         style={{
           fontSize: "clamp(24px, 6vw, 32px)",
