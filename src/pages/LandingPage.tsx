@@ -235,7 +235,7 @@ export function LandingPage() {
               <img
                 src="/lp/screen-dashboard.png"
                 alt="LapoSite 今日のダッシュボード画面"
-                loading="lazy"
+                fetchPriority="high"
                 className="h-52 w-full object-cover object-top"
               />
               <div className="px-4 py-3">
