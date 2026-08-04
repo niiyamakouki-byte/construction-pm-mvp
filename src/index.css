@@ -25,6 +25,50 @@
   --color-sys-separator: rgba(60,60,67,0.12);
 }
 
+/* ─── Design facelift 2026-07-28 (branch design/ui-facelift-20260728) ───
+   Editorial typography pass, matched to laporta-hp /kaigyo-onestop LP:
+   見出し = Shippori Mincho B1 (editorial serif), ラベル = Zen Kaku Gothic New,
+   本文/UI = 既存の -apple-system スタック（変更しない・回帰リスク回避）。
+   数値(KPI・金額)は tabular-nums + 等幅で「読める」データ表示にする。
+   スコープ: 主要ページ見出し(h1)とダッシュボード/見積のKPI数値のみ。
+   本文フォントは意図的に据え置き — アプリ全体の行送り・折返しへの影響を避ける。 */
+:root {
+  --font-heading: "Shippori Mincho B1", "Hiragino Mincho ProN", serif;
+  --font-label: "Zen Kaku Gothic New", -apple-system, "Hiragino Kaku Gothic ProN", sans-serif;
+  --font-figure: ui-monospace, "SF Mono", "Geist Mono", Menlo, monospace;
+}
+
+/* 一目でわかる主見出し。ページタイトル/案件名など main 直下の h1 のみに適用する
+   (ナビ・カード内の小見出しはこれまで通り本文フォント=情報密度を保つ)。 */
+.hero-heading {
+  font-family: var(--font-heading);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1.25;
+}
+
+/* KPI・金額など「数字が主役」の要素。全角崩れ防止に tabular-nums を必須にする。 */
+.figure-hero {
+  font-family: var(--font-figure);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+  letter-spacing: -0.01em;
+}
+
+/* セクション見出し上の小さなラベル（EYEBROW）。控えめだが編集的な質感を出す。 */
+.eyebrow-label {
+  font-family: var(--font-label);
+  font-weight: 500;
+  letter-spacing: 0.14em;
+}
+
+/* カードの影は「ほぼ無い」まで削る（genbahub-ui憲法: shadow-md/lg/xl禁止）。
+   既存の .ios-card / shadow-sm ユーティリティより一段薄い候補として用意し、
+   ダッシュボード/案件詳細/見積のヒーロー周りだけに適用する。 */
+.genba-flat-card {
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+
 :root,
 :root[data-theme="light"],
 :root[data-theme="system"] {

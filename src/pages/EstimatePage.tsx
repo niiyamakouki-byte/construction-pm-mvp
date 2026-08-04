@@ -970,9 +970,9 @@ function EstimatePageContent() {
               <span>消費税 ({(estimate.taxRate * 100).toFixed(0)}%)</span>
               <span className="tabular-nums">¥{estimate.tax.toLocaleString("ja-JP")}</span>
             </div>
-            <div className="flex justify-between pt-2 border-t border-slate-200 text-lg font-bold text-slate-900">
-              <span>合計</span>
-              <span className="tabular-nums text-brand-700">
+            <div className="mt-2 flex items-center justify-between rounded-xl bg-brand-50 px-4 py-3 text-slate-900">
+              <span className="eyebrow-label text-xs text-brand-700 uppercase">合計</span>
+              <span className="figure-hero text-2xl font-bold text-brand-800 sm:text-[28px]">
                 ¥{estimate.total.toLocaleString("ja-JP")}
               </span>
             </div>
@@ -1152,7 +1152,11 @@ function EstimatePageContent() {
       </button>
 
       {/* Page heading */}
-      <h1 className="text-2xl font-bold text-slate-900">見積（手動作成）</h1>
+      <div>
+        {/* brand-700: brand-600 measures under WCAG AA against white here (2026-07-28 contrast pass) */}
+        <p className="eyebrow-label text-[11px] text-brand-700 uppercase">Estimate</p>
+        <h1 className="hero-heading mt-1 text-[26px] text-slate-900 sm:text-3xl">見積（手動作成）</h1>
+      </div>
 
       <h2 className="text-base font-semibold text-slate-900">品目から手動で作成</h2>
 

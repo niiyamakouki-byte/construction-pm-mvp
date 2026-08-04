@@ -42,21 +42,21 @@ export function GreetingHeader({
         background: "linear-gradient(135deg, var(--app-bg, #F8F4ED), var(--app-card-muted, #F0EBE0))",
         border: "1px solid var(--app-border, #E5DDD0)",
       }}
-      className="min-w-[280px] rounded-2xl px-5 py-5 shadow-sm sm:px-6"
+      className="genba-flat-card min-w-[280px] rounded-2xl px-6 py-7 sm:px-8 sm:py-8"
     >
+      {/* brand-700: brand-500 measured 3.17:1 against this card's light gradient bg, below WCAG AA (2026-07-28 contrast pass) */}
+      <p className="eyebrow-label text-[11px] uppercase text-brand-700">今日の現場</p>
       <p
-        className="font-bold text-brand-800"
+        className="hero-heading mt-1.5 text-brand-900"
         style={{
-          fontSize: "clamp(22px, 6vw, 26px)",
-          lineHeight: 1.3,
-          fontFamily: "var(--font-sans, sans-serif)",
+          fontSize: "clamp(24px, 6vw, 32px)",
           writingMode: "horizontal-tb",
           wordBreak: "keep-all",
         }}
       >
         {userName ? `${greeting}、${userName}` : greeting}
       </p>
-      <p className="mt-1 text-sm text-brand-600" style={{ writingMode: "horizontal-tb", wordBreak: "keep-all" }}>
+      <p className="mt-2 text-sm text-brand-600" style={{ writingMode: "horizontal-tb", wordBreak: "keep-all" }}>
         {dateStr}
       </p>
     </motion.div>

@@ -50,7 +50,7 @@ export function DashboardCard({
       onClick={onClick}
       whileHover={{ scale: 1.02 }}
       transition={{ type: "spring", stiffness: 300, damping: 20 }}
-      className="w-full rounded-[20px] bg-white p-4 text-left shadow-sm transition-shadow hover:shadow-md sm:p-6"
+      className="genba-flat-card w-full rounded-[20px] bg-white p-5 text-left transition-shadow hover:shadow-[0_4px_16px_rgba(0,0,0,0.05)] sm:p-6"
       style={{ border: "1px solid var(--app-border, #E5DDD0)" }}
     >
       <div className="flex items-start gap-3">
@@ -63,10 +63,10 @@ export function DashboardCard({
           </span>
         )}
         <div className="min-w-0 flex-1">
-          <p className="text-xs font-semibold uppercase text-brand-600 sm:tracking-widest">
+          <p className="eyebrow-label text-xs uppercase text-brand-600">
             {title}
           </p>
-          <p className={`mt-1 text-xl font-bold sm:text-2xl ${muted ? "text-slate-400" : "text-brand-900"}`}>
+          <p className={`figure-hero mt-1.5 text-2xl sm:text-[28px] ${muted ? "text-slate-400" : "text-brand-900"}`}>
             {value}
           </p>
           {subtext && (

@@ -951,7 +951,7 @@ function TodayDashboardPageContent() {
   }
 
   return (
-    <div className="mx-auto max-w-[1320px] space-y-4 px-4 pb-8">
+    <div className="mx-auto max-w-[1320px] space-y-7 px-4 pb-8">
       {/* Error banner */}
       {loadError && (
         <div role="alert" className="flex items-start gap-2 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
@@ -1105,17 +1105,17 @@ function TodayDashboardPageContent() {
       </div>
 
       {/* Date Header */}
-      <div className="rounded-2xl bg-brand-800 px-5 py-5 text-white shadow-sm">
+      <div className="genba-flat-card rounded-2xl bg-brand-800 px-6 py-6 text-white sm:px-8 sm:py-7">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-xs font-semibold tracking-widest text-brand-300 uppercase">
+            <p className="eyebrow-label text-xs text-brand-300 uppercase">
               本日の概要
             </p>
-            <p className="mt-1 text-xl font-bold">{formatDateJP(today)}</p>
+            <p className="hero-heading mt-1.5 text-2xl text-white sm:text-3xl">{formatDateJP(today)}</p>
           </div>
         </div>
 
-        <div className="mt-4 grid gap-2 sm:grid-cols-3">
+        <div className="mt-5 grid gap-2 sm:grid-cols-3">
           {siteForecasts.map((site) => {
             if (!site.hasLocation) {
               // 座標未設定案件はフォールバック座標の予報を実予報のように見せない
@@ -1690,9 +1690,9 @@ function StatCard({
   bgColor: string;
 }) {
   return (
-    <div className={`rounded-xl ${bgColor} p-3 text-center shadow-sm border border-slate-100`}>
-      <p className={`text-xl font-bold tabular-nums ${color}`}>{value}</p>
-      <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">{label}</p>
+    <div className={`genba-flat-card rounded-xl ${bgColor} p-4 text-center border border-slate-100`}>
+      <p className={`figure-hero text-2xl ${color}`}>{value}</p>
+      <p className="eyebrow-label mt-0.5 text-[10px] text-slate-500 uppercase">{label}</p>
     </div>
   );
 }
@@ -1707,9 +1707,9 @@ function DashboardSummaryCard({
   detail: string;
 }) {
   return (
-    <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-3">
-      <p className="text-xs font-semibold tracking-[0.18em] text-slate-500">{label}</p>
-      <p className="mt-1 text-base font-bold text-slate-900">{value}</p>
+    <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-4">
+      <p className="eyebrow-label text-xs text-slate-500">{label}</p>
+      <p className="figure-hero mt-1 text-base text-slate-900">{value}</p>
       <p className="mt-2 text-xs leading-5 text-slate-600">{detail}</p>
     </div>
   );
