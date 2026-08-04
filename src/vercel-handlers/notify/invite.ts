@@ -111,7 +111,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
             role: data.role as OrgMembership["role"],
           };
         },
-        generateInviteLink: async (inviteeEmail) => {
+        generateInviteLink: async (inviteeEmail, organizationId) => {
           // Vercel のビルド時型チェッカーがパッケージ跨ぎの継承(SupabaseAuthClient → AuthClient →
           // GoTrueClient.admin)を解決できない場合があるため、admin API 呼び出し部分のみ最小の
           // 構造的型で明示する（実行時の挙動は createClient(...).auth.admin と完全に同一）。
@@ -120,17 +120,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
               generateLink: (params: {
                 type: "invite";
                 email: string;
-                options?: { redirectTo?: string };
+                options?: { redirectTo?: string; data?: Record<string, unknown> };
               }) => Promise<{
                 data: { properties?: { action_link?: string } } | null;
                 error: { message: string } | null;
               }>;
             };
           };
+          // data (user_metadata) に招待先organizationを埋め込む。招待経由サインアップ後、
+          // OrganizationContext.resolveInvitedMembership() がここを読み、招待元organizationへ
+          // 自動参加させる（自分だけの新規organizationが作られてしまうのを防ぐ。AC③）。
           const { data, error } = await adminAuth.admin.generateLink({
             type: "invite",
             email: inviteeEmail,
-            options: { redirectTo: `${getAppBaseUrl()}/#/login` },
+            options: {
+              redirectTo: `${getAppBaseUrl()}/#/login`,
+              data: { invited_organization_id: organizationId, invited_role: "member" },
+            },
           });
           if (error || !data?.properties?.action_link) {
             return { ok: false, error: error?.message ?? "招待リンクの発行に失敗しました" };

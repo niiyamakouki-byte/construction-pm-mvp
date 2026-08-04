@@ -1,6 +1,8 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AccountSettingsPage } from "./AccountSettingsPage.js";
+
+afterEach(cleanup);
 
 const { useAuth, getSupabaseClient, hasSupabaseEnv, readGoogleProviderToken } = vi.hoisted(() => ({
   useAuth: vi.fn(),
@@ -74,5 +76,48 @@ describe("AccountSettingsPage", () => {
     fireEvent.change(select, { target: { value: "ceil" } });
     expect(select.value).toBe("ceil");
     expect(localStorage.getItem("genbahub:estimate-tax-rounding")).toBe("ceil");
+  });
+
+  it("チームメンバーをメールアドレスで招待できる（AC③・票construction_pm_mvp-1g7）", async () => {
+    useAuth.mockReturnValue({
+      user: { id: "user-1", email: "owner@example.com" },
+      session: { access_token: "token-abc" },
+    });
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ ok: true, emailId: "email-1", organizationName: "株式会社ラポルタ" }),
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<AccountSettingsPage />);
+
+    fireEvent.change(screen.getByLabelText("招待するメールアドレス"), {
+      target: { value: "member@example.com" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "招待する" }));
+
+    await waitFor(() => {
+      expect(screen.getByText("member@example.com に招待メールを送信しました")).toBeDefined();
+    });
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/api/push/invite",
+      expect.objectContaining({
+        headers: expect.objectContaining({ Authorization: "Bearer token-abc" }),
+        body: JSON.stringify({ email: "member@example.com", inviterName: "owner@example.com" }),
+      }),
+    );
+  });
+
+  it("未ログイン(access_tokenなし)で招待するとエラーを表示する", async () => {
+    render(<AccountSettingsPage />); // beforeEachのuseAuthモックはsessionを持たない
+
+    fireEvent.change(screen.getByLabelText("招待するメールアドレス"), {
+      target: { value: "member@example.com" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "招待する" }));
+
+    await waitFor(() => {
+      expect(screen.getByText("ログインが必要です")).toBeDefined();
+    });
   });
 });

@@ -5,6 +5,7 @@
 
 import { useState, type FormEvent } from "react";
 import { useAuth, readGoogleProviderToken } from "../contexts/AuthContext.js";
+import { inviteTeamMember } from "../lib/invite-team-member.js";
 import { getSupabaseClient, hasSupabaseEnv } from "../infra/supabase-client.js";
 import {
   clearPasswordRecoveryMode,
@@ -24,7 +25,39 @@ function getOAuthRedirectUrl(): string | undefined {
 }
 
 export function AccountSettingsPage() {
-  const { user } = useAuth();
+  const { user, session } = useAuth();
+
+  // チームメンバー招待（AC③、票construction_pm_mvp-1g7）
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteLoading, setInviteLoading] = useState(false);
+  const [inviteError, setInviteError] = useState<string | null>(null);
+  const [inviteSuccess, setInviteSuccess] = useState<string | null>(null);
+
+  const handleInvite = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!inviteEmail.includes("@")) {
+      setInviteError("メールアドレスを正しく入力してください");
+      return;
+    }
+    if (!session?.access_token) {
+      setInviteError("ログインが必要です");
+      return;
+    }
+    setInviteLoading(true);
+    setInviteError(null);
+    setInviteSuccess(null);
+    try {
+      await inviteTeamMember(inviteEmail, session.access_token, {
+        inviterName: user?.email ?? undefined,
+      });
+      setInviteSuccess(`${inviteEmail} に招待メールを送信しました`);
+      setInviteEmail("");
+    } catch (err) {
+      setInviteError(err instanceof Error ? err.message : "招待の送信に失敗しました");
+    } finally {
+      setInviteLoading(false);
+    }
+  };
 
   // Googleカレンダー連携
   const [googleConnected, setGoogleConnected] = useState(() => readGoogleProviderToken() !== null);
@@ -129,6 +162,47 @@ export function AccountSettingsPage() {
             <p className="mt-0.5 font-mono text-xs text-slate-500">{user?.id ?? "—"}</p>
           </div>
         </div>
+      </section>
+
+      {/* チームメンバー招待（AC③、票construction_pm_mvp-1g7） */}
+      <section className="mb-8 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+        <h2 className="mb-2 text-base font-semibold text-slate-800">チームメンバー</h2>
+        <p className="mb-4 text-sm text-slate-500">
+          現場メンバーをメールアドレスで招待します。招待リンク付きのメールが送信されます。
+        </p>
+        <form onSubmit={(e) => { void handleInvite(e); }} className="flex flex-wrap items-end gap-3">
+          <div className="flex-1 min-w-[200px]">
+            <label htmlFor="invite-email" className="mb-1 block text-sm font-medium text-slate-700">
+              招待するメールアドレス
+            </label>
+            <input
+              id="invite-email"
+              type="email"
+              required
+              value={inviteEmail}
+              onChange={(e) => setInviteEmail(e.target.value)}
+              placeholder="member@example.com"
+              className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200"
+            />
+          </div>
+          <button
+            type="submit"
+            disabled={inviteLoading}
+            className="rounded-lg bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-brand-700 disabled:opacity-60"
+          >
+            {inviteLoading ? "送信中..." : "招待する"}
+          </button>
+        </form>
+        {inviteError && (
+          <p className="mt-3 text-sm text-red-700" role="alert">
+            {inviteError}
+          </p>
+        )}
+        {inviteSuccess && (
+          <p className="mt-3 text-sm text-brand-700" role="status">
+            {inviteSuccess}
+          </p>
+        )}
       </section>
 
       {/* Googleカレンダー連携 */}

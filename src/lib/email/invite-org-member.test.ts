@@ -38,6 +38,7 @@ describe("inviteOrgMember", () => {
       organizationName: "株式会社ラポルタ",
       inviterName: "新山",
     });
+    expect(deps.generateInviteLink).toHaveBeenCalledWith("member@example.com", "org-1");
   });
 
   it("admin ロールでも招待できる", async () => {

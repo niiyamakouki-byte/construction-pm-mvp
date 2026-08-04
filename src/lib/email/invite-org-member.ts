@@ -31,8 +31,12 @@ export type InviteOrgMemberInput = {
 export type InviteOrgMemberDeps = {
   /** 依頼者（認証済みユーザー）の組織所属・ロールを引く */
   lookupRequesterMembership: (requesterId: string) => Promise<OrgMembership | null>;
-  /** 招待リンクを発行する（実装は Supabase Admin API を想定） */
-  generateInviteLink: (email: string) => Promise<InviteLinkResult>;
+  /**
+   * 招待リンクを発行する（実装は Supabase Admin API を想定）。
+   * organizationId は招待先organizationをリンクのuser_metadataへ埋め込むために渡す
+   * （AC③: 招待経由サインアップ時にorganization_membersへ自動追加するため）。
+   */
+  generateInviteLink: (email: string, organizationId: string) => Promise<InviteLinkResult>;
   sendUserInvitationImpl?: typeof sendUserInvitation;
 };
 
@@ -54,7 +58,7 @@ export async function inviteOrgMember(
     return { ok: false, status: 403, error: "招待権限がありません（owner/adminのみ）" };
   }
 
-  const link = await deps.generateInviteLink(input.email);
+  const link = await deps.generateInviteLink(input.email, membership.organizationId);
   if (!link.ok) {
     return { ok: false, status: 502, error: link.error };
   }
