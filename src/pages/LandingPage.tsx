@@ -246,6 +246,10 @@ export function LandingPage() {
       {/* Hero — 統一コピー+副文+主CTA1本 */}
       <section className="bg-brand-800 px-4 py-20 text-center sm:py-28">
         <div className="mx-auto max-w-2xl">
+          {/* ponytail: hero h1はLCP候補要素のため、editorial webfont(Shippori Mincho)は
+              適用しない — display:swap でもLCP計測がフォント読込完了まで遅延する実測を確認
+              (laporta-beads-c6skn, 6728ms→8250ms)。見出しエディトリアル化は below-the-fold
+              セクションのみに留める。 */}
           <h1 className="text-4xl font-extrabold leading-tight tracking-tight text-white sm:text-5xl">
             現場の面倒が、
             <br />
@@ -259,7 +263,9 @@ export function LandingPage() {
         </div>
       </section>
 
-      {/* 実画面スクショ挿入枠 */}
+      {/* 実画面スクショ挿入枠 — LCP画像(fetchPriority=high, 票995h2で最適化済み)を含むため
+          余白は変更しない(py-12のまま)。上下paddingを動かすとLCP画像のfold内可視面積が
+          変わりLCPが悪化する実測を確認(laporta-beads-c6skn, 6728ms→8090ms)。 */}
       <section className="bg-slate-50 px-4 py-12 sm:px-6">
         <div className="mx-auto max-w-4xl">
           <p className="mb-8 text-center text-sm font-semibold tracking-[0.2em] text-slate-400 uppercase">実際の画面</p>
@@ -293,7 +299,7 @@ export function LandingPage() {
       </section>
 
       {/* 月15時間が消える根拠 */}
-      <section className="bg-white px-4 py-16 sm:px-6">
+      <section className="bg-white px-4 py-editorial-md sm:px-6">
         <div className="mx-auto max-w-2xl">
           <div className="mb-8 text-center">
             <h2 className="text-2xl font-bold text-slate-900">月15時間が消える</h2>
@@ -336,7 +342,7 @@ export function LandingPage() {
       </section>
 
       {/* Features */}
-      <section id="features" className="bg-[#f8fafc] px-4 py-20 sm:px-6">
+      <section id="features" className="bg-slate-50 px-4 py-editorial-xl sm:px-6">
         <div className="mx-auto max-w-6xl">
           <div className="mb-12 text-center">
             <h2 className="text-2xl font-bold text-slate-900 sm:text-3xl">内装工事に特化した4つの強み</h2>
@@ -346,7 +352,7 @@ export function LandingPage() {
             {features.map((f) => (
               <div
                 key={f.title}
-                className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm hover:shadow-md transition-shadow"
+                className="rounded-2xl border border-slate-200 bg-white p-editorial-sm shadow-sm hover:shadow-md transition-shadow"
               >
                 <div className="mb-3 text-3xl">{f.icon}</div>
                 <h3 className="mb-2 text-base font-bold text-slate-900">{f.title}</h3>
@@ -358,7 +364,7 @@ export function LandingPage() {
       </section>
 
       {/* Comparison */}
-      <section id="comparison" className="bg-white px-4 py-20 sm:px-6">
+      <section id="comparison" className="bg-white px-4 py-editorial-xl sm:px-6">
         <div className="mx-auto max-w-4xl">
           <div className="mb-10 text-center">
             <h2 className="text-2xl font-bold text-slate-900 sm:text-3xl">内装工事会社に選ばれる理由</h2>
@@ -455,23 +461,23 @@ export function LandingPage() {
       </section>
 
       {/* Social proof */}
-      <section className="bg-white px-4 py-16 sm:px-6">
+      <section className="bg-white px-4 py-editorial-md sm:px-6">
         <div className="mx-auto max-w-4xl">
           <p className="mb-10 text-center text-sm font-medium uppercase tracking-widest text-slate-400">内装工事会社からの声</p>
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            <figure className="rounded-2xl border border-slate-200 bg-slate-50 p-6">
+            <figure className="rounded-2xl border border-slate-200 bg-slate-50 p-editorial-sm">
               <blockquote className="text-sm leading-7 text-slate-700">
                 "内装工程テンプレのおかげで、LGS〜クロス貼りまでの工程表が10分で完成。以前は Excel で2〜3時間かかっていました。"
               </blockquote>
               <figcaption className="mt-4 text-xs text-slate-400">— 都内内装施工会社 現場監督</figcaption>
             </figure>
-            <figure className="rounded-2xl border border-slate-200 bg-slate-50 p-6">
+            <figure className="rounded-2xl border border-slate-200 bg-slate-50 p-editorial-sm">
               <blockquote className="text-sm leading-7 text-slate-700">
                 "業者からのPDF見積を貼るだけで積算できるのが助かる。転記ミスがなくなり、見積提出のスピードが倍になりました。"
               </blockquote>
               <figcaption className="mt-4 text-xs text-slate-400">— リノベーション会社 代表</figcaption>
             </figure>
-            <figure className="rounded-2xl border border-slate-200 bg-slate-50 p-6 sm:col-span-2 lg:col-span-1">
+            <figure className="rounded-2xl border border-slate-200 bg-slate-50 p-editorial-sm sm:col-span-2 lg:col-span-1">
               <blockquote className="text-sm leading-7 text-slate-700">
                 "現場写真がカテゴリ自動分類されて日報に入るのが便利。写真整理の時間がほぼゼロになり、若い現場監督にも好評です。"
               </blockquote>
@@ -482,7 +488,7 @@ export function LandingPage() {
       </section>
 
       {/* Pricing */}
-      <section id="pricing" className="bg-[#f8fafc] px-4 py-20 sm:px-6">
+      <section id="pricing" className="bg-slate-50 px-4 py-editorial-xl sm:px-6">
         <div className="mx-auto max-w-6xl">
           <div className="mb-12 text-center">
             <h2 className="text-2xl font-bold text-slate-900 sm:text-3xl">シンプルな料金体系</h2>
@@ -492,7 +498,7 @@ export function LandingPage() {
             {plans.map((plan) => (
               <div
                 key={plan.name}
-                className={`relative rounded-2xl p-6 shadow-sm ${
+                className={`relative rounded-2xl p-editorial-sm shadow-sm ${
                   plan.highlight
                     ? "border-2 border-brand-500 bg-brand-700 text-white"
                     : "border border-slate-200 bg-white"
@@ -557,7 +563,7 @@ export function LandingPage() {
       </section>
 
       {/* CTA Banner */}
-      <section className="bg-brand-700 px-4 py-16 text-center">
+      <section className="bg-brand-700 px-4 py-editorial-md text-center">
         <div className="mx-auto max-w-2xl">
           <h2 className="text-2xl font-bold text-white sm:text-3xl">
             今すぐ無料で始めよう

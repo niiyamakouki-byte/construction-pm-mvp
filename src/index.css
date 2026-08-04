@@ -23,6 +23,17 @@
   --color-sys-gray: #64748B;
   --color-sys-gray-bg: #F2F2F7;
   --color-sys-separator: rgba(60,60,67,0.12);
+
+  /* ─── 方向1「静けさ展開」第2弾 2026-08-04 (laporta-beads-c6skn) ───
+     LapoQuiz(lapoquiz commit 5e2cee1, AppTheme.Spacing)と同じ余白スケールの型。
+     LP(LandingPage.tsx)のセクション縦間隔・カード内paddingをここへ集約する。
+     sm=カード内padding(既存p-6と同値) / md=標準セクション(既存py-16と同値) /
+     lg=hero相当(既存py-20と同値、hero自体は390px foldテスト制約のため今回は変更しない) /
+     xl=主要セクション(やや広めに再設定、旧py-20から拡張)。 */
+  --spacing-editorial-sm: 1.5rem;
+  --spacing-editorial-md: 4rem;
+  --spacing-editorial-lg: 5rem;
+  --spacing-editorial-xl: 7rem;
 }
 
 /* ─── Design facelift 2026-07-28 (branch design/ui-facelift-20260728) ───

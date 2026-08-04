@@ -18,6 +18,7 @@ export default tseslint.config(
       ".vercel/",
       ".claude/",
       ".worktrees/",
+      ".codex-worktrees/",
       ".omc/",
       "test-results/",
       "tasks/",
