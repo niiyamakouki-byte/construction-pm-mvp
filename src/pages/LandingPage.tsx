@@ -1,3 +1,4 @@
+import { useState, type FormEvent } from "react";
 import { navigate } from "../hooks/useHashRouter.js";
 
 // 比較表データ: 内装業者が重視する観点でGenbaHub vs 汎用ツール(ANDPAD/kintoneなど)
@@ -87,6 +88,44 @@ function CellValue({ value }: { value: boolean | string }) {
   }
   // string value (e.g. price or "△")
   return <span className="text-sm font-medium text-slate-700">{value}</span>;
+}
+
+function HeroEmailCta() {
+  const [email, setEmail] = useState("");
+
+  const handleSubmit = (e: FormEvent) => {
+    // ponytail: type="email" required の native validation が空/不正形式を弾くため、
+    // ここに到達する時点で email は常に妥当な非空文字列
+    e.preventDefault();
+    navigate(`/signup?email=${encodeURIComponent(email.trim())}`);
+  };
+
+  return (
+    <form
+      onSubmit={handleSubmit}
+      className="mx-auto mt-8 flex max-w-md flex-col gap-3 sm:flex-row"
+    >
+      <label htmlFor="hero-email" className="sr-only">
+        メールアドレス
+      </label>
+      <input
+        id="hero-email"
+        type="email"
+        required
+        autoComplete="email"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        placeholder="メールアドレスを入力"
+        className="w-full rounded-xl border-0 px-4 py-4 text-base text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-accent-400 sm:flex-1"
+      />
+      <button
+        type="submit"
+        className="shrink-0 rounded-xl bg-accent-400 px-6 py-4 text-base font-bold text-brand-900 hover:bg-accent-500"
+      >
+        無料で始める
+      </button>
+    </form>
+  );
 }
 
 function LogoIcon() {
@@ -215,14 +254,7 @@ export function LandingPage() {
           <p className="mx-auto mt-6 max-w-lg text-lg text-brand-200 break-keep">
             内装工事会社のための現場管理SaaS。工程・見積・写真を1画面に集約。
           </p>
-          <div className="mt-8 flex justify-center">
-            <button
-              onClick={() => navigate("/signup")}
-              className="rounded-xl bg-accent-400 px-10 py-4 text-base font-bold text-brand-900 shadow-lg hover:bg-accent-500"
-            >
-              14日間 無料で始める
-            </button>
-          </div>
+          <HeroEmailCta />
           <p className="mt-4 text-sm text-brand-300">クレジットカード不要 · 14日間無料 · 即日利用開始</p>
         </div>
       </section>

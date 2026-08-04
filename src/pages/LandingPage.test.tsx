@@ -1,6 +1,8 @@
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, render, screen, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { LandingPage } from "./LandingPage.js";
+import { navigate } from "../hooks/useHashRouter.js";
 
 vi.mock("../hooks/useHashRouter.js", () => ({
   navigate: vi.fn(),
@@ -40,5 +42,22 @@ describe("LandingPage 比較表セクション", () => {
     render(<LandingPage />);
     const disclaimers = screen.getAllByText(/各社公開情報の概算/);
     expect(disclaimers.length).toBeGreaterThan(0);
+  });
+});
+
+describe("LandingPage ヒーロー登録距離ゼロCTA", () => {
+  afterEach(() => {
+    cleanup();
+    vi.clearAllMocks();
+  });
+
+  it("メール入力→送信で /signup?email=... へ遷移する", async () => {
+    const user = userEvent.setup();
+    render(<LandingPage />);
+    const emailInput = screen.getByLabelText("メールアドレス");
+    const form = emailInput.closest("form") as HTMLFormElement;
+    await user.type(emailInput, "taro@example.com");
+    await user.click(within(form).getByRole("button", { name: "無料で始める" }));
+    expect(navigate).toHaveBeenCalledWith("/signup?email=taro%40example.com");
   });
 });

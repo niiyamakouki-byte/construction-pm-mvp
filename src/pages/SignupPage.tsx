@@ -4,8 +4,14 @@ import { navigate } from "../hooks/useHashRouter.js";
 import { trackEvent } from "../lib/analytics.js";
 import { trackFunnelStep } from "../lib/signup-funnel.js";
 
+function getPrefillEmail(): string {
+  const queryIndex = window.location.hash.indexOf("?");
+  if (queryIndex === -1) return "";
+  return new URLSearchParams(window.location.hash.slice(queryIndex + 1)).get("email") ?? "";
+}
+
 export function SignupPage() {
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState(getPrefillEmail);
   const [password, setPassword] = useState("");
   const [passwordConfirm, setPasswordConfirm] = useState("");
   const [companyName, setCompanyName] = useState("");
@@ -17,7 +23,7 @@ export function SignupPage() {
   const abandonedRef = useRef(false);
   const draftRef = useRef({
     companyName: "",
-    email: "",
+    email,
     password: "",
     passwordConfirm: "",
   });

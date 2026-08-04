@@ -88,6 +88,7 @@ import { PersonaProvider, usePersona } from "./contexts/PersonaContext.js";
 import { useHashRoute, navigate } from "./hooks/useHashRouter.js";
 import { useTheme } from "./hooks/useTheme.js";
 import { ThemeToggle } from "./components/ThemeToggle.js";
+import { AiActivityIndicator } from "./components/AiActivityIndicator.js";
 import { MobileNav } from "./components/MobileNav.js";
 // Navigation import removed – sidebar is rendered inline in AppShell
 // 票995h2: NotificationBanner/AssistantChatPanelは認証後のAppShell内でしか描画されないが、
@@ -535,7 +536,7 @@ function AppShell() {
     return null;
   }
   if (route === "/login") return <Suspense fallback={pageFallback}><LoginPage /></Suspense>;
-  if (route === "/signup") return <Suspense fallback={pageFallback}><SignupPage /></Suspense>;
+  if (route === "/signup" || route.startsWith("/signup?")) return <Suspense fallback={pageFallback}><SignupPage /></Suspense>;
   if (legalMatch) {
     const section = legalMatch[1] as "tokushoho" | "privacy" | "tos" | undefined;
     return <Suspense fallback={pageFallback}><LegalPages section={section} /></Suspense>;
@@ -981,6 +982,7 @@ function AppShell() {
               </button>
             </div>
             <div className="flex items-center gap-2">
+              <AiActivityIndicator />
               <ThemeToggle theme={theme} onToggle={cycleTheme} />
               <button
                 type="button"
