@@ -162,7 +162,7 @@ describe("GanttPage", () => {
     expect(screen.getAllByText("配線工事").length).toBeGreaterThan(0);
   });
 
-  it("laporta-beads-lzurb: 本日納品の発注が既存サマリ帯に「今日納品」件数として統合表示される(遅延と同居、新規の別帯は出ない)", async () => {
+  it("COMPASSクローン: 本日納品・遅延と日次サマリーを同じ薄型ヘッダーに表示する", async () => {
     const now = "2025-01-01T00:00:00.000Z";
     const today = toLocalDateString(new Date());
     mockProjectRepository.findAll.mockResolvedValue([
@@ -228,12 +228,11 @@ describe("GanttPage", () => {
     render(<GanttPage initialProjectId="p1" />);
 
     expect(await screen.findByRole("heading", { name: "南青山ビル改修" })).toBeDefined();
-    // 既存の遅延・次工程サマリ帯に「今日納品」が同居する(新設の別帯ではない)
+    // COMPASS型の薄型ヘッダー内で、発注・遅延と日次サマリーを同時に確認できる
     expect(await screen.findByText("今日納品 1件")).toBeDefined();
     expect(screen.getByText("遅延 2件")).toBeDefined();
-    // 票2下書きにあった旧「日次サマリ帯」新設パターン(進行中/今日開始/今日締切)は出ない
-    expect(screen.queryByText(/今日開始/)).toBeNull();
-    expect(screen.queryByText(/今日締切/)).toBeNull();
+    expect(screen.getByText(/今日開始/)).toBeDefined();
+    expect(screen.getByText(/今日締切/)).toBeDefined();
   });
 
   it("laporta-beads-z8ja5: ヘッダーの+工程追加ボタンが画面内にある間はFABを隠し、スクロールアウトしたら表示する", async () => {

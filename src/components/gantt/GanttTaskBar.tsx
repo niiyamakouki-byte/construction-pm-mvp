@@ -4,17 +4,16 @@ import type { ChartDateInfo, ConnectState, DragState, GanttTask, OrderDeliveryMa
 import { daysBetween, effectiveProgress, formatScheduleDate, statusColor, statusLabel } from "./utils.js";
 import { gantt } from "../../theme/index.js";
 
-/** 大項目ごとの色マッピング */
 const MAJOR_CATEGORY_COLORS: Record<string, string> = {
   仮設工事: "#94a3b8",
   解体工事: "#f87171",
   "躯体・下地": "#fb923c",
   床工事: "#fbbf24",
-  "壁・天井仕上げ": "#a3e635",
+  "壁・天井仕上げ": "#84a98c",
   建具工事: "#34d399",
   電気工事: "#38bdf8",
   給排水工事: "#818cf8",
-  "空調・換気": "#c084fc",
+  "空調・換気": "#8b9dc3",
   造作家具: "#f472b6",
   塗装工事: "#2dd4bf",
   クリーニング: "#bfd3ba",
@@ -36,6 +35,7 @@ type GanttTaskBarProps = {
   /** 票g0zed: このタスクに紐づく発注の納期マーカー（該当なしなら空配列/undefined） */
   deliveryMarkers?: OrderDeliveryMarker[];
   onTaskDragStart: (task: GanttTask, event: React.PointerEvent<HTMLDivElement>) => void;
+  onTaskResizeFromStart?: (task: GanttTask, event: React.PointerEvent<HTMLDivElement>) => void;
   onTaskResizeStart: (task: GanttTask, event: React.PointerEvent<HTMLDivElement>) => void;
   onOpenTaskDetail: (task: GanttTask) => void;
   onSetConnectState: (state: ConnectState | null) => void;
@@ -61,6 +61,7 @@ export function GanttTaskBar({
   connectState,
   deliveryMarkers = [],
   onTaskDragStart,
+  onTaskResizeFromStart,
   onTaskResizeStart,
   onOpenTaskDetail,
   onSetConnectState,
@@ -95,17 +96,17 @@ export function GanttTaskBar({
     ghostDuration !== null ? Math.max(ghostDuration * dayWidth, dayWidth) : null;
 
   return (
-    <div className="group relative border-b border-slate-100 bg-white" style={{ height: rowHeight }}>
+    <div className="group relative border-b border-[#e3e9f1] bg-white" style={{ height: rowHeight }}>
       {/* Cascade ghost bar — shown when a predecessor is being dragged */}
       {ghostLeft !== null && ghostWidth !== null && (
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute rounded-full opacity-50"
+          className="pointer-events-none absolute rounded-md opacity-50"
           style={{
             left: ghostLeft + 4,
-            top: 14,
+            top: 7,
             width: Math.max(ghostWidth - 8, 24),
-            height: rowHeight - 28,
+            height: rowHeight - 14,
             backgroundColor: color,
             border: "2px dashed rgba(0,0,0,0.3)",
           }}
@@ -116,10 +117,14 @@ export function GanttTaskBar({
         return (
           <div
             key={date.date}
-            className={`absolute top-0 h-full border-r border-slate-100/70 ${
-              date.isToday ? "bg-red-50/55" : "bg-slate-50/80"
-            }`}
-            style={{ left: offset * dayWidth, width: dayWidth }}
+            className={`absolute top-0 h-full border-r border-[#e3e9f1] ${date.isToday ? "bg-[#fff9e8]" : "bg-[#f8fafc]"}`}
+            style={{
+              left: offset * dayWidth,
+              width: dayWidth,
+              backgroundImage: date.isWeekend && !date.isToday
+                ? "repeating-linear-gradient(135deg, transparent 0 5px, rgba(148,163,184,.16) 5px 7px)"
+                : undefined,
+            }}
           />
         );
       })}
@@ -136,7 +141,7 @@ export function GanttTaskBar({
         >
           <span
             aria-label={`発注納期: ${marker.contractorName} (${marker.deliveryDate})`}
-            className="block h-2 w-2 rounded-full border border-white bg-brand-600 shadow-sm"
+            className="block h-2 w-2 rounded-full border border-white bg-[#2855a6] shadow-sm"
           />
         </div>
       ))}
@@ -147,14 +152,14 @@ export function GanttTaskBar({
         data-task-id={task.id}
         data-tour="gantt-task-bar"
         aria-label={`${task.name} ${statusLabel[task.status]} ${progress}%${overdue ? " 期限超過" : ""}`}
-        className={`group/bar absolute rounded-full border border-white/70 shadow-sm transition-transform ${
+        className={`group/bar absolute rounded-md border border-white/80 shadow-[0_1px_2px_rgba(15,38,71,0.18)] transition-transform ${
           isDragging ? "cursor-grabbing opacity-90" : "cursor-pointer active:scale-[0.99]"
         } ${connectMode ? "ring-2 ring-violet-400 ring-offset-1" : ""}`}
         style={{
           left: barLeft + 4,
-          top: 14,
+          top: 7,
           width: Math.max(barWidth - 8, 24),
-          height: rowHeight - 28,
+          height: rowHeight - 14,
           // P2: 未完了部分を透過色で薄く見せて、進捗塗り分けを明確化
           backgroundColor: `${color}80`,
           touchAction: "none",
@@ -198,7 +203,7 @@ export function GanttTaskBar({
         {/* P2: 進捗塗り分け（左から progress% を濃色でベタ塗り） */}
         <div
           data-testid="progress-fill"
-          className="absolute inset-y-0 left-0 rounded-full"
+          className="absolute inset-y-0 left-0 rounded-l-md"
           style={{ width: `${progress}%`, backgroundColor: color }}
         />
         {/* [compass] 4o9m2: 遅延タスクは色だけでなく斜線ハッチングでも異常を伝える（既存の期限切バッジ色=red-500を再利用、新規カラー導入なし） */}
@@ -206,7 +211,7 @@ export function GanttTaskBar({
           <div
             data-testid="overdue-hatch"
             aria-hidden="true"
-            className="pointer-events-none absolute inset-0 rounded-full"
+            className="pointer-events-none absolute inset-0 rounded-md"
             style={{
               backgroundImage:
                 "repeating-linear-gradient(45deg, rgba(239,68,68,0.35) 0px, rgba(239,68,68,0.35) 4px, transparent 4px, transparent 9px)",
@@ -241,7 +246,8 @@ export function GanttTaskBar({
           </div>
         </div>
         <div
-          className="absolute right-0 top-0 flex h-full w-5 items-center justify-center rounded-r-full bg-black/10"
+          data-testid="resize-end-handle"
+          className="absolute right-0 top-0 flex h-full w-3 cursor-ew-resize items-center justify-center rounded-r-md bg-black/10 opacity-0 transition-opacity group-hover/bar:opacity-100"
           onPointerDown={(event) => {
             pointerStartXRef.current = null;
             onTaskResizeStart(task, event);
@@ -251,6 +257,19 @@ export function GanttTaskBar({
           <div className="h-4 w-1 rounded-full bg-white/70" />
         </div>
       </div>
+      <div
+        data-testid="resize-start-handle"
+        aria-hidden="true"
+        className="absolute z-10 flex w-3 cursor-ew-resize items-center justify-center rounded-l-md bg-black/10 opacity-0 transition-opacity group-hover:opacity-100"
+        style={{ left: barLeft + 4, top: 7, height: rowHeight - 14, touchAction: "none" }}
+        onPointerDown={(event) => {
+          event.stopPropagation();
+          pointerStartXRef.current = null;
+          onTaskResizeFromStart?.(task, event);
+        }}
+      >
+        <div className="h-3 w-px bg-white/80" />
+      </div>
       {/* P2.5: 依存関係ドラッグ用ハンドル（バー右端の外側、ホバーで出現） */}
       <button
         type="button"
@@ -258,7 +277,7 @@ export function GanttTaskBar({
         className="absolute z-10 h-3 w-3 rounded-full border border-white bg-slate-400 opacity-0 shadow-sm transition-opacity hover:bg-slate-500 focus-visible:opacity-100 group-hover:opacity-100"
         style={{
           left: barLeft + 4 + Math.max(barWidth - 8, 24) + 2,
-          top: 14 + (rowHeight - 28) / 2 - 6,
+          top: 7 + (rowHeight - 14) / 2 - 6,
           touchAction: "none",
         }}
         onPointerDown={(event) => {
@@ -311,7 +330,7 @@ export function GanttTaskLabel({
 
   return (
     <div
-      className="flex w-full items-center gap-1 border-b border-slate-100 px-3 py-2"
+      className="group/label relative grid w-full grid-cols-[20px_minmax(0,1fr)_30px_42px] items-center gap-1 border-b border-[#e3e9f1] px-2 md:grid-cols-[20px_minmax(0,1fr)_48px_66px] md:gap-2"
       style={{ minHeight: rowHeight }}
     >
       {onToggleDone && (
@@ -322,25 +341,26 @@ export function GanttTaskLabel({
           checked={task.status === "done"}
           onChange={() => onToggleDone(task)}
           onClick={(event) => event.stopPropagation()}
-          className="h-4 w-4 shrink-0 rounded border-slate-300 accent-brand-500"
+          className="h-4 w-4 shrink-0 rounded-sm border-[#b7c3d3] accent-[#6ea8ff]"
         />
       )}
       <button
         type="button"
-        className="min-w-0 flex-1 text-left transition-colors hover:bg-slate-50/80"
+        className="contents text-left"
         onClick={() => {
           if (!connectMode) onOpenTaskDetail(task);
         }}
       >
-        <div className="flex items-center gap-1.5">
-          {task.majorCategory && (
+        <div className="flex min-w-0 items-center gap-1.5">
+          {task.majorCategory ? (
             <span
-              className="shrink-0 rounded-full px-1.5 py-0.5 text-[9px] font-bold text-white"
+              data-testid="major-category-badge"
+              className="shrink-0 rounded-full px-1.5 py-0.5 text-[8px] font-bold text-white"
               style={{ backgroundColor: MAJOR_CATEGORY_COLORS[task.majorCategory] ?? "#94a3b8" }}
             >
               {task.majorCategory}
             </span>
-          )}
+          ) : null}
           {/* P2.5: 先行未完了警告 */}
           {hasDependencyWarning && (
             <span
@@ -351,23 +371,28 @@ export function GanttTaskLabel({
             </span>
           )}
           {/* P2: 完了タスクは名前をグレー化 */}
-          <p className={`truncate text-sm font-semibold ${task.status === "done" ? "text-slate-400 line-through" : "text-slate-900"}`}>
+          <p className={`truncate text-[12px] font-medium ${task.status === "done" ? "text-[#a2adbb] line-through" : "text-[#26364d]"}`}>
             {task.name}
           </p>
         </div>
-        <p className="mt-1 truncate text-xs text-slate-500">{task.contractorName ?? "業者未設定"}</p>
-        <div className="mt-2 flex items-center gap-2">
-          <div className="h-1.5 flex-1 rounded-full bg-slate-200">
+        <span className="mx-auto flex h-6 w-6 items-center justify-center rounded-full bg-[#edf1f6] text-[10px] font-semibold text-[#65748a]" title={task.contractorName ?? "担当未設定"}>
+          {task.contractorName?.trim().slice(0, 1) ?? "-"}
+        </span>
+        <div className="flex items-center gap-1.5">
+          <div className="hidden h-1 flex-1 rounded-full bg-[#dce3ec] md:block">
             <div
               className="h-full rounded-full"
-              style={{ width: `${effectiveProgress(task)}%`, backgroundColor: statusColor[task.status] }}
+              style={{
+                width: `${effectiveProgress(task)}%`,
+                backgroundColor: task.status === "done" ? "#94a3b8" : statusColor[task.status],
+              }}
             />
           </div>
-          <span className="shrink-0 text-[11px] font-semibold tabular-nums text-slate-500">{effectiveProgress(task)}%</span>
+          <span className="w-7 shrink-0 text-right text-[10px] font-semibold tabular-nums text-[#65748a]">{effectiveProgress(task)}%</span>
         </div>
       </button>
       {onMoveTask && (
-        <div className="flex shrink-0 flex-col">
+        <div className="absolute right-0 top-0 hidden h-full shrink-0 flex-col justify-center bg-white px-1 group-hover/label:flex">
           <button
             type="button"
             aria-label="上へ移動"

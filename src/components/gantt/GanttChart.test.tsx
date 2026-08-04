@@ -43,6 +43,41 @@ const task: GanttTask = {
 };
 
 describe("GanttChart", () => {
+  it("COMPASS型の固定3列ヘッダーとチャート内ズーム操作を表示する", () => {
+    const onZoomIn = vi.fn();
+    const onZoomOut = vi.fn();
+    const { getByText, getByLabelText } = render(
+      <GanttChart
+        ganttTasks={[task]}
+        visibleRows={[{ type: "task", task }]}
+        chartLayout={chartLayout}
+        dragState={null}
+        dragRef={{ current: null }}
+        connectMode={false}
+        connectState={null}
+        today="2025-01-03"
+        scrollRef={createRef<HTMLDivElement>()}
+        onTaskDragStart={vi.fn()}
+        onTaskResizeStart={vi.fn()}
+        onOpenTaskDetail={vi.fn()}
+        onOpenQuickAdd={vi.fn()}
+        onTogglePhase={vi.fn()}
+        onSetConnectState={vi.fn()}
+        onConnectTask={vi.fn()}
+        onConnectTasks={vi.fn()}
+        onZoomIn={onZoomIn}
+        onZoomOut={onZoomOut}
+      />,
+    );
+    expect(getByText("タスク名")).toBeTruthy();
+    expect(getByText("担当")).toBeTruthy();
+    expect(getByText("進捗")).toBeTruthy();
+    getByLabelText("拡大").click();
+    getByLabelText("縮小").click();
+    expect(onZoomIn).toHaveBeenCalledOnce();
+    expect(onZoomOut).toHaveBeenCalledOnce();
+  });
+
   it("sizes the timeline for every rendered date column", () => {
     const { container } = render(
       <GanttChart

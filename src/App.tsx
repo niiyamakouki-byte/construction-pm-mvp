@@ -1145,7 +1145,7 @@ function AppShell() {
           key={route}
           className="page-enter ios-main-with-sidebar assistant-fab-safe-content max-md:ml-0 px-4 py-5 sm:py-6"
         >
-          <div className="mx-auto max-w-5xl">
+          <div className={`mx-auto ${route === "/gantt" || route.startsWith("/gantt/") ? "max-w-none" : "max-w-5xl"}`}>
             <Suspense fallback={pageFallback}>
               {renderPage()}
             </Suspense>

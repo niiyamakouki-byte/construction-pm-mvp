@@ -93,7 +93,7 @@ import { EmptyState } from "../components/EmptyState.js";
 const MAX_CHART_DAYS = 240;
 const MIN_DAY_WIDTH = 8;
 const MAX_DAY_WIDTH = 60;
-const DEFAULT_DAY_WIDTH = 28;
+const DEFAULT_DAY_WIDTH = 30;
 
 const GANTT_PAPER_SIZE_KEY = "genbahub:gantt-paper-size";
 
@@ -123,7 +123,7 @@ const projectStatusLabel: Record<ProjectStatus, string> = {
 
 const projectStatusTone: Record<ProjectStatus, string> = {
   planning: "bg-gray-100 text-gray-500 ring-gray-200",
-  active: "bg-brand-50 text-brand-700 ring-brand-200",
+  active: "bg-[#eef4ff] text-[#2855a6] ring-[#cbdaf4]",
   completed: "bg-gray-200 text-gray-600 ring-gray-300",
   on_hold: "bg-amber-50 text-amber-700 ring-amber-200",
 };
@@ -781,6 +781,18 @@ function GanttPageContent({ initialProjectId = null, openMaster = false, initial
     () => selectedProjectTasks.filter((t) => t.status !== "done" && !!t.endDate && t.endDate < today).length,
     [selectedProjectTasks, today],
   );
+  const inProgressCount = useMemo(
+    () => selectedProjectTasks.filter((task) => task.status === "in_progress").length,
+    [selectedProjectTasks],
+  );
+  const todayStartCount = useMemo(
+    () => selectedProjectTasks.filter((task) => task.startDate === today).length,
+    [selectedProjectTasks, today],
+  );
+  const todayDueCount = useMemo(
+    () => selectedProjectTasks.filter((task) => task.endDate === today).length,
+    [selectedProjectTasks, today],
+  );
   const nextInProgressTask = useMemo(
     () => selectedProjectTasks.find((t) => t.status === "in_progress"),
     [selectedProjectTasks],
@@ -1128,7 +1140,14 @@ function GanttPageContent({ initialProjectId = null, openMaster = false, initial
     }
   }, [loadData, taskRepository]);
 
-  const { dragState, dragRef, cascadePreview, startTaskDrag, startTaskResize } = useGanttDrag({
+  const {
+    dragState,
+    dragRef,
+    cascadePreview,
+    startTaskDrag,
+    startTaskResize,
+    startTaskResizeFromStart,
+  } = useGanttDrag({
     ganttTasks,
     contractors,
     dayWidth,
@@ -1638,6 +1657,7 @@ function GanttPageContent({ initialProjectId = null, openMaster = false, initial
       scrollRef={scrollRef}
       phaseProgress={phaseProgress}
       onTaskDragStart={startTaskDrag}
+      onTaskResizeFromStart={startTaskResizeFromStart}
       onTaskResizeStart={startTaskResize}
       onOpenTaskDetail={openTaskDetail}
       onMoveTask={(task, direction) => void handleMoveTask(task, direction)}
@@ -1651,12 +1671,15 @@ function GanttPageContent({ initialProjectId = null, openMaster = false, initial
       onTimelineTouchStart={handleTimelineTouchStart}
       onTimelineTouchMove={handleTimelineTouchMove}
       onTimelineTouchEnd={handleTimelineTouchEnd}
+      onToday={scrollToToday}
+      onZoomOut={() => setDayWidth((value) => Math.max(MIN_DAY_WIDTH, value - 4))}
+      onZoomIn={() => setDayWidth((value) => Math.min(MAX_DAY_WIDTH, value + 4))}
       personalEventLabelsByDate={googleCalendar.connected ? personalEventLabelsByDate : undefined}
     />
   ) : null;
 
   return (
-    <div className="mx-auto max-w-[1320px] space-y-4 pb-24">
+    <div className="mx-auto max-w-none space-y-3 pb-24">
       {quickAdd ? (
         <QuickAddForm
           quickAdd={quickAdd}
@@ -2083,37 +2106,37 @@ function GanttPageContent({ initialProjectId = null, openMaster = false, initial
         </div>
       ) : null}
 
-      <section className="rounded-[28px] bg-[linear-gradient(145deg,#fff8ef_0%,#f7fbff_55%,#eef6ff_100%)] px-4 py-5 shadow-sm ring-1 ring-slate-200 sm:px-6">
-        <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
+      <section className="rounded-md border border-[#d9e2ef] bg-white px-4 py-3 shadow-[0_1px_3px_rgba(15,38,71,0.04)]">
+        <div className="flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
           <div className="min-w-0">
-            <p className="text-[11px] font-semibold tracking-[0.2em] text-slate-500">工程表</p>
-            <h1 className="mt-1 text-2xl font-bold text-slate-900">{selectedProject.name}</h1>
-            <div className="mt-3 flex flex-wrap items-center gap-2 text-sm text-slate-600">
-              <span className={`rounded-full px-3 py-1 text-xs font-semibold ring-1 ${projectStatusTone[selectedProject.status]}`}>
+            <h1 className="text-[18px] font-bold leading-6 text-[#172238]">{selectedProject.name}</h1>
+            <div className="mt-1 flex flex-wrap items-center gap-x-2 text-[11px] text-[#65748a]">
+              <span className={`rounded px-1.5 py-0.5 text-[10px] font-semibold ring-1 ${projectStatusTone[selectedProject.status]}`}>
                 {projectStatusLabel[selectedProject.status]}
               </span>
-              <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-slate-600 ring-1 ring-slate-200">
-                {selectedProjectPeriod}
-              </span>
-              <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-slate-600 ring-1 ring-slate-200">
-                {selectedProjectTasks.length}件
-              </span>
+              <span>{selectedProjectPeriod}</span>
+            </div>
+            <div className="mt-2 flex flex-wrap items-center gap-x-2 text-[11px] font-medium tabular-nums text-[#40516b]" aria-label="工程サマリー">
+              <span>進行中 {inProgressCount}件</span><span className="text-[#c4ccd7]">|</span>
+              <span>今日開始 {todayStartCount}件</span><span className="text-[#c4ccd7]">|</span>
+              <span>今日締切 {todayDueCount}件</span><span className="text-[#c4ccd7]">|</span>
+              <span>表示中 {filteredProjectTasks.length}アイテム</span>
             </div>
           </div>
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2 xl:justify-end">
             {/* 遅延・今日納品・次工程サマリ(票lzurb: 新設帯ではなく既存帯へ統合) */}
             {todayDeliveryCount > 0 ? (
-              <span className="rounded-full bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700 ring-1 ring-blue-200">
+              <span className="rounded-full bg-blue-50 px-3 py-1.5 text-[11px] font-semibold text-blue-700 ring-1 ring-blue-200">
                 今日納品 {todayDeliveryCount}件
               </span>
             ) : null}
             {delayedCount > 0 ? (
-              <span className="rounded-full bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-700 ring-1 ring-red-200">
+              <span className="rounded-full bg-red-50 px-3 py-1.5 text-[11px] font-semibold text-red-700 ring-1 ring-red-200">
                 遅延 {delayedCount}件
               </span>
             ) : null}
             {nextInProgressTask ? (
-              <span className="max-w-[160px] truncate rounded-full bg-[#EDF3EC] px-3 py-1.5 text-xs font-semibold text-[#346538]" title={nextInProgressTask.name}>
+              <span className="max-w-[160px] truncate rounded-full bg-[#eef4ff] px-3 py-1.5 text-[11px] font-semibold text-[#2855a6]" title={nextInProgressTask.name}>
                 次: {nextInProgressTask.name}
               </span>
             ) : null}
@@ -2124,7 +2147,7 @@ function GanttPageContent({ initialProjectId = null, openMaster = false, initial
               data-tour="add-task-btn"
               type="button"
               onClick={() => openQuickAdd(selectedProject.id, selectedProject.name)}
-              className="inline-flex items-center gap-1.5 rounded-md bg-[#111111] px-4 py-2.5 text-sm font-semibold text-white transition-all hover:bg-[#333] active:scale-[0.98]"
+              className="inline-flex h-9 items-center gap-1.5 rounded-full bg-[#2855a6] px-4 text-xs font-semibold text-white transition-colors hover:bg-[#21498f] active:scale-[0.98]"
             >
               <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5} aria-hidden="true">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
@@ -2136,9 +2159,9 @@ function GanttPageContent({ initialProjectId = null, openMaster = false, initial
             <button
               type="button"
               onClick={() => setShowMilestones((current) => !current)}
-              className={`rounded-md px-3 py-2.5 text-sm font-semibold transition-colors ${
+              className={`h-9 rounded-full px-3 text-xs font-semibold transition-colors ${
                 showMilestones
-                  ? "bg-brand-700 text-white"
+                  ? "bg-[#2855a6] text-white"
                   : "bg-white text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50"
               }`}
             >
@@ -2147,7 +2170,7 @@ function GanttPageContent({ initialProjectId = null, openMaster = false, initial
             <button
               type="button"
               onClick={() => setShowChanges((current) => !current)}
-              className={`rounded-md px-3 py-2.5 text-sm font-semibold transition-colors ${
+              className={`h-9 rounded-full px-3 text-xs font-semibold transition-colors ${
                 showChanges
                   ? "bg-amber-500 text-white"
                   : "bg-white text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50"
@@ -2161,7 +2184,7 @@ function GanttPageContent({ initialProjectId = null, openMaster = false, initial
                 onClick={() => void handleUndo()}
                 disabled={undoing}
                 aria-label="直前の変更を元に戻す"
-                className="flex h-10 w-10 items-center justify-center rounded-md bg-white text-slate-600 ring-1 ring-slate-200 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+                className="flex h-9 w-9 items-center justify-center rounded-full bg-white text-slate-600 ring-1 ring-slate-200 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 ↩
               </button>
@@ -2170,14 +2193,14 @@ function GanttPageContent({ initialProjectId = null, openMaster = false, initial
             <button
               type="button"
               onClick={scrollToToday}
-              className="rounded-md bg-white px-3 py-2.5 text-sm font-semibold text-slate-600 ring-1 ring-slate-200 transition-colors hover:bg-slate-50"
+              className="h-9 rounded-full bg-white px-3 text-xs font-semibold text-slate-600 ring-1 ring-slate-200 transition-colors hover:bg-slate-50"
             >
               今日
             </button>
 
             {/* 編集メニュー */}
             <details className="group relative">
-              <summary className="list-none cursor-pointer rounded-md bg-white px-3 py-2.5 text-sm font-semibold text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50 [&::-webkit-details-marker]:hidden">
+              <summary className="flex h-9 list-none cursor-pointer items-center rounded-full bg-white px-3 text-xs font-semibold text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50 [&::-webkit-details-marker]:hidden">
                 編集
               </summary>
               <div className="absolute right-0 z-30 mt-1 w-44 rounded-xl border border-slate-200 bg-white p-1.5 shadow-lg">
@@ -2224,7 +2247,7 @@ function GanttPageContent({ initialProjectId = null, openMaster = false, initial
 
             {/* 出力メニュー */}
             <details className="group relative">
-              <summary data-tour="gantt-output-menu" className="list-none cursor-pointer rounded-md bg-white px-3 py-2.5 text-sm font-semibold text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50 [&::-webkit-details-marker]:hidden">
+              <summary data-tour="gantt-output-menu" className="flex h-9 list-none cursor-pointer items-center rounded-full bg-white px-3 text-xs font-semibold text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50 [&::-webkit-details-marker]:hidden">
                 出力
               </summary>
               <div className="absolute right-0 z-30 mt-1 w-44 rounded-xl border border-slate-200 bg-white p-1.5 shadow-lg">
@@ -2252,7 +2275,7 @@ function GanttPageContent({ initialProjectId = null, openMaster = false, initial
 
             {/* 分析メニュー */}
             <details className="group relative">
-              <summary data-tour="gantt-analysis-menu" className="list-none cursor-pointer rounded-md bg-white px-3 py-2.5 text-sm font-semibold text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50 [&::-webkit-details-marker]:hidden">
+              <summary data-tour="gantt-analysis-menu" className="flex h-9 list-none cursor-pointer items-center rounded-full bg-white px-3 text-xs font-semibold text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50 [&::-webkit-details-marker]:hidden">
                 分析
               </summary>
               <div className="absolute right-0 z-30 mt-1 w-44 rounded-xl border border-slate-200 bg-white p-1.5 shadow-lg">
@@ -2292,8 +2315,8 @@ function GanttPageContent({ initialProjectId = null, openMaster = false, initial
           </div>
         </div>
 
-        {showMilestones || showChanges ? (
-          <div className="mt-4 grid gap-3 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+        {showChanges ? (
+          <div className="mt-3 grid gap-3 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
             <div className="rounded-2xl bg-white/90 px-4 py-4 ring-1 ring-slate-200">
               <div className="flex items-center justify-between gap-3">
                 <div>
@@ -2384,7 +2407,7 @@ function GanttPageContent({ initialProjectId = null, openMaster = false, initial
                   onClick={() => handleProjectSelect(project.id)}
                   className={`rounded-full px-4 py-2 text-sm font-semibold transition-colors ${
                     active
-                      ? "bg-brand-700 text-white"
+                      ? "bg-[#2855a6] text-white"
                       : "bg-white text-slate-600 ring-1 ring-slate-200"
                   }`}
                 >
@@ -2468,7 +2491,7 @@ function GanttPageContent({ initialProjectId = null, openMaster = false, initial
                 }
                 className={`rounded-full px-3 py-1.5 text-xs font-semibold transition-colors ${
                   on
-                    ? "bg-brand-600 text-white shadow-sm"
+                    ? "bg-[#2855a6] text-white shadow-sm"
                     : "bg-white text-slate-400 ring-1 ring-slate-200"
                 }`}
               >
@@ -2650,7 +2673,7 @@ function GanttPageContent({ initialProjectId = null, openMaster = false, initial
         onClick={() => openQuickAdd(selectedProject.id, selectedProject.name)}
         aria-hidden={!showAddTaskFab}
         tabIndex={showAddTaskFab ? 0 : -1}
-        className={`safe-bottom fixed bottom-20 right-4 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-brand-600 text-3xl text-white shadow-[0_16px_30px_rgba(37,99,235,0.35)] transition-[opacity,transform] duration-200 ease-out md:bottom-6 ${
+        className={`safe-bottom fixed bottom-20 right-4 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-[#2855a6] text-3xl text-white shadow-[0_16px_30px_rgba(37,99,235,0.35)] transition-[opacity,transform] duration-200 ease-out md:bottom-6 ${
           showAddTaskFab ? "opacity-100 scale-100" : "pointer-events-none opacity-0 scale-90"
         }`}
         aria-label="新しいタスクを追加"

@@ -120,7 +120,7 @@ test("② 今日ボタンを押すと今日の列を中心にタイムライン�
 
   await page.screenshot({ path: path.join(screenshotsDir, "03-scrolled-away.png") });
 
-  await page.getByRole("button", { name: "今日", exact: true }).click();
+  await page.getByRole("button", { name: "今日", exact: true }).first().click();
 
   await expect(async () => {
     const left = await scrollContainer.evaluate((el) => el.scrollLeft);

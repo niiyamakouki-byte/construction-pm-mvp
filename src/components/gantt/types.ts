@@ -26,7 +26,7 @@ export type PhaseGroup = {
 
 export type DragState = {
   taskId: string;
-  type: "move" | "resize";
+  type: "move" | "resize-start" | "resize-end";
   startX: number;
   originalStartDate: string;
   originalEndDate: string;

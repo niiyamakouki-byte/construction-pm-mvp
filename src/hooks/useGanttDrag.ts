@@ -112,7 +112,15 @@ export function useGanttDrag({
   const startTaskResize = useCallback(
     (task: GanttTask, event: DragStartPointerEvent) => {
       event.stopPropagation();
-      startDrag(task, "resize", event);
+      startDrag(task, "resize-end", event);
+    },
+    [startDrag],
+  );
+
+  const startTaskResizeFromStart = useCallback(
+    (task: GanttTask, event: DragStartPointerEvent) => {
+      event.stopPropagation();
+      startDrag(task, "resize-start", event);
     },
     [startDrag],
   );
@@ -136,15 +144,18 @@ export function useGanttDrag({
       const deltaDays = Math.round((event.clientX - drag.startX) / dayWidth);
       const draggedTask = ganttTasks.find((task) => task.id === drag.taskId);
 
-      const previewStartDate =
-        drag.type === "move" && draggedTask
-          ? addDaysBySchedule(
-            drag.originalStartDate,
-            deltaDays,
-            draggedTask.projectIncludesWeekends,
-            draggedTask.includeWeekends,
-          )
-          : drag.originalStartDate;
+      const previewStartDate = (() => {
+        if (!draggedTask || drag.type === "resize-end") return drag.originalStartDate;
+        const nextStart = addDaysBySchedule(
+          drag.originalStartDate,
+          deltaDays,
+          draggedTask.projectIncludesWeekends,
+          draggedTask.includeWeekends,
+        );
+        return drag.type === "resize-start" && nextStart > drag.originalEndDate
+          ? drag.originalEndDate
+          : nextStart;
+      })();
       const previewEndDate = (() => {
         if (drag.type === "move") {
           return draggedTask
@@ -156,6 +167,7 @@ export function useGanttDrag({
           )
           : drag.originalEndDate;
         }
+        if (drag.type === "resize-start") return drag.originalEndDate;
         const originalDuration = daysBetween(
           drag.originalStartDate,
           drag.originalEndDate,
@@ -300,5 +312,6 @@ export function useGanttDrag({
     cascadePreview,
     startTaskDrag,
     startTaskResize,
+    startTaskResizeFromStart,
   };
 }

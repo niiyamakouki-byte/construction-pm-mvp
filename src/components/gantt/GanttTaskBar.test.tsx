@@ -1,4 +1,4 @@
-import { cleanup, render } from "@testing-library/react";
+import { cleanup, fireEvent, render } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { GanttTaskBar, GanttTaskLabel } from "./GanttTaskBar.js";
 import type { ChartDateInfo, GanttTask } from "./types.js";
@@ -34,7 +34,7 @@ describe("GanttTaskLabel - 大項目バッジ", () => {
         onOpenTaskDetail={vi.fn()}
       />,
     );
-    const badge = container.querySelector("span.rounded-full");
+    const badge = container.querySelector('[data-testid="major-category-badge"]');
     expect(badge).toBeTruthy();
     expect(badge?.textContent).toBe("電気工事");
   });
@@ -48,7 +48,7 @@ describe("GanttTaskLabel - 大項目バッジ", () => {
         onOpenTaskDetail={vi.fn()}
       />,
     );
-    const badge = container.querySelector("span.rounded-full");
+    const badge = container.querySelector('[data-testid="major-category-badge"]');
     expect(badge).toBeNull();
   });
 
@@ -61,7 +61,7 @@ describe("GanttTaskLabel - 大項目バッジ", () => {
         onOpenTaskDetail={vi.fn()}
       />,
     );
-    const badge = container.querySelector("span.rounded-full") as HTMLElement;
+    const badge = container.querySelector('[data-testid="major-category-badge"]') as HTMLElement;
     expect(badge).toBeTruthy();
     expect(badge.style.backgroundColor).toBe("rgb(148, 163, 184)"); // #94a3b8
   });
@@ -156,6 +156,32 @@ describe("GanttTaskBar - 遅延タスクの斜線ハッチング", () => {
       { today: "2025-06-01" },
     );
     expect(queryByTestId("overdue-hatch")).toBeNull();
+  });
+});
+
+describe("GanttTaskBar - COMPASS型の期間直接操作", () => {
+  it("休日列は色だけでなく斜線で識別できる", () => {
+    const weekend: ChartDateInfo = {
+      date: "2025-01-04",
+      isToday: false,
+      isWeekend: true,
+      isHoliday: false,
+      holidayName: null,
+    };
+    const { container } = renderBar(baseTask, { highlightedDates: [weekend] });
+    const holidayColumn = Array.from(container.querySelectorAll<HTMLElement>("div"))
+      .find((element) => element.style.backgroundImage.includes("repeating-linear-gradient"));
+    expect(holidayColumn).toBeTruthy();
+  });
+
+  it("左右の端から期間を伸縮できる", () => {
+    const onTaskResizeFromStart = vi.fn();
+    const onTaskResizeStart = vi.fn();
+    const { getByTestId } = renderBar(baseTask, { onTaskResizeFromStart, onTaskResizeStart });
+    fireEvent.pointerDown(getByTestId("resize-start-handle"));
+    fireEvent.pointerDown(getByTestId("resize-end-handle"));
+    expect(onTaskResizeFromStart).toHaveBeenCalledOnce();
+    expect(onTaskResizeStart).toHaveBeenCalledOnce();
   });
 });
 
