@@ -216,8 +216,10 @@ function AppShell() {
   const isE2EBypass =
     import.meta.env.DEV && typeof window !== "undefined" && window.__E2E_BYPASS_AUTH__ === true;
   const authGuardWouldRenderChildren = isE2EBypass || !hasSupabaseEnv() || (!authLoading && !!user);
+  // vaolb: 工程表ファーストIAでログイン後の着地先が "/app" から "/gantt" (lastProjectIdなし)
+  // へ変わったため、初回サンプル案件bootstrapの発火条件にも "/gantt" を含める。
   const shouldBootstrapFirstRun =
-    authGuardWouldRenderChildren && !onboardingDone && route === "/app" && !lastProjectId;
+    authGuardWouldRenderChildren && !onboardingDone && (route === "/app" || route === "/gantt") && !lastProjectId;
 
   // iOS keyboard detection via visualViewport
   useEffect(() => {
@@ -525,14 +527,18 @@ function AppShell() {
   if (route === "/landing") return <Suspense fallback={pageFallback}><LandingPage /></Suspense>;
   if (route === "/" || route === "") {
     // laporta-beads-77qyl: 未ログイン訪問は /app→/login バウンスさせず、直接LPを見せる
-    // (3秒でLapoSiteの価値と主CTA=新規登録が分かる)。ログイン済み/E2E/未設定は従来通り即 /app。
+    // (3秒でLapoSiteの価値と主CTA=新規登録が分かる)。
+    // laporta-beads-vaolb: ログイン済み/E2E/未設定時の着地先を "/app"(案件一覧)から
+    // ganttPath(工程表。lastProjectIdがあれば /gantt/:id、なければ /gantt)へ変更。
+    // 工程表ファーストIA(オーナー決定2026-08-04): ダッシュボードや案件一覧は補助であり、
+    // ログイン後最初に見る画面は工程表にする。
     if (isE2EBypass || !hasSupabaseEnv()) {
-      navigate("/app");
+      navigate(ganttPath);
       return null;
     }
     if (authLoading) return pageFallback;
     if (!user) return <Suspense fallback={pageFallback}><LandingPage /></Suspense>;
-    navigate("/app");
+    navigate(ganttPath);
     return null;
   }
   if (route === "/login") return <Suspense fallback={pageFallback}><LoginPage /></Suspense>;
