@@ -302,7 +302,7 @@ export function LandingPage() {
       <section className="bg-white px-4 py-editorial-md sm:px-6">
         <div className="mx-auto max-w-2xl">
           <div className="mb-8 text-center">
-            <h2 className="text-2xl font-bold text-slate-900">月15時間が消える</h2>
+            <h2 className="lp-editorial-heading text-2xl text-slate-900">月15時間が消える</h2>
             <p className="mt-2 text-slate-500">1日30分の事務 × 20日 ＝ 人工0.5人分</p>
           </div>
           <div className="overflow-hidden rounded-2xl border border-slate-200 shadow-sm">
@@ -345,7 +345,7 @@ export function LandingPage() {
       <section id="features" className="bg-slate-50 px-4 py-editorial-xl sm:px-6">
         <div className="mx-auto max-w-6xl">
           <div className="mb-12 text-center">
-            <h2 className="text-2xl font-bold text-slate-900 sm:text-3xl">内装工事に特化した4つの強み</h2>
+            <h2 className="lp-editorial-heading text-2xl text-slate-900 sm:text-3xl">内装工事に特化した4つの強み</h2>
             <p className="mt-3 text-slate-500">汎用ツールでは対応できない内装工種・積算・写真管理をカバー。内装工事会社のために作られています。</p>
           </div>
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
@@ -367,7 +367,7 @@ export function LandingPage() {
       <section id="comparison" className="bg-white px-4 py-editorial-xl sm:px-6">
         <div className="mx-auto max-w-4xl">
           <div className="mb-10 text-center">
-            <h2 className="text-2xl font-bold text-slate-900 sm:text-3xl">内装工事会社に選ばれる理由</h2>
+            <h2 className="lp-editorial-heading text-2xl text-slate-900 sm:text-3xl">内装工事会社に選ばれる理由</h2>
             <p className="mt-3 text-slate-500">
               汎用現場管理ツールは多業種向けのため、内装特有の工種・積算・写真管理に対応するには別途カスタマイズが必要です。
               LapoSite は内装工事向けに最初から設計されています。
@@ -438,7 +438,7 @@ export function LandingPage() {
           {/* Generic AI comparison */}
           <div className="mt-14">
             <div className="mb-8 text-center">
-              <h3 className="text-2xl font-bold text-slate-900">ChatGPT等の汎用AIとの違い</h3>
+              <h3 className="lp-editorial-heading text-2xl text-slate-900">ChatGPT等の汎用AIとの違い</h3>
               <p className="mt-3 text-slate-500">
                 汎用AIは何でもできる代わりに、何をさせるかを言葉にできる人しか使いこなせません。
                 LapoSiteは、AIを使いこなす能力が要らないAIです。
@@ -491,7 +491,7 @@ export function LandingPage() {
       <section id="pricing" className="bg-slate-50 px-4 py-editorial-xl sm:px-6">
         <div className="mx-auto max-w-6xl">
           <div className="mb-12 text-center">
-            <h2 className="text-2xl font-bold text-slate-900 sm:text-3xl">シンプルな料金体系</h2>
+            <h2 className="lp-editorial-heading text-2xl text-slate-900 sm:text-3xl">シンプルな料金体系</h2>
             <p className="mt-3 text-slate-500">14日間の無料トライアルでお試しの後、チームに合ったプランをお選びください。</p>
           </div>
           <div className="grid gap-6 sm:grid-cols-3">
@@ -565,7 +565,7 @@ export function LandingPage() {
       {/* CTA Banner */}
       <section className="bg-brand-700 px-4 py-editorial-md text-center">
         <div className="mx-auto max-w-2xl">
-          <h2 className="text-2xl font-bold text-white sm:text-3xl">
+          <h2 className="lp-editorial-heading text-2xl text-white sm:text-3xl">
             今すぐ無料で始めよう
           </h2>
           <p className="mt-3 text-brand-200">14日間の無料トライアル。カード登録不要。</p>

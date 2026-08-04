@@ -49,6 +49,31 @@
   --font-figure: ui-monospace, "SF Mono", "Geist Mono", Menlo, monospace;
 }
 
+/* ─── LP below-fold見出しサブセットフォント (票laporta-beads-tkbmf, 2026-08-04) ───
+   below-foldセクション見出し6箇所(LandingPage.tsx)が hero-heading と同じ
+   Google Fonts全文字セット("Shippori Mincho B1"変数)を使うと、below-fold要素が
+   DOM上に存在するだけでunicode-range一致するCJK woff2チャンクの取得が走り、
+   LCP画像(fetchPriority=high)と帯域競合してLCPが悪化した実測あり
+   (6728ms→8250ms, laporta-beads-c6skn差し戻し)。
+   対策: 見出し6箇所の実使用グリフのみ(CJK 63字+基本ラテン)をpyftsubsetで
+   サブセット(~20KB)し自己ホスト。preloadはしない — below-foldでLCPと競合させず、
+   font-display:swapでフォールバックserif表示→読み込み完了後に差し替える。
+   ライセンス: SIL Open Font License 1.1 (public/fonts/shippori-mincho-OFL.txt 同梱)。 */
+@font-face {
+  font-family: "Shippori Mincho B1 Subset";
+  src: url("/fonts/shippori-mincho-b1-semibold-subset.woff2") format("woff2");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+.lp-editorial-heading {
+  font-family: "Shippori Mincho B1 Subset", "Hiragino Mincho ProN", serif;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1.25;
+}
+
 /* 一目でわかる主見出し。ページタイトル/案件名など main 直下の h1 のみに適用する
    (ナビ・カード内の小見出しはこれまで通り本文フォント=情報密度を保つ)。 */
 .hero-heading {
