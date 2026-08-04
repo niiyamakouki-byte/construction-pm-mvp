@@ -39,6 +39,8 @@ export type PurchaseOrderRecord = {
   taxAmount: number;
   totalWithTax: number;
   notes?: string;
+  /** 紐づく工程タスクID（票g0zed: ガント上に納期マーカーを表示するため） */
+  taskId?: string;
   createdAt: string;
   updatedAt: string;
 };
@@ -55,6 +57,7 @@ type PurchaseOrderRow = {
   order_date: string | null;
   delivery_date: string | null;
   expected_date?: string | null;
+  task_id?: string | null;
   items: PurchaseOrderItemRecord[] | null;
   total_amount: number | string | null;
   tax_amount: number | string | null;
@@ -74,6 +77,7 @@ function rowToRecord(row: PurchaseOrderRow): PurchaseOrderRecord {
     status: (row.status as PurchaseOrderStatus) ?? '下書き',
     orderDate: row.order_date ?? '',
     deliveryDate: row.delivery_date ?? row.expected_date ?? '',
+    taskId: row.task_id ?? undefined,
     totalAmount: Number(row.total_amount ?? 0),
     taxAmount: Number(row.tax_amount ?? 0),
     totalWithTax: Number(row.total_with_tax ?? row.total_amount ?? 0),
@@ -93,6 +97,7 @@ function recordToRow(o: PurchaseOrderRecord): PurchaseOrderRow {
     status: o.status,
     order_date: o.orderDate || null,
     delivery_date: o.deliveryDate || null,
+    task_id: o.taskId || null,
     items: o.items,
     total_amount: o.totalAmount,
     tax_amount: o.taxAmount,
@@ -179,3 +184,9 @@ export class OrderRepository {
     this.memory.clear();
   }
 }
+
+// 票g0zed: 発注(Orders画面)とガント(工程画面)は別ページから同じ受発注データを
+// 参照する。非Supabaseモードの内部ストアはインスタンス毎に独立したMapなので、
+// 別々に `new OrderRepository()` すると納期マーカーがガント側に反映されない。
+// 両ページで同一インスタンスを共有するための既定シングルトン。
+export const orderRepository = new OrderRepository();

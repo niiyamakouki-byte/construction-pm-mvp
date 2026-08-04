@@ -9,15 +9,19 @@ const { mockListByProjectAsync, mockSaveAsync, mockDeleteAsync } = vi.hoisted(()
 }));
 
 vi.mock("../lib/supabase-adapter/OrderRepository.js", () => ({
-  OrderRepository: vi.fn().mockImplementation(() => ({
+  orderRepository: {
     listByProjectAsync: mockListByProjectAsync,
     saveAsync: mockSaveAsync,
     deleteAsync: mockDeleteAsync,
-  })),
+  },
 }));
 
 vi.mock("../lib/order-management.js", () => ({
   getNextStatuses: vi.fn().mockReturnValue([]),
+}));
+
+vi.mock("../stores/task-store.js", () => ({
+  createTaskRepository: () => ({ findAll: vi.fn().mockResolvedValue([]) }),
 }));
 
 vi.mock("../components/common/ConfirmDialog.js", () => ({

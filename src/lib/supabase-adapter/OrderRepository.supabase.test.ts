@@ -129,6 +129,57 @@ describe('OrderRepository — Supabase routing', () => {
     expect(result).toEqual([]);
   });
 
+  it('票g0zed: task_id が taskId にマップされる (rowToRecord)', async () => {
+    const now = '2026-05-28T10:00:00.000Z';
+    const row = {
+      id: 'po-4',
+      project_id: 'p-1',
+      supplier_name: 'テスト',
+      contractor_id: 'c-1',
+      contractor_name: 'テスト',
+      status: '下書き',
+      order_date: '2025-07-01',
+      delivery_date: '2025-07-15',
+      task_id: 'task-3',
+      items: [],
+      total_amount: 0,
+      tax_amount: 0,
+      total_with_tax: 0,
+      notes: null,
+      created_at: now,
+      updated_at: now,
+    };
+    mockFrom.mockReturnValue(makeBuilder({ data: row, error: null }));
+
+    const repo = new OrderRepository(true);
+    const result = await repo.getAsync('po-4');
+    expect(result?.taskId).toBe('task-3');
+  });
+
+  it('票g0zed: saveAsync(新規作成) が taskId を task_id としてinsertペイロードに含める', async () => {
+    const builder = makeBuilder({ data: null, error: null });
+    mockFrom.mockReturnValue(builder);
+    const repo = new OrderRepository(true);
+    const now = '2026-05-28T10:00:00.000Z';
+    await repo.saveAsync({
+      id: 'po-5',
+      projectId: 'p-1',
+      contractorId: 'c-1',
+      contractorName: '山田内装工業',
+      items: [],
+      status: '下書き',
+      orderDate: '2025-07-01',
+      deliveryDate: '2025-07-15',
+      totalAmount: 0,
+      taxAmount: 0,
+      totalWithTax: 0,
+      taskId: 'task-7',
+      createdAt: now,
+      updatedAt: now,
+    });
+    expect(builder.insert).toHaveBeenCalledWith(expect.objectContaining({ task_id: 'task-7' }));
+  });
+
   it('useSupabase=false で Supabase を呼ばない', async () => {
     const now = '2026-05-28T10:00:00.000Z';
     const repo = new OrderRepository(false);

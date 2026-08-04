@@ -33,6 +33,8 @@ export type PurchaseOrder = {
   taxAmount: number;
   totalWithTax: number;
   notes?: string;
+  /** 紐づく工程タスクID（票g0zed: 発注物を工程上の納期マーカーとして表示するため） */
+  taskId?: string;
   createdAt: string;
   updatedAt: string;
 };
@@ -86,6 +88,7 @@ export function createOrder(
   items: Omit<OrderItem, "amount">[],
   deliveryDate: string,
   notes?: string,
+  taskId?: string,
 ): PurchaseOrder {
   const TAX_RATE = 0.1;
   const fullItems: OrderItem[] = items.map((item) => ({
@@ -109,6 +112,7 @@ export function createOrder(
     taxAmount,
     totalWithTax: totalAmount + taxAmount,
     notes,
+    taskId,
     createdAt: now,
     updatedAt: now,
   };

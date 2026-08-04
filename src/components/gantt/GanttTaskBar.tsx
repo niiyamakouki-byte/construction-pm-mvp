@@ -1,6 +1,6 @@
 import { useRef } from "react";
 import { ChevronDown, ChevronUp } from "lucide-react";
-import type { ChartDateInfo, ConnectState, DragState, GanttTask } from "./types.js";
+import type { ChartDateInfo, ConnectState, DragState, GanttTask, OrderDeliveryMarker } from "./types.js";
 import { daysBetween, effectiveProgress, formatScheduleDate, statusColor, statusLabel } from "./utils.js";
 import { gantt } from "../../theme/index.js";
 
@@ -33,6 +33,8 @@ type GanttTaskBarProps = {
   highlightedDates: ChartDateInfo[];
   today: string;
   dayWidth: number;
+  /** 票g0zed: このタスクに紐づく発注の納期マーカー（該当なしなら空配列/undefined） */
+  deliveryMarkers?: OrderDeliveryMarker[];
   onTaskDragStart: (task: GanttTask, event: React.PointerEvent<HTMLDivElement>) => void;
   onTaskResizeStart: (task: GanttTask, event: React.PointerEvent<HTMLDivElement>) => void;
   onOpenTaskDetail: (task: GanttTask) => void;
@@ -57,6 +59,7 @@ export function GanttTaskBar({
   dayWidth,
   connectMode,
   connectState,
+  deliveryMarkers = [],
   onTaskDragStart,
   onTaskResizeStart,
   onOpenTaskDetail,
@@ -120,6 +123,23 @@ export function GanttTaskBar({
           />
         );
       })}
+
+      {/* 票g0zed: 紐づく発注の納期マーカー。マイルストーン(◆)とは形状を分け、
+          行の上端に小さな丸(セージ)で表示する。ホバーで発注業者名+納期。 */}
+      {deliveryMarkers.map((marker) => (
+        <div
+          key={marker.orderId}
+          data-testid="order-delivery-marker"
+          className="pointer-events-none absolute top-0.5 z-10 -translate-x-1/2"
+          style={{ left: daysBetween(chartStart, marker.deliveryDate) * dayWidth + dayWidth / 2 }}
+          title={`発注: ${marker.contractorName}（納期 ${marker.deliveryDate}）`}
+        >
+          <span
+            aria-label={`発注納期: ${marker.contractorName} (${marker.deliveryDate})`}
+            className="block h-2 w-2 rounded-full border border-white bg-brand-600 shadow-sm"
+          />
+        </div>
+      ))}
 
       <div
         role="button"

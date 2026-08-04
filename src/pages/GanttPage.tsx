@@ -56,6 +56,8 @@ import {
   checkMilestoneStatus,
   createMilestones,
 } from "../lib/milestone-tracker.js";
+import { orderRepository } from "../lib/supabase-adapter/OrderRepository.js";
+import type { OrderDeliveryMarker } from "../components/gantt/types.js";
 import {
   generateChangeLog,
   getChangeOrders,
@@ -456,6 +458,8 @@ function GanttPageContent({ initialProjectId = null, openMaster = false, initial
   const [ganttTasks, setGanttTasks] = useState<GanttTask[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [contractors, setContractors] = useState<Contractor[]>([]);
+  // 票g0zed: taskId紐づけ済み発注の納期マーカー用。プロジェクト切替のたびに読み直す。
+  const [orderMarkers, setOrderMarkers] = useState<OrderDeliveryMarker[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(initialProjectId ?? readLastProjectId());
@@ -613,6 +617,32 @@ function GanttPageContent({ initialProjectId = null, openMaster = false, initial
   useEffect(() => {
     if (!selectedProjectId) return;
     writeLastProjectId(selectedProjectId);
+  }, [selectedProjectId]);
+
+  // 票g0zed: 選択プロジェクトの発注一覧からtaskId紐づけ済みの納期マーカーを組み立てる
+  useEffect(() => {
+    if (!selectedProjectId) {
+      setOrderMarkers([]);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      const orders = await orderRepository.listByProjectAsync(selectedProjectId);
+      if (cancelled) return;
+      setOrderMarkers(
+        orders
+          .filter((order) => Boolean(order.taskId))
+          .map((order) => ({
+            orderId: order.id,
+            taskId: order.taskId as string,
+            contractorName: order.contractorName,
+            deliveryDate: order.deliveryDate,
+          })),
+      );
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [selectedProjectId]);
 
   useEffect(() => () => {
@@ -1576,6 +1606,7 @@ function GanttPageContent({ initialProjectId = null, openMaster = false, initial
       connectState={connectState}
       milestones={milestoneIndicators}
       showMilestones={showMilestones}
+      orderMarkers={orderMarkers}
       today={today}
       scrollRef={scrollRef}
       phaseProgress={phaseProgress}

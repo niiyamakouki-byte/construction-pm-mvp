@@ -170,3 +170,37 @@ describe("GanttTaskBar - P2.5 依存ハンドル", () => {
     expect(getByLabelText("依存関係を接続: 内装工事")).toBeTruthy();
   });
 });
+
+// ────────────────────────────────────────────────────────────────
+// 票g0zed: 発注の納期マーカー（taskId紐づけ + 位置算出）
+// ────────────────────────────────────────────────────────────────
+describe("GanttTaskBar - 発注納期マーカー", () => {
+  it("deliveryMarkersが空/未指定ならマーカーは描画されない", () => {
+    const { queryByTestId } = renderBar(baseTask);
+    expect(queryByTestId("order-delivery-marker")).toBeNull();
+  });
+
+  it("紐づく発注があれば納期の位置にマーカーが描画される（chartStart起点のオフセット×dayWidthで算出）", () => {
+    const { getByTestId } = renderBar(baseTask, {
+      chartStart: "2025-01-01",
+      dayWidth: 40,
+      deliveryMarkers: [
+        { orderId: "po-1", taskId: "t1", contractorName: "山田内装工業", deliveryDate: "2025-01-05" },
+      ],
+    });
+    const marker = getByTestId("order-delivery-marker") as HTMLElement;
+    // daysBetween(2025-01-01, 2025-01-05)=4 → left = 4*40 + 40/2 = 180
+    expect(marker.style.left).toBe("180px");
+    expect(marker.getAttribute("title")).toBe("発注: 山田内装工業（納期 2025-01-05）");
+  });
+
+  it("複数の発注が同じタスクに紐づく場合は複数マーカーが描画される", () => {
+    const { getAllByTestId } = renderBar(baseTask, {
+      deliveryMarkers: [
+        { orderId: "po-1", taskId: "t1", contractorName: "山田内装工業", deliveryDate: "2025-01-02" },
+        { orderId: "po-2", taskId: "t1", contractorName: "鈴木設備工事", deliveryDate: "2025-01-03" },
+      ],
+    });
+    expect(getAllByTestId("order-delivery-marker")).toHaveLength(2);
+  });
+});

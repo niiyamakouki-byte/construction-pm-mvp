@@ -72,6 +72,17 @@ export type TaskDetailState = {
   saving: boolean;
 };
 
+/**
+ * 票g0zed: taskIdで紐づく発注(PurchaseOrder)の納期をガント上のタスク行に
+ * 小マーカーとして表示するための最小データ。
+ */
+export type OrderDeliveryMarker = {
+  orderId: string;
+  taskId: string;
+  contractorName: string;
+  deliveryDate: string;
+};
+
 export type ChartDateInfo = {
   date: string;
   isToday: boolean;

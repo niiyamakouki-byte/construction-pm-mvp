@@ -194,4 +194,39 @@ describe("GanttChart", () => {
 
     expect(queryByTestId("milestone-marker")).toBeNull();
   });
+
+  // 票g0zed: taskId紐づけ済み発注の納期マーカー（紐づけロジック: 行ごとの絞り込み）
+  it("orderMarkersはtaskIdが一致する行にだけ描画される（別タスクの行には出ない）", () => {
+    const otherTask: GanttTask = { ...task, id: "t2", name: "Other" };
+    const { getAllByTestId } = render(
+      <GanttChart
+        ganttTasks={[task, otherTask]}
+        visibleRows={[
+          { type: "task", task },
+          { type: "task", task: otherTask },
+        ]}
+        chartLayout={chartLayout}
+        dragState={null}
+        dragRef={{ current: null }}
+        connectMode={false}
+        connectState={null}
+        orderMarkers={[
+          { orderId: "po-1", taskId: task.id, contractorName: "山田内装工業", deliveryDate: "2025-01-02" },
+        ]}
+        today="2025-01-03"
+        scrollRef={createRef<HTMLDivElement>()}
+        onTaskDragStart={vi.fn()}
+        onTaskResizeStart={vi.fn()}
+        onOpenTaskDetail={vi.fn()}
+        onOpenQuickAdd={vi.fn()}
+        onTogglePhase={vi.fn()}
+        onSetConnectState={vi.fn()}
+        onConnectTask={vi.fn()}
+        onConnectTasks={vi.fn()}
+      />,
+    );
+
+    // 2タスク中1つだけ紐づいているので、マーカーは1つだけ描画される
+    expect(getAllByTestId("order-delivery-marker")).toHaveLength(1);
+  });
 });

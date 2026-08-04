@@ -49,6 +49,14 @@ describe("createOrder", () => {
     const fetched = getOrder(order.id);
     expect(fetched).toEqual(order);
   });
+
+  it("票g0zed: taskId is undefined when omitted, and passed through when provided", () => {
+    const withoutTask = createOrder("p-1", "c-1", "テスト業者", DEMO_ITEMS, "2026-05-01");
+    expect(withoutTask.taskId).toBeUndefined();
+
+    const withTask = createOrder("p-1", "c-1", "テスト業者", DEMO_ITEMS, "2026-05-01", "備考なし", "task-42");
+    expect(withTask.taskId).toBe("task-42");
+  });
 });
 
 describe("transitionOrder", () => {

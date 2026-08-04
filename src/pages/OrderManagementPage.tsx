@@ -1,11 +1,14 @@
 import { useEffect, useState, useMemo } from "react";
 import { getNextStatuses } from "../lib/order-management.js";
 import {
-  OrderRepository,
+  orderRepository,
   type PurchaseOrderRecord,
   type PurchaseOrderItemRecord,
   type PurchaseOrderStatus,
 } from "../lib/supabase-adapter/OrderRepository.js";
+import { createTaskRepository } from "../stores/task-store.js";
+import type { Task } from "../domain/types.js";
+import { readLastProjectId } from "../lib/last-project.js";
 import { ConfirmDialog } from "../components/common/ConfirmDialog.js";
 import costMaster from "../estimate/cost-master.json";
 
@@ -36,9 +39,11 @@ const DEMO_CONTRACTORS = [
 
 const DEMO_PROJECT_ID = "p-1";
 
-// ── Repository (Supabase or InMemory) ────────────────────────────────────────
+// ── Repository (Supabase or InMemory, shared singleton — GanttPageと同じ
+//    インスタンスを参照することで、ここで作った発注の納期マーカーが工程表側にも見える) ──
 
-const repository = new OrderRepository();
+const repository = orderRepository;
+const taskRepository = createTaskRepository();
 
 // ── Status style helpers ─────────────────────────────────────────────────────
 
@@ -185,15 +190,18 @@ function ItemRow({
 
 function OrderForm({
   projectId,
+  tasks,
   onClose,
   onCreated,
 }: {
   projectId: string;
+  tasks: Task[];
   onClose: () => void;
   onCreated: (order: PurchaseOrderRecord) => void;
 }) {
   const [contractorId, setContractorId] = useState(DEMO_CONTRACTORS[0].id);
   const [deliveryDate, setDeliveryDate] = useState("");
+  const [taskId, setTaskId] = useState("");
   const [notes, setNotes] = useState("");
   const [items, setItems] = useState<FormItem[]>([{ ...EMPTY_ITEM }]);
   const [error, setError] = useState("");
@@ -259,6 +267,7 @@ function OrderForm({
       taxAmount,
       totalWithTax: totalAmount + taxAmount,
       notes: notes || undefined,
+      taskId: taskId || undefined,
       createdAt: now,
       updatedAt: now,
     };
@@ -310,6 +319,22 @@ function OrderForm({
                 className="w-full rounded border border-slate-200 px-3 py-2 text-sm"
                 required
               />
+            </div>
+            <div className="col-span-2">
+              <label className="block text-sm font-medium text-slate-700 mb-1">紐づける工程（任意）</label>
+              <select
+                value={taskId}
+                onChange={(e) => setTaskId(e.target.value)}
+                className="w-full rounded border border-slate-200 bg-white px-3 py-2 text-sm"
+              >
+                <option value="">工程に紐づけない</option>
+                {tasks.map((t) => (
+                  <option key={t.id} value={t.id}>
+                    {t.name}
+                  </option>
+                ))}
+              </select>
+              <p className="mt-1 text-xs text-slate-400">選択した工程の行にガント上で納期マーカーが表示されます</p>
             </div>
           </div>
 
@@ -389,10 +414,12 @@ function OrderForm({
 
 function OrderCard({
   order,
+  taskName,
   onTransition,
   onDelete,
 }: {
   order: PurchaseOrderRecord;
+  taskName?: string;
   onTransition: (id: string, to: PurchaseOrderStatus) => void;
   onDelete: (order: PurchaseOrderRecord) => void;
 }) {
@@ -409,6 +436,11 @@ function OrderCard({
             </span>
             <span className="font-semibold text-slate-800 truncate">{order.contractorName}</span>
             <span className="text-xs text-slate-400">{order.id}</span>
+            {taskName && (
+              <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-brand-100 text-brand-700">
+                工程: {taskName}
+              </span>
+            )}
           </div>
           <div className="flex gap-4 mt-1 text-sm text-slate-500 flex-wrap">
             <span>発注日: {order.orderDate}</span>
@@ -494,11 +526,13 @@ function OrderCard({
 function StatusColumn({
   status,
   orders,
+  taskNameById,
   onTransition,
   onDelete,
 }: {
   status: PurchaseOrderStatus;
   orders: PurchaseOrderRecord[];
+  taskNameById: Map<string, string>;
   onTransition: (id: string, to: PurchaseOrderStatus) => void;
   onDelete: (order: PurchaseOrderRecord) => void;
 }) {
@@ -512,6 +546,7 @@ function StatusColumn({
         {orders.map((order) => (
           <OrderCard
             key={order.id}
+            taskName={order.taskId ? taskNameById.get(order.taskId) : undefined}
             order={order}
             onTransition={onTransition}
             onDelete={onDelete}
@@ -528,10 +563,11 @@ function StatusColumn({
 // ── Main page ─────────────────────────────────────────────────────────────────
 
 export function OrderManagementPage({
-  projectId = DEMO_PROJECT_ID,
+  projectId = readLastProjectId() ?? DEMO_PROJECT_ID,
 }: { projectId?: string } = {}) {
   const [showForm, setShowForm] = useState(false);
   const [allOrders, setAllOrders] = useState<PurchaseOrderRecord[]>([]);
+  const [projectTasks, setProjectTasks] = useState<Task[]>([]);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<"kanban" | "list">("list");
@@ -543,8 +579,14 @@ export function OrderManagementPage({
     let cancelled = false;
     (async () => {
       try {
-        const loaded = await repository.listByProjectAsync(projectId);
-        if (!cancelled) setAllOrders(loaded);
+        const [loaded, allTasks] = await Promise.all([
+          repository.listByProjectAsync(projectId),
+          taskRepository.findAll(),
+        ]);
+        if (!cancelled) {
+          setAllOrders(loaded);
+          setProjectTasks(allTasks.filter((t) => t.projectId === projectId));
+        }
       } catch (err) {
         if (!cancelled) {
           setLoadError(err instanceof Error ? err.message : "受発注データの読み込みに失敗しました");
@@ -557,6 +599,11 @@ export function OrderManagementPage({
       cancelled = true;
     };
   }, [projectId]);
+
+  const taskNameById = useMemo(
+    () => new Map(projectTasks.map((t) => [t.id, t.name])),
+    [projectTasks],
+  );
 
   const reload = async () => {
     const loaded = await repository.listByProjectAsync(projectId);
@@ -718,6 +765,7 @@ export function OrderManagementPage({
                 key={status}
                 status={status}
                 orders={allOrders.filter((o) => o.status === status)}
+                taskNameById={taskNameById}
                 onTransition={handleTransition}
                 onDelete={setDeleteTarget}
               />
@@ -741,6 +789,7 @@ export function OrderManagementPage({
               <OrderCard
                 key={order.id}
                 order={order}
+                taskName={order.taskId ? taskNameById.get(order.taskId) : undefined}
                 onTransition={handleTransition}
                 onDelete={setDeleteTarget}
               />
@@ -753,6 +802,7 @@ export function OrderManagementPage({
       {showForm && (
         <OrderForm
           projectId={projectId}
+          tasks={projectTasks}
           onClose={() => setShowForm(false)}
           onCreated={() => void reload()}
         />

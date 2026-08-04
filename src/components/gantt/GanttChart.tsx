@@ -7,7 +7,7 @@ import type {
   TouchEvent as ReactTouchEvent,
 } from "react";
 import type { CascadePreview } from "../../hooks/useGanttDrag.js";
-import type { ChartLayout, ConnectState, DragState, GanttTask } from "./types.js";
+import type { ChartLayout, ConnectState, DragState, GanttTask, OrderDeliveryMarker } from "./types.js";
 import type { Milestone, MilestoneStatus } from "../../lib/milestone-tracker.js";
 import { gantt } from "../../theme/index.js";
 import { daysBetween, formatDayNumber, formatMonthLabel, formatWeekdayLabel } from "./utils.js";
@@ -40,6 +40,8 @@ type Props = {
   connectState: ConnectState | null;
   milestones?: Milestone[];
   showMilestones?: boolean;
+  /** 票g0zed: taskId紐づけ済み発注の納期マーカー（全タスク横断、行ごとに絞り込んで描画） */
+  orderMarkers?: OrderDeliveryMarker[];
   today: string;
   scrollRef: RefObject<HTMLDivElement | null>;
   /** P1: フェーズ別進捗（日数加重平均）。key=工種名 */
@@ -77,6 +79,7 @@ export function GanttChart({
   connectState,
   milestones = [],
   showMilestones = true,
+  orderMarkers = [],
   today,
   scrollRef,
   phaseProgress,
@@ -455,6 +458,7 @@ export function GanttChart({
                   highlightedDates={highlightedDates}
                   today={today}
                   dayWidth={dayWidth}
+                  deliveryMarkers={orderMarkers.filter((marker) => marker.taskId === row.task.id)}
                   onTaskDragStart={onTaskDragStart}
                   onTaskResizeStart={onTaskResizeStart}
                   onOpenTaskDetail={onOpenTaskDetail}
