@@ -120,6 +120,20 @@ describe("CardBoardChart", () => {
     confirmSpy.mockRestore();
   });
 
+  // [compass] 4o9m2: 依存線の紫(#7c3aed)をgenbahub-ui skill準拠のセージグリーン規範色(#346538)へ変更
+  it("draws dependency lines in the sage-green norm color, not the old purple", () => {
+    const tasks = [makeTask({ id: "a" }), makeTask({ id: "b", dependencies: ["a"] })];
+    const { container } = render(
+      <CardBoardChart tasks={tasks} onMove={vi.fn()} onConnect={vi.fn()} onDisconnect={vi.fn()} />,
+    );
+
+    const visibleLine = container.querySelector('path[stroke="#346538"]');
+    expect(visibleLine).toBeTruthy();
+    const arrowFill = container.querySelector("marker#card-board-arrow path");
+    expect(arrowFill?.getAttribute("fill")).toBe("#346538");
+    expect(container.innerHTML).not.toContain("#7c3aed");
+  });
+
   // 文字ズレ総点検(2026-07-10): 長い description が overflow:hidden 無しで
   // 全文表示され、下の「未着手」ステータス行と重なる不具合があった。
   // ellipsis 表示にはフレックス子要素の min-width:0 が必須（無いと text-overflow が効かない）。

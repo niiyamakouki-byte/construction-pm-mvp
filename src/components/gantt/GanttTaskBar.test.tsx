@@ -132,6 +132,33 @@ describe("GanttTaskBar - P2 進捗塗り分け", () => {
   });
 });
 
+// ────────────────────────────────────────────────────────────────
+// [compass] 4o9m2: 遅延タスクの柄表現（斜線ハッチング）
+// ────────────────────────────────────────────────────────────────
+describe("GanttTaskBar - 遅延タスクの斜線ハッチング", () => {
+  it("期限切のタスクは斜線ハッチングが描画される", () => {
+    const { getByTestId } = renderBar(
+      { ...baseTask, status: "todo", dueDate: "2025-01-03", endDate: "2025-01-03" },
+      { today: "2025-06-01" },
+    );
+    const hatch = getByTestId("overdue-hatch") as HTMLElement;
+    expect(hatch.style.backgroundImage).toContain("repeating-linear-gradient");
+  });
+
+  it("期限内のタスクは斜線ハッチングが描画されない", () => {
+    const { queryByTestId } = renderBar({ ...baseTask, status: "todo" }, { today: "2025-01-02" });
+    expect(queryByTestId("overdue-hatch")).toBeNull();
+  });
+
+  it("status=done なら期限切でもハッチングは出ない", () => {
+    const { queryByTestId } = renderBar(
+      { ...baseTask, status: "done", dueDate: "2025-01-03", endDate: "2025-01-03" },
+      { today: "2025-06-01" },
+    );
+    expect(queryByTestId("overdue-hatch")).toBeNull();
+  });
+});
+
 describe("GanttTaskBar - P2 完了タスクのグレー化", () => {
   it("status=done なら進捗フィル色はグレー(#94a3b8)", () => {
     const { getByTestId } = renderBar({ ...baseTask, status: "done", progress: 100 });

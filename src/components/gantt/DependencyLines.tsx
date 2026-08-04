@@ -33,7 +33,7 @@ export function DependencyLines({ lines, totalDays, dayWidth }: Props) {
           markerHeight="6"
           orient="auto-start-reverse"
         >
-          <path d="M 0 0 L 10 5 L 0 10 z" fill="#7c3aed" opacity="0.7" />
+          <path d="M 0 0 L 10 5 L 0 10 z" fill="#346538" opacity="0.7" />
         </marker>
       </defs>
       {lines.map((line) => {
@@ -44,7 +44,7 @@ export function DependencyLines({ lines, totalDays, dayWidth }: Props) {
             key={`${line.fromTaskId}-${line.toTaskId}`}
             d={d}
             fill="none"
-            stroke="#7c3aed"
+            stroke="#346538"
             strokeWidth="1.5"
             strokeOpacity="0.6"
             markerEnd="url(#dep-arrow)"

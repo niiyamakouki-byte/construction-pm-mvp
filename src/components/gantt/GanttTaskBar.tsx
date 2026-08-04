@@ -201,6 +201,18 @@ export function GanttTaskBar({
           className="absolute inset-y-0 left-0 rounded-full"
           style={{ width: `${progress}%`, backgroundColor: color }}
         />
+        {/* [compass] 4o9m2: 遅延タスクは色だけでなく斜線ハッチングでも異常を伝える（既存の期限切バッジ色=red-500を再利用、新規カラー導入なし） */}
+        {overdue ? (
+          <div
+            data-testid="overdue-hatch"
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0 rounded-full"
+            style={{
+              backgroundImage:
+                "repeating-linear-gradient(45deg, rgba(239,68,68,0.35) 0px, rgba(239,68,68,0.35) 4px, transparent 4px, transparent 9px)",
+            }}
+          />
+        ) : null}
         <div
           className="absolute inset-0 flex items-center justify-between gap-2 px-3 text-white"
           style={{ textShadow: "0 1px 2px rgba(15, 23, 42, 0.35)" }}

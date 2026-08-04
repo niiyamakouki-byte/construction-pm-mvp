@@ -370,7 +370,7 @@ export function CardBoardChart({ tasks, onMove, onConnect, onDisconnect }: CardB
             <circle cx="40" cy="40" r="1" fill="#1e293b" />
           </pattern>
           <marker id="card-board-arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
-            <path d="M0,0 L0,6 L8,3 z" fill="#7c3aed" />
+            <path d="M0,0 L0,6 L8,3 z" fill="#346538" />
           </marker>
         </defs>
         <rect width="100%" height="100%" fill="url(#card-board-grid)" />
@@ -387,7 +387,7 @@ export function CardBoardChart({ tasks, onMove, onConnect, onDisconnect }: CardB
             const d = bezierPath(from, to);
             return (
               <g key={`${fromId}-${toId}`}>
-                <path d={d} fill="none" stroke="#7c3aed" strokeWidth="2" markerEnd="url(#card-board-arrow)" pointerEvents="none" />
+                <path d={d} fill="none" stroke="#346538" strokeWidth="2" markerEnd="url(#card-board-arrow)" pointerEvents="none" />
                 <path
                   data-testid={`dep-line-hit-${fromId}-${toId}`}
                   d={d}
