@@ -203,6 +203,7 @@ export function LandingPage() {
         </div>
       </header>
 
+      <main>
       {/* Hero — 統一コピー+副文+主CTA1本 */}
       <section className="bg-brand-800 px-4 py-20 text-center sm:py-28">
         <div className="mx-auto max-w-2xl">
@@ -222,7 +223,7 @@ export function LandingPage() {
               14日間 無料で始める
             </button>
           </div>
-          <p className="mt-4 text-sm text-brand-400">クレジットカード不要 · 14日間無料 · 即日利用開始</p>
+          <p className="mt-4 text-sm text-brand-300">クレジットカード不要 · 14日間無料 · 即日利用開始</p>
         </div>
       </section>
 
@@ -477,7 +478,7 @@ export function LandingPage() {
                   <span className={`text-3xl sm:text-4xl font-extrabold ${plan.highlight ? "text-white" : "text-slate-900"}`}>
                     {plan.price}
                   </span>
-                  <span className={`mb-1 text-sm ${plan.highlight ? "text-brand-300" : "text-slate-400"}`}>
+                  <span className={`mb-1 text-sm ${plan.highlight ? "text-brand-200" : "text-slate-400"}`}>
                     {plan.period}
                   </span>
                 </div>
@@ -515,7 +516,7 @@ export function LandingPage() {
           </div>
           <p className="mt-6 text-center text-sm text-slate-400">
             大規模案件・エンタープライズのご相談は{" "}
-            <a href="mailto:info@laporta.co.jp" className="text-brand-500 hover:underline whitespace-nowrap">
+            <a href="mailto:info@laporta.co.jp" className="text-brand-600 underline whitespace-nowrap">
               お問い合わせ
             </a>
             ください。
@@ -538,6 +539,7 @@ export function LandingPage() {
           </button>
         </div>
       </section>
+      </main>
 
       {/* Footer */}
       <footer className="bg-brand-900 px-4 py-10 sm:px-6">
@@ -549,7 +551,7 @@ export function LandingPage() {
                 <span className="text-lg text-white"><span className="font-bold">Lapo</span><span className="font-normal">Site</span></span>
               </div>
               <p className="mt-1 text-sm text-brand-400">内装工事に特化した現場管理SaaS。</p>
-              <p className="mt-2 text-xs text-brand-500">
+              <p className="mt-2 text-xs text-brand-400">
                 提供: 株式会社ラポルタ<br />
                 〒156-0051 東京都世田谷区給田5-12-12<br />
                 代表: 新山光輝
@@ -582,7 +584,7 @@ export function LandingPage() {
               </a>
             </nav>
           </div>
-          <div className="mt-8 border-t border-brand-800 pt-6 text-center text-xs text-brand-600">
+          <div className="mt-8 border-t border-brand-800 pt-6 text-center text-xs text-brand-400">
             &copy; {new Date().getFullYear()} 株式会社ラポルタ. All rights reserved.
           </div>
         </div>
