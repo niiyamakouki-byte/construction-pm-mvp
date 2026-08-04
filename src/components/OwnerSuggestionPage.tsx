@@ -26,6 +26,8 @@ import {
   mostPopularPlanKind,
   avgBudgetGap,
 } from "../lib/owner-suggestion/portfolio-owner-suggestion-metrics.js";
+import { reportAiActivity } from "../lib/ai-activity-bus.js";
+import { AiDraftBadge } from "./AiDraftBadge.js";
 
 // ── Constants ──────────────────────────────────────────────────────────────
 
@@ -394,6 +396,7 @@ export function OwnerSuggestionPage() {
         const s = createSuggestion(projectId, profile, budget);
         setSelectedId(s.id);
         setShowForm(false);
+        reportAiActivity(`AIが${profile.ownerName}様向けの提案プラン${s.plans.length}案を作成しました`);
       } finally {
         setGenerating(false);
       }
@@ -529,8 +532,9 @@ export function OwnerSuggestionPage() {
             >
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
                 <div>
-                  <div style={{ fontSize: 18, fontWeight: 700, color: "#1e293b" }}>
+                  <div style={{ fontSize: 18, fontWeight: 700, color: "#1e293b", display: "flex", alignItems: "center", gap: 8 }}>
                     {selected.ownerProfile.ownerName} 様
+                    <AiDraftBadge />
                   </div>
                   <div style={{ fontSize: 12, color: "#64748b", marginTop: 4 }}>
                     予算 {formatJpy(selected.ownerProfile.budget)} / {selected.ownerProfile.familySize}名 / {selected.ownerProfile.ageRange}

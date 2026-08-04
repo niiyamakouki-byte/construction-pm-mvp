@@ -18,6 +18,8 @@ import { inquiryStore } from "../lib/inquiry-responder/inquiry-store.js";
 import { dealStore } from "../lib/sales-pipeline/deal-store.js";
 import type { InquiryRecord } from "../lib/inquiry-responder/types.js";
 import type { Deal } from "../lib/sales-pipeline/types.js";
+import { reportAiActivity } from "../lib/ai-activity-bus.js";
+import { AiDraftBadge } from "./AiDraftBadge.js";
 
 // ── Constants ──────────────────────────────────────────────────────────────
 
@@ -154,6 +156,7 @@ export function ProposalGeneratorPage() {
     setCurrentDoc(doc);
     setMarkdownPreview(renderMarkdown(doc));
     setGenerating(false);
+    reportAiActivity(`AIが${doc.customerName}様向けの提案書を作成しました`);
   }, [customerName, workCategory, workScale, locationCity, budgetHintJpy, desiredStartMonth, styleTags]);
 
   const handleImportFromInquiry = useCallback((inquiry: InquiryRecord) => {
@@ -433,7 +436,10 @@ export function ProposalGeneratorPage() {
               {/* Summary card */}
               <div className="bg-white rounded-xl border border-slate-100 shadow-sm px-5 py-4">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-semibold text-slate-800">{currentDoc.customerName} 様</span>
+                  <span className="flex items-center gap-2 text-sm font-semibold text-slate-800">
+                    {currentDoc.customerName} 様
+                    <AiDraftBadge />
+                  </span>
                   <span className="text-xs text-slate-400">有効期限: {currentDoc.validUntil}</span>
                 </div>
                 <div className="flex gap-4 text-xs text-slate-600">
