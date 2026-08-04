@@ -50,6 +50,8 @@ type Props = {
   onTaskResizeStart: (task: GanttTask, event: ReactPointerEvent<HTMLDivElement>) => void;
   onOpenTaskDetail: (task: GanttTask) => void;
   onMoveTask?: (task: GanttTask, direction: "up" | "down") => void;
+  /** 票l7369: 行チェックボックスでの完了/未完了ワンクリックトグル */
+  onToggleDone?: (task: GanttTask) => void;
   onOpenQuickAdd: (projectId: string, projectName: string) => void;
   onTogglePhase: (projectId: string) => void;
   onSetConnectState: (state: ConnectState | null) => void;
@@ -87,6 +89,7 @@ export function GanttChart({
   onTaskResizeStart,
   onOpenTaskDetail,
   onMoveTask,
+  onToggleDone,
   onOpenQuickAdd,
   onTogglePhase,
   onSetConnectState,
@@ -280,6 +283,7 @@ export function GanttChart({
                 connectMode={connectMode}
                 onOpenTaskDetail={onOpenTaskDetail}
                 onMoveTask={onMoveTask}
+                onToggleDone={onToggleDone}
                 isFirst={taskPosition === 0}
                 isLast={taskPosition === taskRowIds.length - 1}
               />

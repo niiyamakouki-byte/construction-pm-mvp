@@ -267,6 +267,8 @@ type GanttTaskLabelProps = {
   allTasks?: GanttTask[];
   onOpenTaskDetail: (task: GanttTask) => void;
   onMoveTask?: (task: GanttTask, direction: "up" | "down") => void;
+  /** 票l7369: 行チェックボックスでの完了/未完了ワンクリックトグル */
+  onToggleDone?: (task: GanttTask) => void;
   isFirst?: boolean;
   isLast?: boolean;
 };
@@ -278,6 +280,7 @@ export function GanttTaskLabel({
   connectMode,
   onOpenTaskDetail,
   onMoveTask,
+  onToggleDone,
   isFirst = false,
   isLast = false,
 }: GanttTaskLabelProps) {
@@ -299,6 +302,17 @@ export function GanttTaskLabel({
       className="flex w-full items-center gap-1 border-b border-slate-100 px-3 py-2"
       style={{ minHeight: rowHeight }}
     >
+      {onToggleDone && (
+        <input
+          type="checkbox"
+          data-testid={`task-done-checkbox-${task.id}`}
+          aria-label={`${task.name}を${task.status === "done" ? "未完了に戻す" : "完了にする"}`}
+          checked={task.status === "done"}
+          onChange={() => onToggleDone(task)}
+          onClick={(event) => event.stopPropagation()}
+          className="h-4 w-4 shrink-0 rounded border-slate-300 accent-brand-500"
+        />
+      )}
       <button
         type="button"
         className="min-w-0 flex-1 text-left transition-colors hover:bg-slate-50/80"

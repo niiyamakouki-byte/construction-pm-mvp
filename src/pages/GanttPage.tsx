@@ -35,6 +35,7 @@ import {
   addDaysSkipWeekends,
   compareGanttRows,
   computeReorder,
+  computeScrollLeftForDate,
   daysBetween,
   effectiveProgress,
   formatScheduleDate,
@@ -1079,6 +1080,20 @@ function GanttPageContent({ initialProjectId = null, openMaster = false, initial
     }
   }, [ganttTasks, loadData, taskRepository]);
 
+  // 票l7369: ガント左ペインのチェックボックスからワンクリックで完了/未完了をトグルする
+  const handleToggleTaskDone = useCallback(async (task: GanttTask) => {
+    const nextStatus = task.status === "done" ? "todo" : "done";
+    try {
+      await taskRepository.update(task.id, {
+        status: nextStatus,
+        updatedAt: new Date().toISOString(),
+      });
+      await loadData();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "タスクの状態変更に失敗しました");
+    }
+  }, [loadData, taskRepository]);
+
   const handleToggleConnectMode = useCallback(() => {
     setConnectMode((prev) => {
       if (prev) setConnectState(null);
@@ -1165,20 +1180,27 @@ function GanttPageContent({ initialProjectId = null, openMaster = false, initial
     };
   }, [dayWidth, selectedProject, selectedProjectTasks, today]);
 
-  // 初期表示は今日を中心にスクロールする。ただしチャート範囲は常に今日を含むため、
-  // 工期が過去/未来の案件では今日周辺に工程バーが1本もなく「空の工程表」に見える。
-  // 今日が工程範囲外のときは範囲の端(過去案件=最終工程、未来案件=最初の工程)へ寄せる。
-  useEffect(() => {
+  // 初期表示・「今日」ボタン共通: 今日を中心にスクロールする。ただしチャート範囲は
+  // 常に今日を含むため、工期が過去/未来の案件では今日周辺に工程バーが1本もなく
+  // 「空の工程表」に見える。今日が工程範囲外のときは範囲の端(過去案件=最終工程、
+  // 未来案件=最初の工程)へ寄せる。
+  const scrollToToday = useCallback(() => {
     const container = scrollRef.current;
-    if (loading || !container || !chartLayout) return;
+    if (!container || !chartLayout) return;
     const target = initialScrollDate(today, selectedProjectTasks);
-    const offset = daysBetween(chartLayout.chartStart, target);
-    const left = Math.max(0, offset * chartLayout.dayWidth + chartLayout.dayWidth / 2 - container.clientWidth / 2);
+    const left = computeScrollLeftForDate(chartLayout.chartStart, chartLayout.dayWidth, target, container.clientWidth);
     if (typeof container.scrollTo === "function") {
       container.scrollTo({ left, behavior: "smooth" });
     } else {
       container.scrollLeft = left;
     }
+  }, [chartLayout, today, selectedProjectTasks]);
+
+  useEffect(() => {
+    // 初期表示・案件切替・ズーム変更時のみ実行する（タスク編集の度に今日へ戻さない）
+    if (loading) return;
+    scrollToToday();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loading, selectedProjectId, dayWidth]);
 
   // ─── Googleカレンダー個人予定とのダブり可視化 (Phase A) ────────
@@ -1614,6 +1636,7 @@ function GanttPageContent({ initialProjectId = null, openMaster = false, initial
       onTaskResizeStart={startTaskResize}
       onOpenTaskDetail={openTaskDetail}
       onMoveTask={(task, direction) => void handleMoveTask(task, direction)}
+      onToggleDone={(task) => void handleToggleTaskDone(task)}
       onOpenQuickAdd={openQuickAdd}
       onTogglePhase={handleTogglePhase}
       onSetConnectState={setConnectState}
@@ -2133,6 +2156,14 @@ function GanttPageContent({ initialProjectId = null, openMaster = false, initial
                 ↩
               </button>
             ) : null}
+            {/* 票l7369: 今日の列へジャンプ */}
+            <button
+              type="button"
+              onClick={scrollToToday}
+              className="rounded-md bg-white px-3 py-2.5 text-sm font-semibold text-slate-600 ring-1 ring-slate-200 transition-colors hover:bg-slate-50"
+            >
+              今日
+            </button>
 
             {/* 編集メニュー */}
             <details className="group relative">

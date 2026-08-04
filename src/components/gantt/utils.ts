@@ -29,6 +29,20 @@ export function initialScrollDate(today: string, tasks: Pick<GanttTask, "startDa
   return today;
 }
 
+/**
+ * chartStart起点で targetDate の列がビューポート中央に来るスクロール位置(px)。
+ * 初期表示・「今日」ジャンプボタンの両方から使う共通計算。
+ */
+export function computeScrollLeftForDate(
+  chartStart: string,
+  dayWidth: number,
+  targetDate: string,
+  clientWidth: number,
+): number {
+  const offset = daysBetween(chartStart, targetDate);
+  return Math.max(0, offset * dayWidth + dayWidth / 2 - clientWidth / 2);
+}
+
 type GanttRowOrder = { sortIndex?: number | null; startDate: string; endDate: string };
 
 /**

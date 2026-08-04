@@ -4,6 +4,7 @@ import {
   addDaysSkipWeekends,
   compareGanttRows,
   computeReorder,
+  computeScrollLeftForDate,
   formatScheduleDate,
   getAlertLevel,
   hasCycle,
@@ -41,6 +42,18 @@ describe("initialScrollDate (工期外の案件で初期表示が空に見える
 
   it("工程が無ければ今日を返す", () => {
     expect(initialScrollDate("2026-07-12", [])).toBe("2026-07-12");
+  });
+});
+
+describe("computeScrollLeftForDate (今日ジャンプボタン共通ロジック)", () => {
+  it("対象日をビューポート中央に置くスクロール位置を返す", () => {
+    // daysBetween(2026-03-01, 2026-03-10) = 9 → 9*40 + 20 - 400/2 = 360+20-200 = 180
+    expect(computeScrollLeftForDate("2026-03-01", 40, "2026-03-10", 400)).toBe(180);
+  });
+
+  it("計算結果が負になる場合は0にクランプされる", () => {
+    // daysBetween=0 → 0*40+20-1000/2 = -480 → 0
+    expect(computeScrollLeftForDate("2026-03-01", 40, "2026-03-01", 1000)).toBe(0);
   });
 });
 

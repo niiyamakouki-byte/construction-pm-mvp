@@ -204,3 +204,46 @@ describe("GanttTaskBar - 発注納期マーカー", () => {
     expect(getAllByTestId("order-delivery-marker")).toHaveLength(2);
   });
 });
+
+// ────────────────────────────────────────────────────────────────
+// 票l7369: 行チェックボックスでのワンクリック完了トグル
+// ────────────────────────────────────────────────────────────────
+describe("GanttTaskLabel - 行チェックボックス", () => {
+  it("onToggleDoneが渡されなければチェックボックスは描画されない", () => {
+    const { container } = render(
+      <GanttTaskLabel task={baseTask} today="2025-01-02" connectMode={false} onOpenTaskDetail={vi.fn()} />,
+    );
+    expect(container.querySelector('input[type="checkbox"]')).toBeNull();
+  });
+
+  it("status=todoのときは未チェック", () => {
+    const { getByRole } = render(
+      <GanttTaskLabel task={baseTask} today="2025-01-02" connectMode={false} onOpenTaskDetail={vi.fn()} onToggleDone={vi.fn()} />,
+    );
+    expect((getByRole("checkbox") as HTMLInputElement).checked).toBe(false);
+  });
+
+  it("status=doneのときはチェック済み", () => {
+    const { getByRole } = render(
+      <GanttTaskLabel
+        task={{ ...baseTask, status: "done" }}
+        today="2025-01-02"
+        connectMode={false}
+        onOpenTaskDetail={vi.fn()}
+        onToggleDone={vi.fn()}
+      />,
+    );
+    expect((getByRole("checkbox") as HTMLInputElement).checked).toBe(true);
+  });
+
+  it("チェック操作でonToggleDoneがそのタスクを引数に呼ばれる（詳細モーダルは開かない）", () => {
+    const onToggleDone = vi.fn();
+    const onOpenTaskDetail = vi.fn();
+    const { getByRole } = render(
+      <GanttTaskLabel task={baseTask} today="2025-01-02" connectMode={false} onOpenTaskDetail={onOpenTaskDetail} onToggleDone={onToggleDone} />,
+    );
+    getByRole("checkbox").click();
+    expect(onToggleDone).toHaveBeenCalledWith(baseTask);
+    expect(onOpenTaskDetail).not.toHaveBeenCalled();
+  });
+});
