@@ -299,7 +299,6 @@ function AppShell() {
       icon: "contractors",
       path: "/contractors",
       matchRoute: (currentRoute) => currentRoute === "/contractors",
-      dataTour: "nav-contractors",
     },
     {
       key: "estimate",
