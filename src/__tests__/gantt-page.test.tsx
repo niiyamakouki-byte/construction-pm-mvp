@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { GanttPage } from "../pages/GanttPage.js";
+import { toLocalDateString } from "../components/gantt/utils.js";
 
 const mockTaskRepository = {
   findAll: vi.fn(),
@@ -19,6 +20,14 @@ const mockContractorRepository = {
 };
 
 const mockExportGanttToPdf = vi.fn();
+
+const mockOrderRepository = vi.hoisted(() => ({
+  listByProjectAsync: vi.fn().mockResolvedValue([]),
+}));
+
+vi.mock("../lib/supabase-adapter/OrderRepository.js", () => ({
+  orderRepository: mockOrderRepository,
+}));
 
 vi.mock("../stores/task-store.js", () => ({
   createTaskRepository: () => mockTaskRepository,
@@ -64,6 +73,8 @@ describe("GanttPage", () => {
     mockProjectRepository.findAll.mockReset();
     mockContractorRepository.findAll.mockReset();
     mockExportGanttToPdf.mockReset();
+    mockOrderRepository.listByProjectAsync.mockReset();
+    mockOrderRepository.listByProjectAsync.mockResolvedValue([]);
   });
 
   it("データ読込中はガント用スケルトンが表示される", () => {
@@ -149,6 +160,80 @@ describe("GanttPage", () => {
     expect(screen.getByRole("figure", { name: "ガントチャート: 2タスク" })).toBeDefined();
     expect(screen.getAllByText("墨出し").length).toBeGreaterThan(0);
     expect(screen.getAllByText("配線工事").length).toBeGreaterThan(0);
+  });
+
+  it("laporta-beads-lzurb: 本日納品の発注が既存サマリ帯に「今日納品」件数として統合表示される(遅延と同居、新規の別帯は出ない)", async () => {
+    const now = "2025-01-01T00:00:00.000Z";
+    const today = toLocalDateString(new Date());
+    mockProjectRepository.findAll.mockResolvedValue([
+      {
+        id: "p1",
+        name: "南青山ビル改修",
+        description: "",
+        status: "active",
+        startDate: "2020-01-10",
+        includeWeekends: true,
+        createdAt: now,
+        updatedAt: now,
+      },
+    ]);
+    mockTaskRepository.findAll.mockResolvedValue([
+      {
+        id: "t1",
+        projectId: "p1",
+        name: "墨出し",
+        description: "",
+        status: "in_progress",
+        startDate: "2020-01-10",
+        dueDate: "2020-01-12",
+        progress: 25,
+        dependencies: [],
+        createdAt: now,
+        updatedAt: now,
+      },
+      {
+        id: "t2",
+        projectId: "p1",
+        name: "配線工事",
+        description: "",
+        status: "todo",
+        startDate: "2020-01-13",
+        dueDate: "2020-01-18",
+        progress: 0,
+        dependencies: [],
+        createdAt: now,
+        updatedAt: now,
+      },
+    ]);
+    mockContractorRepository.findAll.mockResolvedValue([]);
+    mockOrderRepository.listByProjectAsync.mockResolvedValue([
+      {
+        id: "o1",
+        projectId: "p1",
+        contractorId: "c1",
+        contractorName: "サンプル工務店",
+        items: [],
+        status: "発注済",
+        orderDate: "2020-01-01",
+        deliveryDate: today,
+        totalAmount: 0,
+        taxAmount: 0,
+        totalWithTax: 0,
+        taskId: "t1",
+        createdAt: now,
+        updatedAt: now,
+      },
+    ]);
+
+    render(<GanttPage initialProjectId="p1" />);
+
+    expect(await screen.findByRole("heading", { name: "南青山ビル改修" })).toBeDefined();
+    // 既存の遅延・次工程サマリ帯に「今日納品」が同居する(新設の別帯ではない)
+    expect(await screen.findByText("今日納品 1件")).toBeDefined();
+    expect(screen.getByText("遅延 2件")).toBeDefined();
+    // 票2下書きにあった旧「日次サマリ帯」新設パターン(進行中/今日開始/今日締切)は出ない
+    expect(screen.queryByText(/今日開始/)).toBeNull();
+    expect(screen.queryByText(/今日締切/)).toBeNull();
   });
 
   it("laporta-beads-z8ja5: ヘッダーの+工程追加ボタンが画面内にある間はFABを隠し、スクロールアウトしたら表示する", async () => {

@@ -785,6 +785,11 @@ function GanttPageContent({ initialProjectId = null, openMaster = false, initial
     () => selectedProjectTasks.find((t) => t.status === "in_progress"),
     [selectedProjectTasks],
   );
+  // 票lzurb: 票g0zed発注納期マーカーのうち本日納品分を既存サマリ帯へ統合
+  const todayDeliveryCount = useMemo(
+    () => orderMarkers.filter((marker) => marker.deliveryDate === today).length,
+    [orderMarkers, today],
+  );
 
   const projectChangeOrders = useMemo(
     () => (selectedProject ? getChangeOrders(selectedProject.id) : []),
@@ -2096,7 +2101,12 @@ function GanttPageContent({ initialProjectId = null, openMaster = false, initial
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            {/* 遅延・次工程サマリ */}
+            {/* 遅延・今日納品・次工程サマリ(票lzurb: 新設帯ではなく既存帯へ統合) */}
+            {todayDeliveryCount > 0 ? (
+              <span className="rounded-full bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700 ring-1 ring-blue-200">
+                今日納品 {todayDeliveryCount}件
+              </span>
+            ) : null}
             {delayedCount > 0 ? (
               <span className="rounded-full bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-700 ring-1 ring-red-200">
                 遅延 {delayedCount}件
