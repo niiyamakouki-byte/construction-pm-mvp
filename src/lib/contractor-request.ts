@@ -49,11 +49,12 @@ export function buildContractorRequestEmail(
 
 function buildShareUrl(token: string): string {
   const base = window.location.origin + window.location.pathname;
-  return `${base}#/portal/share/${encodeURIComponent(token)}`;
+  return `${base}#/portal/request/${encodeURIComponent(token)}`;
 }
 
 export type SendContractorRequestInput = {
   projectId: string;
+  notificationId: string;
   projectName: string;
   taskName: string;
   startDate: string;
@@ -98,6 +99,7 @@ export async function sendContractorRequest(
       expiresInDays: deps.expiresInDays ?? 14,
       getAccessToken: deps.getAccessToken,
       fetcher: deps.fetcher,
+      contractorRequest: { notificationId: input.notificationId, taskName },
     });
     shareUrl = buildShareUrl(token);
   } catch (err) {

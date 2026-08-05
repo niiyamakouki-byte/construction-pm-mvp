@@ -226,6 +226,7 @@ export type SignedTokenOptions = {
   getAccessToken?: () => Promise<string | null>;
   /** テスト注入用の fetch 実装。デフォルトは global fetch。 */
   fetcher?: ShareTokenFetcher;
+  contractorRequest?: { notificationId: string; taskName: string };
 };
 
 export type SignedTokenVerifyResult = {
@@ -234,6 +235,9 @@ export type SignedTokenVerifyResult = {
   expired?: boolean;
   requiresPassword?: boolean;
   tampered?: boolean;
+  purpose?: "contractor_request";
+  notificationId?: string;
+  taskName?: string;
 };
 
 /**
@@ -247,7 +251,7 @@ export async function createShareToken(
   projectId: string,
   options: SignedTokenOptions,
 ): Promise<string> {
-  const { expiresInDays, password, getAccessToken, fetcher } = options;
+  const { expiresInDays, password, getAccessToken, fetcher, contractorRequest } = options;
   const doFetch = fetcher ?? (fetch.bind(globalThis) as ShareTokenFetcher);
 
   const headers: Record<string, string> = { "Content-Type": "application/json" };
@@ -259,7 +263,7 @@ export async function createShareToken(
   const res = await doFetch(SHARE_TOKEN_API_ENDPOINT, {
     method: "POST",
     headers,
-    body: JSON.stringify({ action: "create", projectId, expiresInDays, password }),
+    body: JSON.stringify({ action: "create", projectId, expiresInDays, password, contractorRequest }),
   });
 
   if (!res.ok) {
@@ -269,6 +273,23 @@ export async function createShareToken(
 
   const { token } = (await res.json()) as { token: string };
   return token;
+}
+
+export async function respondToContractorRequest(
+  token: string,
+  response: "accepted" | "rejected",
+  opts?: { fetcher?: ShareTokenFetcher },
+): Promise<void> {
+  const doFetch = opts?.fetcher ?? (fetch.bind(globalThis) as ShareTokenFetcher);
+  const res = await doFetch(SHARE_TOKEN_API_ENDPOINT, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ action: "respond", token, response }),
+  });
+  if (!res.ok) {
+    const body = (await res.json().catch(() => ({}))) as { error?: string };
+    throw new Error(body.error ?? `依頼回答の保存に失敗しました (${res.status})`);
+  }
 }
 
 /**

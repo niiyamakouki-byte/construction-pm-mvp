@@ -71,6 +71,24 @@ describe("createSignedShareToken", () => {
     ) as { passwordHash?: string };
     expect(claims.passwordHash).toBeUndefined();
   });
+
+  it("contractor request claims are signed and returned by verification", () => {
+    const token = createSignedShareToken(
+      "proj-request",
+      {
+        expiresInDays: 14,
+        contractorRequest: { notificationId: "notification-1", taskName: "軽鉄下地組み" },
+      },
+      TEST_ENV,
+    );
+    expect(verifySignedShareToken(token, undefined, TEST_ENV)).toMatchObject({
+      valid: true,
+      projectId: "proj-request",
+      purpose: "contractor_request",
+      notificationId: "notification-1",
+      taskName: "軽鉄下地組み",
+    });
+  });
 });
 
 describe("verifySignedShareToken", () => {
@@ -273,5 +291,52 @@ describe("handleShareTokenRequest", () => {
     const res = makeRes();
     await handleShareTokenRequest(req, res, { auth: okAuth, env: TEST_ENV });
     expect(res._status).toBe(400);
+  });
+
+  it.each(["accepted", "rejected"] as const)(
+    "action=respond saves a signed contractor response: %s",
+    async (response) => {
+      const token = createSignedShareToken(
+        "proj-response",
+        {
+          expiresInDays: 14,
+          contractorRequest: { notificationId: "notification-response", taskName: "塗装" },
+        },
+        TEST_ENV,
+      );
+      const saved: Array<[string, string, string]> = [];
+      const req: ShareTokenRequest = {
+        method: "POST",
+        headers: {},
+        body: { action: "respond", token, response },
+      };
+      const res = makeRes();
+      await handleShareTokenRequest(req, res, {
+        auth: okAuth,
+        env: TEST_ENV,
+        respondToContractorRequest: async (notificationId, projectId, nextStatus) => {
+          saved.push([notificationId, projectId, nextStatus]);
+          return true;
+        },
+      });
+      expect(res._status).toBe(200);
+      expect(saved).toEqual([["notification-response", "proj-response", response]]);
+    },
+  );
+
+  it("action=respond rejects a normal owner share token", async () => {
+    const token = createSignedShareToken("proj-owner", { expiresInDays: 14 }, TEST_ENV);
+    const req: ShareTokenRequest = {
+      method: "POST",
+      headers: {},
+      body: { action: "respond", token, response: "accepted" },
+    };
+    const res = makeRes();
+    await handleShareTokenRequest(req, res, {
+      auth: okAuth,
+      env: TEST_ENV,
+      respondToContractorRequest: async () => true,
+    });
+    expect(res._status).toBe(403);
   });
 });

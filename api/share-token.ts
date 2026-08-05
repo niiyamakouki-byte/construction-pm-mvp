@@ -46,5 +46,18 @@ export default async function handler(
 
   await handleShareTokenRequest(req, res, {
     auth: asSupabaseAuthVerifier(supabase.auth),
+    respondToContractorRequest: async (notificationId, projectId, response) => {
+      const { data, error } = await supabase
+        .from("notifications")
+        .update({ status: response, updated_at: new Date().toISOString() })
+        .eq("id", notificationId)
+        .eq("project_id", projectId)
+        .eq("type", "contractor_request")
+        .in("status", ["sent", "accepted", "rejected"])
+        .select("id")
+        .maybeSingle();
+      if (error) throw new Error(error.message);
+      return Boolean(data);
+    },
   });
 }

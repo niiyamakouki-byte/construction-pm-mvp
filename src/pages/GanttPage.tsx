@@ -1013,9 +1013,11 @@ function GanttPageContent({ initialProjectId = null, openMaster = false, initial
     const mode: ContractorRequestMode =
       import.meta.env.VITE_CONTRACTOR_REQUEST_LIVE === "true" ? "live" : "dry-run";
 
+    const notificationId = crypto.randomUUID();
     const result = await sendContractorRequest(
       {
         projectId: taskDetail.task.projectId,
+        notificationId,
         projectName: project?.name ?? taskDetail.task.projectName,
         taskName: taskDetail.task.name,
         startDate: taskDetail.task.startDate,
@@ -1029,7 +1031,7 @@ function GanttPageContent({ initialProjectId = null, openMaster = false, initial
     const notificationRepository = createNotificationRepository(() => organizationId);
     const now = new Date().toISOString();
     await notificationRepository.create({
-      id: crypto.randomUUID(),
+      id: notificationId,
       projectId: taskDetail.task.projectId,
       taskId: taskDetail.task.id,
       contractorId: contractor.id,

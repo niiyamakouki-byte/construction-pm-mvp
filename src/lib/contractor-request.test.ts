@@ -81,6 +81,7 @@ describe("buildContractorRequestEmail", () => {
 describe("sendContractorRequest", () => {
   const baseInput = {
     projectId: "proj-1",
+    notificationId: "request-1",
     projectName: "松下邸リノベーション",
     taskName: "軽鉄下地組み",
     startDate: "2026-08-10",
@@ -98,7 +99,7 @@ describe("sendContractorRequest", () => {
     if (result.ok) {
       expect(result.recipient).toBe(DRY_RUN_RECIPIENT);
       expect(result.emailId).toBe("email_test123");
-      expect(result.shareUrl).toContain("/portal/share/");
+      expect(result.shareUrl).toContain("/portal/request/");
     }
   });
 

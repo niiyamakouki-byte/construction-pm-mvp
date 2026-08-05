@@ -133,7 +133,7 @@ export type NotificationType =
   | "alert"
   | "contractor_request";
 
-export type NotificationStatus = "pending" | "sent" | "failed";
+export type NotificationStatus = "pending" | "sent" | "failed" | "accepted" | "rejected";
 
 export type Notification = BaseEntity & {
   projectId?: string;

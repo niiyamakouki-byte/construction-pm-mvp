@@ -34,6 +34,7 @@ const ProcurementPage = lazy(() => import("./pages/ProcurementPage.js").then((m)
 const SiteEntryPage = lazy(() => import("./pages/SiteEntryPage.js").then((m) => ({ default: m.SiteEntryPage })));
 const AttendanceHistoryPage = lazy(() => import("./pages/AttendanceHistoryPage.js").then((m) => ({ default: m.AttendanceHistoryPage })));
 const ContractorPortalPage = lazy(() => import("./pages/ContractorPortalPage.js").then((m) => ({ default: m.ContractorPortalPage })));
+const ContractorRequestResponsePage = lazy(() => import("./pages/ContractorRequestResponsePage.js").then((m) => ({ default: m.ContractorRequestResponsePage })));
 // Sprint 66移行 (2026-07-27): /portal/share/:token の正本は OwnerPortalSharePage
 // (サーバー署名HMAC検証、src/lib/share-token.js)。旧 SharePortalPage
 // (share-token-jwt.js、localStorage秘密鍵、別端末で開くと必ず invalid_signature) は
@@ -478,6 +479,7 @@ function AppShell() {
   const historyMatch = route.match(/^\/attendance-history\/(.+)$/);
   const reportsMatch = route.match(/^\/reports(?:\/(.+))?$/);
   const sharePortalMatch = route.match(/^\/portal\/share\/(.+)$/);
+  const contractorRequestMatch = route.match(/^\/portal\/request\/(.+)$/);
   const portalMatch = route.match(/^\/portal\/([^/]+)(?:\/(.+))?$/);
   const selectionMatch = route.match(/^\/selection\/([^/]+)$/);
   const moodBoardMatch = route.match(/^\/mood-board\/([^/]+)$/);
@@ -503,6 +505,7 @@ function AppShell() {
   const historyProjectId = historyMatch?.[1] ? decodeURIComponent(historyMatch[1]) : null;
   const reportsProjectId = reportsMatch?.[1] ? decodeURIComponent(reportsMatch[1]) : undefined;
   const sharePortalToken = sharePortalMatch?.[1] ? decodeURIComponent(sharePortalMatch[1]) : null;
+  const contractorRequestToken = contractorRequestMatch?.[1] ? decodeURIComponent(contractorRequestMatch[1]) : null;
   const portalProjectId = portalMatch?.[1] ? decodeURIComponent(portalMatch[1]) : null;
   const portalCompany = portalMatch?.[2] ? decodeURIComponent(portalMatch[2]) : undefined;
   const selectionProjectId = selectionMatch?.[1] ? decodeURIComponent(selectionMatch[1]) : null;
@@ -537,6 +540,7 @@ function AppShell() {
   if (clientProjectId) return <Suspense fallback={pageFallback}><ClientViewerPage projectId={clientProjectId} /></Suspense>;
   if (entryProjectId) return <Suspense fallback={pageFallback}><SiteEntryPage projectId={entryProjectId} entryToken={entryToken ?? ""} /></Suspense>;
   if (sharePortalToken) return <Suspense fallback={pageFallback}><OwnerPortalSharePage token={sharePortalToken} /></Suspense>;
+  if (contractorRequestToken) return <Suspense fallback={pageFallback}><ContractorRequestResponsePage token={contractorRequestToken} /></Suspense>;
   if (portalProjectId) return <Suspense fallback={pageFallback}><ContractorPortalPage projectId={portalProjectId} company={portalCompany} /></Suspense>;
   if (selectionProjectId) return <Suspense fallback={pageFallback}><SelectionBoardPage projectId={selectionProjectId} /></Suspense>;
   if (finishingMatch) return <Suspense fallback={pageFallback}><FinishingSchedulePage projectName={finishingMatch[1] ? decodeURIComponent(finishingMatch[1]) : undefined} /></Suspense>;

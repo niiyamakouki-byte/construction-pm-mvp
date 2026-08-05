@@ -83,6 +83,9 @@ export type SignedTokenClaims = {
   issuedAt: number;
   expiresAt: number;
   passwordHash?: string;
+  purpose?: "contractor_request";
+  notificationId?: string;
+  taskName?: string;
 };
 
 export type SignedTokenVerifyResult = {
@@ -91,6 +94,9 @@ export type SignedTokenVerifyResult = {
   expired?: boolean;
   requiresPassword?: boolean;
   tampered?: boolean;
+  purpose?: "contractor_request";
+  notificationId?: string;
+  taskName?: string;
 };
 
 /**
@@ -99,7 +105,11 @@ export type SignedTokenVerifyResult = {
  */
 export function createSignedShareToken(
   projectId: string,
-  options: { expiresInDays: number; password?: string },
+  options: {
+    expiresInDays: number;
+    password?: string;
+    contractorRequest?: { notificationId: string; taskName: string };
+  },
   env: NodeJS.ProcessEnv,
 ): string {
   const secret = getShareTokenSecret(env);
@@ -110,6 +120,11 @@ export function createSignedShareToken(
   const claims: SignedTokenClaims = { projectId, issuedAt: now, expiresAt };
   if (password !== undefined && password !== "") {
     claims.passwordHash = hashPasswordServer(password);
+  }
+  if (options.contractorRequest) {
+    claims.purpose = "contractor_request";
+    claims.notificationId = options.contractorRequest.notificationId;
+    claims.taskName = options.contractorRequest.taskName;
   }
 
   const claimsB64 = toBase64Url(Buffer.from(JSON.stringify(claims), "utf8"));
@@ -163,7 +178,13 @@ export function verifySignedShareToken(
     }
   }
 
-  return { valid: true, projectId };
+  return {
+    valid: true,
+    projectId,
+    purpose: claims.purpose,
+    notificationId: claims.notificationId,
+    taskName: claims.taskName,
+  };
 }
 
 // ── Vercel handler ───────────────────────────────────────────────────────────
@@ -182,6 +203,11 @@ export type ShareTokenResponse = {
 
 export type ShareTokenHandlerDeps = {
   auth: SupabaseAuthVerifier;
+  respondToContractorRequest?: (
+    notificationId: string,
+    projectId: string,
+    response: "accepted" | "rejected",
+  ) => Promise<boolean>;
   /** テスト注入用。デフォルトは process.env。 */
   env?: NodeJS.ProcessEnv;
 };
@@ -192,8 +218,10 @@ type ShareTokenRequestBody =
       projectId?: string;
       expiresInDays?: number;
       password?: string;
+      contractorRequest?: { notificationId?: string; taskName?: string };
     }
-  | { action: "verify"; token?: string; password?: string };
+  | { action: "verify"; token?: string; password?: string }
+  | { action: "respond"; token?: string; response?: "accepted" | "rejected" };
 
 function readBody(req: ShareTokenRequest): ShareTokenRequestBody | null {
   if (req.body == null) return null;
@@ -220,8 +248,8 @@ export async function handleShareTokenRequest(
 
   const env = deps.env ?? process.env;
   const body = readBody(req);
-  if (!body || (body.action !== "create" && body.action !== "verify")) {
-    res.status(400).json({ error: "action は 'create' または 'verify' が必要です" });
+  if (!body || !["create", "verify", "respond"].includes(body.action)) {
+    res.status(400).json({ error: "action は 'create'、'verify'、'respond' のいずれかが必要です" });
     return;
   }
 
@@ -238,16 +266,56 @@ export async function handleShareTokenRequest(
         res.status(400).json({ error: "projectId と expiresInDays(number) が必要です" });
         return;
       }
+      if (
+        body.contractorRequest &&
+        (!body.contractorRequest.notificationId || !body.contractorRequest.taskName)
+      ) {
+        res.status(400).json({ error: "contractorRequest には notificationId と taskName が必要です" });
+        return;
+      }
       const token = createSignedShareToken(
         body.projectId,
-        { expiresInDays: body.expiresInDays, password: body.password },
+        {
+          expiresInDays: body.expiresInDays,
+          password: body.password,
+          contractorRequest: body.contractorRequest as
+            | { notificationId: string; taskName: string }
+            | undefined,
+        },
         env,
       );
       res.status(200).json({ token });
       return;
     }
 
-    // verify: 共有リンクを受け取った施主本人が呼ぶ想定なので無認証で受け付ける。
+    if (body.action === "respond") {
+      if (!body.token || (body.response !== "accepted" && body.response !== "rejected")) {
+        res.status(400).json({ error: "token と response(accepted/rejected) が必要です" });
+        return;
+      }
+      const result = verifySignedShareToken(body.token, undefined, env);
+      if (!result.valid || result.purpose !== "contractor_request" || !result.notificationId || !result.projectId) {
+        res.status(403).json({ error: "有効な協力業者依頼トークンではありません" });
+        return;
+      }
+      if (!deps.respondToContractorRequest) {
+        res.status(500).json({ error: "依頼回答の保存先が設定されていません" });
+        return;
+      }
+      const updated = await deps.respondToContractorRequest(
+        result.notificationId,
+        result.projectId,
+        body.response,
+      );
+      if (!updated) {
+        res.status(404).json({ error: "対象の依頼が見つかりません" });
+        return;
+      }
+      res.status(200).json({ ok: true, status: body.response });
+      return;
+    }
+
+    // verify: 共有リンクを受け取った本人が呼ぶ想定なので無認証で受け付ける。
     if (!body.token) {
       res.status(400).json({ error: "token が必要です" });
       return;

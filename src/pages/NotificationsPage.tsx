@@ -8,12 +8,16 @@ const statusLabel: Record<NotificationStatus, string> = {
   pending: "未送信",
   sent: "送信済",
   failed: "失敗",
+  accepted: "承諾済",
+  rejected: "辞退",
 };
 
 const statusColor: Record<NotificationStatus, string> = {
   pending: "bg-amber-100 text-amber-700",
   sent: "bg-brand-100 text-brand-700",
   failed: "bg-red-100 text-red-700",
+  accepted: "bg-emerald-100 text-emerald-700",
+  rejected: "bg-slate-200 text-slate-700",
 };
 
 const typeLabel: Record<Notification["type"], string> = {
@@ -141,7 +145,7 @@ export function NotificationsPage() {
       {/* Status summary */}
       {notifications.length > 0 && (
         <div className="flex gap-3">
-          {(["pending", "sent", "failed"] as NotificationStatus[]).map((s) => {
+          {(["pending", "sent", "failed", "accepted", "rejected"] as NotificationStatus[]).map((s) => {
             const count = notifications.filter((n) => n.status === s).length;
             return (
               <div key={s} className="flex-1 rounded-xl border border-slate-100 bg-white p-3 text-center shadow-sm">
