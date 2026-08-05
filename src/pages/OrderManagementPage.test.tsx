@@ -1,12 +1,24 @@
 import { describe, expect, it, beforeEach, afterEach, vi } from "vitest";
 import { render, screen, cleanup, fireEvent } from "@testing-library/react";
 import { OrderManagementPage } from "./OrderManagementPage.js";
+import { OrganizationContext } from "../contexts/OrganizationContext.js";
+import type { UserRole } from "../lib/user-roles.js";
 
 const { mockListByProjectAsync, mockSaveAsync, mockDeleteAsync } = vi.hoisted(() => ({
   mockListByProjectAsync: vi.fn().mockResolvedValue([]),
   mockSaveAsync: vi.fn().mockResolvedValue(undefined),
   mockDeleteAsync: vi.fn().mockResolvedValue(undefined),
 }));
+
+function renderWithRole(role: UserRole) {
+  return render(
+    <OrganizationContext.Provider
+      value={{ organization: null, organizationId: "org-test", role, loading: false }}
+    >
+      <OrderManagementPage projectId="p-test" />
+    </OrganizationContext.Provider>,
+  );
+}
 
 vi.mock("../lib/supabase-adapter/OrderRepository.js", () => ({
   orderRepository: {
@@ -113,5 +125,58 @@ describe("OrderManagementPage — 納期変更UI", () => {
         expect.objectContaining({ id: "o-1", deliveryDate: "2026-09-01" }),
       );
     });
+  });
+});
+
+describe("OrderManagementPage — RBAC", () => {
+  const EXISTING_ORDER = {
+    id: "o-rbac",
+    projectId: "p-test",
+    contractorId: "c-1",
+    contractorName: "山田内装工業",
+    items: [],
+    status: "下書き" as const,
+    orderDate: "2026-08-01",
+    deliveryDate: "2026-08-10",
+    totalAmount: 0,
+    taxAmount: 0,
+    totalWithTax: 0,
+    createdAt: "2026-08-01T00:00:00.000Z",
+    updatedAt: "2026-08-01T00:00:00.000Z",
+  };
+
+  beforeEach(async () => {
+    vi.clearAllMocks();
+    mockListByProjectAsync.mockResolvedValue([EXISTING_ORDER]);
+    const { getNextStatuses } = await import("../lib/order-management.js");
+    vi.mocked(getNextStatuses).mockReturnValue(["発注済"]);
+  });
+
+  afterEach(cleanup);
+
+  it("viewer権限では発注作成とステータス変更を実行できない", async () => {
+    renderWithRole("viewer");
+    const createButton = await screen.findByRole("button", { name: "+ 発注書作成" });
+    const transitionButton = await screen.findByRole("button", { name: "→ 発注済" });
+
+    expect((createButton as HTMLButtonElement).disabled).toBe(true);
+    expect((transitionButton as HTMLButtonElement).disabled).toBe(true);
+    fireEvent.click(createButton);
+    fireEvent.click(transitionButton);
+    expect(screen.queryByText("発注書作成", { selector: "h2" })).toBeNull();
+    expect(mockSaveAsync).not.toHaveBeenCalled();
+  });
+
+  it("admin権限では発注作成とステータス変更を実行できる", async () => {
+    renderWithRole("admin");
+    const createButton = await screen.findByRole("button", { name: "+ 発注書作成" });
+    const transitionButton = await screen.findByRole("button", { name: "→ 発注済" });
+
+    expect((createButton as HTMLButtonElement).disabled).toBe(false);
+    expect((transitionButton as HTMLButtonElement).disabled).toBe(false);
+    fireEvent.click(createButton);
+    expect(await screen.findByText("発注書作成", { selector: "h2" })).toBeDefined();
+    fireEvent.click(transitionButton);
+    await vi.waitFor(() => expect(mockSaveAsync).toHaveBeenCalledTimes(1));
   });
 });

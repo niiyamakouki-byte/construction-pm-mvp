@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { getSupabaseClient, hasSupabaseEnv } from "../infra/supabase-client.js";
+import { UserRole, type UserRole as UserRoleValue } from "../lib/user-roles.js";
 import { useAuth } from "./AuthContext.js";
 
 export type Organization = {
@@ -17,14 +18,23 @@ export type Organization = {
 type OrganizationContextValue = {
   organization: Organization | null;
   organizationId: string | null;
+  role: UserRoleValue;
   loading: boolean;
 };
 
 export const OrganizationContext = createContext<OrganizationContextValue>({
   organization: null,
   organizationId: null,
+  role: UserRole.owner,
   loading: true,
 });
+
+export function resolveOrganizationRole(role: unknown): UserRoleValue {
+  if (role === "member") return UserRole.field_worker;
+  return Object.values(UserRole).includes(role as UserRoleValue)
+    ? role as UserRoleValue
+    : UserRole.viewer;
+}
 
 /**
  * 招待リンク経由のサインアップ判定（AC③、票construction_pm_mvp-1g7）。
@@ -75,6 +85,21 @@ async function fetchOrganization(orgId: string): Promise<Organization> {
   };
 }
 
+async function fetchOrganizationRole(userId: string, orgId: string): Promise<UserRoleValue> {
+  const client = await getSupabaseClient();
+  const { data, error } = await client
+    .from("organization_members")
+    .select("role")
+    .eq("user_id", userId)
+    .eq("organization_id", orgId)
+    .single();
+
+  if (error || !data) {
+    throw new Error(error?.message ?? "Failed to fetch organization role");
+  }
+  return resolveOrganizationRole((data as { role?: unknown }).role);
+}
+
 async function ensureOrganization(
   userId: string,
   companyName: string,
@@ -121,12 +146,14 @@ async function joinInvitedOrganization(
 export function OrganizationProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
   const [organization, setOrganization] = useState<Organization | null>(null);
+  const [role, setRole] = useState<UserRoleValue>(UserRole.viewer);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!user || !hasSupabaseEnv()) {
       // eslint-disable-next-line react-hooks/set-state-in-effect -- ユーザー未認証時に組織情報をリセットする初期化パターン
       setOrganization(null);
+      setRole(hasSupabaseEnv() ? UserRole.viewer : UserRole.owner);
       setLoading(false);
       return;
     }
@@ -142,15 +169,21 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
       : ensureOrganization(user.id, companyName);
 
     void setup
-      .then((org) => {
+      .then(async (org) => ({
+        org,
+        role: await fetchOrganizationRole(user.id, org.id),
+      }))
+      .then(({ org, role: resolvedRole }) => {
         if (!disposed) {
           setOrganization(org);
+          setRole(resolvedRole);
         }
       })
       .catch((err) => {
         if (!disposed) {
           console.error("Organization setup failed:", err);
           setOrganization(null);
+          setRole(UserRole.viewer);
         }
       })
       .finally(() => {
@@ -169,6 +202,7 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
       value={{
         organization,
         organizationId: organization?.id ?? null,
+        role,
         loading,
       }}
     >

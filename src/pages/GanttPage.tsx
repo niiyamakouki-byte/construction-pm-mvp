@@ -93,6 +93,7 @@ import { ConfirmDialog } from "../components/common/ConfirmDialog.js";
 import { ACTION_LABELS } from "../lib/action-labels.js";
 import { BarChart2, Check, ChevronLeft, FolderKanban } from "lucide-react";
 import { EmptyState } from "../components/EmptyState.js";
+import { hasPermission } from "../lib/user-roles.js";
 
 const MAX_CHART_DAYS = 240;
 const MIN_DAY_WIDTH = 8;
@@ -454,8 +455,9 @@ type GanttPageProps = {
 };
 
 function GanttPageContent({ initialProjectId = null, openMaster = false, initialView }: GanttPageProps) {
-  const { organizationId } = useOrganizationContext();
+  const { organizationId, role } = useOrganizationContext();
   const { session } = useAuth();
+  const canSendContractorRequest = hasPermission(role, "edit");
   const projectRepository = useMemo(() => createProjectRepository(() => organizationId), [organizationId]);
   const taskRepository = useMemo(() => createTaskRepository(() => organizationId), [organizationId]);
   const contractorRepository = useMemo(() => createContractorRepository(() => organizationId), [organizationId]);
@@ -1008,6 +1010,9 @@ function GanttPageContent({ initialProjectId = null, openMaster = false, initial
   const handleSendContractorRequest = useCallback(async (
     options: { allowResend?: boolean } = {},
   ) => {
+    if (!canSendContractorRequest) {
+      return { ok: false as const, error: "依頼を送信する権限がありません" };
+    }
     if (!taskDetail) {
       return { ok: false as const, error: "タスクが見つかりません" };
     }
@@ -1067,7 +1072,7 @@ function GanttPageContent({ initialProjectId = null, openMaster = false, initial
     });
 
     return result;
-  }, [contractors, organizationId, projects, session, taskDetail]);
+  }, [canSendContractorRequest, contractors, organizationId, projects, session, taskDetail]);
 
   // 先行(fromTaskId)→後続(toTaskId)の依存を設定する共通ハンドラ。
   // connectMode ボタン経由・バードラッグ接続の両方から呼ばれる。
@@ -1731,6 +1736,7 @@ function GanttPageContent({ initialProjectId = null, openMaster = false, initial
           onChange={(updater) => setTaskDetail((current) => (current ? updater(current) : current))}
           onDelete={(taskId) => setDeleteTarget(ganttTasks.find((task) => task.id === taskId) ?? taskDetail.task)}
           onSendContractorRequest={handleSendContractorRequest}
+          canSendContractorRequest={canSendContractorRequest}
           onAddDependency={async (predecessorId) => {
             const toTask = taskDetail.task;
             const updated = [...(toTask.dependencies ?? []), predecessorId];

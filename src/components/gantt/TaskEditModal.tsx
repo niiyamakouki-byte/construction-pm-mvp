@@ -35,6 +35,7 @@ type Props = {
   onSendContractorRequest?: (
     options?: { allowResend?: boolean },
   ) => Promise<ContractorRequestDispatchResult>;
+  canSendContractorRequest?: boolean;
 };
 
 export function TaskEditModal({
@@ -49,6 +50,7 @@ export function TaskEditModal({
   onAddDependency,
   onRemoveDependency,
   onSendContractorRequest,
+  canSendContractorRequest = true,
 }: Props) {
   const effectiveIncludeWeekends = resolveIncludeWeekends(
     taskDetail.task.projectIncludesWeekends,
@@ -193,14 +195,22 @@ export function TaskEditModal({
             {onSendContractorRequest && (
               <div className="rounded-2xl bg-slate-50 px-4 py-3">
                 {taskDetail.task.contractorId ? (
-                  <button
-                    type="button"
-                    disabled={sending}
-                    onClick={() => void handleSendContractorRequest()}
-                    className="min-h-11 w-full rounded-2xl bg-brand-600 px-4 py-3 text-sm font-semibold text-white shadow-sm disabled:opacity-60"
-                  >
-                    {sending ? "送信中..." : "業者へ依頼を送る"}
-                  </button>
+                  <>
+                    <button
+                      type="button"
+                      disabled={sending || !canSendContractorRequest}
+                      onClick={() => void handleSendContractorRequest()}
+                      title={!canSendContractorRequest ? "依頼を送信する権限がありません" : undefined}
+                      className="min-h-11 w-full rounded-2xl bg-brand-600 px-4 py-3 text-sm font-semibold text-white shadow-sm disabled:opacity-60"
+                    >
+                      {sending ? "送信中..." : "業者へ依頼を送る"}
+                    </button>
+                    {!canSendContractorRequest && (
+                      <p className="mt-2 text-xs font-medium text-amber-700">
+                        依頼を送信する権限がありません。
+                      </p>
+                    )}
+                  </>
                 ) : (
                   <p className="text-sm text-amber-700">
                     業者を選択して保存すると、依頼メールを送信できます。

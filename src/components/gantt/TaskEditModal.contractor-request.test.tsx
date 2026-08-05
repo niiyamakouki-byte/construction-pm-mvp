@@ -41,6 +41,52 @@ const taskDetail: TaskDetailState = {
 afterEach(cleanup);
 
 describe("TaskEditModal contractor request resend", () => {
+  it("viewer権限では依頼送信を実行できない", () => {
+    const send = vi.fn();
+    render(
+      <TaskEditModal
+        taskDetail={taskDetail}
+        contractors={[]}
+        onClose={vi.fn()}
+        onSubmit={vi.fn()}
+        onChange={vi.fn()}
+        onSendContractorRequest={send}
+        canSendContractorRequest={false}
+      />,
+    );
+
+    const button = screen.getByRole("button", { name: "業者へ依頼を送る" });
+    expect((button as HTMLButtonElement).disabled).toBe(true);
+    expect(screen.getByText("依頼を送信する権限がありません。")).toBeDefined();
+    fireEvent.click(button);
+    expect(send).not.toHaveBeenCalled();
+  });
+
+  it("admin権限では依頼送信を実行できる", async () => {
+    const send = vi.fn().mockResolvedValue({
+      ok: true,
+      recipient: "test@example.com",
+      emailId: "email-admin",
+      shareUrl: "https://example.com/request-admin",
+    });
+    render(
+      <TaskEditModal
+        taskDetail={taskDetail}
+        contractors={[]}
+        onClose={vi.fn()}
+        onSubmit={vi.fn()}
+        onChange={vi.fn()}
+        onSendContractorRequest={send}
+        canSendContractorRequest
+      />,
+    );
+
+    const button = screen.getByRole("button", { name: "業者へ依頼を送る" });
+    expect((button as HTMLButtonElement).disabled).toBe(false);
+    fireEvent.click(button);
+    await waitFor(() => expect(send).toHaveBeenCalledTimes(1));
+  });
+
   it("送信済み依頼は確認でキャンセルすると再送しない", async () => {
     const confirm = vi.spyOn(window, "confirm").mockReturnValue(false);
     const send = vi.fn().mockResolvedValue({

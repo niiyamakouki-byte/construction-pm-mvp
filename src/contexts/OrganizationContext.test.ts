@@ -3,7 +3,7 @@
  * 設計: docs/onboarding-flow.md
  */
 import { describe, expect, it } from "vitest";
-import { resolveInvitedMembership } from "./OrganizationContext.js";
+import { resolveInvitedMembership, resolveOrganizationRole } from "./OrganizationContext.js";
 
 describe("resolveInvitedMembership", () => {
   it("user_metadataが無ければnull（通常の自己組織作成フロー）", () => {
@@ -27,5 +27,20 @@ describe("resolveInvitedMembership", () => {
   it("invited_organization_idが文字列でなければnull", () => {
     expect(resolveInvitedMembership({ invited_organization_id: 123 })).toBeNull();
     expect(resolveInvitedMembership({ invited_organization_id: "" })).toBeNull();
+  });
+});
+
+describe("resolveOrganizationRole", () => {
+  it("RBACの5ロールをそのまま返す", () => {
+    expect(resolveOrganizationRole("owner")).toBe("owner");
+    expect(resolveOrganizationRole("admin")).toBe("admin");
+    expect(resolveOrganizationRole("manager")).toBe("manager");
+    expect(resolveOrganizationRole("field_worker")).toBe("field_worker");
+    expect(resolveOrganizationRole("viewer")).toBe("viewer");
+  });
+
+  it("既存のmemberはfield_worker、未知ロールはviewerへ安全側に倒す", () => {
+    expect(resolveOrganizationRole("member")).toBe("field_worker");
+    expect(resolveOrganizationRole("unknown")).toBe("viewer");
   });
 });

@@ -10,6 +10,8 @@ import { createTaskRepository } from "../stores/task-store.js";
 import type { Task } from "../domain/types.js";
 import { readLastProjectId } from "../lib/last-project.js";
 import { ConfirmDialog } from "../components/common/ConfirmDialog.js";
+import { useOrganizationContext } from "../contexts/OrganizationContext.js";
+import { hasPermission } from "../lib/user-roles.js";
 import costMaster from "../estimate/cost-master.json";
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -500,12 +502,14 @@ function OrderCard({
   onTransition,
   onDelete,
   onEditDeliveryDate,
+  canEdit,
 }: {
   order: PurchaseOrderRecord;
   taskName?: string;
   onTransition: (id: string, to: PurchaseOrderStatus) => void;
   onDelete: (order: PurchaseOrderRecord) => void;
   onEditDeliveryDate: (order: PurchaseOrderRecord) => void;
+  canEdit: boolean;
 }) {
   const nextStatuses = getNextStatuses(order.status) as PurchaseOrderStatus[];
   const [expanded, setExpanded] = useState(false);
@@ -532,8 +536,9 @@ function OrderCard({
               納期: {order.deliveryDate}
               <button
                 onClick={() => onEditDeliveryDate(order)}
+                disabled={!canEdit}
                 aria-label={`${order.contractorName} — 納期を変更`}
-                className="text-blue-500 hover:text-blue-700 text-xs underline"
+                className="text-blue-500 hover:text-blue-700 text-xs underline disabled:cursor-not-allowed disabled:text-slate-300"
               >
                 変更
               </button>
@@ -596,7 +601,8 @@ function OrderCard({
           <button
             key={next}
             onClick={() => onTransition(order.id, next)}
-            className="px-3 py-1 rounded-lg text-xs font-medium bg-brand-600 text-white hover:bg-brand-700"
+            disabled={!canEdit}
+            className="px-3 py-1 rounded-lg text-xs font-medium bg-brand-600 text-white hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-50"
           >
             → {next}
           </button>
@@ -604,7 +610,8 @@ function OrderCard({
         {order.status === "下書き" && (
           <button
             onClick={() => onDelete(order)}
-            className="px-3 py-1 rounded-lg text-xs font-medium text-red-500 border border-red-200 hover:bg-red-50 ml-auto"
+            disabled={!canEdit}
+            className="px-3 py-1 rounded-lg text-xs font-medium text-red-500 border border-red-200 hover:bg-red-50 ml-auto disabled:cursor-not-allowed disabled:opacity-50"
           >
             削除
           </button>
@@ -623,6 +630,7 @@ function StatusColumn({
   onTransition,
   onDelete,
   onEditDeliveryDate,
+  canEdit,
 }: {
   status: PurchaseOrderStatus;
   orders: PurchaseOrderRecord[];
@@ -630,6 +638,7 @@ function StatusColumn({
   onTransition: (id: string, to: PurchaseOrderStatus) => void;
   onDelete: (order: PurchaseOrderRecord) => void;
   onEditDeliveryDate: (order: PurchaseOrderRecord) => void;
+  canEdit: boolean;
 }) {
   return (
     <div className="flex-1 min-w-[220px]">
@@ -646,6 +655,7 @@ function StatusColumn({
             onTransition={onTransition}
             onDelete={onDelete}
             onEditDeliveryDate={onEditDeliveryDate}
+            canEdit={canEdit}
           />
         ))}
         {orders.length === 0 && (
@@ -661,6 +671,8 @@ function StatusColumn({
 export function OrderManagementPage({
   projectId = readLastProjectId() ?? DEMO_PROJECT_ID,
 }: { projectId?: string } = {}) {
+  const { role } = useOrganizationContext();
+  const canEdit = hasPermission(role, "edit");
   const [showForm, setShowForm] = useState(false);
   const [allOrders, setAllOrders] = useState<PurchaseOrderRecord[]>([]);
   const [projectTasks, setProjectTasks] = useState<Task[]>([]);
@@ -727,6 +739,7 @@ export function OrderManagementPage({
   }, [allOrders]);
 
   const handleTransition = async (id: string, to: PurchaseOrderStatus) => {
+    if (!canEdit) return;
     const existing = allOrders.find((o) => o.id === id);
     if (!existing) return;
     const next: PurchaseOrderRecord = {
@@ -739,6 +752,7 @@ export function OrderManagementPage({
   };
 
   const handleDelete = async () => {
+    if (!canEdit) return;
     if (!deleteTarget) return;
     await repository.deleteAsync(deleteTarget.id);
     setDeleteTarget(null);
@@ -746,6 +760,7 @@ export function OrderManagementPage({
   };
 
   const handleEditDeliveryDate = async (id: string, deliveryDate: string) => {
+    if (!canEdit) return;
     const existing = allOrders.find((o) => o.id === id);
     if (!existing) return;
     const next: PurchaseOrderRecord = {
@@ -805,7 +820,9 @@ export function OrderManagementPage({
         </div>
         <button
           onClick={() => setShowForm(true)}
-          className="px-4 py-2 rounded-lg bg-brand-600 text-white text-sm font-medium hover:bg-brand-700 shadow-sm"
+          disabled={!canEdit}
+          title={!canEdit ? "発注書を作成する権限がありません" : undefined}
+          className="px-4 py-2 rounded-lg bg-brand-600 text-white text-sm font-medium hover:bg-brand-700 shadow-sm disabled:cursor-not-allowed disabled:opacity-50"
         >
           + 発注書作成
         </button>
@@ -878,6 +895,7 @@ export function OrderManagementPage({
                 onTransition={handleTransition}
                 onDelete={setDeleteTarget}
                 onEditDeliveryDate={setEditTarget}
+                canEdit={canEdit}
               />
             ))}
           </div>
@@ -889,7 +907,8 @@ export function OrderManagementPage({
               <p className="text-slate-400 text-sm">発注書がありません</p>
               <button
                 onClick={() => setShowForm(true)}
-                className="mt-3 text-blue-600 text-sm hover:underline"
+                disabled={!canEdit}
+                className="mt-3 text-blue-600 text-sm hover:underline disabled:cursor-not-allowed disabled:text-slate-300"
               >
                 最初の発注書を作成する
               </button>
@@ -903,6 +922,7 @@ export function OrderManagementPage({
                 onTransition={handleTransition}
                 onDelete={setDeleteTarget}
                 onEditDeliveryDate={setEditTarget}
+                canEdit={canEdit}
               />
             ))
           )}
