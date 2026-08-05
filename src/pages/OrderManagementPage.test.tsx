@@ -70,3 +70,48 @@ describe("OrderManagementPage — ItemRow aria-labels", () => {
     expect(nameInputs.length).toBeGreaterThan(0);
   });
 });
+
+describe("OrderManagementPage — 納期変更UI", () => {
+  const EXISTING_ORDER = {
+    id: "o-1",
+    projectId: "p-test",
+    contractorId: "c-1",
+    contractorName: "山田内装工業",
+    items: [],
+    status: "下書き" as const,
+    orderDate: "2026-08-01",
+    deliveryDate: "2026-08-10",
+    totalAmount: 0,
+    taxAmount: 0,
+    totalWithTax: 0,
+    createdAt: "2026-08-01T00:00:00.000Z",
+    updatedAt: "2026-08-01T00:00:00.000Z",
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockListByProjectAsync.mockResolvedValue([EXISTING_ORDER]);
+  });
+
+  afterEach(() => {
+    cleanup();
+  });
+
+  it("既存発注の納期を編集して保存すると repository.saveAsync に新しいdeliveryDateが渡る", async () => {
+    render(<OrderManagementPage projectId="p-test" />);
+    await screen.findByText("山田内装工業");
+
+    fireEvent.click(screen.getByRole("button", { name: /山田内装工業 — 納期を変更/ }));
+    await screen.findByText("納期を変更");
+
+    const input = screen.getByLabelText("納期");
+    fireEvent.change(input, { target: { value: "2026-09-01" } });
+    fireEvent.click(screen.getByRole("button", { name: "保存" }));
+
+    await vi.waitFor(() => {
+      expect(mockSaveAsync).toHaveBeenCalledWith(
+        expect.objectContaining({ id: "o-1", deliveryDate: "2026-09-01" }),
+      );
+    });
+  });
+});

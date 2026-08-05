@@ -410,6 +410,88 @@ function OrderForm({
   );
 }
 
+// ── Delivery date edit modal ────────────────────────────────────────────────
+
+function EditDeliveryDateModal({
+  order,
+  onClose,
+  onSave,
+}: {
+  order: PurchaseOrderRecord;
+  onClose: () => void;
+  onSave: (id: string, deliveryDate: string) => Promise<void>;
+}) {
+  const [deliveryDate, setDeliveryDate] = useState(order.deliveryDate);
+  const [error, setError] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!deliveryDate) {
+      setError("納期を入力してください");
+      return;
+    }
+    setSaving(true);
+    try {
+      await onSave(order.id, deliveryDate);
+      onClose();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "保存に失敗しました");
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+      <div className="w-full max-w-sm bg-white rounded-xl shadow-2xl overflow-hidden">
+        <div className="border-b border-slate-100 px-6 py-4 flex items-center justify-between">
+          <h2 className="text-lg font-semibold text-slate-800">納期を変更</h2>
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 text-xl leading-none">
+            ×
+          </button>
+        </div>
+        <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4">
+          {error && (
+            <div className="rounded bg-red-50 border border-red-200 text-red-700 text-sm px-3 py-2">
+              {error}
+            </div>
+          )}
+          <div>
+            <label htmlFor="edit-delivery-date" className="block text-sm font-medium text-slate-700 mb-1">
+              納期
+            </label>
+            <input
+              id="edit-delivery-date"
+              type="date"
+              value={deliveryDate}
+              onChange={(e) => setDeliveryDate(e.target.value)}
+              aria-label="納期"
+              className="w-full rounded border border-slate-200 px-3 py-2 text-sm"
+              required
+            />
+          </div>
+          <div className="flex justify-end gap-3 pt-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 rounded-lg border border-slate-200 text-sm text-slate-600 hover:bg-slate-50"
+            >
+              キャンセル
+            </button>
+            <button
+              type="submit"
+              disabled={saving}
+              className="px-5 py-2 rounded-lg bg-brand-600 text-white text-sm font-medium hover:bg-brand-700 disabled:opacity-50"
+            >
+              保存
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 // ── Order card ────────────────────────────────────────────────────────────────
 
 function OrderCard({
@@ -417,11 +499,13 @@ function OrderCard({
   taskName,
   onTransition,
   onDelete,
+  onEditDeliveryDate,
 }: {
   order: PurchaseOrderRecord;
   taskName?: string;
   onTransition: (id: string, to: PurchaseOrderStatus) => void;
   onDelete: (order: PurchaseOrderRecord) => void;
+  onEditDeliveryDate: (order: PurchaseOrderRecord) => void;
 }) {
   const nextStatuses = getNextStatuses(order.status) as PurchaseOrderStatus[];
   const [expanded, setExpanded] = useState(false);
@@ -442,9 +526,18 @@ function OrderCard({
               </span>
             )}
           </div>
-          <div className="flex gap-4 mt-1 text-sm text-slate-500 flex-wrap">
+          <div className="flex gap-4 mt-1 text-sm text-slate-500 flex-wrap items-center">
             <span>発注日: {order.orderDate}</span>
-            <span>納期: {order.deliveryDate}</span>
+            <span className="inline-flex items-center gap-1">
+              納期: {order.deliveryDate}
+              <button
+                onClick={() => onEditDeliveryDate(order)}
+                aria-label={`${order.contractorName} — 納期を変更`}
+                className="text-blue-500 hover:text-blue-700 text-xs underline"
+              >
+                変更
+              </button>
+            </span>
             <span className="font-medium text-slate-700">¥{fmt(order.totalWithTax)}</span>
           </div>
           {order.notes && (
@@ -529,12 +622,14 @@ function StatusColumn({
   taskNameById,
   onTransition,
   onDelete,
+  onEditDeliveryDate,
 }: {
   status: PurchaseOrderStatus;
   orders: PurchaseOrderRecord[];
   taskNameById: Map<string, string>;
   onTransition: (id: string, to: PurchaseOrderStatus) => void;
   onDelete: (order: PurchaseOrderRecord) => void;
+  onEditDeliveryDate: (order: PurchaseOrderRecord) => void;
 }) {
   return (
     <div className="flex-1 min-w-[220px]">
@@ -550,6 +645,7 @@ function StatusColumn({
             order={order}
             onTransition={onTransition}
             onDelete={onDelete}
+            onEditDeliveryDate={onEditDeliveryDate}
           />
         ))}
         {orders.length === 0 && (
@@ -573,6 +669,7 @@ export function OrderManagementPage({
   const [viewMode, setViewMode] = useState<"kanban" | "list">("list");
   const [filterStatus, setFilterStatus] = useState<PurchaseOrderStatus | "すべて">("すべて");
   const [deleteTarget, setDeleteTarget] = useState<PurchaseOrderRecord | null>(null);
+  const [editTarget, setEditTarget] = useState<PurchaseOrderRecord | null>(null);
 
   // Load on mount + reload helper.
   useEffect(() => {
@@ -645,6 +742,18 @@ export function OrderManagementPage({
     if (!deleteTarget) return;
     await repository.deleteAsync(deleteTarget.id);
     setDeleteTarget(null);
+    await reload();
+  };
+
+  const handleEditDeliveryDate = async (id: string, deliveryDate: string) => {
+    const existing = allOrders.find((o) => o.id === id);
+    if (!existing) return;
+    const next: PurchaseOrderRecord = {
+      ...existing,
+      deliveryDate,
+      updatedAt: new Date().toISOString(),
+    };
+    await repository.saveAsync(next);
     await reload();
   };
 
@@ -768,6 +877,7 @@ export function OrderManagementPage({
                 taskNameById={taskNameById}
                 onTransition={handleTransition}
                 onDelete={setDeleteTarget}
+                onEditDeliveryDate={setEditTarget}
               />
             ))}
           </div>
@@ -792,6 +902,7 @@ export function OrderManagementPage({
                 taskName={order.taskId ? taskNameById.get(order.taskId) : undefined}
                 onTransition={handleTransition}
                 onDelete={setDeleteTarget}
+                onEditDeliveryDate={setEditTarget}
               />
             ))
           )}
@@ -805,6 +916,15 @@ export function OrderManagementPage({
           tasks={projectTasks}
           onClose={() => setShowForm(false)}
           onCreated={() => void reload()}
+        />
+      )}
+
+      {/* Delivery date edit modal */}
+      {editTarget && (
+        <EditDeliveryDateModal
+          order={editTarget}
+          onClose={() => setEditTarget(null)}
+          onSave={handleEditDeliveryDate}
         />
       )}
     </div>
