@@ -224,9 +224,19 @@ export function WeatherPage() {
   const [siteForecasts, setSiteForecasts] = useState<ConstructionSiteForecast[]>(
     () => buildMockConstructionSiteForecasts(projects),
   );
+  // 案件がある場合、実予報の取得が終わるまでは合成データ(初期state)を「現場天気」として出さない
+  const [forecastsLoaded, setForecastsLoaded] = useState(false);
   useEffect(() => {
     if (projects.length === 0) return;
-    void fetchConstructionSiteForecasts(projects).then(setSiteForecasts);
+    void fetchConstructionSiteForecasts(projects)
+      .then((data) => {
+        setSiteForecasts(data);
+        setForecastsLoaded(true);
+      })
+      .catch((error) => {
+        setLoadError(error instanceof Error ? error.message : "天気予報の取得に失敗しました");
+        setForecastsLoaded(true);
+      });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [projects.length]);
 
@@ -244,8 +254,17 @@ export function WeatherPage() {
   const selectedSite = siteForecasts.find((site) => site.siteId === selectedSiteId) ?? siteForecasts[0];
   const selectedDays = selectedSite?.forecast.daily.slice(0, 7) ?? [];
   const summary = buildRiskSummary(selectedDays);
+  // 案件0件のときはDEFAULT_SITEのデモデータ(意図的な参考表示)。案件がある場合のみ、
+  // 座標未設定 or API失敗による合成データを「実予報」として見せない
+  const isDemoMode = projects.length === 0;
+  const siteDataUnavailable = !isDemoMode && !!selectedSite && (!selectedSite.hasLocation || selectedSite.isSynthetic);
+  const unavailableReason = selectedSite && !selectedSite.hasLocation
+    ? "現場の住所（緯度・経度）が未設定です。案件詳細ページで住所を設定してください。"
+    : "天気情報の取得に失敗しました。しばらくしてから再読み込みしてください。";
+  // 案件がある場合は実予報の取得完了を待つ(合成データの初期stateをそのまま出さない)
+  const forecastsPending = projects.length > 0 && !forecastsLoaded;
 
-  if (loading) {
+  if (loading || forecastsPending) {
     return (
       <div className="flex items-center justify-center gap-2 py-16" role="status" aria-label="天気予報を読み込み中">
         <span className="inline-block h-5 w-5 animate-spin rounded-full border-2 border-slate-300 border-t-slate-900" />
@@ -266,8 +285,10 @@ export function WeatherPage() {
               現場天気
             </h1>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
-              7日先までの降水確率と風速を見ながら、外装工事や揚重作業の可否を判断できます。現在はモックデータですが、
-              `OpenWeatherMap One Call` の `daily` 形式をそのまま受け取れる構成です。
+              7日先までの降水確率と風速を見ながら、外装工事や揚重作業の可否を判断できます。
+              {isDemoMode
+                ? " 案件が未登録のため、参考用のデモデータを表示しています。"
+                : " Open-Meteo APIの実況予報を表示します。"}
             </p>
           </div>
           <button
@@ -305,44 +326,57 @@ export function WeatherPage() {
             />
           </section>
 
-          <section className="grid gap-3 md:grid-cols-3">
-            <div className="rounded-[24px] border border-brand-200 bg-brand-50 px-4 py-4">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-brand-700">施工可</p>
-              <p className="mt-2 text-3xl font-bold text-brand-900">{summary.normal}</p>
-              <p className="mt-1 text-sm text-brand-800">通常工程を維持できる日</p>
-            </div>
-            <div className="rounded-[24px] border border-amber-200 bg-amber-50 px-4 py-4">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-amber-700">要注意</p>
-              <p className="mt-2 text-3xl font-bold text-amber-900">{summary.warning}</p>
-              <p className="mt-1 text-sm text-amber-800">予備日を確保したい日</p>
-            </div>
-            <div className="rounded-[24px] border border-red-200 bg-red-50 px-4 py-4">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-red-700">延期推奨</p>
-              <p className="mt-2 text-3xl font-bold text-red-900">{summary.danger}</p>
-              <p className="mt-1 text-sm text-red-800">外装工事を避けたい日</p>
-            </div>
-          </section>
+          {siteDataUnavailable ? (
+            <section role="status" className="rounded-[28px] border border-slate-200 bg-white px-6 py-10 text-center shadow-sm">
+              <p className="text-3xl" aria-hidden="true">📍</p>
+              <p className="mt-3 text-base font-bold text-slate-900">
+                {selectedSite.siteName} の天候情報を取得できません
+              </p>
+              <p className="mt-1 text-xs text-slate-500">{selectedSite.locationLabel}</p>
+              <p className="mt-3 text-sm text-slate-600">{unavailableReason}</p>
+            </section>
+          ) : (
+            <>
+              <section className="grid gap-3 md:grid-cols-3">
+                <div className="rounded-[24px] border border-brand-200 bg-brand-50 px-4 py-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-brand-700">施工可</p>
+                  <p className="mt-2 text-3xl font-bold text-brand-900">{summary.normal}</p>
+                  <p className="mt-1 text-sm text-brand-800">通常工程を維持できる日</p>
+                </div>
+                <div className="rounded-[24px] border border-amber-200 bg-amber-50 px-4 py-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-amber-700">要注意</p>
+                  <p className="mt-2 text-3xl font-bold text-amber-900">{summary.warning}</p>
+                  <p className="mt-1 text-sm text-amber-800">予備日を確保したい日</p>
+                </div>
+                <div className="rounded-[24px] border border-red-200 bg-red-50 px-4 py-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-red-700">延期推奨</p>
+                  <p className="mt-2 text-3xl font-bold text-red-900">{summary.danger}</p>
+                  <p className="mt-1 text-sm text-red-800">外装工事を避けたい日</p>
+                </div>
+              </section>
 
-          <section className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm">
-            <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                  選択中の現場
-                </p>
-                <h2 className="mt-1 text-xl font-bold text-slate-900">{selectedSite.siteName}</h2>
-              </div>
-              <p className="text-sm text-slate-500">{selectedSite.locationLabel}</p>
-            </div>
-            <div className="mt-4 rounded-[24px] border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-900">
-              降水確率が60%を超える日は外装工程を再確認してください。80%超または風速15m/s超は延期候補として扱います。
-            </div>
-          </section>
+              <section className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm">
+                <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                      選択中の現場
+                    </p>
+                    <h2 className="mt-1 text-xl font-bold text-slate-900">{selectedSite.siteName}</h2>
+                  </div>
+                  <p className="text-sm text-slate-500">{selectedSite.locationLabel}</p>
+                </div>
+                <div className="mt-4 rounded-[24px] border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-900">
+                  降水確率が60%を超える日は外装工程を再確認してください。80%超または風速15m/s超は延期候補として扱います。
+                </div>
+              </section>
 
-          <section className="grid gap-3 lg:grid-cols-2">
-            {selectedDays.map((day) => (
-              <ForecastDayCard key={day.dt} day={day} date={new Date(day.dt * 1000).toISOString().slice(0, 10)} />
-            ))}
-          </section>
+              <section className="grid gap-3 lg:grid-cols-2">
+                {selectedDays.map((day) => (
+                  <ForecastDayCard key={day.dt} day={day} date={new Date(day.dt * 1000).toISOString().slice(0, 10)} />
+                ))}
+              </section>
+            </>
+          )}
         </>
       ) : null}
     </div>

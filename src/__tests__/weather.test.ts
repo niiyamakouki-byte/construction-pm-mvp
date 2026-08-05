@@ -86,4 +86,13 @@ describe("weather helpers", () => {
     expect(warnings.length).toBeGreaterThan(0);
     expect(warnings.every((warning) => warning.siteName === "横浜現場")).toBe(true);
   });
+
+  // buildMockConstructionSiteForecastsは常に合成データ(createMockForecast)を返す (bead laporta-beads-pr4zs)
+  it("marks buildMockConstructionSiteForecasts output as synthetic", () => {
+    const forecasts = buildMockConstructionSiteForecasts([
+      makeProject({ id: "p-1", name: "横浜現場", latitude: 35.44, longitude: 139.64 }),
+    ]);
+
+    expect(forecasts.every((site) => site.isSynthetic)).toBe(true);
+  });
 });

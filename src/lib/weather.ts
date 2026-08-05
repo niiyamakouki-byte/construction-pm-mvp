@@ -62,6 +62,8 @@ export type ConstructionSiteForecast = {
   locationLabel: string;
   /** false = 案件に座標が無くフォールバック座標で生成した参考値(実予報として扱わないこと) */
   hasLocation: boolean;
+  /** true = forecastはcreateMockForecast由来の合成データ(実測ではない)。hasLocation=trueでもAPI失敗時はtrueになる */
+  isSynthetic: boolean;
   forecast: OpenWeatherMapForecast;
 };
 
@@ -329,6 +331,8 @@ export async function fetchConstructionSiteForecasts(
         siteName: site.siteName,
         locationLabel: site.locationLabel,
         hasLocation: site.hasLocation,
+        // realForecastがnull = 座標未設定 or API失敗。どちらもcreateMockForecastの合成値であり実測ではない
+        isSynthetic: realForecast === null,
         forecast: realForecast ?? createMockForecast(site.lat, site.lon, site.offset, baseDate),
       };
     }),
@@ -370,6 +374,8 @@ export function buildMockConstructionSiteForecasts(
     siteName: site.siteName,
     locationLabel: site.locationLabel,
     hasLocation: site.hasLocation,
+    // この関数は常にcreateMockForecastを使う(テスト/タイムアウト用の同期フォールバック)
+    isSynthetic: true,
     forecast: createMockForecast(site.lat, site.lon, site.offset, baseDate),
   }));
 }
