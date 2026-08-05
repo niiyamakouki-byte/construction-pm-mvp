@@ -38,7 +38,9 @@ export function auditAdapters(libDir) {
   return walkTsFiles(libDir)
     .map((file) => ({ file, src: fs.readFileSync(file, 'utf8') }))
     .filter(({ src }) => isSelfRoutingSupabaseAdapter(src))
-    .map(({ file, src }) => ({ file, compliant: isE2EAware(src) }));
+    // ponytail: file を POSIX 形式に正規化(Windows実行時はpath.joinがbackslashを返し、
+    // 呼び出し側のFIX_FILE等 "/" 区切り定数との endsWith 比較が壊れるため)
+    .map(({ file, src }) => ({ file: file.split(path.sep).join('/'), compliant: isE2EAware(src) }));
 }
 
 // CLI実行時のみ走査・レポートする(テストからはexportした関数を直接使う)。

@@ -104,6 +104,9 @@ describe("InquiryStore — 基本 CRUD", () => {
 });
 
 describe("InquiryStore — FIFO 1000件", () => {
+  // ponytail: 1001回のadd(各回localStorage全体を再シリアライズ)はCPU単発性能依存。
+  // 遅いホスト(rixen/Threadripper 2990WX)で既定5000msを超えて実測タイムアウトしたため
+  // 15000msへ拡大(ロジック自体は正: Mac実測712ms)。真に遅くなったら別途要調査。
   it("1001件追加したとき最初の1件が削除される", () => {
     localStorage.clear();
     _resetInquiryStore();
@@ -115,7 +118,7 @@ describe("InquiryStore — FIFO 1000件", () => {
     // 最初の r0000 が削除されている
     expect(s.byId("r0000")).toBeNull();
     expect(s.byId("r0001")).not.toBeNull();
-  });
+  }, 15000);
 });
 
 describe("InquiryStore — ensureSeed", () => {
