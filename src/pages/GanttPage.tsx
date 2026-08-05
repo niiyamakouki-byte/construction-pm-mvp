@@ -46,7 +46,11 @@ import {
 import { getHolidayName } from "../lib/japanese-holidays.js";
 import { readLastProjectId, writeLastProjectId } from "../lib/last-project.js";
 import { cascadeSchedule } from "../lib/cascade-scheduler.js";
-import { sendContractorRequest, type ContractorRequestMode } from "../lib/contractor-request.js";
+import {
+  findActiveContractorRequest,
+  sendContractorRequest,
+  type ContractorRequestMode,
+} from "../lib/contractor-request.js";
 import { useAuth } from "../contexts/AuthContext.js";
 import { filterScheduleTasks } from "../lib/cost-management.js";
 import { buildGanttPdfHtml, exportGanttToPdf, type GanttPaperSize } from "../lib/gantt-pdf-export.js";
@@ -1001,13 +1005,30 @@ function GanttPageContent({ initialProjectId = null, openMaster = false, initial
 
   // 票laporta-beads-vj1gj: 工程バー→割当済み協力業者へ依頼メール送信
   // 外部送信ゲート: VITE_CONTRACTOR_REQUEST_LIVE が "true" のときのみ実際の業者メール宛。既定はdry-run（自分宛）。
-  const handleSendContractorRequest = useCallback(async () => {
+  const handleSendContractorRequest = useCallback(async (
+    options: { allowResend?: boolean } = {},
+  ) => {
     if (!taskDetail) {
       return { ok: false as const, error: "タスクが見つかりません" };
     }
     const contractor = contractors.find((item) => item.id === taskDetail.task.contractorId);
     if (!contractor) {
       return { ok: false as const, error: "業者が未割当です" };
+    }
+    const notificationRepository = createNotificationRepository(() => organizationId);
+    if (!options.allowResend) {
+      const activeRequest = findActiveContractorRequest(
+        await notificationRepository.findAll(),
+        taskDetail.task.id,
+        contractor.id,
+      );
+      if (activeRequest) {
+        return {
+          ok: false as const,
+          requiresConfirmation: true as const,
+          sentAt: activeRequest.sentAt ?? activeRequest.createdAt,
+        };
+      }
     }
     const project = projects.find((item) => item.id === taskDetail.task.projectId);
     const mode: ContractorRequestMode =
@@ -1028,7 +1049,6 @@ function GanttPageContent({ initialProjectId = null, openMaster = false, initial
       { getAccessToken: async () => session?.access_token ?? null },
     );
 
-    const notificationRepository = createNotificationRepository(() => organizationId);
     const now = new Date().toISOString();
     await notificationRepository.create({
       id: notificationId,

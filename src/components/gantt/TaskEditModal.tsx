@@ -1,6 +1,9 @@
 import { useEffect, useState } from "react";
 import type { Contractor, DependencyType } from "../../domain/types.js";
-import type { SendContractorRequestResult } from "../../lib/contractor-request.js";
+import type {
+  ContractorRequestDispatchResult,
+  SendContractorRequestResult,
+} from "../../lib/contractor-request.js";
 import type { GanttTask, TaskDetailState } from "./types.js";
 import { addDays, hasCycle, resolveIncludeWeekends, statusLabel, toLocalDateString } from "./utils.js";
 import { DateRangeStrip } from "./DateRangeStrip.js";
@@ -29,7 +32,9 @@ type Props = {
   /** P2.5: 先行タスクを削除する */
   onRemoveDependency?: (predecessorId: string) => void;
   /** 割当済み協力業者へ依頼メールを送信する（保存済みの task.contractorId が対象） */
-  onSendContractorRequest?: () => Promise<SendContractorRequestResult>;
+  onSendContractorRequest?: (
+    options?: { allowResend?: boolean },
+  ) => Promise<ContractorRequestDispatchResult>;
 };
 
 export function TaskEditModal({
@@ -57,13 +62,30 @@ export function TaskEditModal({
   // 業者へ依頼を送る（share-token + resend）の送信状態
   const [sending, setSending] = useState(false);
   const [sendResult, setSendResult] = useState<SendContractorRequestResult | null>(null);
+  const [resendNotice, setResendNotice] = useState<string | null>(null);
 
   const handleSendContractorRequest = async () => {
     if (!onSendContractorRequest) return;
     setSending(true);
     setSendResult(null);
+    setResendNotice(null);
     try {
-      const result = await onSendContractorRequest();
+      let result = await onSendContractorRequest();
+      if (!result.ok && "requiresConfirmation" in result) {
+        const sentDate = new Date(result.sentAt).toLocaleString("ja-JP");
+        const confirmed = window.confirm(
+          `この依頼は${sentDate}に送信済みです。再送しますか？`,
+        );
+        if (!confirmed) {
+          setResendNotice("送信済みのため、再送をキャンセルしました。");
+          return;
+        }
+        result = await onSendContractorRequest({ allowResend: true });
+      }
+      if (!result.ok && "requiresConfirmation" in result) {
+        setResendNotice("再送確認を完了できませんでした。");
+        return;
+      }
       setSendResult(result);
     } finally {
       setSending(false);
@@ -192,6 +214,9 @@ export function TaskEditModal({
                       ? `${sendResult.recipient} へ依頼メールを送信しました。`
                       : `送信に失敗しました: ${sendResult.error}`}
                   </p>
+                )}
+                {resendNotice && (
+                  <p className="mt-2 text-xs font-medium text-amber-700">{resendNotice}</p>
                 )}
               </div>
             )}

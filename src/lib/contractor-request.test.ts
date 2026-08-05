@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import {
   buildContractorRequestEmail,
+  findActiveContractorRequest,
   sendContractorRequest,
   DRY_RUN_RECIPIENT,
 } from "./contractor-request.js";
@@ -132,5 +133,30 @@ describe("sendContractorRequest", () => {
       { getAccessToken, fetcher, resendApiKey: "re_test" },
     );
     expect(result.ok).toBe(false);
+  });
+});
+
+describe("findActiveContractorRequest", () => {
+  const now = Date.parse("2026-08-06T00:00:00.000Z");
+  const request = {
+    id: "request-1",
+    taskId: "task-1",
+    contractorId: "contractor-1",
+    type: "contractor_request" as const,
+    message: "依頼",
+    status: "sent" as const,
+    sentAt: "2026-08-05T00:00:00.000Z",
+    createdAt: "2026-08-05T00:00:00.000Z",
+    updatedAt: "2026-08-05T00:00:00.000Z",
+  };
+
+  it("14日以内の同一タスク・業者への送信済み依頼を検出する", () => {
+    expect(findActiveContractorRequest([request], "task-1", "contractor-1", now)?.id).toBe("request-1");
+  });
+
+  it("期限切れ・別業者・失敗した依頼は再送を妨げない", () => {
+    expect(findActiveContractorRequest([{ ...request, sentAt: "2026-07-01T00:00:00.000Z" }], "task-1", "contractor-1", now)).toBeNull();
+    expect(findActiveContractorRequest([request], "task-1", "contractor-2", now)).toBeNull();
+    expect(findActiveContractorRequest([{ ...request, status: "failed" }], "task-1", "contractor-1", now)).toBeNull();
   });
 });

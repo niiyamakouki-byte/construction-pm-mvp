@@ -13,6 +13,7 @@
 
 import { createShareToken, type ShareTokenFetcher } from "./share-token.js";
 import { sendEmail } from "./email/resend-client.js";
+import type { Notification } from "../domain/types.js";
 
 /** dry-run 時の固定送信先。実送信テストはこのアドレス宛でのみ許可する。 */
 export const DRY_RUN_RECIPIENT = "niiyama@laporta.co.jp";
@@ -77,6 +78,35 @@ export type SendContractorRequestDeps = {
 export type SendContractorRequestResult =
   | { ok: true; recipient: string; emailId: string; shareUrl: string }
   | { ok: false; error: string };
+
+export type ContractorRequestDispatchResult =
+  | SendContractorRequestResult
+  | { ok: false; requiresConfirmation: true; sentAt: string };
+
+const REQUEST_TOKEN_TTL_MS = 14 * 24 * 60 * 60 * 1000;
+
+/** 票 laporta-beads-7h0d7: 有効期限内の同一依頼を検出する純粋関数。 */
+export function findActiveContractorRequest(
+  notifications: Notification[],
+  taskId: string,
+  contractorId: string,
+  nowMs = Date.now(),
+): Notification | null {
+  const cutoff = nowMs - REQUEST_TOKEN_TTL_MS;
+  return (
+    notifications.find((notification) => {
+      const sentAt = Date.parse(notification.sentAt ?? notification.createdAt);
+      return (
+        notification.type === "contractor_request" &&
+        notification.taskId === taskId &&
+        notification.contractorId === contractorId &&
+        ["sent", "accepted", "rejected"].includes(notification.status) &&
+        Number.isFinite(sentAt) &&
+        sentAt >= cutoff
+      );
+    }) ?? null
+  );
+}
 
 /**
  * share-token 発行 → 依頼メール送信までを一気通貫で行う。
