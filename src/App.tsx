@@ -8,6 +8,7 @@ import { KeyboardShortcutHelp } from "./components/KeyboardShortcutHelp.js";
 import { InstallPrompt } from "./components/InstallPrompt.js";
 
 const ProjectListPage = lazy(() => import("./pages/ProjectListPage.js").then((m) => ({ default: m.ProjectListPage })));
+const CalendarInboxPage = lazy(() => import("./pages/CalendarInboxPage.js").then((m) => ({ default: m.CalendarInboxPage })));
 const TodayDashboardPage = lazy(() => import("./pages/TodayDashboardPage.js").then((m) => ({ default: m.TodayDashboardPage })));
 const ProjectDetailPage = lazy(() => import("./pages/ProjectDetailPage.js").then((m) => ({ default: m.ProjectDetailPage })));
 const GanttPage = lazy(() => import("./pages/GanttPage.js").then((m) => ({ default: m.GanttPage })));
@@ -283,6 +284,13 @@ function AppShell() {
   // sol-ultra #1: 一次ナビは 今日/案件/工程/写真 の4つに固定する (bead 7fctp)。
   // 見積・請求・原価等は「その他」ドロワー配下の「お金」グループへ、タスク等の現場系は「現場を進める」グループへ集約。
   const secondaryTabs: TabDef[] = [
+    {
+      key: "calendar-inbox",
+      label: "カレンダーから登録",
+      icon: "calendar-inbox",
+      path: "/calendar-inbox",
+      matchRoute: (currentRoute) => currentRoute === "/calendar-inbox",
+    },
     {
       key: "tasks",
       label: t("common:nav.tasks"),
@@ -573,6 +581,13 @@ function AppShell() {
       return (
         <ErrorBoundary fallbackTitle={t("errors:page_error.project_list")}>
           <ProjectListPage />
+        </ErrorBoundary>
+      );
+    }
+    if (route === "/calendar-inbox") {
+      return (
+        <ErrorBoundary fallbackTitle="カレンダー">
+          <CalendarInboxPage />
         </ErrorBoundary>
       );
     }

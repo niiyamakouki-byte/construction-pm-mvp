@@ -51,6 +51,35 @@ describe("fetchPrimaryCalendarEvents", () => {
     expect(events[0].start.toISOString()).toBe("2025-07-10T01:00:00.000Z");
   });
 
+  it("locationを保持し、空文字はundefinedにする", async () => {
+    mockFetchOnce({
+      status: 200,
+      jsonBody: {
+        items: [
+          {
+            id: "ev-loc",
+            summary: "現場定例",
+            location: "東京都世田谷区給田5-12-12",
+            start: { dateTime: "2025-07-10T10:00:00+09:00" },
+            end: { dateTime: "2025-07-10T11:00:00+09:00" },
+          },
+          {
+            id: "ev-noloc",
+            summary: "電話MTG",
+            location: "  ",
+            start: { dateTime: "2025-07-11T10:00:00+09:00" },
+            end: { dateTime: "2025-07-11T11:00:00+09:00" },
+          },
+        ],
+      },
+    });
+
+    const events = await fetchPrimaryCalendarEvents("token-xxx", timeMin, timeMax);
+
+    expect(events[0].location).toBe("東京都世田谷区給田5-12-12");
+    expect(events[1].location).toBeUndefined();
+  });
+
   it("終日イベント (date) を allDay=true で正規化する", async () => {
     mockFetchOnce({
       status: 200,

@@ -33,12 +33,15 @@ export type GoogleCalendarEvent = {
   end: Date;
   /** 終日イベント（Google API では start.date / end.date のみ来る） */
   allDay: boolean;
+  /** 開催場所（未設定なら undefined） */
+  location?: string;
 };
 
 /** Google Calendar API の event レスポンス（必要な部分だけ） */
 type RawGoogleEvent = {
   id?: string;
   summary?: string;
+  location?: string;
   start?: { date?: string; dateTime?: string; timeZone?: string };
   end?: { date?: string; dateTime?: string; timeZone?: string };
 };
@@ -50,13 +53,14 @@ type RawEventsResponse = {
 function normalizeEvent(raw: RawGoogleEvent): GoogleCalendarEvent | null {
   if (!raw.id) return null;
   const summary = raw.summary ?? "(無題)";
+  const location = raw.location?.trim() || undefined;
 
   // 終日イベント: start.date / end.date は YYYY-MM-DD 形式（end は exclusive）
   if (raw.start?.date && raw.end?.date) {
     const start = new Date(`${raw.start.date}T00:00:00`);
     const end = new Date(`${raw.end.date}T00:00:00`);
     if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return null;
-    return { id: raw.id, summary, start, end, allDay: true };
+    return { id: raw.id, summary, start, end, allDay: true, location };
   }
 
   // 時刻指定イベント
@@ -64,7 +68,7 @@ function normalizeEvent(raw: RawGoogleEvent): GoogleCalendarEvent | null {
     const start = new Date(raw.start.dateTime);
     const end = new Date(raw.end.dateTime);
     if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return null;
-    return { id: raw.id, summary, start, end, allDay: false };
+    return { id: raw.id, summary, start, end, allDay: false, location };
   }
 
   return null;

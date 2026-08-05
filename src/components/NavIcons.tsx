@@ -35,6 +35,7 @@ import {
   LayoutGrid,
   Wallet,
   Layers,
+  CalendarPlus,
 } from "lucide-react";
 
 const SIZE = 18;
@@ -74,6 +75,7 @@ export const navIconMap: Record<string, React.ReactNode> = {
   "partner-companies": <Handshake size={SIZE} strokeWidth={STROKE} />,
   "money-hub": <Wallet size={SIZE} strokeWidth={STROKE} />,
   "field-hub": <Layers size={SIZE} strokeWidth={STROKE} />,
+  "calendar-inbox": <CalendarPlus size={SIZE} strokeWidth={STROKE} />,
 };
 
 /** アイコンキーからlucide SVGを返す。未知のキーはFileTextにフォールバック */
