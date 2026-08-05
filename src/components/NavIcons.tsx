@@ -36,6 +36,7 @@ import {
   Wallet,
   Layers,
   CalendarPlus,
+  Landmark,
 } from "lucide-react";
 
 const SIZE = 18;
@@ -67,6 +68,7 @@ export const navIconMap: Record<string, React.ReactNode> = {
   node: <Network size={SIZE} strokeWidth={STROKE} />,
   cards: <LayoutGrid size={SIZE} strokeWidth={STROKE} />,
   reports: <FileBarChart size={SIZE} strokeWidth={STROKE} />,
+  keiei: <Landmark size={SIZE} strokeWidth={STROKE} />,
   finishing: <PaintBucket size={SIZE} strokeWidth={STROKE} />,
   schedule: <CalendarDays size={SIZE} strokeWidth={STROKE} />,
   "phase-templates": <FileText size={SIZE} strokeWidth={STROKE} />,

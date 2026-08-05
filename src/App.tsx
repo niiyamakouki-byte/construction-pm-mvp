@@ -45,6 +45,7 @@ const SelectionBoardPage = lazy(() => import("./pages/SelectionBoardPage.js").th
 const MoodBoardPage = lazy(() => import("./pages/MoodBoardPage.js").then((m) => ({ default: m.MoodBoardPage })));
 const CRMPage = lazy(() => import("./pages/CRMPage.js").then((m) => ({ default: m.CRMPage })));
 const ReportsPage = lazy(() => import("./pages/ReportsPage.js").then((m) => ({ default: m.ReportsPage })));
+const KeieiPage = lazy(() => import("./pages/KeieiPage.js").then((m) => ({ default: m.KeieiPage })));
 const OrderManagementPage = lazy(() => import("./pages/OrderManagementPage.js").then((m) => ({ default: m.OrderManagementPage })));
 const InvoiceManagementPage = lazy(() => import("./pages/InvoiceManagementPage.js").then((m) => ({ default: m.InvoiceManagementPage })));
 const CrossProjectGanttPage = lazy(() => import("./pages/CrossProjectGanttPage.js").then((m) => ({ default: m.CrossProjectGanttPage })));
@@ -381,6 +382,13 @@ function AppShell() {
       icon: "reports",
       path: "/reports",
       matchRoute: (currentRoute) => currentRoute === "/reports" || currentRoute.startsWith("/reports/"),
+    },
+    {
+      key: "keiei",
+      label: t("common:nav.keiei"),
+      icon: "keiei",
+      path: "/keiei",
+      matchRoute: (currentRoute) => currentRoute === "/keiei",
     },
     {
       key: "finishing",
@@ -833,6 +841,13 @@ function AppShell() {
         </ErrorBoundary>
       );
     }
+    if (route === "/keiei") {
+      return (
+        <ErrorBoundary fallbackTitle="経営タブエラー">
+          <KeieiPage />
+        </ErrorBoundary>
+      );
+    }
     if (route === "/invoices") {
       return (
         <ErrorBoundary fallbackTitle={t("errors:page_error.invoice_management")}>
@@ -963,6 +978,7 @@ function AppShell() {
     { key: "invoice", label: t("common:nav.invoices_nav"), icon: "invoice", path: "/invoice", active: route === "/invoice", group: "money", aiHint: "請求漏れと入金予定を見る" },
     { key: "cost", label: t("common:nav.cost"), icon: "cost", path: "/cost-management", active: route === "/cost-management", group: "money", aiHint: "予算超過と原価差異を見る" },
     { key: "reports", label: t("common:nav.reports"), icon: "reports", path: "/reports", active: route === "/reports" || route.startsWith("/reports/"), group: "money", aiHint: "報告書と経営向け集計を出す" },
+    { key: "keiei", label: t("common:nav.keiei"), icon: "keiei", path: "/keiei", active: route === "/keiei", group: "money", aiHint: "残高・ランウェイ・未回収を1画面で見る" },
     { key: "freee", label: t("common:nav.freee"), icon: "freee", path: "/freee", active: route === "/freee" || route.startsWith("/freee?"), group: "money", aiHint: "会計連携と仕訳候補を見る" },
     { key: "help", label: t("common:nav.help"), icon: "help", path: "/help", active: route === "/help", group: "system", aiHint: "使い方とショートカットを見る" },
     { key: "account", label: "アカウント設定", icon: "account", path: "/account", active: route === "/account", group: "system", aiHint: "ユーザー・組織・表示設定を変える" },

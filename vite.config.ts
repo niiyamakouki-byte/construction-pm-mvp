@@ -1,12 +1,29 @@
-import { defineConfig } from "vite";
+import { defineConfig, type Plugin } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import { VitePWA } from "vite-plugin-pwa";
+import { loadKeieiSnapshot } from "./src/api/keiei-snapshot.js";
+
+// ponytail: 経営タブ(/keiei)専用のdev-onlyデータ橋。~/laporta-keieiはこのMacのローカル
+// ファイルなので本番(Vercel)からは読めない。実データは `pnpm dev` 時のみ出る。
+// 詳細・アップグレード経路は src/api/keiei-snapshot.ts のコメント参照。
+function keieiSnapshotDevApi(): Plugin {
+  return {
+    name: "keiei-snapshot-dev-api",
+    configureServer(server) {
+      server.middlewares.use("/api/keiei/snapshot", (_req, res) => {
+        res.setHeader("Content-Type", "application/json; charset=utf-8");
+        res.end(JSON.stringify(loadKeieiSnapshot()));
+      });
+    },
+  };
+}
 
 export default defineConfig({
   plugins: [
     tailwindcss(),
     react(),
+    keieiSnapshotDevApi(),
     VitePWA({
       registerType: "autoUpdate",
       includeAssets: ["favicon.ico", "apple-touch-icon.png", "icons/*.png"],
