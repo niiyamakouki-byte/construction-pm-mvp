@@ -2,6 +2,7 @@ node_modules/
 dist/
 .claude/settings.local.json
 .claude/worktrees/
+.codex-worktrees/
 .omc/
 .env.local
 .env.*.local
