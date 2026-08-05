@@ -1703,6 +1703,7 @@ function GanttPageContent({ initialProjectId = null, openMaster = false, initial
           taskDetail={taskDetail}
           contractors={contractors}
           allProjectTasks={selectedProjectTasks}
+          today={today}
           onClose={() => setTaskDetail(null)}
           onSubmit={(event) => void handleTaskDetailSave(event)}
           onChange={(updater) => setTaskDetail((current) => (current ? updater(current) : current))}

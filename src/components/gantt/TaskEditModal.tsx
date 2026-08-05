@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import type { Contractor, DependencyType } from "../../domain/types.js";
 import type { SendContractorRequestResult } from "../../lib/contractor-request.js";
 import type { GanttTask, TaskDetailState } from "./types.js";
-import { addDays, hasCycle, resolveIncludeWeekends, statusLabel } from "./utils.js";
+import { addDays, hasCycle, resolveIncludeWeekends, statusLabel, toLocalDateString } from "./utils.js";
+import { DateRangeStrip } from "./DateRangeStrip.js";
 
 const DEP_TYPE_OPTIONS: Array<{ value: DependencyType; label: string; description: string }> = [
   { value: "FS", label: "FS", description: "前タスク完了→開始" },
@@ -17,6 +18,8 @@ type Props = {
   contractors: Contractor[];
   /** P2.5: 同一案件内の全タスク（先行タスク追加/削除UIで使用） */
   allProjectTasks?: GanttTask[];
+  /** 範囲塗りストリップの「今日」判定用。未指定時は現在日時から求める */
+  today?: string;
   onClose: () => void;
   onSubmit: (e: React.FormEvent) => void;
   onChange: (updater: (d: TaskDetailState) => TaskDetailState) => void;
@@ -33,6 +36,7 @@ export function TaskEditModal({
   taskDetail,
   contractors,
   allProjectTasks,
+  today,
   onClose,
   onSubmit,
   onChange,
@@ -212,6 +216,12 @@ export function TaskEditModal({
               />
             </label>
           </div>
+
+          <DateRangeStrip
+            startDate={taskDetail.editStartDate}
+            endDate={taskDetail.editDueDate}
+            today={today ?? toLocalDateString(new Date())}
+          />
 
           <div className="grid gap-3 sm:grid-cols-2">
             <label className="flex flex-col gap-1.5">
