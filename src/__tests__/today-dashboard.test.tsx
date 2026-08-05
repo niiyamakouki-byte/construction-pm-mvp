@@ -151,6 +151,9 @@ function makeCostItem(overrides: Partial<CostItem> = {}): CostItem {
 describe("TodayDashboardPage", () => {
   beforeEach(() => {
     cleanup();
+    // 天気APIは既定でreject(=API失敗)に戻す。個別テストが成功レスポンスをstubした場合の
+    // 他テストへの汚染を防ぐ (bead laporta-beads-boiqk)
+    vi.stubGlobal("fetch", vi.fn(() => Promise.reject(new Error("network"))));
     mockTasks = [];
     mockProjects = [];
     mockCostItems = [];
@@ -389,10 +392,27 @@ describe("TodayDashboardPage", () => {
     expect(screen.queryByText("要注意")).toBeNull();
   });
 
-  it("座標設定済み案件の概要カードは天候を表示する", async () => {
+  it("座標設定済み案件の概要カードはAPI成功時に天候を表示する", async () => {
     mockProjects = [
       makeProject({ id: "p-1", name: "横浜現場", latitude: 35.44, longitude: 139.64 }),
     ];
+    // 実予報取得成功をstub(このテストのみ。他テストは既定でreject=API失敗)
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => ({
+        ok: true,
+        json: async () => ({
+          daily: {
+            time: Array.from({ length: 7 }, (_, i) => `2026-08-${String(6 + i).padStart(2, "0")}`),
+            weather_code: [0, 0, 0, 0, 0, 0, 0],
+            temperature_2m_max: [27, 27, 27, 27, 27, 27, 27],
+            temperature_2m_min: [21, 21, 21, 21, 21, 21, 21],
+            precipitation_probability_max: [5, 5, 5, 5, 5, 5, 5],
+            wind_speed_10m_max: [4, 4, 4, 4, 4, 4, 4],
+          },
+        }),
+      })),
+    );
     render(<TodayDashboardPage />);
 
     await waitFor(() =>
@@ -401,6 +421,35 @@ describe("TodayDashboardPage", () => {
       ).not.toBeNull(),
     );
     expect(screen.queryByText("住所未設定のため天候情報なし")).toBeNull();
+    expect(screen.queryByText("天候情報を取得できません")).toBeNull();
+  });
+
+  // 座標ありでOpen-Meteo API失敗時、合成データに施工可否バッジを出さない (bead laporta-beads-boiqk)
+  it("座標設定済み案件でもAPI失敗時は概要カードに施工可否バッジを出さない", async () => {
+    mockProjects = [
+      makeProject({ id: "p-1", name: "横浜現場", latitude: 35.44, longitude: 139.64 }),
+    ];
+    // fetchは既定(beforeEach)でreject = API失敗
+
+    render(<TodayDashboardPage />);
+
+    expect(await screen.findByText("天候情報を取得できません")).toBeDefined();
+    expect(screen.queryByText("施工可")).toBeNull();
+    expect(screen.queryByText("要注意")).toBeNull();
+    expect(screen.queryByText("延期候補")).toBeNull();
+  });
+
+  // 「本日の日報」天候欄も合成データを実予報として出さない (bead laporta-beads-boiqk)
+  it("座標設定済み案件でもAPI失敗時は本日の日報の天候欄が正直なフォールバックになる", async () => {
+    mockProjects = [
+      makeProject({ id: "p-1", name: "横浜現場", latitude: 35.44, longitude: 139.64 }),
+    ];
+    render(<TodayDashboardPage />);
+
+    await waitFor(() => expect(screen.getByText("本日の日報")).toBeDefined());
+    expect(await screen.findByText("天候情報なし")).toBeDefined();
+    expect(screen.queryByText("外装・揚重作業は延期推奨")).toBeNull();
+    expect(screen.queryByText("外装作業は予備日を確保")).toBeNull();
   });
 
   it("写真は選択だけでは保存せず、確認ボタンでアップロードする", async () => {

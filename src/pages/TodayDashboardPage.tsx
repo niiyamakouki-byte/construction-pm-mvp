@@ -520,18 +520,19 @@ function TodayDashboardPageContent() {
   );
 
   const dailyReportForecast = useMemo(() => {
-    // 座標未設定案件に他現場やフォールバック座標の予報を実予報として紐づけない
+    // 座標未設定案件に他現場やフォールバック座標の予報を実予報として紐づけない。
+    // API失敗による合成データ(isSynthetic)も実予報として日報に出さない (bead laporta-beads-boiqk)
     const site = dailyReportProject
       ? allSiteForecasts.find((s) => s.projectId === dailyReportProject.id) ?? null
-      : allSiteForecasts.find((s) => s.hasLocation) ?? null;
-    return site?.hasLocation ? site : null;
+      : allSiteForecasts.find((s) => s.hasLocation && !s.isSynthetic) ?? null;
+    return site?.hasLocation && !site.isSynthetic ? site : null;
   }, [allSiteForecasts, dailyReportProject]);
 
   const dailyWeatherSummary = useMemo(() => {
     if (!dailyReportForecast) {
       return {
         title: "天候情報なし",
-        detail: "現場住所(座標)が未設定のため天気を表示できません",
+        detail: "現場住所(座標)が未設定、または天気予報を取得できませんでした",
         exportText: "天候情報なし",
         issues: [] as string[],
       };
@@ -1117,8 +1118,9 @@ function TodayDashboardPageContent() {
 
         <div className="mt-5 grid gap-2 sm:grid-cols-3">
           {siteForecasts.map((site) => {
-            if (!site.hasLocation) {
-              // 座標未設定案件はフォールバック座標の予報を実予報のように見せない
+            if (!site.hasLocation || site.isSynthetic) {
+              // 座標未設定、またはAPI失敗による合成データは施工可否バッジ付きで出さない
+              // (isSynthetic分岐は bead laporta-beads-boiqk)
               return (
                 <button
                   key={site.siteId}
@@ -1128,7 +1130,7 @@ function TodayDashboardPageContent() {
                 >
                   <p className="text-2xl leading-tight">📍</p>
                   <p className="mt-2 text-[11px] text-brand-200">
-                    住所未設定のため天候情報なし
+                    {site.hasLocation ? "天候情報を取得できません" : "住所未設定のため天候情報なし"}
                   </p>
                   <p className="mt-1.5 truncate text-[11px] font-semibold text-white">
                     {site.siteName}

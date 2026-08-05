@@ -393,10 +393,16 @@ export type WeatherWarningItem = {
 export function collectWeatherWarnings(
   siteForecasts: ConstructionSiteForecast[],
   dayLimit = 3,
+  // includeSynthetic: テストがbuildMockConstructionSiteForecasts(常にisSynthetic=true)で
+  // 警告収集ロジック自体をシナリオ検証する用途のみtrueにする。本番呼び出し(NotificationBanner)は
+  // 省略してデフォルトfalseのまま使うこと (bead laporta-beads-boiqk)
+  { includeSynthetic = false }: { includeSynthetic?: boolean } = {},
 ): WeatherWarningItem[] {
   return siteForecasts.flatMap((site) => {
     // 座標未設定案件の予報はフォールバック座標由来の参考値なので警告(天候注意)を出さない
     if (!site.hasLocation) return [];
+    // 座標ありでもAPI失敗によるcreateMockForecast合成値からは「天候注意」を出さない
+    if (site.isSynthetic && !includeSynthetic) return [];
     // 案件に紐づかない予報(案件0件時のデモ用DEFAULT_SITEフォールバック)は通知に出さない
     if (!site.projectId) return [];
     return site.forecast.daily.slice(0, dayLimit).flatMap((day) => {

@@ -36,7 +36,9 @@ describe("weather helpers", () => {
       makeProject({ id: "p-2", name: "横浜現場", latitude: 35.44, longitude: 139.64 }),
     ]);
 
-    const warnings = collectWeatherWarnings(forecasts, 2);
+    // buildMockConstructionSiteForecastsは常にisSynthetic=true。ここでは合成値の可否ではなく
+    // 警告収集ロジック(閾値判定)自体をテストシナリオ生成用途で検証するためincludeSyntheticで明示許可する
+    const warnings = collectWeatherWarnings(forecasts, 2, { includeSynthetic: true });
 
     expect(warnings.length).toBeGreaterThan(0);
     expect(warnings.some((warning) => warning.siteName === "横浜現場")).toBe(true);
@@ -82,9 +84,20 @@ describe("weather helpers", () => {
       makeProject({ id: "p-2", name: "横浜現場", latitude: 35.44, longitude: 139.64 }),
     ]);
 
-    const warnings = collectWeatherWarnings(forecasts, 7);
+    // シナリオ検証用途でincludeSynthetic許可(理由は上記テスト参照)
+    const warnings = collectWeatherWarnings(forecasts, 7, { includeSynthetic: true });
     expect(warnings.length).toBeGreaterThan(0);
     expect(warnings.every((warning) => warning.siteName === "横浜現場")).toBe(true);
+  });
+
+  // 座標ありでOpen-Meteo API失敗時、合成データから「天候注意」通知を出さない (bead laporta-beads-boiqk)
+  it("excludes synthetic (API-failure fallback) forecasts from weather warnings by default", () => {
+    const forecasts = buildMockConstructionSiteForecasts([
+      makeProject({ id: "p-1", name: "横浜現場", latitude: 35.44, longitude: 139.64 }),
+    ]);
+    expect(forecasts[0].isSynthetic).toBe(true);
+
+    expect(collectWeatherWarnings(forecasts, 7)).toEqual([]);
   });
 
   // buildMockConstructionSiteForecastsは常に合成データ(createMockForecast)を返す (bead laporta-beads-pr4zs)
