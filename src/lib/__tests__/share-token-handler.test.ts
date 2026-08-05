@@ -282,6 +282,26 @@ describe("handleShareTokenRequest", () => {
     expect(res._status).toBe(500);
   });
 
+  it("action=verify rejects a contractor request token", async () => {
+    const token = createSignedShareToken(
+      "proj-contractor",
+      {
+        expiresInDays: 14,
+        contractorRequest: { notificationId: "notification-contractor", taskName: "塗装" },
+      },
+      TEST_ENV,
+    );
+    const req: ShareTokenRequest = {
+      method: "POST",
+      headers: {},
+      body: { action: "verify", token },
+    };
+    const res = makeRes();
+    await handleShareTokenRequest(req, res, { auth: okAuth, env: TEST_ENV });
+    expect(res._status).toBe(403);
+    expect(res._body).toEqual({ error: "協力業者依頼トークンでは施主ポータルを開けません" });
+  });
+
   it("unknown action returns 400", async () => {
     const req: ShareTokenRequest = {
       method: "POST",

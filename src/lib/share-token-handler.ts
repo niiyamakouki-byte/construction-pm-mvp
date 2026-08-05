@@ -321,6 +321,11 @@ export async function handleShareTokenRequest(
       return;
     }
     const result = verifySignedShareToken(body.token, body.password, env);
+    // laporta-beads-twae2: contractor request tokens are valid only for action=respond.
+    if (result.purpose === "contractor_request") {
+      res.status(403).json({ error: "協力業者依頼トークンでは施主ポータルを開けません" });
+      return;
+    }
     res.status(200).json(result);
   } catch (err) {
     if (err instanceof ShareTokenSecretMissingError) {
