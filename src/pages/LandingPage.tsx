@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from "react";
+import { Check, X } from "lucide-react";
 import { navigate } from "../hooks/useHashRouter.js";
 
 // 比較表データ: 内装業者が重視する観点でGenbaHub vs 汎用ツール(ANDPAD/kintoneなど)
@@ -42,31 +43,11 @@ const comparisonRows = [
 ];
 
 function CheckIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      className={className}
-      fill="none"
-      stroke="currentColor"
-      viewBox="0 0 24 24"
-      aria-hidden="true"
-    >
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-    </svg>
-  );
+  return <Check className={className} strokeWidth={2.25} aria-hidden="true" />;
 }
 
 function XIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      className={className}
-      fill="none"
-      stroke="currentColor"
-      viewBox="0 0 24 24"
-      aria-hidden="true"
-    >
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
-    </svg>
-  );
+  return <X className={className} strokeWidth={2.25} aria-hidden="true" />;
 }
 
 function CellValue({ value }: { value: boolean | string }) {
@@ -140,22 +121,18 @@ function LogoIcon() {
 
 const features = [
   {
-    icon: "📐",
     title: "内装特化の工程テンプレ",
     desc: "LGS・ボード・塗装・OA床など内装工種ごとの工程テンプレを即適用。ゼロからの工程作成が不要に。",
   },
   {
-    icon: "💰",
     title: "PDF見積→自動積算",
     desc: "メーカー・業者のPDF見積をアップロードするだけで金額を自動集計。転記ミスと積算時間を削減。",
   },
   {
-    icon: "📷",
     title: "AI写真日報",
     desc: "現場写真をスマホで撮るだけ。ファイル名からAIがカテゴリ（下地・仕上・検査）を自動分類して日報に反映。",
   },
   {
-    icon: "📊",
     title: "粗利・予実管理",
     desc: "見積・発注・実費をリアルタイム比較。各案件の粗利率と予算超過アラートをダッシュボードに集約。",
   },
@@ -196,6 +173,7 @@ const plans = [
 
 export function LandingPage() {
   return (
+    // laporta-beads-4on5a / Codex: LPの実画面訴求とセクション階層をv2-cozyへ整理。
     <div className="min-h-screen bg-white">
       {/* Header */}
       <header className="sticky top-0 z-50 border-b border-slate-100 bg-white/95 backdrop-blur-sm">
@@ -243,11 +221,11 @@ export function LandingPage() {
       </header>
 
       <main>
-      {/* Hero — 統一コピー+副文+主CTA1本 */}
+      {/* Hero: 統一コピー+副文+主CTA1本 */}
       <section className="bg-brand-800 px-4 py-20 text-center sm:py-28">
         <div className="mx-auto max-w-2xl">
           {/* ponytail: hero h1はLCP候補要素のため、editorial webfont(Shippori Mincho)は
-              適用しない — display:swap でもLCP計測がフォント読込完了まで遅延する実測を確認
+              適用しない。display:swap でもLCP計測がフォント読込完了まで遅延する実測を確認
               (laporta-beads-c6skn, 6728ms→8250ms)。見出しエディトリアル化は below-the-fold
               セクションのみに留める。 */}
           <h1 className="text-4xl font-extrabold leading-tight tracking-tight text-white sm:text-5xl">
@@ -259,41 +237,45 @@ export function LandingPage() {
             内装工事会社のための現場管理SaaS。工程・見積・写真を1画面に集約。
           </p>
           <HeroEmailCta />
-          <p className="mt-4 text-sm text-brand-300">クレジットカード不要 · 14日間無料 · 即日利用開始</p>
+          <p className="mt-4 text-sm text-brand-300">クレジットカード不要 / 14日間無料 / 即日利用開始</p>
         </div>
       </section>
 
-      {/* 実画面スクショ挿入枠 — LCP画像(fetchPriority=high, 票995h2で最適化済み)を含むため
+      {/* 実画面スクショ挿入枠。LCP画像(fetchPriority=high, 票995h2で最適化済み)を含むため
           余白は変更しない(py-12のまま)。上下paddingを動かすとLCP画像のfold内可視面積が
           変わりLCPが悪化する実測を確認(laporta-beads-c6skn, 6728ms→8090ms)。 */}
       <section className="bg-slate-50 px-4 py-12 sm:px-6">
-        <div className="mx-auto max-w-4xl">
-          <p className="mb-8 text-center text-sm font-semibold tracking-[0.2em] text-slate-400 uppercase">実際の画面</p>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <div className="mx-auto max-w-6xl">
+          <div className="mb-8 max-w-2xl">
+            <p className="text-sm font-semibold text-brand-600">実際の画面</p>
+            <h2 className="lp-editorial-heading mt-2 text-2xl text-slate-900 sm:text-3xl">現場の情報を、見える形に。</h2>
+            <p className="mt-3 text-slate-500">デモではなく、日々の案件管理と見積作成に使う画面です。</p>
+          </div>
+          <div className="grid gap-6 lg:grid-cols-2">
+            <figure className="overflow-hidden rounded-2xl border border-brand-200 bg-white genba-flat-card">
               <img
                 src="/lp/screen-dashboard.png"
                 alt="LapoSite 今日のダッシュボード画面"
                 fetchPriority="high"
-                className="h-52 w-full object-cover object-top"
+                className="aspect-[16/15] w-full bg-brand-50 object-contain object-top"
               />
-              <div className="px-4 py-3">
-                <p className="text-sm font-semibold text-slate-700">今日のダッシュボード</p>
-                <p className="mt-0.5 text-xs text-slate-400">進行中案件・タスク・天気をひと目で確認</p>
-              </div>
-            </div>
-            <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+              <figcaption className="border-t border-brand-100 px-5 py-4">
+                <p className="font-semibold text-slate-700">今日のダッシュボード</p>
+                <p className="mt-1 text-sm text-slate-500">進行中案件・タスク・天気をひと目で確認</p>
+              </figcaption>
+            </figure>
+            <figure className="overflow-hidden rounded-2xl border border-brand-200 bg-white genba-flat-card">
               <img
                 src="/lp/screen-estimate.png"
                 alt="LapoSite 見積作成画面（PDFから作成/手動で作成）"
                 loading="lazy"
-                className="h-52 w-full object-cover object-top"
+                className="aspect-[16/15] w-full bg-brand-50 object-contain object-top"
               />
-              <div className="px-4 py-3">
-                <p className="text-sm font-semibold text-slate-700">PDF見積→自動積算</p>
-                <p className="mt-0.5 text-xs text-slate-400">業者PDFをドロップするだけで金額を自動集計</p>
-              </div>
-            </div>
+              <figcaption className="border-t border-brand-100 px-5 py-4">
+                <p className="font-semibold text-slate-700">PDF見積→自動積算</p>
+                <p className="mt-1 text-sm text-slate-500">業者PDFをドロップするだけで金額を自動集計</p>
+              </figcaption>
+            </figure>
           </div>
         </div>
       </section>
@@ -344,20 +326,24 @@ export function LandingPage() {
       {/* Features */}
       <section id="features" className="bg-slate-50 px-4 py-editorial-xl sm:px-6">
         <div className="mx-auto max-w-6xl">
-          <div className="mb-12 text-center">
+          <div className="mb-12 max-w-2xl">
             <h2 className="lp-editorial-heading text-2xl text-slate-900 sm:text-3xl">内装工事に特化した4つの強み</h2>
             <p className="mt-3 text-slate-500">汎用ツールでは対応できない内装工種・積算・写真管理をカバー。内装工事会社のために作られています。</p>
           </div>
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {features.map((f) => (
-              <div
+          <div className="grid overflow-hidden rounded-2xl border border-brand-200 bg-white sm:grid-cols-2">
+            {features.map((f, index) => (
+              <article
                 key={f.title}
-                className="rounded-2xl border border-slate-200 bg-white p-editorial-sm shadow-sm hover:shadow-md transition-shadow"
+                className={`grid grid-cols-[auto_1fr] gap-4 p-6 sm:p-8 ${
+                  index < 2 ? "border-b border-brand-100" : ""
+                } ${index % 2 === 0 ? "sm:border-r sm:border-brand-100" : ""}`}
               >
-                <div className="mb-3 text-3xl">{f.icon}</div>
-                <h3 className="mb-2 text-base font-bold text-slate-900">{f.title}</h3>
-                <p className="text-sm leading-relaxed text-slate-500">{f.desc}</p>
-              </div>
+                <span className="figure-hero text-2xl font-semibold text-brand-300">0{index + 1}</span>
+                <div>
+                  <h3 className="text-base font-bold text-slate-900">{f.title}</h3>
+                  <p className="mt-2 text-sm leading-relaxed text-slate-500">{f.desc}</p>
+                </div>
+              </article>
             ))}
           </div>
         </div>
@@ -374,9 +360,8 @@ export function LandingPage() {
             </p>
           </div>
 
-          {/* Desktop table */}
-          <div className="hidden overflow-hidden rounded-2xl border border-slate-200 shadow-sm sm:block">
-            <table className="w-full text-left text-sm">
+          <div className="overflow-x-auto rounded-2xl border border-brand-200 bg-white genba-flat-card">
+            <table className="min-w-[700px] w-full text-left text-sm">
               <thead>
                 <tr className="border-b border-slate-200 bg-slate-50">
                   <th className="py-4 pl-6 pr-4 font-semibold text-slate-600 w-1/2">比較ポイント</th>
@@ -413,46 +398,30 @@ export function LandingPage() {
             </p>
           </div>
 
-          {/* Mobile cards */}
-          <div className="space-y-3 sm:hidden">
-            {comparisonRows.map((row) => (
-              <div key={row.feature} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-                <p className="mb-3 text-sm font-semibold text-slate-800">{row.feature}</p>
-                <div className="flex items-center justify-around gap-4">
-                  <div className="flex flex-col items-center gap-1 text-center">
-                    <span className="text-xs font-medium text-brand-600">LapoSite</span>
-                    <CellValue value={row.genbahub} />
-                  </div>
-                  <div className="h-8 w-px bg-slate-200" aria-hidden="true" />
-                  <div className="flex flex-col items-center gap-1 text-center">
-                    <span className="text-xs font-medium text-slate-400">汎用ツール（目安）</span>
-                    <CellValue value={row.generic} />
-                  </div>
-                </div>
-              </div>
-            ))}
-            <p className="text-xs text-slate-400 px-1">
-              ※ 汎用ツールの月額は各社公開情報の概算です。詳細は各社サイトでご確認ください。
-            </p>
-          </div>
           {/* Generic AI comparison */}
           <div className="mt-14">
-            <div className="mb-8 text-center">
+            <div className="mb-8 max-w-2xl">
               <h3 className="lp-editorial-heading text-2xl text-slate-900">ChatGPT等の汎用AIとの違い</h3>
               <p className="mt-3 text-slate-500">
                 汎用AIは何でもできる代わりに、何をさせるかを言葉にできる人しか使いこなせません。
                 LapoSiteは、AIを使いこなす能力が要らないAIです。
               </p>
             </div>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 sm:gap-6">
+            <div className="overflow-hidden rounded-2xl bg-brand-800 text-white">
               {[
-                ["要る能力が違う", "汎用AIは指示の上手さがそのまま成果の差になる。LapoSiteは写真を送る・喋るだけ。現場仕事をそのまま続けるだけでいい。"],
-                ["残るものが違う", "チャットの返答は流れて消える。LapoSiteは工程表・日報・請求書という会社の資産として構造化されて残る。"],
-                ["効く範囲が違う", "汎用AIは使った本人だけが楽になる。LapoSiteは全員が同じ画面を見る、会社の仕組みとして効く。"],
-              ].map(([title, desc]) => (
-                <div key={title} className="rounded-2xl border border-slate-200 bg-slate-50 p-4 sm:p-6">
-                  <h4 className="mb-2 text-base font-bold text-slate-900">{title}</h4>
-                  <p className="text-sm leading-relaxed text-slate-500">{desc}</p>
+                ["要る能力", "指示の上手さで成果が変わる", "写真を送る、喋るだけで使える"],
+                ["残るもの", "返答がチャットに流れていく", "工程表・日報・請求書として残る"],
+                ["効く範囲", "使った本人だけが楽になる", "全員が使う会社の仕組みになる"],
+              ].map(([title, generic, genbahub], index) => (
+                <div
+                  key={title}
+                  className={`grid gap-4 px-5 py-6 sm:grid-cols-[0.65fr_1fr_1fr] sm:items-center sm:px-8 ${
+                    index > 0 ? "border-t border-brand-700" : ""
+                  }`}
+                >
+                  <h4 className="font-semibold text-brand-200">{title}</h4>
+                  <p className="text-sm leading-relaxed text-brand-300">汎用AI: {generic}</p>
+                  <p className="text-sm font-medium leading-relaxed text-white">LapoSite: {genbahub}</p>
                 </div>
               ))}
             </div>
@@ -463,26 +432,25 @@ export function LandingPage() {
       {/* Social proof */}
       <section className="bg-white px-4 py-editorial-md sm:px-6">
         <div className="mx-auto max-w-4xl">
-          <p className="mb-10 text-center text-sm font-medium uppercase tracking-widest text-slate-400">内装工事会社からの声</p>
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            <figure className="rounded-2xl border border-slate-200 bg-slate-50 p-editorial-sm">
-              <blockquote className="text-sm leading-7 text-slate-700">
+          <p className="mb-3 text-sm font-medium text-brand-600">内装工事会社からの声</p>
+          <h2 className="lp-editorial-heading mb-10 text-2xl text-slate-900 sm:text-3xl">導入後に変わったこと</h2>
+          <div className="grid gap-8 lg:grid-cols-[1.15fr_0.85fr]">
+            <figure className="rounded-2xl bg-brand-50 p-8 sm:p-10">
+              <blockquote className="lp-editorial-heading text-xl leading-9 text-slate-800 sm:text-2xl">
                 "内装工程テンプレのおかげで、LGS〜クロス貼りまでの工程表が10分で完成。以前は Excel で2〜3時間かかっていました。"
               </blockquote>
-              <figcaption className="mt-4 text-xs text-slate-400">— 都内内装施工会社 現場監督</figcaption>
+              <figcaption className="mt-6 text-sm text-brand-700">都内内装施工会社 現場監督</figcaption>
             </figure>
-            <figure className="rounded-2xl border border-slate-200 bg-slate-50 p-editorial-sm">
-              <blockquote className="text-sm leading-7 text-slate-700">
-                "業者からのPDF見積を貼るだけで積算できるのが助かる。転記ミスがなくなり、見積提出のスピードが倍になりました。"
-              </blockquote>
-              <figcaption className="mt-4 text-xs text-slate-400">— リノベーション会社 代表</figcaption>
-            </figure>
-            <figure className="rounded-2xl border border-slate-200 bg-slate-50 p-editorial-sm sm:col-span-2 lg:col-span-1">
-              <blockquote className="text-sm leading-7 text-slate-700">
-                "現場写真がカテゴリ自動分類されて日報に入るのが便利。写真整理の時間がほぼゼロになり、若い現場監督にも好評です。"
-              </blockquote>
-              <figcaption className="mt-4 text-xs text-slate-400">— 内装工事会社 工事部長</figcaption>
-            </figure>
+            <div className="divide-y divide-brand-100 border-y border-brand-100">
+              <figure className="py-6 lg:pt-2">
+                <blockquote className="text-sm leading-7 text-slate-700">"PDF見積を貼るだけで積算でき、転記ミスがなくなりました。見積提出も早くなっています。"</blockquote>
+                <figcaption className="mt-3 text-xs text-slate-400">リノベーション会社 代表</figcaption>
+              </figure>
+              <figure className="py-6">
+                <blockquote className="text-sm leading-7 text-slate-700">"現場写真が自動分類されて日報に入るので、写真整理に追われなくなりました。"</blockquote>
+                <figcaption className="mt-3 text-xs text-slate-400">内装工事会社 工事部長</figcaption>
+              </figure>
+            </div>
           </div>
         </div>
       </section>
@@ -490,67 +458,68 @@ export function LandingPage() {
       {/* Pricing */}
       <section id="pricing" className="bg-slate-50 px-4 py-editorial-xl sm:px-6">
         <div className="mx-auto max-w-6xl">
-          <div className="mb-12 text-center">
+          <div className="mb-12 max-w-2xl">
             <h2 className="lp-editorial-heading text-2xl text-slate-900 sm:text-3xl">シンプルな料金体系</h2>
             <p className="mt-3 text-slate-500">14日間の無料トライアルでお試しの後、チームに合ったプランをお選びください。</p>
           </div>
-          <div className="grid gap-6 sm:grid-cols-3">
-            {plans.map((plan) => (
+          <div className="grid gap-6 lg:grid-cols-[1.15fr_0.85fr]">
+            {plans.filter((plan) => plan.highlight).map((plan) => (
               <div
                 key={plan.name}
-                className={`relative rounded-2xl p-editorial-sm shadow-sm ${
-                  plan.highlight
-                    ? "border-2 border-brand-500 bg-brand-700 text-white"
-                    : "border border-slate-200 bg-white"
-                }`}
+                className="relative rounded-2xl bg-brand-700 p-8 text-white sm:p-10"
               >
-                {plan.highlight && (
-                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-accent-400 px-3 py-0.5 text-xs font-bold text-brand-900">
-                    人気No.1
-                  </span>
-                )}
-                <p className={`text-sm font-medium ${plan.highlight ? "text-brand-200" : "text-slate-500"}`}>
-                  {plan.name}
-                </p>
+                <p className="text-sm font-medium text-brand-200">おすすめ / {plan.name}</p>
                 <div className="mt-2 flex items-end gap-1">
-                  <span className={`text-3xl sm:text-4xl font-extrabold ${plan.highlight ? "text-white" : "text-slate-900"}`}>
-                    {plan.price}
-                  </span>
-                  <span className={`mb-1 text-sm ${plan.highlight ? "text-brand-200" : "text-slate-400"}`}>
-                    {plan.period}
-                  </span>
+                  <span className="text-4xl font-extrabold text-white sm:text-5xl">{plan.price}</span>
+                  <span className="mb-1 text-sm text-brand-200">{plan.period}</span>
                 </div>
-                <p className={`mt-1 text-sm ${plan.highlight ? "text-brand-200" : "text-slate-500"}`}>
-                  {plan.desc}
-                </p>
-                <ul className="mt-5 space-y-2.5">
+                <p className="mt-2 text-sm text-brand-200">{plan.desc}</p>
+                <ul className="mt-8 grid gap-3 sm:grid-cols-2">
                   {plan.features.map((feat) => (
                     <li key={feat} className="flex items-start gap-2 text-sm">
-                      <svg
-                        className={`mt-0.5 h-4 w-4 shrink-0 ${plan.highlight ? "text-accent-400" : "text-brand-500"}`}
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                        aria-hidden="true"
-                      >
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-                      </svg>
-                      <span className={plan.highlight ? "text-brand-100" : "text-slate-600"}>{feat}</span>
+                      <CheckIcon className="mt-0.5 h-4 w-4 shrink-0 text-accent-400" />
+                      <span className="text-brand-100">{feat}</span>
                     </li>
                   ))}
                 </ul>
                 <button
                   onClick={plan.ctaAction}
-                  className={`mt-6 w-full rounded-xl px-4 py-2.5 text-sm font-bold transition-all ${
-                    plan.highlight
-                      ? "bg-white text-brand-700 hover:bg-brand-50"
-                      : "bg-brand-600 text-white hover:bg-brand-700"
-                  }`}
+                  className="mt-8 w-full rounded-xl bg-white px-4 py-3 text-sm font-bold text-brand-700 hover:bg-brand-50"
                 >
                   {plan.cta}
                 </button>
               </div>
             ))}
+            <div className="overflow-hidden rounded-2xl border border-brand-200 bg-white">
+              {plans.filter((plan) => !plan.highlight).map((plan, index) => (
+                <section key={plan.name} className={`p-6 sm:p-8 ${index > 0 ? "border-t border-brand-100" : ""}`}>
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <p className="text-sm font-medium text-slate-500">{plan.name}</p>
+                      <p className="mt-1 text-sm text-slate-500">{plan.desc}</p>
+                    </div>
+                    <p className="shrink-0 text-right">
+                      <span className="text-2xl font-extrabold text-slate-900">{plan.price}</span>
+                      <span className="block text-xs text-slate-400">{plan.period}</span>
+                    </p>
+                  </div>
+                  <ul className="mt-5 grid gap-2 sm:grid-cols-2">
+                    {plan.features.slice(0, 4).map((feat) => (
+                      <li key={feat} className="flex items-start gap-2 text-xs text-slate-600">
+                        <CheckIcon className="mt-0.5 h-3.5 w-3.5 shrink-0 text-brand-500" />
+                        <span>{feat}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  <button
+                    onClick={plan.ctaAction}
+                    className="mt-5 rounded-xl border border-brand-300 px-4 py-2.5 text-sm font-bold text-brand-700 hover:bg-brand-50"
+                  >
+                    {plan.cta}
+                  </button>
+                </section>
+              ))}
+            </div>
           </div>
           <p className="mt-6 text-center text-sm text-slate-400">
             大規模案件・エンタープライズのご相談は{" "}
@@ -571,7 +540,7 @@ export function LandingPage() {
           <p className="mt-3 text-brand-200">14日間の無料トライアル。カード登録不要。</p>
           <button
             onClick={() => navigate("/signup")}
-            className="mt-6 rounded-xl bg-accent-400 px-8 py-3.5 text-base font-bold text-brand-900 shadow-lg hover:bg-accent-500"
+            className="mt-6 rounded-xl bg-accent-400 px-8 py-3.5 text-base font-bold text-brand-900 hover:bg-accent-500"
           >
             無料トライアルを開始する
           </button>
