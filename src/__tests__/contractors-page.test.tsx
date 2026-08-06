@@ -69,7 +69,7 @@ describe("ContractorsPage", () => {
   it("業者がいない場合は空状態メッセージが表示される", async () => {
     render(<ContractorsPage />);
     await waitFor(() =>
-      expect(screen.getByText("業者が登録されていません")).toBeDefined(),
+      expect(screen.getByText("最初の協力業者を登録しましょう")).toBeDefined(),
     );
   });
 
@@ -139,12 +139,12 @@ describe("ContractorsPage", () => {
   it("業者を追加すると空状態メッセージが消える", async () => {
     const user = userEvent.setup();
     render(<ContractorsPage />);
-    await waitFor(() => screen.getByText("業者が登録されていません"));
+    await waitFor(() => screen.getByText("最初の協力業者を登録しましょう"));
     await user.click(screen.getByRole("button", { name: /業者を登録/ }));
     await user.type(screen.getByPlaceholderText("会社名・業者名 *"), "佐藤塗装");
     await user.click(screen.getByRole("button", { name: "業者を登録" }));
     await waitFor(() =>
-      expect(screen.queryByText("業者が登録されていません")).toBeNull(),
+      expect(screen.queryByText("最初の協力業者を登録しましょう")).toBeNull(),
     );
   });
 

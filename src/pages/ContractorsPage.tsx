@@ -126,13 +126,15 @@ export function ContractorsPage() {
       />
       <div className="flex items-center justify-between">
         <h1 className="text-lg font-bold text-slate-900">業者管理</h1>
-        <button
-          onClick={() => { setShowForm(!showForm); if (showForm) resetForm(); }}
-          className="inline-flex items-center gap-1 rounded-lg bg-brand-500 px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-brand-600 active:bg-brand-700 transition-colors"
-        >
-          <span className="text-sm leading-none">{showForm ? "−" : "+"}</span>
-          {ACTION_LABELS.contractor.register}
-        </button>
+        {(contractors.length > 0 || showForm) && (
+          <button
+            onClick={() => { setShowForm(!showForm); if (showForm) resetForm(); }}
+            className="inline-flex items-center gap-1 rounded-lg bg-brand-500 px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition-transform active:scale-[0.98]"
+          >
+            <span className="text-sm leading-none">{showForm ? "−" : "+"}</span>
+            {ACTION_LABELS.contractor.register}
+          </button>
+        )}
       </div>
 
       {error && (
@@ -243,9 +245,17 @@ export function ContractorsPage() {
       )}
 
       {contractors.length === 0 && !showForm ? (
-        <div className="rounded-xl border-2 border-dashed border-slate-200 bg-white p-10 text-center">
-          <p className="text-base font-bold text-slate-900">業者が登録されていません</p>
-          <p className="mt-1 text-sm text-slate-500">「{ACTION_LABELS.contractor.register}」ボタンから業者を登録してください。</p>
+        <div className="rounded-2xl border border-slate-200 bg-white px-6 py-7 text-center shadow-sm">
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-50 text-2xl" aria-hidden="true">👷</div>
+          <p className="mt-4 text-lg font-bold text-slate-900">最初の協力業者を登録しましょう</p>
+          <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-slate-500">会社名と連絡先をまとめておくと、現場からすぐ確認できます。</p>
+          <button
+            type="button"
+            onClick={() => setShowForm(true)}
+            className="mt-5 inline-flex w-full items-center justify-center rounded-2xl bg-brand-500 px-5 py-3 text-sm font-semibold text-white shadow-sm transition-transform active:scale-[0.98] sm:w-auto"
+          >
+            + 業者を登録する
+          </button>
         </div>
       ) : (
         <div className="divide-y divide-slate-100 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">

@@ -1066,40 +1066,40 @@ function EstimatePageContent() {
   if (estimateMode === null) {
     return (
       <div className="mx-auto max-w-2xl px-4 pb-24">
-        <h1 className="mb-2 text-2xl font-bold text-slate-900">見積</h1>
-        <p className="mb-8 text-sm text-slate-500">作成方法を選んでください</p>
-        <div className="grid gap-4 sm:grid-cols-2">
+        <h1 className="text-2xl font-bold text-slate-900">見積を作る</h1>
+        <p className="mt-2 text-sm leading-6 text-slate-500">見積PDFがあれば、読み取りから始めるのが最短です。</p>
+        <div className="mt-6 space-y-3">
           <button
             type="button"
+            aria-label="PDF読取"
             onClick={() => setEstimateMode("pdf")}
-            className="relative flex flex-col items-start gap-4 rounded-2xl border-2 border-brand-200 bg-brand-50/40 p-6 text-left transition-colors hover:border-brand-400 hover:bg-brand-50"
+            className="relative flex w-full items-center gap-4 rounded-2xl border border-brand-200 bg-brand-50 p-5 text-left shadow-sm transition-transform active:scale-[0.98]"
           >
             <span className="absolute right-4 top-4 rounded-full bg-brand-600 px-2 py-0.5 text-[10px] font-bold text-white">推奨</span>
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-brand-100 text-2xl">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-white text-2xl shadow-sm">
               📄
             </div>
-            <div>
-              <p className="text-base font-bold text-slate-900">PDF読取</p>
-              <p className="mt-1 text-sm text-slate-500">
-                業者の見積PDFを読み込んで自動でドラフト化
+            <div className="min-w-0 pr-10">
+              <p className="text-base font-bold text-slate-900">PDFから自動で作る</p>
+              <span className="sr-only">PDF読取</span>
+              <p className="mt-1 text-sm leading-6 text-slate-600">
+                業者の見積PDFを読み取り、編集できる下書きにします
               </p>
             </div>
           </button>
-          <button
-            type="button"
-            onClick={() => setEstimateMode("manual")}
-            className="flex flex-col items-start gap-4 rounded-2xl border-2 border-slate-200 bg-white p-6 text-left transition-colors hover:border-slate-400 hover:bg-slate-50"
-          >
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-slate-100 text-2xl">
-              ✏️
-            </div>
-            <div>
-              <p className="text-base font-bold text-slate-900">品目追加</p>
-              <p className="mt-1 text-sm text-slate-500">
-                品目カタログから選んで組み立てる
-              </p>
-            </div>
-          </button>
+          <div className="rounded-2xl border border-slate-200 bg-white px-5 py-4">
+            <p className="text-sm font-semibold text-slate-800">PDFが手元にない場合</p>
+            <p className="mt-1 text-sm text-slate-500">品目を選びながら、手入力で組み立てられます。</p>
+            <button
+              type="button"
+              aria-label="品目追加"
+              onClick={() => setEstimateMode("manual")}
+              className="mt-3 inline-flex items-center gap-2 rounded-2xl bg-slate-100 px-4 py-2.5 text-sm font-semibold text-slate-700 transition-transform active:scale-[0.98]"
+            >
+              <span aria-hidden="true">✏️</span>
+              品目を手入力する
+            </button>
+          </div>
         </div>
       </div>
     );
