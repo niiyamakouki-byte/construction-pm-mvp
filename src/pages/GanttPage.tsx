@@ -2232,7 +2232,7 @@ function GanttPageContent({ initialProjectId = null, openMaster = false, initial
               <summary className="flex h-9 list-none cursor-pointer items-center rounded-full bg-white px-3 text-xs font-semibold text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50 [&::-webkit-details-marker]:hidden">
                 編集
               </summary>
-              <div className="absolute right-0 z-30 mt-1 w-44 rounded-xl border border-slate-200 bg-white p-1.5 shadow-lg">
+              <div className="absolute left-0 z-30 mt-1 w-44 rounded-xl border border-slate-200 bg-white p-1.5 shadow-lg sm:left-auto sm:right-0">
                 <button
                   type="button"
                   onClick={handleToggleConnectMode}
@@ -2279,7 +2279,7 @@ function GanttPageContent({ initialProjectId = null, openMaster = false, initial
               <summary data-tour="gantt-output-menu" className="flex h-9 list-none cursor-pointer items-center rounded-full bg-white px-3 text-xs font-semibold text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50 [&::-webkit-details-marker]:hidden">
                 出力
               </summary>
-              <div className="absolute right-0 z-30 mt-1 w-44 rounded-xl border border-slate-200 bg-white p-1.5 shadow-lg">
+              <div className="absolute left-0 z-30 mt-1 w-44 rounded-xl border border-slate-200 bg-white p-1.5 shadow-lg sm:left-auto sm:right-0">
                 <button
                   type="button"
                   disabled={pdfExporting}
@@ -2307,7 +2307,7 @@ function GanttPageContent({ initialProjectId = null, openMaster = false, initial
               <summary data-tour="gantt-analysis-menu" className="flex h-9 list-none cursor-pointer items-center rounded-full bg-white px-3 text-xs font-semibold text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50 [&::-webkit-details-marker]:hidden">
                 分析
               </summary>
-              <div className="absolute right-0 z-30 mt-1 w-44 rounded-xl border border-slate-200 bg-white p-1.5 shadow-lg">
+              <div className="absolute left-0 z-30 mt-1 w-44 rounded-xl border border-slate-200 bg-white p-1.5 shadow-lg sm:left-auto sm:right-0">
                 <button
                   type="button"
                   onClick={() => {

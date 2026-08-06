@@ -360,7 +360,28 @@ export function LandingPage() {
             </p>
           </div>
 
-          <div className="overflow-x-auto rounded-2xl border border-brand-200 bg-white genba-flat-card">
+          <div className="grid gap-3 sm:hidden">
+            {comparisonRows.map((row) => (
+              <article key={row.feature} className="rounded-2xl border border-brand-200 bg-white p-4 genba-flat-card">
+                <h3 className="font-semibold leading-6 text-slate-800">{row.feature}</h3>
+                <dl className="mt-3 grid grid-cols-2 gap-2 text-center text-sm">
+                  <div className="rounded-xl bg-brand-50 px-2 py-3">
+                    <dt className="mb-2 text-xs font-semibold text-brand-700">⚡ LapoSite</dt>
+                    <dd><CellValue value={row.genbahub} /></dd>
+                  </div>
+                  <div className="rounded-xl bg-slate-50 px-2 py-3">
+                    <dt className="mb-2 text-xs font-semibold text-slate-500">汎用ツール</dt>
+                    <dd><CellValue value={row.generic} /></dd>
+                  </div>
+                </dl>
+              </article>
+            ))}
+            <p className="rounded-2xl bg-slate-50 px-4 py-3 text-xs leading-5 text-slate-400">
+              ※ 汎用ツールの月額は各社公開情報の概算です。表の内容は2025年時点の公開情報に基づく比較であり、各ツールの詳細は各社サイトでご確認ください。
+            </p>
+          </div>
+
+          <div className="hidden overflow-x-auto rounded-2xl border border-brand-200 bg-white genba-flat-card sm:block">
             <table className="min-w-[700px] w-full text-left text-sm">
               <thead>
                 <tr className="border-b border-slate-200 bg-slate-50">
