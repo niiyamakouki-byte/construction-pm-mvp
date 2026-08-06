@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { CostManagementPage } from "../pages/CostManagementPage.js";
 import { clearChangeRequests, createChangeRequest } from "../lib/change-request.js";
@@ -390,6 +390,38 @@ describe("CostManagementPage", () => {
 
     expect(await screen.findByText("まだコスト項目がありません")).toBeDefined();
     expect(screen.getByText("見積を作成する")).toBeDefined();
+  });
+
+  it("重要指標と次の行動を先に示し、詳細カードを折りたたむ", async () => {
+    mockProjectRepository.findAll.mockResolvedValue([
+      {
+        id: "p1",
+        name: "南青山ビル改修",
+        description: "",
+        status: "active",
+        budget: 1000000,
+        startDate: "2025-04-01",
+        includeWeekends: true,
+        createdAt: now,
+        updatedAt: now,
+      },
+    ]);
+    mockTaskRepository.findAll.mockResolvedValue([]);
+    mockCostItemRepository.findAll.mockResolvedValue([]);
+    mockExpenseRepository.findAll.mockResolvedValue([]);
+
+    render(<CostManagementPage />);
+
+    const priority = await screen.findByTestId("cost-priority");
+    expect(within(priority).getByText("重要指標")).toBeDefined();
+    expect(within(priority).getByText("総予算")).toBeDefined();
+    expect(within(priority).getByText("総支出")).toBeDefined();
+    expect(within(priority).getByText("残予算")).toBeDefined();
+    expect(within(priority).getByText("次の行動")).toBeDefined();
+    expect(within(priority).getByText("見積を作成して予算と実費を紐づける")).toBeDefined();
+
+    const details = screen.getByText("内訳と予測を見る").closest("details");
+    expect(details?.hasAttribute("open")).toBe(false);
   });
 
 });

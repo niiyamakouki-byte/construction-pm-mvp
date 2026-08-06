@@ -120,15 +120,14 @@ function getRemainingProjectDays(project: Project | null, tasks: Task[], today: 
 function StatCard({
   label,
   value,
-  tone,
 }: {
   label: string;
   value: string;
   tone: string;
 }) {
   return (
-    <div className={`rounded-[24px] border px-4 py-4 shadow-sm ${tone}`}>
-      <p className="text-xs font-semibold tracking-[0.16em]">{label}</p>
+    <div className="rounded-2xl border border-slate-200 bg-white px-4 py-4 text-slate-900">
+      <p className="text-xs font-semibold text-slate-500">{label}</p>
       <p className="mt-3 text-2xl font-bold tabular-nums">{value}</p>
     </div>
   );
@@ -739,23 +738,22 @@ export function CostManagementPage() {
 
   return (
     <div className="space-y-4">
-      <section className="rounded-[28px] bg-[linear-gradient(145deg,#f8fbff_0%,#fffaf2_55%,#f3f9f7_100%)] px-4 py-5 shadow-sm ring-1 ring-slate-200 sm:px-6">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+      <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:px-6 sm:py-5">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between sm:gap-4">
           <div>
-            <p className="text-[11px] font-semibold tracking-[0.2em] text-slate-500">原価集計</p>
-            <h1 className="mt-1 text-2xl font-bold text-slate-900">原価集計</h1>
-            <p className="mt-2 text-sm text-slate-500">案件ごとの予算、支払状況、カテゴリ別コストを一覧で確認できます。</p>
+            <h1 className="text-2xl font-bold text-slate-900">原価集計</h1>
+            <p className="mt-2 hidden text-sm text-slate-500 sm:block">案件ごとの予算、支払状況、カテゴリ別コストを一覧で確認できます。</p>
           </div>
           <div className="flex flex-col gap-3 sm:w-auto sm:items-end">
             <div className="w-full sm:w-80">
-              <label htmlFor="cost-project-select" className="block text-xs font-semibold tracking-[0.16em] text-slate-500">
+              <label htmlFor="cost-project-select" className="sr-only text-xs font-semibold text-slate-500 sm:not-sr-only sm:block">
                 案件選択
               </label>
               <select
                 id="cost-project-select"
                 value={selectedProjectId ?? ""}
                 onChange={(event) => setSelectedProjectId(event.target.value || null)}
-                className="mt-2 w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm font-medium text-slate-700"
+                className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 sm:mt-2 sm:rounded-2xl sm:px-4 sm:py-3"
               >
                 {projects.map((project) => (
                   <option key={project.id} value={project.id}>
@@ -792,11 +790,44 @@ export function CostManagementPage() {
         <ChangeRequestTab projectId={selectedProjectId} />
       ) : (
         <>
-      <section className="grid gap-3 md:grid-cols-3">
-        <StatCard label="総予算" value={budgetSummary.budget > 0 ? formatCurrency(budgetSummary.budget) : "未設定"} tone="border-slate-200 bg-white text-slate-900" />
-        <StatCard label="総支出" value={formatCurrency(budgetSummary.spent)} tone="border-brand-200 bg-brand-50 text-brand-900" />
-        <StatCard label="残予算" value={budgetSummary.budget > 0 ? formatCurrency(budgetSummary.remaining) : "未設定"} tone="border-amber-200 bg-amber-50 text-amber-900" />
+      {/* laporta-beads-8qtge: 重要指標と次の行動を1群にまとめ、詳細カードは折りたたむ。 */}
+      <section data-testid="cost-priority" className="rounded-2xl border border-brand-200 bg-brand-50/60 p-4">
+        <h2 className="text-sm font-semibold text-slate-900">重要指標</h2>
+        <div className="mt-3 grid grid-cols-3 divide-x divide-brand-200 rounded-xl bg-white py-3 text-center">
+          <div className="min-w-0 px-2">
+            <p className="text-[10px] font-semibold text-slate-500">総予算</p>
+            <p className="mt-1 whitespace-nowrap text-[12px] font-bold tracking-tight tabular-nums text-slate-900 sm:text-lg">
+              {budgetSummary.budget > 0 ? formatCurrency(budgetSummary.budget) : "未設定"}
+            </p>
+          </div>
+          <div className="min-w-0 px-2">
+            <p className="text-[10px] font-semibold text-slate-500">総支出</p>
+            <p className="mt-1 whitespace-nowrap text-[12px] font-bold tracking-tight tabular-nums text-brand-800 sm:text-lg">{formatCurrency(budgetSummary.spent)}</p>
+          </div>
+          <div className="min-w-0 px-2">
+            <p className="text-[10px] font-semibold text-slate-500">残予算</p>
+            <p className={`mt-1 whitespace-nowrap text-[12px] font-bold tracking-tight tabular-nums sm:text-lg ${remainingBudgetDetail.alertLevel === "danger" ? "text-red-700" : "text-slate-900"}`}>
+              {budgetSummary.budget > 0 ? formatCurrency(budgetSummary.remaining) : "未設定"}
+            </p>
+          </div>
+        </div>
+        <div className="mt-3 flex items-start gap-3 rounded-xl border border-brand-200 bg-white px-3 py-3">
+          <span className="mt-0.5 text-brand-700" aria-hidden="true">→</span>
+          <div>
+            <p className="text-xs font-semibold text-slate-500">次の行動</p>
+            <p className="mt-1 text-sm font-semibold text-slate-900">
+              {projectCostRows.length === 0
+                ? "見積を作成して予算と実費を紐づける"
+                : remainingBudgetDetail.alertLevel === "danger"
+                  ? "予算残と未払いの内訳を確認する"
+                  : "予測と支払内訳を確認する"}
+            </p>
+          </div>
+        </div>
       </section>
+      <details className="rounded-2xl border border-slate-200 bg-white">
+        <summary className="cursor-pointer px-4 py-3 text-sm font-semibold text-brand-800">内訳と予測を見る</summary>
+        <div className="space-y-4 border-t border-slate-100 p-3 sm:p-4">
       <RemainingBudgetCard detail={remainingBudgetDetail} />
       <section className="grid gap-3 lg:grid-cols-2">
         <article className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm">
@@ -1103,6 +1134,8 @@ export function CostManagementPage() {
           ))}
         </>
       )}
+        </div>
+      </details>
         </>
       )}
     </div>
