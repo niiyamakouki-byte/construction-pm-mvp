@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState, type ChangeEvent, type ReactNode } from "react";
-import { AlertTriangle, BarChart3, Bell, Building2, CalendarDays, Camera, ChevronDown, ChevronUp, FileText, Package } from "lucide-react";
+import { AlertTriangle, BarChart3, Bell, Building2, CalendarDays, Camera, FileText, Package } from "lucide-react";
 import { EmptyState } from "../components/EmptyState.js";
 import type { Contractor, CostItem, Expense, Task, TaskStatus, Project } from "../domain/types.js";
 import { createTaskRepository } from "../stores/task-store.js";
@@ -263,13 +263,6 @@ function TodayDashboardPageContent() {
   const [alertsExpanded, setAlertsExpanded] = useState(false);
   const [demoCreating, setDemoCreating] = useState(false);
   const [demoError, setDemoError] = useState<string | null>(null);
-  const [actionsCollapsed, setActionsCollapsed] = useState<boolean>(() => {
-    try {
-      return window.localStorage?.getItem("today:actionsCollapsed") === "true";
-    } catch {
-      return false;
-    }
-  });
   const [allProjectTasks, setAllProjectTasks] = useState<Task[]>([]);
   const [allTasks, setAllTasks] = useState<Task[]>([]);
   const [allProjects, setAllProjects] = useState<Project[]>([]);
@@ -980,7 +973,7 @@ function TodayDashboardPageContent() {
         </div>
       )}
 
-      {/* 今日のおすすめアクション (ファーストビュー: スクロール前に「次やること」を見せる) */}
+      {/* laporta-beads-du5f2: 390pxの初期表示を「やること・現場・異常」に限定する。 */}
       {allProjects.length > 0 && (() => {
         // deadlineSortKey: 負数=期限超過(絶対値が大きいほど緊急), 0=今日, 1-7=今週, Infinity=期限なし
         const actions: { icon: ReactNode; label: string; path: string; highlight?: boolean; deadlineSortKey: number }[] = [];
@@ -991,7 +984,7 @@ function TodayDashboardPageContent() {
           actions.push({ icon: <AlertTriangle className="h-4 w-4" aria-hidden="true" />, label: `期限超過 ${overdueTasks}件を確認`, path: "/tasks", highlight: true, deadlineSortKey: -maxOverdueDays });
         }
         if (tasks.length > 0) {
-          actions.push({ icon: <span className="text-base leading-none">✓</span>, label: `今日のタスク ${tasks.length}件を処理`, path: "/today", deadlineSortKey: 0 });
+          actions.push({ icon: <span className="text-base leading-none">✓</span>, label: `今日のタスク ${tasks.length}件を処理`, path: "/tasks", deadlineSortKey: 0 });
         }
         if (allProjects.length === 0) {
           actions.push({ icon: <Building2 className="h-4 w-4" aria-hidden="true" />, label: ACTION_LABELS.project.createFirst, path: "/app", highlight: true, deadlineSortKey: Infinity });
@@ -999,35 +992,47 @@ function TodayDashboardPageContent() {
         if (allTasks.filter((t) => t.status === "todo" && !t.startDate).length > 0) {
           actions.push({ icon: <BarChart3 className="h-4 w-4" aria-hidden="true" />, label: "工程表で未開始タスクを確認", path: insightProject ? `/gantt/${insightProject.id}` : "/gantt", deadlineSortKey: Infinity });
         }
-        actions.push({ icon: <Camera className="h-4 w-4" aria-hidden="true" />, label: "現場写真をアップロード", path: "/today", deadlineSortKey: Infinity });
+        actions.push({ icon: <Camera className="h-4 w-4" aria-hidden="true" />, label: "現場写真をアップロード", path: "/photos", deadlineSortKey: Infinity });
         actions.sort((a, b) => a.deadlineSortKey - b.deadlineSortKey);
         if (actions.length === 0) return null;
         return (
-          <section>
-            <button
-              type="button"
-              onClick={() => {
-                const next = !actionsCollapsed;
-                setActionsCollapsed(next);
-                try {
-                  window.localStorage?.setItem("today:actionsCollapsed", String(next));
-                } catch {
-                  // localStorage が使えない環境では無視
-                }
-              }}
-              aria-expanded={!actionsCollapsed}
-              className="mb-3 flex w-full items-center justify-between text-left"
-            >
-              <h2 className="text-base font-semibold text-slate-800">今日のおすすめアクション</h2>
-              {actionsCollapsed ? (
-                <ChevronDown className="h-4 w-4 text-slate-400" aria-hidden="true" />
-              ) : (
-                <ChevronUp className="h-4 w-4 text-slate-400" aria-hidden="true" />
-              )}
-            </button>
-            {!actionsCollapsed && (
-            <div className="grid gap-2 sm:grid-cols-2">
-              {actions.slice(0, 4).map((action) => (
+          <section data-testid="today-priority" className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+            <h2 className="text-base font-semibold text-slate-900">今日のおすすめアクション</h2>
+            <div className="mt-3 grid grid-cols-3 divide-x divide-slate-200 rounded-xl bg-slate-50 py-3 text-center">
+              <div className="px-2">
+                <p className="text-[11px] font-semibold text-slate-500">やること</p>
+                <p className="mt-1 text-lg font-bold tabular-nums text-slate-900">{tasks.length}件</p>
+              </div>
+              <div className="px-2">
+                <p className="text-[11px] font-semibold text-slate-500">現場</p>
+                <p className="mt-1 text-lg font-bold tabular-nums text-brand-700">{activeProjectsCount}件</p>
+              </div>
+              <div className="px-2">
+                <p className="text-[11px] font-semibold text-slate-500">異常</p>
+                <p className={`mt-1 text-lg font-bold tabular-nums ${overdueTasks > 0 ? "text-red-600" : "text-slate-900"}`}>
+                  {overdueTasks}件
+                </p>
+              </div>
+            </div>
+            {actions.slice(0, 1).map((action) => (
+              <button
+                key={action.label}
+                type="button"
+                onClick={() => navigate(action.path)}
+                className={`mt-3 flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-sm font-semibold text-white transition-colors ${
+                  action.highlight ? "bg-red-600 hover:bg-red-700" : "bg-brand-700 hover:bg-brand-800"
+                }`}
+              >
+                <span className="flex h-5 w-5 shrink-0 items-center justify-center" aria-hidden="true">{action.icon}</span>
+                <span className="flex-1">{action.label}</span>
+                <span aria-hidden="true">›</span>
+              </button>
+            ))}
+            {actions.length > 1 && (
+              <details className="mt-2 rounded-xl border border-slate-200 bg-white">
+                <summary className="cursor-pointer px-4 py-2.5 text-sm font-semibold text-slate-600">他の行動を見る</summary>
+                <div className="grid gap-2 border-t border-slate-100 p-2 sm:grid-cols-2">
+                  {actions.slice(1, 4).map((action) => (
                 <button
                   key={action.label}
                   type="button"
@@ -1042,69 +1047,29 @@ function TodayDashboardPageContent() {
                   <span className="flex-1">{action.label}</span>
                   <span className="text-slate-300" aria-hidden="true">›</span>
                 </button>
-              ))}
-            </div>
+                  ))}
+                </div>
+              </details>
             )}
           </section>
         );
       })()}
 
-      {/* Dashboard Cards — 6-card grid (仮データ: Supabase接続は別タスク) */}
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        <DashboardCard
-          title="今日の予定"
-          value={dashboardCardMetrics.todayScheduleValue}
-          subtext={dashboardCardMetrics.todayScheduleSubtext}
-          icon={<CalendarDays size={18} strokeWidth={1.75} />}
-          accent="primary"
-          muted={dashboardCardMetrics.todayScheduleValue === "0件"}
-          onClick={() => navigate("/tasks")}
-        />
-        <DashboardCard
-          title="今週の現場"
-          value={dashboardCardMetrics.weeklyActiveProjectsValue}
-          subtext={dashboardCardMetrics.weeklyActiveProjectsSubtext}
-          icon={<Building2 size={18} strokeWidth={1.75} />}
-          accent="primary"
-          onClick={() => navigate("/app")}
-        />
-        <DashboardCard
-          title="未読通知"
-          value={dashboardCardMetrics.unreadNotificationsValue}
-          subtext={dashboardCardMetrics.unreadNotificationsSubtext}
-          icon={<Bell size={18} strokeWidth={1.75} />}
-          accent="warning"
-          muted={dashboardCardMetrics.unreadNotificationsValue === "0件"}
-          onClick={() => navigate("/notifications")}
-        />
-        <DashboardCard
-          title="進行中の見積"
-          value={dashboardCardMetrics.planningEstimateValue}
-          subtext={dashboardCardMetrics.planningEstimateSubtext}
-          icon={<FileText size={18} strokeWidth={1.75} />}
-          accent="warm"
-          muted={dashboardCardMetrics.planningEstimateValue === "0件"}
-          onClick={() => navigate("/estimate")}
-        />
-        <DashboardCard
-          title="今月の粗利率"
-          value={dashboardCardMetrics.grossMarginValue}
-          subtext={dashboardCardMetrics.grossMarginSubtext}
-          icon={<BarChart3 size={18} strokeWidth={1.75} />}
-          accent="success"
-          onClick={() => navigate("/reports")}
-        />
-        <DashboardCard
-          title="残課題"
-          value={dashboardCardMetrics.openIssuesValue}
-          subtext={dashboardCardMetrics.openIssuesSubtext}
-          icon={<AlertTriangle size={18} strokeWidth={1.75} />}
-          accent="warning"
-          muted={dashboardCardMetrics.openIssuesValue === "0件"}
-          onClick={() => navigate("/tasks")}
-        />
-      </div>
+      <details className="rounded-2xl border border-slate-200 bg-white">
+        <summary className="cursor-pointer px-4 py-3 text-sm font-semibold text-slate-600">その他の指標を見る</summary>
+        <div className="grid gap-3 border-t border-slate-100 p-3 sm:grid-cols-2 lg:grid-cols-3">
+          <DashboardCard title="今日の予定" value={dashboardCardMetrics.todayScheduleValue} subtext={dashboardCardMetrics.todayScheduleSubtext} icon={<CalendarDays size={18} strokeWidth={1.75} />} accent="primary" muted={dashboardCardMetrics.todayScheduleValue === "0件"} onClick={() => navigate("/tasks")} />
+          <DashboardCard title="今週の現場" value={dashboardCardMetrics.weeklyActiveProjectsValue} subtext={dashboardCardMetrics.weeklyActiveProjectsSubtext} icon={<Building2 size={18} strokeWidth={1.75} />} accent="primary" onClick={() => navigate("/app")} />
+          <DashboardCard title="未読通知" value={dashboardCardMetrics.unreadNotificationsValue} subtext={dashboardCardMetrics.unreadNotificationsSubtext} icon={<Bell size={18} strokeWidth={1.75} />} accent="warning" muted={dashboardCardMetrics.unreadNotificationsValue === "0件"} onClick={() => navigate("/notifications")} />
+          <DashboardCard title="進行中の見積" value={dashboardCardMetrics.planningEstimateValue} subtext={dashboardCardMetrics.planningEstimateSubtext} icon={<FileText size={18} strokeWidth={1.75} />} accent="warm" muted={dashboardCardMetrics.planningEstimateValue === "0件"} onClick={() => navigate("/estimate")} />
+          <DashboardCard title="今月の粗利率" value={dashboardCardMetrics.grossMarginValue} subtext={dashboardCardMetrics.grossMarginSubtext} icon={<BarChart3 size={18} strokeWidth={1.75} />} accent="success" onClick={() => navigate("/reports")} />
+          <DashboardCard title="残課題" value={dashboardCardMetrics.openIssuesValue} subtext={dashboardCardMetrics.openIssuesSubtext} icon={<AlertTriangle size={18} strokeWidth={1.75} />} accent="warning" muted={dashboardCardMetrics.openIssuesValue === "0件"} onClick={() => navigate("/tasks")} />
+        </div>
+      </details>
 
+      <details className="rounded-2xl border border-slate-200 bg-white">
+        <summary className="cursor-pointer px-4 py-3 text-sm font-semibold text-slate-600">現場と進捗の詳細を見る</summary>
+        <div className="space-y-7 border-t border-slate-100 p-3 sm:p-4">
       {/* Date Header */}
       <div className="genba-flat-card rounded-2xl bg-brand-800 px-6 py-6 text-white sm:px-8 sm:py-7">
         <div className="flex items-center justify-between">
@@ -1249,6 +1214,12 @@ function TodayDashboardPageContent() {
         />
       </section>
 
+        </div>
+      </details>
+
+      <details className="rounded-2xl border border-slate-200 bg-white">
+        <summary className="cursor-pointer px-4 py-3 text-sm font-semibold text-slate-600">日報・写真・分析を見る</summary>
+        <div className="space-y-7 border-t border-slate-100 p-3 sm:p-4">
       <section>
         <div className="mb-3 flex items-center justify-between gap-3">
           <h2 className="text-base font-semibold text-slate-800">本日の日報</h2>
@@ -1515,6 +1486,9 @@ function TodayDashboardPageContent() {
           </div>
         )}
       </section>
+
+        </div>
+      </details>
 
       {/* Upcoming milestones */}
       {upcomingMilestones.length > 0 && (

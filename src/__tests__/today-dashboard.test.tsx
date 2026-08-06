@@ -525,4 +525,23 @@ describe("TodayDashboardPage", () => {
     expect(overdueIdx).toBeLessThan(todayIdx);
     expect(todayIdx).toBeLessThan(noDateIdx);
   });
+
+  it("390px向けの先頭領域をやること・現場・異常と主CTAに圧縮する", async () => {
+    mockProjects = [makeProject()];
+    mockTasks = [makeTask({ id: "t-priority", status: "todo" })];
+    render(<TodayDashboardPage />);
+
+    const priority = await screen.findByTestId("today-priority");
+    expect(within(priority).getByText("やること")).toBeDefined();
+    expect(within(priority).getByText("現場")).toBeDefined();
+    expect(within(priority).getByText("異常")).toBeDefined();
+    expect(priority.querySelectorAll(":scope > button")).toHaveLength(1);
+
+    const secondaryMetrics = screen.getByText("その他の指標を見る").closest("details");
+    const fieldDetails = screen.getByText("現場と進捗の詳細を見る").closest("details");
+    const reportDetails = screen.getByText("日報・写真・分析を見る").closest("details");
+    expect(secondaryMetrics?.hasAttribute("open")).toBe(false);
+    expect(fieldDetails?.hasAttribute("open")).toBe(false);
+    expect(reportDetails?.hasAttribute("open")).toBe(false);
+  });
 });
