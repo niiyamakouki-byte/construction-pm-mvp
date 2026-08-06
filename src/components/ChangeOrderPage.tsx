@@ -326,7 +326,7 @@ export function ChangeOrderPage() {
         <div className="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
           <div>
             <h1 className="text-lg font-bold text-slate-800">変更管理</h1>
-            <p className="text-xs text-slate-400 mt-0.5">Sprint 17-B — 追加/変更要望の影響分析と承認フロー</p>
+            <p className="text-xs text-slate-400 mt-0.5">追加・変更要望の影響を分析し、承認状況を管理します</p>
           </div>
           <button
             type="button"

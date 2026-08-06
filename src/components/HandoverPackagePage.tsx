@@ -268,7 +268,7 @@ export function HandoverPackagePage() {
         <div className="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
           <div>
             <h1 className="text-lg font-bold text-slate-800">引渡しパッケージ</h1>
-            <p className="text-xs text-slate-400 mt-0.5">Sprint 17-C — 書類自動収集・メンテナンス管理</p>
+            <p className="text-xs text-slate-400 mt-0.5">引渡し書類の収集とメンテナンス情報を一元管理します</p>
           </div>
           <button
             type="button"

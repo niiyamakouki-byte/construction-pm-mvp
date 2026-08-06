@@ -223,7 +223,7 @@ export function ProposalGeneratorPage() {
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-slate-900">提案書自動生成</h1>
         <p className="text-sm text-slate-500 mt-1">
-          Sprint 16-C — 強み3点・類似事例3件・価格・工期・競合差別化を含む叩き台を1クリックで生成
+          強み・類似事例・価格・工期・競合差別化を含む提案書の叩き台を生成します
         </p>
       </div>
 
@@ -250,14 +250,14 @@ export function ProposalGeneratorPage() {
               onClick={() => setShowImport(showImport === "inquiry" ? null : "inquiry")}
               className="flex-1 text-xs px-3 py-2 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50"
             >
-              問合せから取込 (16-A)
+              問合せから取込
             </button>
             <button
               type="button"
               onClick={() => setShowImport(showImport === "deal" ? null : "deal")}
               className="flex-1 text-xs px-3 py-2 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50"
             >
-              商談から取込 (16-B)
+              商談から取込
             </button>
           </div>
 
