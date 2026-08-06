@@ -62,8 +62,8 @@ export function CrewOptimizerPage() {
   const taskStore = useMemo(() => new TaskAssignmentStore(), []);
   const optimizationStore = useMemo(() => new CrewOptimizationStore(), []);
 
-  // Ensure seed data exists
-  craftsmanStore.ensureSeed();
+  // laporta-beads-5hx97: craftsmen must reflect only records explicitly
+  // registered by the user; never auto-insert fictional workers.
   taskStore.ensureSeed();
 
   const craftsmen = craftsmanStore.all();

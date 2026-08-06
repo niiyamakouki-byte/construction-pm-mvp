@@ -57,6 +57,13 @@ describe("CrewOptimizerPage", () => {
     expect(screen.getByText("平均稼働率")).toBeTruthy();
   });
 
+  it("新規状態では架空の職人を自動投入せず職人数0を表示する", () => {
+    render(<CrewOptimizerPage />);
+
+    expect(screen.getByTestId("kpi-職人数").textContent).toBe("0");
+    expect(localStorage.getItem("genbahub:craftsmen")).toBeNull();
+  });
+
   it("最適化ボタンが表示される", () => {
     render(<CrewOptimizerPage />);
     const btn = screen.getByTestId("optimize-btn");
