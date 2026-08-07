@@ -396,13 +396,17 @@ export function GanttChart({
                 }}
                 title={`${milestone.name} (${milestone.targetDate})`}
               >
-                <div className="flex flex-col items-center gap-1">
+                {/* laporta-beads-mchy1: ラベルを◆の横へ逃がし、1行目のステータスバッジ帯と分離する。 */}
+                <div className="relative flex flex-col items-center">
                   <span
                     aria-label={`マイルストーン: ${milestone.name}`}
                     className={`block h-4 w-4 rotate-45 border-2 border-white shadow-md ${milestoneTone[milestone.status].split(" ")[0]}`}
                   />
                   {dayWidth >= 20 ? (
-                    <span className={`rounded-full bg-white/95 px-2 py-1 text-[10px] font-semibold shadow-sm ${milestoneTone[milestone.status].split(" ")[1]}`}>
+                    <span
+                      data-testid="milestone-label"
+                      className={`absolute left-full top-1/2 ml-2 -translate-y-1/2 whitespace-nowrap rounded-full bg-white/95 px-2 py-1 text-[10px] font-semibold shadow-sm ${milestoneTone[milestone.status].split(" ")[1]}`}
+                    >
                       {milestone.name}
                     </span>
                   ) : null}

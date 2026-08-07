@@ -192,6 +192,48 @@ describe("GanttChart", () => {
     expect(diamond?.className).toContain("rotate-45");
   });
 
+  it("マイルストーンラベルを◆の横に固定してタスクバッジ帯から分離する", () => {
+    const milestones: Milestone[] = [
+      {
+        id: "ms-overdue",
+        projectId: "p1",
+        name: "クロス貼り検証タスク完了",
+        targetDate: "2025-01-03",
+        status: "missed",
+      },
+    ];
+
+    const { getByTestId } = render(
+      <GanttChart
+        ganttTasks={[task]}
+        visibleRows={[{ type: "task", task }]}
+        chartLayout={chartLayout}
+        dragState={null}
+        dragRef={{ current: null }}
+        connectMode={false}
+        connectState={null}
+        milestones={milestones}
+        showMilestones={true}
+        today="2025-01-04"
+        scrollRef={createRef<HTMLDivElement>()}
+        onTaskDragStart={vi.fn()}
+        onTaskResizeStart={vi.fn()}
+        onOpenTaskDetail={vi.fn()}
+        onOpenQuickAdd={vi.fn()}
+        onTogglePhase={vi.fn()}
+        onSetConnectState={vi.fn()}
+        onConnectTask={vi.fn()}
+        onConnectTasks={vi.fn()}
+      />,
+    );
+
+    const label = getByTestId("milestone-label");
+    expect(label.className).toContain("absolute");
+    expect(label.className).toContain("left-full");
+    expect(label.className).toContain("-translate-y-1/2");
+    expect(label.className).toContain("whitespace-nowrap");
+  });
+
   it("showMilestones=false のときはマイルストーンが非表示", () => {
     const milestones: Milestone[] = [
       {
