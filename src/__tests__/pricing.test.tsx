@@ -125,6 +125,18 @@ describe("PricingPage", () => {
     expect(screen.getByText("クレジットカード不要")).toBeDefined();
   });
 
+  it("ページ上部で無料枠の具体的な条件（プロジェクト1件・タスク20件まで）が一目でわかる", () => {
+    render(<PricingPage />);
+    expect(
+      screen.getByText("プロジェクト1件・タスク20件までずっと¥0"),
+    ).toBeDefined();
+  });
+
+  it("フリープランカードに「ずっと無料」の入口バッジが表示される", () => {
+    render(<PricingPage />);
+    expect(screen.getByText("ずっと無料")).toBeDefined();
+  });
+
   it("プロプランに「freee会計連携・入金照合」機能が含まれる", () => {
     render(<PricingPage />);
     expect(screen.getByText("freee会計連携・入金照合")).toBeDefined();

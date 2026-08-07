@@ -97,6 +97,11 @@ function PlanCardView({
           おすすめ
         </span>
       )}
+      {plan.id === "free" && (
+        <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-brand-100 px-3 py-0.5 text-xs font-semibold text-brand-700">
+          ずっと無料
+        </span>
+      )}
 
       <div className="mb-4">
         <h3 className="text-lg font-bold text-slate-900">{plan.label}</h3>
@@ -223,6 +228,15 @@ export function PricingPage() {
             <span className="font-semibold text-brand-600">{currentPlanLabel}</span>
           </p>
         )}
+      </div>
+
+      <div className="mb-4 rounded-2xl border border-brand-200 bg-brand-50 px-5 py-4 text-center">
+        <p className="text-sm font-semibold text-brand-700">
+          プロジェクト1件・タスク20件までずっと¥0
+        </p>
+        <p className="mt-1 text-xs text-brand-600">
+          クレジットカード登録は不要です。まずはフリープランからお試しいただけます。
+        </p>
       </div>
 
       <div className="mb-6 rounded-2xl border border-brand-200 bg-brand-50 px-5 py-4 text-center">
