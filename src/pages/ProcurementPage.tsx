@@ -27,6 +27,13 @@ const STATUS_STYLES: Record<ProcurementMaterialStatus, string> = {
   accepted: "bg-brand-50 text-brand-700 border-brand-200",
 };
 
+const SUMMARY_STYLES: Record<ProcurementMaterialStatus, string> = {
+  unordered: "border-slate-200 bg-white text-slate-900",
+  ordered: "border-slate-200 bg-white text-slate-900",
+  delivered: "border-slate-200 bg-white text-slate-900",
+  accepted: "border-brand-200 bg-brand-50 text-brand-700",
+};
+
 function alertSeverity(alert: ProcurementAlert): "high" | "medium" | "low" {
   if (alert.daysRemaining <= 2) return "high";
   if (alert.daysRemaining <= alert.leadTime / 2) return "medium";
@@ -190,7 +197,7 @@ export function ProcurementPage({ projectId = "p-1" }: { projectId?: string } = 
         {(["unordered", "ordered", "delivered", "accepted"] as const).map((s) => {
           const count = materials.filter((m) => m.status === s).length;
           return (
-            <div key={s} className={`rounded-xl border p-3 text-center ${STATUS_STYLES[s]}`}>
+            <div key={s} className={`rounded-xl border p-3 text-center ${SUMMARY_STYLES[s]}`}>
               <p className="text-lg font-bold tabular-nums">{count}</p>
               <p className="text-[10px] font-semibold uppercase tracking-wider">{STATUS_LABELS[s]}</p>
             </div>

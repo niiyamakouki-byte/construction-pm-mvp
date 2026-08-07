@@ -1,5 +1,5 @@
-import { render, screen, waitFor } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ProcurementPage } from "./ProcurementPage.js";
 import type { Task } from "../domain/types.js";
 
@@ -53,6 +53,8 @@ describe("ProcurementPage", () => {
     });
   });
 
+  afterEach(cleanup);
+
   it("shows procurement alerts derived from project tasks", async () => {
     render(<ProcurementPage projectId="proj-1" />);
 
@@ -60,5 +62,19 @@ describe("ProcurementPage", () => {
       expect(screen.getByText("壁材手配")).toBeDefined();
     });
     expect(screen.getByText(/開始日:/).textContent).toContain("リードタイム: 3日");
+  });
+
+  it("ig46g: summary cards use neutral and sage tones instead of status colors", async () => {
+    render(<ProcurementPage projectId="proj-1" />);
+
+    await screen.findByText("未発注");
+
+    for (const label of ["未発注", "発注済", "納品済"]) {
+      const card = screen.getByText(label).parentElement;
+      expect(card?.className).toContain("bg-white");
+      expect(card?.className).not.toMatch(/bg-(red|amber|blue)-50/);
+    }
+
+    expect(screen.getByText("検収済").parentElement?.className).toContain("bg-brand-50");
   });
 });

@@ -830,23 +830,23 @@ export function OrderManagementPage({
 
       {/* Summary cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+        <div className="rounded-xl border border-slate-200 bg-white p-4">
           <p className="text-xs text-slate-500">総発注数</p>
           <p className="text-2xl font-bold text-slate-800 mt-1">{allOrders.length}</p>
         </div>
-        <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 shadow-sm">
-          <p className="text-xs text-amber-600">進行中</p>
-          <p className="text-2xl font-bold text-amber-700 mt-1">
+        <div className="rounded-xl border border-slate-200 bg-white p-4">
+          <p className="text-xs text-slate-500">進行中</p>
+          <p className="text-2xl font-bold text-slate-800 mt-1">
             {allOrders.filter((o) => !["支払済", "下書き"].includes(o.status)).length}
           </p>
         </div>
-        <div className="rounded-xl border border-brand-200 bg-brand-50 p-4 shadow-sm">
+        <div className="rounded-xl border border-brand-200 bg-brand-50 p-4">
           <p className="text-xs text-brand-600">支払済</p>
           <p className="text-2xl font-bold text-brand-700 mt-1">{summary["支払済"]}</p>
         </div>
-        <div className="rounded-xl border border-blue-200 bg-blue-50 p-4 shadow-sm">
-          <p className="text-xs text-blue-600">未払合計</p>
-          <p className="text-2xl font-bold text-blue-700 mt-1">¥{fmt(totalPending)}</p>
+        <div className="rounded-xl border border-slate-200 bg-white p-4">
+          <p className="text-xs text-slate-500">未払合計</p>
+          <p className="text-2xl font-bold text-slate-800 mt-1">¥{fmt(totalPending)}</p>
         </div>
       </div>
 

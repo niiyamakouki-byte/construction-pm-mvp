@@ -83,6 +83,29 @@ describe("OrderManagementPage — ItemRow aria-labels", () => {
   });
 });
 
+describe("OrderManagementPage — summary card colors", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockListByProjectAsync.mockResolvedValue([]);
+  });
+
+  afterEach(cleanup);
+
+  it("ig46g: uses neutral cards with sage reserved for the paid count", async () => {
+    render(<OrderManagementPage projectId="p-test" />);
+
+    await screen.findByText("総発注数");
+
+    for (const label of ["総発注数", "進行中", "未払合計"]) {
+      const card = screen.getByText(label).parentElement;
+      expect(card?.className).toContain("bg-white");
+      expect(card?.className).not.toMatch(/bg-(amber|blue)-50/);
+    }
+
+    expect(screen.getByText("支払済").parentElement?.className).toContain("bg-brand-50");
+  });
+});
+
 describe("OrderManagementPage — 納期変更UI", () => {
   const EXISTING_ORDER = {
     id: "o-1",
