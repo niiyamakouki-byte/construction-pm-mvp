@@ -6,6 +6,7 @@ import {
   Download,
   PieChart,
 } from "lucide-react";
+import { useHashRoute } from "../hooks/useHashRouter.js";
 
 const TOUR_KEY = "genbahub_tour_done";
 
@@ -114,6 +115,17 @@ export function TourGuide({ onComplete }: Props) {
   const currentStep = TOUR_STEPS[stepIndex];
 
   const scrolledStepRef = useRef<number | null>(null);
+
+  // construction_pm_mvp-5y1: ツアーは開始したページ(工程表)専用のステップしか持たないため、
+  // ハッシュルートが変わったら即座にツアーを終了する。従来はTourGuideがルート変化を購読しておらず、
+  // 無関係な画面にツールチップ/オーバーレイが残留していた。
+  const route = useHashRoute();
+  const mountRouteRef = useRef(route);
+  useEffect(() => {
+    if (route !== mountRouteRef.current) {
+      onComplete();
+    }
+  }, [route, onComplete]);
 
   const updateHighlight = useCallback(() => {
     if (!currentStep) return;
