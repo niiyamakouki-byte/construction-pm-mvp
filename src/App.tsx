@@ -53,6 +53,7 @@ const CrossProjectGanttPage = lazy(() => import("./pages/CrossProjectGanttPage.j
 const ResourceAnalysisPage = lazy(() => import("./pages/ResourceAnalysisPage.js").then((m) => ({ default: m.ResourceAnalysisPage })));
 const ProgressReviewPage = lazy(() => import("./pages/ProgressReviewPage.js").then((m) => ({ default: m.ProgressReviewPage })));
 const PhotoPage = lazy(() => import("./pages/PhotoPage.js").then((m) => ({ default: m.PhotoPage })));
+const PhotoSharePage = lazy(() => import("./pages/PhotoSharePage.js").then((m) => ({ default: m.PhotoSharePage })));
 const FreeePage = lazy(() => import("./pages/FreeePage.js").then((m) => ({ default: m.FreeePage })));
 const FinishingSchedulePage = lazy(() => import("./pages/FinishingSchedulePage.js").then((m) => ({ default: m.FinishingSchedulePage })));
 const ScheduleFromEstimatePage = lazy(() => import("./pages/ScheduleFromEstimatePage.js").then((m) => ({ default: m.ScheduleFromEstimatePage })));
@@ -479,6 +480,7 @@ function AppShell() {
   const historyMatch = route.match(/^\/attendance-history\/(.+)$/);
   const reportsMatch = route.match(/^\/reports(?:\/(.+))?$/);
   const sharePortalMatch = route.match(/^\/portal\/share\/(.+)$/);
+  const photoShareMatch = route.match(/^\/share\/([^/?]+)$/);
   const contractorRequestMatch = route.match(/^\/portal\/request\/(.+)$/);
   const portalMatch = route.match(/^\/portal\/([^/]+)(?:\/(.+))?$/);
   const selectionMatch = route.match(/^\/selection\/([^/]+)$/);
@@ -505,6 +507,7 @@ function AppShell() {
   const historyProjectId = historyMatch?.[1] ? decodeURIComponent(historyMatch[1]) : null;
   const reportsProjectId = reportsMatch?.[1] ? decodeURIComponent(reportsMatch[1]) : undefined;
   const sharePortalToken = sharePortalMatch?.[1] ? decodeURIComponent(sharePortalMatch[1]) : null;
+  const photoShareToken = photoShareMatch?.[1] ? decodeURIComponent(photoShareMatch[1]) : null;
   const contractorRequestToken = contractorRequestMatch?.[1] ? decodeURIComponent(contractorRequestMatch[1]) : null;
   const portalProjectId = portalMatch?.[1] ? decodeURIComponent(portalMatch[1]) : null;
   const portalCompany = portalMatch?.[2] ? decodeURIComponent(portalMatch[2]) : undefined;
@@ -539,6 +542,7 @@ function AppShell() {
   if (route === "/funnel") return <Suspense fallback={pageFallback}><SignupFunnelPanelLazy /></Suspense>;
   if (clientProjectId) return <Suspense fallback={pageFallback}><ClientViewerPage projectId={clientProjectId} /></Suspense>;
   if (entryProjectId) return <Suspense fallback={pageFallback}><SiteEntryPage projectId={entryProjectId} entryToken={entryToken ?? ""} /></Suspense>;
+  if (photoShareToken) return <Suspense fallback={pageFallback}><PhotoSharePage token={photoShareToken} /></Suspense>;
   if (sharePortalToken) return <Suspense fallback={pageFallback}><OwnerPortalSharePage token={sharePortalToken} /></Suspense>;
   if (contractorRequestToken) return <Suspense fallback={pageFallback}><ContractorRequestResponsePage token={contractorRequestToken} /></Suspense>;
   if (portalProjectId) return <Suspense fallback={pageFallback}><ContractorPortalPage projectId={portalProjectId} company={portalCompany} /></Suspense>;

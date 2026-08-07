@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Camera } from "lucide-react";
 import { PhotoGrid } from "../components/PhotoGrid.js";
+import { PhotoShareButton } from "../components/PhotoShareButton.js";
 import { EmptyState } from "../components/EmptyState.js";
 import { useOrganizationContext } from "../contexts/OrganizationContext.js";
 import type { Project } from "../domain/types.js";
@@ -116,6 +117,8 @@ export function PhotoPage() {
           </select>
         </label>
       </div>
+
+      {selectedProjectId ? <PhotoShareButton projectId={selectedProjectId} /> : null}
 
       {error ? (
         <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">
