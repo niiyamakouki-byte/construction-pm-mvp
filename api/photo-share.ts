@@ -1,4 +1,4 @@
-/** laporta-beads-yf4or — Codex implementation, 2026-08-07. */
+/** laporta-beads-yf4or — Codex implementation, 2026-08-07; commit 881e1661e67e8bcf050cf75c884e8bd741a1013b. */
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { asSupabaseAuthVerifier } from "../src/lib/auth-helper.js";
 import {

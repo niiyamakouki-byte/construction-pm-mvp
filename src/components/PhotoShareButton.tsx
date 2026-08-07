@@ -1,4 +1,4 @@
-/** laporta-beads-yf4or — Codex implementation, 2026-08-07. */
+/** laporta-beads-yf4or — Codex implementation, 2026-08-07; commit 881e1661e67e8bcf050cf75c884e8bd741a1013b. */
 import { useState } from "react";
 import { Check, Share2 } from "lucide-react";
 import { getSupabaseClient } from "../infra/supabase-client.js";

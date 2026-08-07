@@ -1,4 +1,4 @@
--- laporta-beads-yf4or — Codex implementation, 2026-08-07.
+-- laporta-beads-yf4or — Codex implementation, 2026-08-07; commit 881e1661e67e8bcf050cf75c884e8bd741a1013b.
 -- DRAFT ONLY: owner approval前に本番適用しないこと。
 
 create extension if not exists pgcrypto;
