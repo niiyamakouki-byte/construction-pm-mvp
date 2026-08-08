@@ -1,25 +1,27 @@
 @import "tailwindcss";
 
 @theme {
-  /* Brand colors (kept for backward compat) */
-  --color-brand-50: #f7faf6;
-  --color-brand-100: #edf3ec;
-  --color-brand-200: #dbe8d8;
-  --color-brand-300: #bfd3ba;
-  --color-brand-400: #93b18f;
-  --color-brand-500: #6f916c;
-  --color-brand-600: #587b56;
-  --color-brand-700: #346538;
-  --color-brand-800: #254b28;
-  --color-brand-900: #18331b;
+  /* Brand colors (kept for backward compat)
+     既定=深藍(2026-08-09 光輝さん指名「紺だな」)。旧既定セージは
+     :root[data-accent="sage"] ブロックへ退避（下部「テーマカラー選択」節）。 */
+  --color-brand-50: #f5f7fa;
+  --color-brand-100: #eaeff5;
+  --color-brand-200: #d6e0ea;
+  --color-brand-300: #b6c8da;
+  --color-brand-400: #8aa3bf;
+  --color-brand-500: #64809f;
+  --color-brand-600: #4c6787;
+  --color-brand-700: #2f4d6e;
+  --color-brand-800: #223850;
+  --color-brand-900: #162536;
 
-  --color-accent-400: #bfd3ba;
-  --color-accent-500: #6f916c;
-  --color-accent-600: #346538;
+  --color-accent-400: #b6c8da;
+  --color-accent-500: #64809f;
+  --color-accent-600: #2f4d6e;
 
   /* iPadOS / Apple system colors */
-  --color-sys-blue: #346538;
-  --color-sys-blue-light: #edf3ec;
+  --color-sys-blue: #2f4d6e;
+  --color-sys-blue-light: #eaeff5;
   --color-sys-gray: #64748B;
   --color-sys-gray-bg: #F2F2F7;
   --color-sys-separator: rgba(60,60,67,0.12);
@@ -185,24 +187,25 @@
 }
 
 /* ─── テーマカラー選択 2026-08-08 (光輝さん「テーマカラーは選択式でもいいよね」) ───
-   既定=セージ(data-accent無し、上の @theme ベース値そのまま = sage-guard の検証対象)。
+   既定=深藍(data-accent無し、上の @theme ベース値そのまま = sage-guard の検証対象)。
+   2026-08-09 光輝さんが4テーマを見て「紺だな」と指名、既定をセージ→深藍へ切替。
    各テーマは brand スケールの差し替えのみで成立させる。--app-accent-text /
    --app-accent-muted / --app-control-hover / フォーカスリングは var() 参照経由で
    ライト・ダーク両方に自動追従する。いずれも和モダン系・単色アクセント
    (genbahub-ui憲法: グラデ禁止・装飾引き算)を維持。定義: src/theme/accents.ts */
 
-/* 深藍 (紺×生成り) */
-:root[data-accent="ai"] {
-  --color-brand-50: #f5f7fa;
-  --color-brand-100: #eaeff5;
-  --color-brand-200: #d6e0ea;
-  --color-brand-300: #b6c8da;
-  --color-brand-400: #8aa3bf;
-  --color-brand-500: #64809f;
-  --color-brand-600: #4c6787;
-  --color-brand-700: #2f4d6e;
-  --color-brand-800: #223850;
-  --color-brand-900: #162536;
+/* セージ (生成り×セージ×深緑。旧既定 — 2026-08-09に深藍へ既定交代、選択式では維持) */
+:root[data-accent="sage"] {
+  --color-brand-50: #f7faf6;
+  --color-brand-100: #edf3ec;
+  --color-brand-200: #dbe8d8;
+  --color-brand-300: #bfd3ba;
+  --color-brand-400: #93b18f;
+  --color-brand-500: #6f916c;
+  --color-brand-600: #587b56;
+  --color-brand-700: #346538;
+  --color-brand-800: #254b28;
+  --color-brand-900: #18331b;
 }
 
 /* 墨 (炭黒×白) */
@@ -234,8 +237,8 @@
 }
 
 /* 非既定テーマではアクセント派生トークンも brand スケールへ追従させる
-   (既定セージのベタ書き値は @theme に残す = 判定器を緩めない) */
-:root[data-accent="ai"],
+   (既定深藍のベタ書き値は @theme に残す = 判定器を緩めない) */
+:root[data-accent="sage"],
 :root[data-accent="sumi"],
 :root[data-accent="terracotta"] {
   --color-accent-400: var(--color-brand-300);
@@ -327,10 +330,10 @@ textarea::placeholder {
   border-color: var(--app-border) !important;
 }
 
-/* Focus ring styling (既定=セージ #346538。非既定テーマは --app-focus-ring が上書き) */
+/* Focus ring styling (既定=深藍 #2f4d6e。非既定テーマは --app-focus-ring が上書き) */
 :focus-visible {
-  outline: 2px solid #346538;
-  outline-color: var(--app-focus-ring, #346538);
+  outline: 2px solid #2f4d6e;
+  outline-color: var(--app-focus-ring, #2f4d6e);
   outline-offset: 2px;
 }
 
@@ -660,9 +663,9 @@ textarea::placeholder {
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
 }
 
-/* Focus ring = sage deep (constitution: accent is sage only). Keep in sync with the rule above. */
+/* Focus ring = ai (深藍) deep, current default accent. Keep in sync with the rule above. */
 :focus-visible {
-  outline: 2px solid #346538;
+  outline: 2px solid #2f4d6e;
   outline-offset: 2px;
 }
 

@@ -9,7 +9,7 @@ import * as fs from "fs";
 import * as path from "path";
 import * as url from "url";
 import { bypassAuthWithSeed } from "./helpers/e2e-bypass.js";
-import { ACCENT_THEMES, ACCENT_STORAGE_KEY } from "../src/theme/accents.js";
+import { ACCENT_THEMES, ACCENT_STORAGE_KEY, DEFAULT_ACCENT } from "../src/theme/accents.js";
 
 const __dirname = path.dirname(url.fileURLToPath(import.meta.url));
 const outDir =
@@ -24,11 +24,11 @@ for (const theme of ACCENT_THEMES) {
 
     await expect(page.getByRole("radiogroup", { name: "テーマカラー" })).toBeVisible();
 
-    // 既定セージは data-accent を持たない（素の :root = sage-guard の検証対象のまま）
+    // 既定深藍は data-accent を持たない（素の :root = sage-guard の検証対象のまま）
     const accentAttr = await page.evaluate(
       () => document.documentElement.dataset.accent ?? null,
     );
-    expect(accentAttr).toBe(theme.id === "sage" ? null : theme.id);
+    expect(accentAttr).toBe(theme.id === DEFAULT_ACCENT ? null : theme.id);
 
     // アクセントトークンの実測値がテーマ定義と一致する
     const brand700 = await page.evaluate(() =>

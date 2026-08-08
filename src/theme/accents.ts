@@ -1,7 +1,7 @@
 /**
  * テーマカラー（アクセント）定義 — 2026-08-08 光輝さん指示「テーマカラーは選択式でもいいよね」
  *
- * 既定=セージ（ブランド案1: 和モダン 生成り×セージ×深緑）。
+ * 既定=深藍（紺×生成り。2026-08-09 光輝さん指名「紺だな」で4テーマ中から確定）。
  * 全テーマとも和モダン系・単色アクセント（genbahub-ui憲法）を維持し、
  * アクセント色とその淡色面の差し替え（CSS変数 --color-brand-* の上書き）だけで成立させる。
  * 実際の色定義は src/index.css の `:root[data-accent="..."]` ブロック側にある。
@@ -10,7 +10,7 @@
 export type AccentTheme = "sage" | "ai" | "sumi" | "terracotta";
 
 export const ACCENT_STORAGE_KEY = "genbahub-accent";
-export const DEFAULT_ACCENT: AccentTheme = "sage";
+export const DEFAULT_ACCENT: AccentTheme = "ai";
 
 export interface AccentThemeMeta {
   id: AccentTheme;
@@ -23,8 +23,8 @@ export interface AccentThemeMeta {
 }
 
 export const ACCENT_THEMES: readonly AccentThemeMeta[] = [
-  { id: "sage", label: "セージ", description: "生成り×セージ×深緑（標準）", swatch: "#346538" },
-  { id: "ai", label: "深藍", description: "紺×生成り", swatch: "#2f4d6e" },
+  { id: "sage", label: "セージ", description: "生成り×セージ×深緑", swatch: "#346538" },
+  { id: "ai", label: "深藍", description: "紺×生成り（標準）", swatch: "#2f4d6e" },
   { id: "sumi", label: "墨", description: "炭黒×白", swatch: "#3c3c37" },
   { id: "terracotta", label: "テラコッタ", description: "赤土×生成り", swatch: "#7d4423" },
 ] as const;
