@@ -597,9 +597,9 @@ textarea::placeholder {
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
 }
 
-/* Fix: update focus ring to system blue */
+/* Focus ring = sage deep (constitution: accent is sage only). Keep in sync with the rule above. */
 :focus-visible {
-  outline: 2px solid #007AFF;
+  outline: 2px solid #346538;
   outline-offset: 2px;
 }
 

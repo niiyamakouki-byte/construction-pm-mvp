@@ -150,8 +150,8 @@ export function MobileNav({
                     aria-current={item.active ? "page" : undefined}
                     className={`flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left transition-colors ${
                       item.active
-                        ? "bg-[#007AFF]/10 text-[#007AFF] font-semibold"
-                        : "text-slate-600 hover:bg-[#007AFF]/5"
+                        ? "bg-brand-100 text-brand-700 font-semibold"
+                        : "text-slate-600 hover:bg-brand-50"
                     }`}
                   >
                     <span className="flex shrink-0 items-center justify-center" aria-hidden="true">

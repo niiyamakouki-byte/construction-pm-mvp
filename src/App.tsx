@@ -186,7 +186,7 @@ function FirstRunBootstrapScreen() {
       aria-label="サンプル案件を準備中"
     >
       <div className="rounded-2xl border border-slate-200 bg-white px-6 py-5 text-center shadow-xl">
-        <span className="mx-auto block h-6 w-6 animate-spin rounded-full border-2 border-[#007AFF]/30 border-t-[#007AFF]" />
+        <span className="mx-auto block h-6 w-6 animate-spin rounded-full border-2 border-brand-300 border-t-brand-700" />
         <p className="mt-3 text-sm font-semibold text-slate-700">サンプル案件を準備中...</p>
       </div>
     </div>
@@ -1005,7 +1005,7 @@ function AppShell() {
       <div className={`app-shell min-h-screen bg-[var(--app-bg)] text-[var(--app-text)] ${sidebarCollapsed ? "sidebar-collapsed" : ""}`}>
         <a
           href="#main-content"
-          className="sr-only focus:not-sr-only focus:fixed focus:left-2 focus:top-2 focus:z-[100] focus:rounded-lg focus:bg-[#007AFF] focus:px-4 focus:py-2 focus:text-white"
+          className="sr-only focus:not-sr-only focus:fixed focus:left-2 focus:top-2 focus:z-[100] focus:rounded-lg focus:bg-brand-700 focus:px-4 focus:py-2 focus:text-white"
         >
           {t("common:messages.skip_to_main")}
         </a>
@@ -1032,7 +1032,7 @@ function AppShell() {
               <button
                 type="button"
                 onClick={openAssistantPanel}
-                className="hidden rounded-xl border border-[#007AFF]/20 bg-[#007AFF]/8 px-3 py-1.5 text-xs font-semibold text-[#007AFF] hover:bg-[#007AFF]/12 sm:inline-flex"
+                className="hidden rounded-xl border border-brand-200 bg-brand-100 px-3 py-1.5 text-xs font-semibold text-brand-700 hover:bg-brand-200 sm:inline-flex"
                 data-ai-action="open-assistant"
               >
                 AIに相談
@@ -1086,7 +1086,7 @@ function AppShell() {
                 onClick={toggleSidebarCollapsed}
                 aria-label={sidebarCollapsed ? "サイドバーを開く" : "サイドバーを閉じる"}
                 aria-expanded={!sidebarCollapsed}
-                className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 hover:bg-[rgba(0,122,255,0.08)] hover:text-[#007AFF]"
+                className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 hover:bg-brand-100 hover:text-brand-700"
               >
                 {sidebarCollapsed ? (
                   <PanelLeftOpen className="h-4 w-4" aria-hidden="true" />
@@ -1168,7 +1168,7 @@ function AppShell() {
                 className="ios-nav-item w-full justify-between"
               >
                 <span className="text-xs text-slate-400">表示モード</span>
-                <span className="text-xs font-semibold text-[#007AFF]">{persona === "supervisor" ? t("common:persona.supervisor") : t("common:persona.executive")}</span>
+                <span className="text-xs font-semibold text-brand-700">{persona === "supervisor" ? t("common:persona.supervisor") : t("common:persona.executive")}</span>
               </button>
             </div>
           ) : null}
@@ -1213,7 +1213,7 @@ function AppShell() {
                   }
                 }}
                 className={`flex flex-1 flex-col items-center justify-center gap-1 py-2 text-center ${
-                  isActive ? "text-[#007AFF]" : "text-slate-400"
+                  isActive ? "text-brand-700" : "text-slate-400"
                 }`}
               >
                 <span className="flex items-center justify-center" aria-hidden="true"><NavIcon id={tab.icon} /></span>
@@ -1250,7 +1250,7 @@ function AppShell() {
                         aria-expanded={isExpanded}
                         className={`flex w-full items-center justify-between gap-3 rounded-xl border px-4 py-3 text-sm font-semibold ${
                           hasActiveItem
-                            ? "border-[#007AFF]/30 bg-[#007AFF]/8 text-[#007AFF]"
+                            ? "border-brand-200 bg-brand-100 text-brand-700"
                             : "border-slate-200 bg-white text-slate-700"
                         }`}
                       >
@@ -1273,7 +1273,7 @@ function AppShell() {
                               data-tour={tab.dataTour}
                               className={`flex items-center gap-3 rounded-xl border px-4 py-3 text-sm font-semibold ${
                                 tab.matchRoute(route)
-                                  ? "border-[#007AFF]/30 bg-[#007AFF]/8 text-[#007AFF]"
+                                  ? "border-brand-200 bg-brand-100 text-brand-700"
                                   : "border-slate-200 bg-white text-slate-700"
                               }`}
                             >
