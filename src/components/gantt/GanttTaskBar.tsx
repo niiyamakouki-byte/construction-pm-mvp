@@ -5,19 +5,20 @@ import { daysBetween, effectiveProgress, formatScheduleDate, statusColor, status
 import { gantt } from "../../theme/index.js";
 
 const MAJOR_CATEGORY_COLORS: Record<string, string> = {
+  // 案1(和モダン): 彩度を落としたアーストーンで工種を区別する(原色パステル禁止)
   仮設工事: "#94a3b8",
-  解体工事: "#f87171",
-  "躯体・下地": "#fb923c",
-  床工事: "#fbbf24",
+  解体工事: "#c07862",
+  "躯体・下地": "#bd8f56",
+  床工事: "#b3a05a",
   "壁・天井仕上げ": "#84a98c",
-  建具工事: "#34d399",
-  電気工事: "#38bdf8",
-  給排水工事: "#818cf8",
+  建具工事: "#5f9c7a",
+  電気工事: "#6b8fb3",
+  給排水工事: "#8189b0",
   "空調・換気": "#8b9dc3",
-  造作家具: "#f472b6",
-  塗装工事: "#2dd4bf",
+  造作家具: "#b98599",
+  塗装工事: "#5aa89e",
   クリーニング: "#bfd3ba",
-  検査: "#e879f9",
+  検査: "#a488ad",
 };
 
 type GanttTaskBarProps = {
@@ -141,7 +142,7 @@ export function GanttTaskBar({
         >
           <span
             aria-label={`発注納期: ${marker.contractorName} (${marker.deliveryDate})`}
-            className="block h-2 w-2 rounded-full border border-white bg-[#2855a6] shadow-sm"
+            className="block h-2 w-2 rounded-full border border-white bg-[#346538] shadow-sm"
           />
         </div>
       ))}
@@ -257,6 +258,16 @@ export function GanttTaskBar({
           <div className="h-4 w-1 rounded-full bg-white/70" />
         </div>
       </div>
+      {/* [compass] バー幅が狭くて中にラベルを印字できない時は、バー右横に地色ラベルで出す(重なり・はみ出し防止) */}
+      {!labelVisible ? (
+        <span
+          data-testid="bar-outside-label"
+          className="pointer-events-none absolute z-[5] max-w-[180px] truncate rounded bg-white/85 px-1.5 py-0.5 text-[11px] font-medium leading-4 text-[#2F3437]"
+          style={{ left: barLeft + 4 + Math.max(barWidth - 8, 24) + 8, top: (rowHeight - 20) / 2 }}
+        >
+          {task.name}
+        </span>
+      ) : null}
       <div
         data-testid="resize-start-handle"
         aria-hidden="true"
@@ -341,7 +352,7 @@ export function GanttTaskLabel({
           checked={task.status === "done"}
           onChange={() => onToggleDone(task)}
           onClick={(event) => event.stopPropagation()}
-          className="h-4 w-4 shrink-0 rounded-sm border-[#b7c3d3] accent-[#6ea8ff]"
+          className="h-4 w-4 shrink-0 rounded-sm border-[#b7c3d3] accent-[#587b56]"
         />
       )}
       <button

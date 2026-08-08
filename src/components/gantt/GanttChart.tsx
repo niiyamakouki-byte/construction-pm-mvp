@@ -212,7 +212,7 @@ export function GanttChart({
     : [];
 
   const milestoneTone: Record<MilestoneStatus, string> = {
-    "on-track": "bg-blue-500 text-blue-700",
+    "on-track": "bg-[#346538] text-[#346538]",
     "at-risk": "bg-amber-500 text-amber-700",
     missed: "bg-red-500 text-red-700",
     completed: "bg-slate-700 text-slate-700",
@@ -298,8 +298,9 @@ export function GanttChart({
           onTouchMove={onTimelineTouchMove}
           onTouchEnd={onTimelineTouchEnd}
         >
+          {/* [compass] 日付ヘッダー(月+日 計64px)を隠さないよう、フローティング操作はヘッダー直下に浮かせる */}
           {(onToday || onZoomIn || onZoomOut) ? (
-            <div className="absolute right-3 top-3 z-40 flex h-9 items-center overflow-hidden rounded-full border border-[#d9e2ef] bg-white shadow-[0_2px_10px_rgba(15,38,71,0.12)]">
+            <div className="absolute right-3 top-[72px] z-40 flex h-9 items-center overflow-hidden rounded-full border border-[#d9e2ef] bg-white shadow-[0_2px_10px_rgba(15,38,71,0.12)]">
               <span className="flex h-full w-9 items-center justify-center border-r border-[#e6ebf2] text-[#65748a]" aria-hidden="true">≡</span>
               {onToday ? <button type="button" onClick={onToday} className="h-full border-r border-[#e6ebf2] px-4 text-xs font-semibold text-[#33445c] hover:bg-[#f4f7fb]">今日</button> : null}
               {onZoomOut ? <button type="button" onClick={onZoomOut} aria-label="縮小" className="h-full w-9 border-r border-[#e6ebf2] text-lg text-[#33445c] hover:bg-[#f4f7fb]">−</button> : null}

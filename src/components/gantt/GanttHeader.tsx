@@ -70,7 +70,7 @@ export function GanttHeader({
                   className="h-full rounded-full transition-all"
                   style={{
                     width: `${overallProgress}%`,
-                    backgroundColor: overallProgress >= 100 ? "#587b56" : overallProgress >= 50 ? "#2563eb" : "#94a3b8",
+                    backgroundColor: overallProgress >= 100 ? "#587b56" : overallProgress >= 50 ? "#346538" : "#94a3b8",
                   }}
                 />
               </div>

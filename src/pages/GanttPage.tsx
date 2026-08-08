@@ -128,7 +128,7 @@ const projectStatusLabel: Record<ProjectStatus, string> = {
 
 const projectStatusTone: Record<ProjectStatus, string> = {
   planning: "bg-gray-100 text-gray-500 ring-gray-200",
-  active: "bg-[#eef4ff] text-[#2855a6] ring-[#cbdaf4]",
+  active: "bg-[#edf3ec] text-[#346538] ring-[#dbe8d8]",
   completed: "bg-gray-200 text-gray-600 ring-gray-300",
   on_hold: "bg-amber-50 text-amber-700 ring-amber-200",
 };
@@ -237,7 +237,7 @@ function RiskPanel({ schedule, highlightedTaskIds, onHighlight }: RiskPanelProps
       {result && projectEndP50 && projectEndP80 && projectEndP95 && (
         <div className="mt-3 space-y-3">
           <div className="flex flex-wrap gap-2 text-xs font-semibold">
-            <span className="rounded-full bg-blue-50 px-3 py-1 text-blue-700">P50: {fmtDate(projectEndP50)}</span>
+            <span className="rounded-full bg-[#edf3ec] px-3 py-1 text-[#346538]">P50: {fmtDate(projectEndP50)}</span>
             <span className="rounded-full bg-amber-50 px-3 py-1 text-amber-700">P80: {fmtDate(projectEndP80)}</span>
             <span className="rounded-full bg-red-50 px-3 py-1 text-red-700">P95: {fmtDate(projectEndP95)}</span>
           </div>
@@ -2155,7 +2155,7 @@ function GanttPageContent({ initialProjectId = null, openMaster = false, initial
           <div className="flex flex-wrap items-center gap-2 xl:justify-end">
             {/* 遅延・今日納品・次工程サマリ(票lzurb: 新設帯ではなく既存帯へ統合) */}
             {todayDeliveryCount > 0 ? (
-              <span className="rounded-full bg-blue-50 px-3 py-1.5 text-[11px] font-semibold text-blue-700 ring-1 ring-blue-200">
+              <span className="rounded-full bg-[#edf3ec] px-3 py-1.5 text-[11px] font-semibold text-[#346538] ring-1 ring-[#dbe8d8]">
                 今日納品 {todayDeliveryCount}件
               </span>
             ) : null}
@@ -2165,7 +2165,7 @@ function GanttPageContent({ initialProjectId = null, openMaster = false, initial
               </span>
             ) : null}
             {nextInProgressTask ? (
-              <span className="max-w-[160px] truncate rounded-full bg-[#eef4ff] px-3 py-1.5 text-[11px] font-semibold text-[#2855a6]" title={nextInProgressTask.name}>
+              <span className="max-w-[160px] truncate rounded-full bg-[#edf3ec] px-3 py-1.5 text-[11px] font-semibold text-[#346538]" title={nextInProgressTask.name}>
                 次: {nextInProgressTask.name}
               </span>
             ) : null}
@@ -2176,7 +2176,7 @@ function GanttPageContent({ initialProjectId = null, openMaster = false, initial
               data-tour="add-task-btn"
               type="button"
               onClick={() => openQuickAdd(selectedProject.id, selectedProject.name)}
-              className="inline-flex h-9 items-center gap-1.5 rounded-full bg-[#2855a6] px-4 text-xs font-semibold text-white transition-colors hover:bg-[#21498f] active:scale-[0.98]"
+              className="inline-flex h-9 items-center gap-1.5 rounded-full bg-[#346538] px-4 text-xs font-semibold text-white transition-colors hover:bg-[#254b28] active:scale-[0.98]"
             >
               <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5} aria-hidden="true">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
@@ -2190,7 +2190,7 @@ function GanttPageContent({ initialProjectId = null, openMaster = false, initial
               onClick={() => setShowMilestones((current) => !current)}
               className={`h-9 rounded-full px-3 text-xs font-semibold transition-colors ${
                 showMilestones
-                  ? "bg-[#2855a6] text-white"
+                  ? "bg-[#346538] text-white"
                   : "bg-white text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50"
               }`}
             >
@@ -2355,7 +2355,7 @@ function GanttPageContent({ initialProjectId = null, openMaster = false, initial
                   <span className="rounded-full bg-brand-50 px-3 py-1 text-brand-700">
                     完了 {milestoneSummary.completed}
                   </span>
-                  <span className="rounded-full bg-blue-50 px-3 py-1 text-blue-700">
+                  <span className="rounded-full bg-[#edf3ec] px-3 py-1 text-[#346538]">
                     順調 {milestoneSummary["on-track"]}
                   </span>
                   <span className="rounded-full bg-amber-50 px-3 py-1 text-amber-700">
@@ -2378,7 +2378,7 @@ function GanttPageContent({ initialProjectId = null, openMaster = false, initial
                             ? "bg-amber-50 text-amber-700"
                             : milestone.status === "missed"
                               ? "bg-red-50 text-red-700"
-                              : "bg-blue-50 text-blue-700"
+                              : "bg-[#edf3ec] text-[#346538]"
                       }`}
                     >
                       {milestone.name}
@@ -2436,7 +2436,7 @@ function GanttPageContent({ initialProjectId = null, openMaster = false, initial
                   onClick={() => handleProjectSelect(project.id)}
                   className={`rounded-full px-4 py-2 text-sm font-semibold transition-colors ${
                     active
-                      ? "bg-[#2855a6] text-white"
+                      ? "bg-[#346538] text-white"
                       : "bg-white text-slate-600 ring-1 ring-slate-200"
                   }`}
                 >
@@ -2520,7 +2520,7 @@ function GanttPageContent({ initialProjectId = null, openMaster = false, initial
                 }
                 className={`rounded-full px-3 py-1.5 text-xs font-semibold transition-colors ${
                   on
-                    ? "bg-[#2855a6] text-white shadow-sm"
+                    ? "bg-[#346538] text-white shadow-sm"
                     : "bg-white text-slate-400 ring-1 ring-slate-200"
                 }`}
               >
@@ -2702,7 +2702,7 @@ function GanttPageContent({ initialProjectId = null, openMaster = false, initial
         onClick={() => openQuickAdd(selectedProject.id, selectedProject.name)}
         aria-hidden={!showAddTaskFab}
         tabIndex={showAddTaskFab ? 0 : -1}
-        className={`safe-bottom fixed bottom-20 right-4 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-[#2855a6] text-3xl text-white shadow-[0_16px_30px_rgba(37,99,235,0.35)] transition-[opacity,transform] duration-200 ease-out md:bottom-6 ${
+        className={`safe-bottom fixed bottom-20 right-4 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-[#346538] text-3xl text-white shadow-[0_16px_30px_rgba(37,75,40,0.35)] transition-[opacity,transform] duration-200 ease-out md:bottom-6 ${
           showAddTaskFab ? "opacity-100 scale-100" : "pointer-events-none opacity-0 scale-90"
         }`}
         aria-label="新しいタスクを追加"

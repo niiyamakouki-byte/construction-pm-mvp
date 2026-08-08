@@ -3,7 +3,7 @@
 
 export const colors = {
   primary: "#0f172a",       // navy
-  accent: "#2563eb",        // blue
+  accent: "#346538",        // 深緑 (brand-700, 案1: 和モダン 生成り×セージ×深緑)
   success: "#587b56",       // green
   warning: "#f59e0b",       // amber
   danger: "#ef4444",        // red
@@ -17,7 +17,7 @@ export const colors = {
 
 export const statusColors = {
   todo: "#9ca3af",
-  in_progress: "#3b82f6",
+  in_progress: "#346538",
   done: "#6f916c",
 } as const;
 

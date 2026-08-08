@@ -300,3 +300,26 @@ describe("GanttTaskLabel - 行チェックボックス", () => {
     expect(onOpenTaskDetail).not.toHaveBeenCalled();
   });
 });
+
+// ────────────────────────────────────────────────────────────────
+// [compass] gantt-ui-sprint-20260808: 狭いバーはラベルをバー外右側に出す
+// ────────────────────────────────────────────────────────────────
+
+describe("GanttTaskBar - バー外ラベル(狭幅時)", () => {
+  it("バー幅が96px未満ならタスク名がバー外ラベルとして表示される", () => {
+    // duration 2日 × dayWidth 40 = 80px < 96px
+    const { getByTestId } = renderBar(baseTask);
+    const label = getByTestId("bar-outside-label") as HTMLElement;
+    expect(label.textContent).toBe("荒配線");
+  });
+
+  it("バー幅が96px以上ならバー外ラベルは出ない(バー内印字に切替)", () => {
+    // duration 4日 × dayWidth 40 = 160px >= 96px
+    const { queryByTestId } = renderBar({
+      ...baseTask,
+      dueDate: "2025-01-05",
+      endDate: "2025-01-05",
+    });
+    expect(queryByTestId("bar-outside-label")).toBeNull();
+  });
+});
