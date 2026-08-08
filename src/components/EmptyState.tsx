@@ -10,9 +10,9 @@ type Props = {
 
 export function EmptyState({ title, description, actionLabel, onAction, secondaryActionLabel, onSecondaryAction, icon }: Props) {
   return (
-    <div className="rounded-xl border-2 border-dashed border-slate-200 bg-white px-6 py-10 text-center">
+    <div className="rounded-xl border border-[#EAEAEA] bg-white px-6 py-12 text-center">
       {icon && (
-        <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 text-slate-400">
+        <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-brand-100 text-brand-700">
           {icon}
         </div>
       )}
@@ -26,7 +26,7 @@ export function EmptyState({ title, description, actionLabel, onAction, secondar
             <button
               type="button"
               onClick={onAction}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-brand-600 active:bg-brand-700"
+              className="inline-flex items-center gap-1.5 rounded-lg bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-brand-700 active:opacity-85"
             >
               {actionLabel}
             </button>
@@ -35,7 +35,7 @@ export function EmptyState({ title, description, actionLabel, onAction, secondar
             <button
               type="button"
               onClick={onSecondaryAction}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-600 shadow-sm transition-colors hover:bg-slate-50"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-[#EAEAEA] bg-white px-4 py-2.5 text-sm font-semibold text-slate-600 transition-colors hover:bg-slate-50"
             >
               {secondaryActionLabel}
             </button>

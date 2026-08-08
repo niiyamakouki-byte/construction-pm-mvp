@@ -104,18 +104,20 @@ export function PhotoPage() {
           <h1 className="text-2xl font-bold text-slate-900">現場写真</h1>
           <p className="mt-1 text-sm text-slate-500">保存済み写真を表示します。</p>
         </div>
-        <label className="block text-xs font-semibold text-slate-500">
-          案件
-          <select
-            value={selectedProjectId}
-            onChange={(event) => setSelectedProjectId(event.target.value)}
-            className="mt-1 block min-w-64 rounded-xl border border-slate-200 backdrop-blur-sm bg-white/80 px-3 py-2 text-sm text-slate-700 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
-          >
-            {projects.map((project) => (
-              <option key={project.id} value={project.id}>{project.name}</option>
-            ))}
-          </select>
-        </label>
+        {projects.length > 0 ? (
+          <label className="block text-xs font-semibold text-slate-500">
+            案件
+            <select
+              value={selectedProjectId}
+              onChange={(event) => setSelectedProjectId(event.target.value)}
+              className="mt-1 block min-w-64 rounded-lg border border-[#EAEAEA] bg-white px-3 py-2 text-sm text-slate-700 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
+            >
+              {projects.map((project) => (
+                <option key={project.id} value={project.id}>{project.name}</option>
+              ))}
+            </select>
+          </label>
+        ) : null}
       </div>
 
       {selectedProjectId ? <PhotoShareButton projectId={selectedProjectId} /> : null}
