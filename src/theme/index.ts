@@ -3,8 +3,10 @@
 
 export const colors = {
   primary: "#0f172a",       // navy
-  accent: "#346538",        // 深緑 (brand-700, 案1: 和モダン 生成り×セージ×深緑)
-  success: "#587b56",       // green
+  // アクセント系はCSS変数参照(テーマカラー選択に追従)。既定=案1セージのbrandスケール。
+  // インラインstyle(DOM)での消費前提 — SVG属性やcanvasには渡さないこと。
+  accent: "var(--color-brand-700, #346538)",   // 深緑 (brand-700, 案1: 和モダン 生成り×セージ×深緑)
+  success: "var(--color-brand-600, #587b56)",  // green
   warning: "#f59e0b",       // amber
   danger: "#ef4444",        // red
   background: "#f8fafc",    // very light gray
@@ -17,8 +19,8 @@ export const colors = {
 
 export const statusColors = {
   todo: "#9ca3af",
-  in_progress: "#346538",
-  done: "#6f916c",
+  in_progress: "var(--color-brand-700, #346538)",
+  done: "var(--color-brand-500, #6f916c)",
 } as const;
 
 export const spacing = {

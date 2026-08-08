@@ -120,10 +120,11 @@
   --app-topbar-bg: rgba(255, 255, 255, 0.82);
   --app-sidebar-bg: rgba(255, 255, 255, 0.94);
   --app-control-bg: rgba(248, 250, 252, 0.96);
-  --app-control-hover: #edf3ec;
+  --app-control-hover: var(--color-brand-100);
   --app-separator: rgba(60, 60, 67, 0.12);
-  --app-accent-text: #346538;
-  --app-accent-muted: rgba(111, 145, 108, 0.14);
+  --app-accent-text: var(--color-brand-700);
+  --app-accent-muted: color-mix(in srgb, var(--color-brand-500) 14%, transparent);
+  --app-focus-ring: var(--color-brand-700);
 
   /* Sidebar & TopBar dimensions */
   --sidebar-width: 260px;
@@ -158,8 +159,8 @@
   --app-control-bg: #1e293b;
   --app-control-hover: #334155;
   --app-separator: rgba(148, 163, 184, 0.24);
-  --app-accent-text: #bfd3ba;
-  --app-accent-muted: rgba(147, 177, 143, 0.18);
+  --app-accent-text: var(--color-brand-300);
+  --app-accent-muted: color-mix(in srgb, var(--color-brand-400) 18%, transparent);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -178,9 +179,70 @@
     --app-control-bg: #1e293b;
     --app-control-hover: #334155;
     --app-separator: rgba(148, 163, 184, 0.24);
-    --app-accent-text: #bfd3ba;
-    --app-accent-muted: rgba(147, 177, 143, 0.18);
+    --app-accent-text: var(--color-brand-300);
+    --app-accent-muted: color-mix(in srgb, var(--color-brand-400) 18%, transparent);
   }
+}
+
+/* ─── テーマカラー選択 2026-08-08 (光輝さん「テーマカラーは選択式でもいいよね」) ───
+   既定=セージ(data-accent無し、上の @theme ベース値そのまま = sage-guard の検証対象)。
+   各テーマは brand スケールの差し替えのみで成立させる。--app-accent-text /
+   --app-accent-muted / --app-control-hover / フォーカスリングは var() 参照経由で
+   ライト・ダーク両方に自動追従する。いずれも和モダン系・単色アクセント
+   (genbahub-ui憲法: グラデ禁止・装飾引き算)を維持。定義: src/theme/accents.ts */
+
+/* 深藍 (紺×生成り) */
+:root[data-accent="ai"] {
+  --color-brand-50: #f5f7fa;
+  --color-brand-100: #eaeff5;
+  --color-brand-200: #d6e0ea;
+  --color-brand-300: #b6c8da;
+  --color-brand-400: #8aa3bf;
+  --color-brand-500: #64809f;
+  --color-brand-600: #4c6787;
+  --color-brand-700: #2f4d6e;
+  --color-brand-800: #223850;
+  --color-brand-900: #162536;
+}
+
+/* 墨 (炭黒×白) */
+:root[data-accent="sumi"] {
+  --color-brand-50: #f8f8f6;
+  --color-brand-100: #efefec;
+  --color-brand-200: #e0e0db;
+  --color-brand-300: #c6c6bf;
+  --color-brand-400: #9c9c94;
+  --color-brand-500: #75756d;
+  --color-brand-600: #5b5b54;
+  --color-brand-700: #3c3c37;
+  --color-brand-800: #2a2a26;
+  --color-brand-900: #191917;
+}
+
+/* テラコッタ (赤土×生成り) */
+:root[data-accent="terracotta"] {
+  --color-brand-50: #fbf6f3;
+  --color-brand-100: #f6ebe4;
+  --color-brand-200: #eed7ca;
+  --color-brand-300: #ddb69f;
+  --color-brand-400: #c68d6d;
+  --color-brand-500: #ab6a47;
+  --color-brand-600: #94552f;
+  --color-brand-700: #7d4423;
+  --color-brand-800: #5c3119;
+  --color-brand-900: #3e2110;
+}
+
+/* 非既定テーマではアクセント派生トークンも brand スケールへ追従させる
+   (既定セージのベタ書き値は @theme に残す = 判定器を緩めない) */
+:root[data-accent="ai"],
+:root[data-accent="sumi"],
+:root[data-accent="terracotta"] {
+  --color-accent-400: var(--color-brand-300);
+  --color-accent-500: var(--color-brand-500);
+  --color-accent-600: var(--color-brand-700);
+  --color-sys-blue: var(--color-brand-700);
+  --color-sys-blue-light: var(--color-brand-100);
 }
 
 /* Professional base styles */
@@ -265,9 +327,10 @@ textarea::placeholder {
   border-color: var(--app-border) !important;
 }
 
-/* Focus ring styling */
+/* Focus ring styling (既定=セージ #346538。非既定テーマは --app-focus-ring が上書き) */
 :focus-visible {
   outline: 2px solid #346538;
+  outline-color: var(--app-focus-ring, #346538);
   outline-offset: 2px;
 }
 

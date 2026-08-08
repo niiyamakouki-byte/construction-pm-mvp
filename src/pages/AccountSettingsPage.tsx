@@ -18,6 +18,8 @@ import {
   writeTaxRoundingMode,
   type TaxRoundingMode,
 } from "../lib/tax-rounding.js";
+import { ACCENT_THEMES } from "../theme/accents.js";
+import { useAccentTheme } from "../hooks/useAccentTheme.js";
 
 function getOAuthRedirectUrl(): string | undefined {
   if (typeof window === "undefined") return undefined;
@@ -26,6 +28,9 @@ function getOAuthRedirectUrl(): string | undefined {
 
 export function AccountSettingsPage() {
   const { user, session } = useAuth();
+
+  // テーマカラー選択（2026-08-08）
+  const { accent, setAccent } = useAccentTheme();
 
   // チームメンバー招待（AC③、票construction_pm_mvp-1g7）
   const [inviteEmail, setInviteEmail] = useState("");
@@ -259,6 +264,43 @@ export function AccountSettingsPage() {
             <option key={mode} value={mode}>{label}</option>
           ))}
         </select>
+      </section>
+
+      {/* テーマカラー選択（2026-08-08 光輝さん「テーマカラーは選択式でもいいよね」） */}
+      <section className="mb-8 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+        <h2 className="mb-2 text-base font-semibold text-slate-800">テーマカラー</h2>
+        <p className="mb-4 text-sm text-slate-500">
+          画面全体のアクセント色を選べます。この端末に保存されます。
+        </p>
+        <div role="radiogroup" aria-label="テーマカラー" className="flex flex-wrap gap-3">
+          {ACCENT_THEMES.map((themeMeta) => {
+            const selected = accent === themeMeta.id;
+            return (
+              <button
+                key={themeMeta.id}
+                type="button"
+                role="radio"
+                aria-checked={selected}
+                onClick={() => setAccent(themeMeta.id)}
+                className={`flex min-h-12 items-center gap-3 rounded-xl border px-4 py-2 text-left text-sm transition-colors ${
+                  selected
+                    ? "border-brand-700 bg-brand-100 text-slate-900"
+                    : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+                }`}
+              >
+                <span
+                  className="h-5 w-5 shrink-0 rounded-full border border-black/10"
+                  style={{ backgroundColor: themeMeta.swatch }}
+                  aria-hidden="true"
+                />
+                <span>
+                  <span className="block font-medium">{themeMeta.label}</span>
+                  <span className="block text-xs text-slate-500">{themeMeta.description}</span>
+                </span>
+              </button>
+            );
+          })}
+        </div>
       </section>
 
       {/* パスワード変更 */}

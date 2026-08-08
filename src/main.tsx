@@ -5,7 +5,9 @@ import "./index.css";
 import "./i18n/index.js";
 import { App } from "./App.js";
 import { registerServiceWorker } from "./lib/sw-registration.js";
+import { initAccentTheme } from "./theme/accents.js";
 
+initAccentTheme();
 registerServiceWorker();
 inject();
 
