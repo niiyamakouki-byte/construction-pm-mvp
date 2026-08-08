@@ -5,13 +5,13 @@ import { describe, expect, it } from "vitest";
 const repoRoot = resolve(import.meta.dirname, "..");
 
 describe("minimalist sage UI guard", () => {
-  it("keeps the default brand token scale aligned to the current default accent (深藍, 2026-08-09)", () => {
+  it("keeps the default brand token scale aligned to the current default accent (クラシック紺×金, 2026-08-09)", () => {
     const css = readFileSync(resolve(repoRoot, "src/index.css"), "utf8");
 
-    expect(css).toContain("--color-brand-100: #eaeff5;");
-    expect(css).toContain("--color-brand-700: #2f4d6e;");
-    expect(css).toContain("--color-accent-600: #2f4d6e;");
-    expect(css).toContain("outline: 2px solid #2f4d6e;");
+    expect(css).toContain("--color-brand-100: #f5edde;");
+    expect(css).toContain("--color-brand-700: #9e804d;");
+    expect(css).toContain("--color-accent-600: #9e804d;");
+    expect(css).toContain("outline: 2px solid #9e804d;");
   });
 
   it("documents the minimalist sage rules for future UI work", () => {

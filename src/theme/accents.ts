@@ -1,16 +1,20 @@
 /**
  * テーマカラー（アクセント）定義 — 2026-08-08 光輝さん指示「テーマカラーは選択式でもいいよね」
  *
- * 既定=深藍（紺×生成り。2026-08-09 光輝さん指名「紺だな」で4テーマ中から確定）。
+ * 既定=クラシック（紺×金。2026-08-09 光輝さんが05_classic_home.png(LapoPDFのクラシック
+ * 紺×金ホーム)を貼り「これがいい」と確定。先の「紺だな」指名は深藍でなくクラシックが
+ * 指し先だったため訂正。LapoPDF側(laporta-pdf-viewer)と既定を揃える）。
  * 全テーマとも和モダン系・単色アクセント（genbahub-ui憲法）を維持し、
  * アクセント色とその淡色面の差し替え（CSS変数 --color-brand-* の上書き）だけで成立させる。
+ * クラシックは「紺×金」の二色配色だが、工程表は明色chrome基調のUIのため紺そのものでなく
+ * 金(ゴールド/ブロンズ)を単色アクセント化して表現する(LapoPDFのaccentDeep=白地で読める金と同じ役割)。
  * 実際の色定義は src/index.css の `:root[data-accent="..."]` ブロック側にある。
  */
 
-export type AccentTheme = "sage" | "ai" | "sumi" | "terracotta";
+export type AccentTheme = "sage" | "ai" | "sumi" | "terracotta" | "classic";
 
 export const ACCENT_STORAGE_KEY = "genbahub-accent";
-export const DEFAULT_ACCENT: AccentTheme = "ai";
+export const DEFAULT_ACCENT: AccentTheme = "classic";
 
 export interface AccentThemeMeta {
   id: AccentTheme;
@@ -24,9 +28,10 @@ export interface AccentThemeMeta {
 
 export const ACCENT_THEMES: readonly AccentThemeMeta[] = [
   { id: "sage", label: "セージ", description: "生成り×セージ×深緑", swatch: "#346538" },
-  { id: "ai", label: "深藍", description: "紺×生成り（標準）", swatch: "#2f4d6e" },
+  { id: "ai", label: "深藍", description: "紺×生成り", swatch: "#2f4d6e" },
   { id: "sumi", label: "墨", description: "炭黒×白", swatch: "#3c3c37" },
   { id: "terracotta", label: "テラコッタ", description: "赤土×生成り", swatch: "#7d4423" },
+  { id: "classic", label: "クラシック", description: "紺×金（標準）", swatch: "#9e804d" },
 ] as const;
 
 const VALID_ACCENTS: readonly string[] = ACCENT_THEMES.map((t) => t.id);

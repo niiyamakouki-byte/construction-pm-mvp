@@ -1,6 +1,7 @@
 /**
  * テーマカラー選択（2026-08-08 光輝さん「テーマカラーは選択式でもいいよね」）のテスト。
- * - 既定=深藍（data-accent無し、2026-08-09 光輝さん指名「紺だな」）で sage-guard の既定トークンを壊さないこと
+ * - 既定=クラシック(紺×金)（data-accent無し、2026-08-09 光輝さんが05_classic_home.pngで確定）で
+ *   sage-guard の既定トークンを壊さないこと
  * - 選択が localStorage に永続化され <html data-accent> に反映されること
  * - index.css に各テーマの上書きブロックが存在すること
  */
@@ -44,15 +45,15 @@ describe("accent theme (テーマカラー選択)", () => {
     delete document.documentElement.dataset.accent;
   });
 
-  it("既定は深藍（保存なし・不正値はフォールバック）", () => {
-    expect(readStoredAccent()).toBe("ai");
+  it("既定はクラシック（保存なし・不正値はフォールバック）", () => {
+    expect(readStoredAccent()).toBe("classic");
     window.localStorage.setItem(ACCENT_STORAGE_KEY, "neon-pink");
-    expect(readStoredAccent()).toBe("ai");
+    expect(readStoredAccent()).toBe("classic");
     expect(isAccentTheme("terracotta")).toBe(true);
     expect(isAccentTheme("blue")).toBe(false);
   });
 
-  it("既定深藍は data-accent を残さない（sage-guard の素の:rootを保つ）", () => {
+  it("既定クラシックは data-accent を残さない（sage-guard の素の:rootを保つ）", () => {
     applyAccent("sage");
     expect(document.documentElement.dataset.accent).toBe("sage");
     applyAccent(DEFAULT_ACCENT);
@@ -61,7 +62,7 @@ describe("accent theme (テーマカラー選択)", () => {
 
   it("useAccentTheme: 選択が localStorage と <html data-accent> に反映される", () => {
     const { result } = renderHook(() => useAccentTheme());
-    expect(result.current.accent).toBe("ai");
+    expect(result.current.accent).toBe("classic");
 
     act(() => { result.current.setAccent("terracotta"); });
     expect(result.current.accent).toBe("terracotta");
@@ -75,18 +76,20 @@ describe("accent theme (テーマカラー選択)", () => {
     expect(result.current.accent).toBe("sumi");
   });
 
-  it("index.css に非既定3テーマの上書きブロックがある（アクセント色はテーマごとに一意）", () => {
+  it("index.css に非既定4テーマの上書きブロックがある（アクセント色はテーマごとに一意）", () => {
     const css = readFileSync(resolve(repoRoot, "src/index.css"), "utf8");
 
     expect(css).toContain(':root[data-accent="sage"]');
     expect(css).toContain("--color-brand-700: #346538;");
+    expect(css).toContain(':root[data-accent="ai"]');
+    expect(css).toContain("--color-brand-700: #2f4d6e;");
     expect(css).toContain(':root[data-accent="sumi"]');
     expect(css).toContain("--color-brand-700: #3c3c37;");
     expect(css).toContain(':root[data-accent="terracotta"]');
     expect(css).toContain("--color-brand-700: #7d4423;");
 
-    // 既定深藍は data-accent ブロックを持たない（素の :root が深藍）
-    expect(css).not.toContain(':root[data-accent="ai"]');
+    // 既定クラシックは data-accent ブロックを持たない（素の :root がクラシック）
+    expect(css).not.toContain(':root[data-accent="classic"]');
 
     // セレクタUIのスウォッチ（= 各テーマの brand-700）とCSS定義が一致していること
     for (const theme of ACCENT_THEMES) {

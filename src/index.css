@@ -2,26 +2,27 @@
 
 @theme {
   /* Brand colors (kept for backward compat)
-     既定=深藍(2026-08-09 光輝さん指名「紺だな」)。旧既定セージは
-     :root[data-accent="sage"] ブロックへ退避（下部「テーマカラー選択」節）。 */
-  --color-brand-50: #f5f7fa;
-  --color-brand-100: #eaeff5;
-  --color-brand-200: #d6e0ea;
-  --color-brand-300: #b6c8da;
-  --color-brand-400: #8aa3bf;
-  --color-brand-500: #64809f;
-  --color-brand-600: #4c6787;
-  --color-brand-700: #2f4d6e;
-  --color-brand-800: #223850;
-  --color-brand-900: #162536;
+     既定=クラシック(紺×金。2026-08-09 光輝さんが05_classic_home.pngで確定、
+     深藍からの訂正)。工程表は明色chrome基調のため紺そのものでなく金を単色アクセント化。
+     旧既定の深藍/セージは :root[data-accent="..."] ブロックへ退避（下部「テーマカラー選択」節）。 */
+  --color-brand-50: #faf6ee;
+  --color-brand-100: #f5edde;
+  --color-brand-200: #ecdfc7;
+  --color-brand-300: #e1d0ac;
+  --color-brand-400: #d6bd8d;
+  --color-brand-500: #c9a96e;
+  --color-brand-600: #b4915c;
+  --color-brand-700: #9e804d;
+  --color-brand-800: #7a6339;
+  --color-brand-900: #574728;
 
-  --color-accent-400: #b6c8da;
-  --color-accent-500: #64809f;
-  --color-accent-600: #2f4d6e;
+  --color-accent-400: #e1d0ac;
+  --color-accent-500: #c9a96e;
+  --color-accent-600: #9e804d;
 
   /* iPadOS / Apple system colors */
-  --color-sys-blue: #2f4d6e;
-  --color-sys-blue-light: #eaeff5;
+  --color-sys-blue: #9e804d;
+  --color-sys-blue-light: #f5edde;
   --color-sys-gray: #64748B;
   --color-sys-gray-bg: #F2F2F7;
   --color-sys-separator: rgba(60,60,67,0.12);
@@ -187,14 +188,16 @@
 }
 
 /* ─── テーマカラー選択 2026-08-08 (光輝さん「テーマカラーは選択式でもいいよね」) ───
-   既定=深藍(data-accent無し、上の @theme ベース値そのまま = sage-guard の検証対象)。
-   2026-08-09 光輝さんが4テーマを見て「紺だな」と指名、既定をセージ→深藍へ切替。
+   既定=クラシック(紺×金。data-accent無し、上の @theme ベース値そのまま = sage-guard の検証対象)。
+   2026-08-09 光輝さんが05_classic_home.png(LapoPDFのクラシック紺×金ホーム)を貼り
+   「これがいい」と確定。先の「紺だな」指名は深藍でなくクラシックが指し先だったため、
+   セージ→深藍(同日訂正前)→クラシックへ既定を再変更。深藍は5テーマ目として選択式で維持。
    各テーマは brand スケールの差し替えのみで成立させる。--app-accent-text /
    --app-accent-muted / --app-control-hover / フォーカスリングは var() 参照経由で
    ライト・ダーク両方に自動追従する。いずれも和モダン系・単色アクセント
    (genbahub-ui憲法: グラデ禁止・装飾引き算)を維持。定義: src/theme/accents.ts */
 
-/* セージ (生成り×セージ×深緑。旧既定 — 2026-08-09に深藍へ既定交代、選択式では維持) */
+/* セージ (生成り×セージ×深緑。旧既定) */
 :root[data-accent="sage"] {
   --color-brand-50: #f7faf6;
   --color-brand-100: #edf3ec;
@@ -206,6 +209,20 @@
   --color-brand-700: #346538;
   --color-brand-800: #254b28;
   --color-brand-900: #18331b;
+}
+
+/* 深藍 (紺×生成り。一時既定だったが2026-08-09にクラシックへ既定交代、選択式では維持) */
+:root[data-accent="ai"] {
+  --color-brand-50: #f5f7fa;
+  --color-brand-100: #eaeff5;
+  --color-brand-200: #d6e0ea;
+  --color-brand-300: #b6c8da;
+  --color-brand-400: #8aa3bf;
+  --color-brand-500: #64809f;
+  --color-brand-600: #4c6787;
+  --color-brand-700: #2f4d6e;
+  --color-brand-800: #223850;
+  --color-brand-900: #162536;
 }
 
 /* 墨 (炭黒×白) */
@@ -237,8 +254,9 @@
 }
 
 /* 非既定テーマではアクセント派生トークンも brand スケールへ追従させる
-   (既定深藍のベタ書き値は @theme に残す = 判定器を緩めない) */
+   (既定クラシックのベタ書き値は @theme に残す = 判定器を緩めない) */
 :root[data-accent="sage"],
+:root[data-accent="ai"],
 :root[data-accent="sumi"],
 :root[data-accent="terracotta"] {
   --color-accent-400: var(--color-brand-300);
@@ -330,10 +348,10 @@ textarea::placeholder {
   border-color: var(--app-border) !important;
 }
 
-/* Focus ring styling (既定=深藍 #2f4d6e。非既定テーマは --app-focus-ring が上書き) */
+/* Focus ring styling (既定=クラシック #9e804d。非既定テーマは --app-focus-ring が上書き) */
 :focus-visible {
-  outline: 2px solid #2f4d6e;
-  outline-color: var(--app-focus-ring, #2f4d6e);
+  outline: 2px solid #9e804d;
+  outline-color: var(--app-focus-ring, #9e804d);
   outline-offset: 2px;
 }
 
@@ -663,9 +681,9 @@ textarea::placeholder {
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
 }
 
-/* Focus ring = ai (深藍) deep, current default accent. Keep in sync with the rule above. */
+/* Focus ring = classic (紺×金) gold deep, current default accent. Keep in sync with the rule above. */
 :focus-visible {
-  outline: 2px solid #2f4d6e;
+  outline: 2px solid #9e804d;
   outline-offset: 2px;
 }
 
