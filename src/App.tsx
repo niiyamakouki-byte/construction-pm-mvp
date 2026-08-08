@@ -1295,15 +1295,16 @@ function AppShell() {
         {shouldBootstrapFirstRun && firstRunError ? <OnboardingWizard onComplete={handleOnboardingComplete} /> : null}
         {onboardingDone && !tourDone && showTour ? <TourGuide onComplete={markTourDone} /> : null}
         {showShortcutHelp ? <KeyboardShortcutHelp onClose={() => setShowShortcutHelp(false)} /> : null}
-        {/* ponytail: ganttMatch があるページは工程追加FABが右下を占有するのでAI FABを非表示 */}
-        {!ganttMatch && (
-          <Suspense fallback={null}>
-            <AssistantChatPanel
-              userId={user?.email ?? "anonymous"}
-              hideFab={mobileNavOpen || moreDrawerOpen}
-            />
-          </Suspense>
-        )}
+        {/* ponytail: ganttMatch があるページは工程追加FABが右下を占有するのでAI FABは非表示にするが、
+            パネル自体はマウントし続ける。以前は !ganttMatch でコンポーネント全体を外していたため、
+            工程ページのヘッダー「AIに相談」ボタン(openAssistantPanel)がgenbahub:assistant-openを
+            dispatchしてもリスナーが存在せず無反応になっていた(検証ループ2026-08-08で発見)。 */}
+        <Suspense fallback={null}>
+          <AssistantChatPanel
+            userId={user?.email ?? "anonymous"}
+            hideFab={mobileNavOpen || moreDrawerOpen || !!ganttMatch}
+          />
+        </Suspense>
         <InstallPrompt />
       </div>
     </AuthGuard>
