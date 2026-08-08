@@ -258,7 +258,7 @@ export function ProjectListPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center gap-2 py-16" role="status" aria-label={t("common:status.loading")}>
-        <span className="inline-block h-5 w-5 animate-spin rounded-full border-2 border-[#007AFF]/30 border-t-[#007AFF]" />
+        <span className="inline-block h-5 w-5 animate-spin rounded-full border-2 border-brand-300 border-t-brand-700" />
         <span className="text-sm text-slate-400">{t("common:status.loading")}</span>
       </div>
     );
@@ -266,7 +266,7 @@ export function ProjectListPage() {
 
   return (
     <div className="space-y-4">
-      <section className="rounded-[28px] bg-[linear-gradient(145deg,#fffaf2_0%,#f6fbff_56%,#eff6ff_100%)] px-4 py-5 shadow-sm ring-1 ring-slate-200 sm:px-6">
+      <section className="rounded-xl border border-[#EAEAEA] bg-white px-4 py-5 sm:px-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <p className="text-[11px] font-semibold tracking-[0.2em] text-slate-500">{t("pages:project_list.section_label")}</p>
@@ -359,7 +359,7 @@ export function ProjectListPage() {
       {showForm ? (
         <section className="rounded-[28px] bg-white p-5 shadow-sm ring-1 ring-slate-200 sm:p-6">
           <div className="mb-5 flex items-center gap-2">
-            <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-[#007AFF]/10 text-[#007AFF]">+</span>
+            <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-brand-100 text-brand-700">+</span>
             <h2 className="text-base font-semibold text-slate-900">{t("pages:project_list.create_title")}</h2>
           </div>
 
@@ -381,7 +381,7 @@ export function ProjectListPage() {
                   }}
                   className={`rounded-2xl border px-3 py-3 text-left text-sm transition-colors ${
                     captureMode === "memo"
-                      ? "border-[#007AFF] bg-white text-slate-900 ring-2 ring-[#007AFF]/15"
+                      ? "border-brand-600 bg-white text-slate-900 ring-2 ring-brand-600/15"
                       : "border-slate-200 bg-white text-slate-600"
                   }`}
                 >
@@ -398,7 +398,7 @@ export function ProjectListPage() {
                   }}
                   className={`rounded-2xl border px-3 py-3 text-left text-sm transition-colors ${
                     captureMode === "schedule"
-                      ? "border-[#007AFF] bg-white text-slate-900 ring-2 ring-[#007AFF]/15"
+                      ? "border-brand-600 bg-white text-slate-900 ring-2 ring-brand-600/15"
                       : "border-slate-200 bg-white text-slate-600"
                   }`}
                 >
@@ -415,7 +415,7 @@ export function ProjectListPage() {
                   }}
                   className={`rounded-2xl border px-3 py-3 text-left text-sm transition-colors ${
                     captureMode === "record"
-                      ? "border-[#007AFF] bg-white text-slate-900 ring-2 ring-[#007AFF]/15"
+                      ? "border-brand-600 bg-white text-slate-900 ring-2 ring-brand-600/15"
                       : "border-slate-200 bg-white text-slate-600"
                   }`}
                 >
@@ -443,7 +443,7 @@ export function ProjectListPage() {
                   if (name) validateName(name);
                 }}
                 placeholder={t("pages:project_list.project_name_placeholder")}
-                className={`mt-1.5 w-full rounded-2xl border px-4 py-3 text-sm focus:border-[#007AFF] focus:outline-none focus:ring-2 focus:ring-[#007AFF]/20 ${
+                className={`mt-1.5 w-full rounded-2xl border px-4 py-3 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 ${
                   nameError ? "border-red-300 bg-red-50" : "border-slate-300 bg-white"
                 }`}
               />
@@ -454,7 +454,7 @@ export function ProjectListPage() {
             <button
               type="button"
               onClick={() => setShowDetails((v) => !v)}
-              className="flex items-center gap-1.5 text-sm font-medium text-[#007AFF]"
+              className="flex items-center gap-1.5 text-sm font-medium text-brand-700"
             >
               <span
                 className={`inline-block transition-transform duration-150 ${showDetails ? "rotate-90" : ""}`}
@@ -477,7 +477,7 @@ export function ProjectListPage() {
                     value={description}
                     onChange={(event) => setDescription(event.target.value)}
                     placeholder={t("pages:project_list.description_placeholder")}
-                    className="mt-1.5 w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm focus:border-[#007AFF] focus:outline-none focus:ring-2 focus:ring-[#007AFF]/20"
+                    className="mt-1.5 w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
                   />
                 </div>
 
@@ -491,7 +491,7 @@ export function ProjectListPage() {
                     value={address}
                     onChange={(event) => setAddress(event.target.value)}
                     placeholder={t("pages:project_list.address_placeholder")}
-                    className="mt-1.5 w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm focus:border-[#007AFF] focus:outline-none focus:ring-2 focus:ring-[#007AFF]/20"
+                    className="mt-1.5 w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
                   />
                 </div>
 
@@ -504,7 +504,7 @@ export function ProjectListPage() {
                       id="project-status"
                       value={status}
                       onChange={(event) => setStatus(event.target.value as ProjectStatus)}
-                      className="mt-1.5 w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm focus:border-[#007AFF] focus:outline-none focus:ring-2 focus:ring-[#007AFF]/20"
+                      className="mt-1.5 w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
                     >
                       <option value="planning">{t("common:status.planning")}</option>
                       <option value="active">{t("common:status.active")}</option>
@@ -521,7 +521,7 @@ export function ProjectListPage() {
                       type="date"
                       value={startDate}
                       onChange={(event) => setStartDate(event.target.value)}
-                      className="mt-1.5 w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm focus:border-[#007AFF] focus:outline-none focus:ring-2 focus:ring-[#007AFF]/20"
+                      className="mt-1.5 w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
                     />
                   </div>
                 </div>
@@ -554,7 +554,7 @@ export function ProjectListPage() {
                                 return next;
                               });
                             }}
-                            className="h-4 w-4 rounded border-slate-300 text-[#007AFF] focus:ring-[#007AFF]/30"
+                            className="h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500/30"
                           />
                           {majorName}
                         </label>
@@ -562,7 +562,7 @@ export function ProjectListPage() {
                     })}
                   </div>
                   {selectedTemplateMajors.size > 0 && (
-                    <p className="mt-2 text-xs text-[#007AFF]">
+                    <p className="mt-2 text-xs text-brand-700">
                       {selectedTemplateMajors.size}大項目 /{" "}
                       {[...selectedTemplateMajors]
                         .flatMap((m) => getTemplateIdsByMajor(m))
@@ -597,15 +597,20 @@ export function ProjectListPage() {
       {projects.length === 0 && !showForm ? (
         <section className="flex justify-center py-8">
           <div className="w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-8 shadow-sm text-center">
-            <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#007AFF]/8 mx-auto">
-              <span className="text-3xl" aria-hidden="true">🏗️</span>
+            <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-xl bg-brand-100 mx-auto">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M4 21V5.5a1 1 0 0 1 .7-.95l7-2.2a1 1 0 0 1 1.3.95V21" stroke="#346538" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M13 9.5l6.3 2a1 1 0 0 1 .7.95V21" stroke="#346538" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M2.5 21h19" stroke="#346538" strokeWidth="1.8" strokeLinecap="round" />
+                <path d="M7.5 8.5h2M7.5 12h2M7.5 15.5h2M16 15.5h1.5" stroke="#346538" strokeWidth="1.8" strokeLinecap="round" />
+              </svg>
             </div>
             <h2 className="text-xl font-bold text-slate-900">まず案件を作りましょう</h2>
             <p className="mt-2 text-sm text-slate-500">2分で最初の現場が登録できます</p>
             <button
               type="button"
               onClick={() => setShowForm(true)}
-              className="mt-6 w-full rounded-xl bg-[#007AFF] px-4 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[#006AEE]"
+              className="ios-btn-primary mt-6 w-full px-4 py-3 text-sm"
             >
               案件を作成する
             </button>
@@ -613,7 +618,7 @@ export function ProjectListPage() {
               type="button"
               onClick={() => void handleCreateSample()}
               disabled={sampleCreating}
-              className="mt-3 w-full text-sm font-semibold text-[#007AFF] hover:text-[#006AEE] disabled:opacity-60"
+              className="mt-3 w-full text-sm font-semibold text-brand-700 hover:text-brand-800 disabled:opacity-60"
             >
               {sampleCreating ? t("pages:project_list.sample_creating") : "デモデータで試す"}
             </button>
