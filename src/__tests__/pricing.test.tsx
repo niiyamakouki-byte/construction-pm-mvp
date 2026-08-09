@@ -7,11 +7,18 @@ import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { PricingPage } from "../pages/PricingPage.js";
 
+const { useAuth } = vi.hoisted(() => ({
+  useAuth: vi.fn(),
+}));
+
 // Mock navigate
 vi.mock("../hooks/useHashRouter.js", () => ({
   navigate: vi.fn(),
   useHashRoute: () => "/app/pricing",
 }));
+
+// デフォルトはログイン済み(既存テストの前提を維持)。未ログインを検証するテストは個別に上書きする。
+vi.mock("../contexts/AuthContext.js", () => ({ useAuth }));
 
 // Mock stripe (not configured by default)
 vi.mock("../lib/stripe.js", async (importOriginal) => {
@@ -40,6 +47,13 @@ describe("PricingPage", () => {
   beforeEach(() => {
     cleanup();
     vi.clearAllMocks();
+    useAuth.mockReturnValue({
+      session: {
+        user: { id: "user-1", email: "user@example.com" },
+        access_token: "token-abc",
+      },
+      loading: false,
+    });
   });
 
   it("プランと料金ページのタイトルが表示される", () => {
@@ -145,6 +159,28 @@ describe("PricingPage", () => {
   it("プロプランに「図面差分チェック」機能が含まれる", () => {
     render(<PricingPage />);
     expect(screen.getByText("図面差分チェック（AIによる変更点自動検出）")).toBeDefined();
+  });
+});
+
+// ── 未ログイン時の表示（laporta-beads-tm138） ─────────────────────
+// 認証状態(hasSupabaseEnv()前提)によりSubscriptionContextのcurrentPlanが"pro"になっても、
+// 未ログインでは「現在のプラン」表示を一切出さない。
+
+describe("PricingPage (未ログイン)", () => {
+  beforeEach(() => {
+    cleanup();
+    vi.clearAllMocks();
+    useAuth.mockReturnValue({ session: null, loading: false });
+  });
+
+  it("未ログイン時はヘッダーに「現在のプラン」ラベルが表示されない", () => {
+    render(<PricingPage />);
+    expect(screen.queryByText("現在のプラン:")).toBeNull();
+  });
+
+  it("未ログイン時はどのプランカードにも「現在のプラン」バッジが表示されない", () => {
+    render(<PricingPage />);
+    expect(screen.queryByText("現在のプラン")).toBeNull();
   });
 });
 

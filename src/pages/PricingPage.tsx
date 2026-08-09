@@ -74,15 +74,19 @@ function StripeNotReadyModal({ onClose }: { onClose: () => void }) {
 function PlanCardView({
   plan,
   currentPlan,
+  isLoggedIn,
   onSelect,
   loading,
 }: {
   plan: StripePlan;
   currentPlan: PlanId;
+  isLoggedIn: boolean;
   onSelect: (plan: StripePlan) => void;
   loading: boolean;
 }) {
-  const isCurrent = plan.id === currentPlan;
+  // 未ログイン時はcurrentPlanが認証状態と無関係に決まるため(SubscriptionContext参照)、
+  // 「現在のプラン」表示自体を出さない。
+  const isCurrent = isLoggedIn && plan.id === currentPlan;
 
   return (
     <div
@@ -263,6 +267,7 @@ export function PricingPage() {
             key={plan.id}
             plan={plan}
             currentPlan={currentPlan}
+            isLoggedIn={!!session}
             onSelect={handleSelectPlan}
             loading={checkoutLoading}
           />
