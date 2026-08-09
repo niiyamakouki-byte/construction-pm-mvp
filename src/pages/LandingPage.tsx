@@ -1,6 +1,11 @@
 import { useState, type FormEvent } from "react";
 import { Check, X } from "lucide-react";
 import { navigate } from "../hooks/useHashRouter.js";
+import { STRIPE_PLANS } from "../lib/stripe.js";
+
+const cheapestPaidPlan = STRIPE_PLANS.filter((plan) => plan.priceJpy > 0).reduce((min, plan) =>
+  plan.priceJpy < min.priceJpy ? plan : min,
+);
 
 // 比較表データ: 内装業者が重視する観点でGenbaHub vs 汎用ツール(ANDPAD/kintoneなど)
 const comparisonRows = [
@@ -30,7 +35,7 @@ const comparisonRows = [
   },
   {
     feature: "月額料金（目安）",
-    genbahub: "¥9,800〜",
+    genbahub: `${cheapestPaidPlan.priceLabel}〜`,
     generic: "¥36,000〜",
     note: "汎用ツールの価格は各社公開情報の概算。詳細は各社へお問い合わせください",
   },
@@ -138,38 +143,17 @@ const features = [
   },
 ];
 
-const plans = [
-  {
-    name: "フリートライアル",
-    price: "¥0",
-    period: "14日間",
-    desc: "全機能を無料でお試し",
-    features: ["案件5件まで", "内装工程テンプレ", "AI写真日報", "PDF見積自動積算（10回）"],
-    cta: "無料で始める",
-    ctaAction: () => navigate("/signup"),
-    highlight: false,
-  },
-  {
-    name: "Basic",
-    price: "¥9,800",
-    period: "/月",
-    desc: "小〜中規模の内装施工会社向け",
-    features: ["案件無制限", "チームメンバー10名", "内装工程テンプレ全種", "PDF見積自動積算（100回/月）", "粗利・予実ダッシュボード", "メールサポート"],
-    cta: "Basicを始める",
-    ctaAction: () => navigate("/signup"),
-    highlight: true,
-  },
-  {
-    name: "Pro",
-    price: "¥29,800",
-    period: "/月",
-    desc: "複数現場を抱える内装会社向け",
-    features: ["案件無制限", "チームメンバー無制限", "全機能＋カスタム帳票", "PDF積算無制限", "複数現場コックピット", "優先サポート"],
-    cta: "Proを始める",
-    ctaAction: () => navigate("/signup"),
-    highlight: false,
-  },
-];
+// /pricing (STRIPE_PLANS) と食い違わないよう、プラン名・価格は同じ定義元から生成する（laporta-beads-y0we5）
+const plans = STRIPE_PLANS.map((plan) => ({
+  name: plan.label,
+  price: plan.priceLabel,
+  period: plan.period,
+  desc: plan.description,
+  features: plan.features,
+  cta: plan.id === "free" ? "無料で始める" : `${plan.label}を始める`,
+  ctaAction: () => navigate("/signup"),
+  highlight: plan.highlight,
+}));
 
 export function LandingPage() {
   return (
