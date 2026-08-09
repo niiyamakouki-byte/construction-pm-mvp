@@ -28,7 +28,7 @@ export type ReplyDraftInput = {
 const SIGNATURE = `
 --
 株式会社ラポルタ
-〒157-0065 東京都世田谷区給田5-12-12
+〒157-0064 東京都世田谷区給田5-12-12
 TEL: 03-6876-7749
 担当: 新山光輝
 `.trim();
