@@ -9,7 +9,11 @@
  * クラシックは「紺×金」の二色配色だが、工程表は明色chrome基調のUIのため紺そのものでなく
  * 金(ゴールド/ブロンズ)を単色アクセント化して表現する(LapoPDFのaccentDeep=白地で読める金と同じ役割)。
  * 実際の色定義は src/index.css の `:root[data-accent="..."]` ブロック側にある。
+ *
+ * Provenance: laporta-beads-0935m, OKLCH integration authored by Codex.
  */
+
+import { oklchToHex } from "./oklch.js";
 
 export type AccentTheme = "sage" | "ai" | "sumi" | "terracotta" | "classic";
 
@@ -27,11 +31,11 @@ export interface AccentThemeMeta {
 }
 
 export const ACCENT_THEMES: readonly AccentThemeMeta[] = [
-  { id: "sage", label: "セージ", description: "生成り×セージ×深緑", swatch: "#346538" },
-  { id: "ai", label: "深藍", description: "紺×生成り", swatch: "#2f4d6e" },
-  { id: "sumi", label: "墨", description: "炭黒×白", swatch: "#3c3c37" },
-  { id: "terracotta", label: "テラコッタ", description: "赤土×生成り", swatch: "#7d4423" },
-  { id: "classic", label: "クラシック", description: "紺×金（標準）", swatch: "#9e804d" },
+  { id: "sage", label: "セージ", description: "生成り×セージ×深緑", swatch: oklchToHex({ h: 145.6704357758372, c: 0.08937599489302114, l: 0.4597527627319958 }) },
+  { id: "ai", label: "深藍", description: "紺×生成り", swatch: oklchToHex({ h: 251.839472158828, c: 0.06630349363882569, l: 0.4122760885957429 }) },
+  { id: "sumi", label: "墨", description: "炭黒×白", swatch: oklchToHex({ h: 106.82317364655417, c: 0.00845291747553088, l: 0.35445649392752787 }) },
+  { id: "terracotta", label: "テラコッタ", description: "赤土×生成り", swatch: oklchToHex({ h: 48.927390810612, c: 0.09111981252704311, l: 0.4497156352925065 }) },
+  { id: "classic", label: "クラシック", description: "紺×金（標準）", swatch: oklchToHex({ h: 79.81221487171582, c: 0.07787872255171892, l: 0.6166872771533655 }) },
 ] as const;
 
 const VALID_ACCENTS: readonly string[] = ACCENT_THEMES.map((t) => t.id);
