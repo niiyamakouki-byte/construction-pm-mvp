@@ -138,12 +138,16 @@ export function predictCompletionDate(
   // Earned schedule approach
   const safeProgressPct = Number.isFinite(progressPct) ? progressPct : 0;
   const safeElapsedDays = Number.isFinite(elapsedDays) ? elapsedDays : 0;
+  // 進捗0%(着工前・記録なし案件)では実績レートが無いため外挿できない。
+  // 分母を0.01へ底上げしたまま計算すると経過日数が1万倍に増幅され、
+  // 「予測完了2300年」のような非現実的な日付になる(laporta-beads-4cgkw)。
+  // 進捗が実質ゼロの間はスリップなし(=予定日のまま)として扱う。
+  const hasMeaningfulProgress = safeProgressPct > 0;
   const effectiveProgress = Math.max(0.01, Math.min(100, safeProgressPct));
   const projectedDuration = (safeElapsedDays / effectiveProgress) * 100;
-  const slippageDays = Math.max(
-    0,
-    Math.round(projectedDuration - plannedDuration),
-  );
+  const slippageDays = hasMeaningfulProgress
+    ? Math.max(0, Math.round(projectedDuration - plannedDuration))
+    : 0;
 
   const predictedEnd = new Date(origEnd);
   predictedEnd.setDate(predictedEnd.getDate() + slippageDays);

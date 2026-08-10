@@ -89,6 +89,15 @@ describe("predictCompletionDate", () => {
     expect(result.predictedEndDate).toBe("");
     expect(result.confidence).toBe("low");
   });
+
+  // laporta-beads-4cgkw: 進捗0%だとeffectiveProgressの最小値0.01への底上げで
+  // 経過日数が1万倍に増幅され、予定完了から何十年〜何百年も先の日付になっていた。
+  it("does not blow up into a far-future date when progress is 0%", () => {
+    const result = predictCompletionDate("2026-08-10", "2026-08-02", 0, 2);
+    expect(result.predictedEndDate).toBe("2026-08-02");
+    expect(result.slippageDays).toBe(0);
+    expect(result.confidence).toBe("low");
+  });
 });
 
 // ── generateTimelineReport ────────────────────────────
