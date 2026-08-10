@@ -82,7 +82,7 @@ vi.mock("../lib/construction-checklist.js", () => ({
 }));
 
 vi.mock("../lib/qr-code.js", () => ({
-  generateProjectQR: () => "https://example.com/qr.png",
+  generateProjectQR: () => Promise.resolve("https://example.com/qr.png"),
   generateFieldModeUrl: () => "https://example.com/field",
 }));
 

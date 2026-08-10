@@ -28,25 +28,22 @@ describe("qr-code", () => {
   });
 
   describe("generateProjectQR", () => {
-    it("returns a data URL", () => {
-      const qr = generateProjectQR("proj-123");
-      expect(qr).toMatch(/^data:image\/svg\+xml;base64,/);
+    it("returns a real PNG QR code data URL", async () => {
+      const qr = await generateProjectQR("proj-123");
+      expect(qr).toMatch(/^data:image\/png;base64,/);
     });
 
-    it("encodes the field mode URL in the SVG", () => {
-      const qr = generateProjectQR("proj-123", "https://example.com");
-      const decoded = atob(qr.replace("data:image/svg+xml;base64,", ""));
-      expect(decoded).toContain("https://example.com/field/proj-123");
+    it("throws if projectId is empty", async () => {
+      await expect(generateProjectQR("")).rejects.toThrow("projectId is required");
     });
 
-    it("throws if projectId is empty", () => {
-      expect(() => generateProjectQR("")).toThrow("projectId is required");
-    });
-
-    it("uses default base URL", () => {
-      const qr = generateProjectQR("test-1");
-      const decoded = atob(qr.replace("data:image/svg+xml;base64,", ""));
-      expect(decoded).toContain("https://app.genbahub.com/field/test-1");
+    it("does not hardcode a production domain (uses caller-supplied origin)", async () => {
+      // Regression: this used to default to the dead "https://app.genbahub.com"
+      // domain (pre-LapoSite rename), making the field-access QR unscannable
+      // to a real destination. baseUrl must default to "" like generateFieldModeUrl.
+      const withoutBase = await generateProjectQR("test-1");
+      const withBase = await generateProjectQR("test-1", "https://example.com");
+      expect(withoutBase).not.toBe(withBase);
     });
   });
 

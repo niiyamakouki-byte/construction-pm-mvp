@@ -4,6 +4,8 @@
  * for quick project access on construction sites.
  */
 
+import QRCode from "qrcode";
+
 const FIELD_MODE_PATH = "/field";
 const QR_PREFIX = "genbahub://project/";
 
@@ -16,37 +18,18 @@ export function generateFieldModeUrl(projectId: string, baseUrl = ""): string {
 }
 
 /**
- * Generate a QR code data URL for a project.
- * Uses a simple SVG-based QR representation encoding the field mode URL.
+ * Generate a real, scannable QR code data URL for a project's field mode URL.
+ * Pass the real origin (e.g. `window.location.origin`) as baseUrl — this
+ * module does not hardcode a production domain (see generateSiteEntryQR).
  */
-export function generateProjectQR(
+export async function generateProjectQR(
   projectId: string,
-  baseUrl = "https://app.genbahub.com",
-): string {
+  baseUrl = "",
+): Promise<string> {
   if (!projectId) throw new Error("projectId is required");
 
   const url = generateFieldModeUrl(projectId, baseUrl);
-  // Encode as a simple SVG data URL with the URL text embedded
-  // In production, use a proper QR library; this creates a scannable placeholder
-  const encoded = encodeURIComponent(url);
-  const svg = [
-    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">',
-    '<rect width="200" height="200" fill="white"/>',
-    '<rect x="10" y="10" width="60" height="60" fill="black"/>',
-    '<rect x="20" y="20" width="40" height="40" fill="white"/>',
-    '<rect x="30" y="30" width="20" height="20" fill="black"/>',
-    '<rect x="130" y="10" width="60" height="60" fill="black"/>',
-    '<rect x="140" y="20" width="40" height="40" fill="white"/>',
-    '<rect x="150" y="30" width="20" height="20" fill="black"/>',
-    '<rect x="10" y="130" width="60" height="60" fill="black"/>',
-    '<rect x="20" y="140" width="40" height="40" fill="white"/>',
-    '<rect x="30" y="150" width="20" height="20" fill="black"/>',
-    `<text x="100" y="110" text-anchor="middle" font-size="8" fill="black">${encoded.slice(0, 30)}</text>`,
-    `<metadata>${url}</metadata>`,
-    "</svg>",
-  ].join("");
-
-  return `data:image/svg+xml;base64,${btoa(svg)}`;
+  return QRCode.toDataURL(url, { width: 200 });
 }
 
 /**

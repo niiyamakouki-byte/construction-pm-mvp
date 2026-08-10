@@ -306,6 +306,18 @@ export function ProjectDetailPage({
   const [onSiteCount, setOnSiteCount] = useState(0);
   const [siteEntryNotesDraft, setSiteEntryNotesDraft] = useState(DEFAULT_SITE_ENTRY_NOTES);
   const [savingSiteEntryNotes, setSavingSiteEntryNotes] = useState(false);
+  const [fieldQrDataUrl, setFieldQrDataUrl] = useState<string | null>(null);
+  const fieldModeUrl = generateFieldModeUrl(projectId, window.location.origin);
+
+  useEffect(() => {
+    let cancelled = false;
+    void generateProjectQR(projectId, window.location.origin).then((dataUrl) => {
+      if (!cancelled) setFieldQrDataUrl(dataUrl);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [projectId]);
 
   const loadData = useCallback(async () => {
     try {
@@ -1511,17 +1523,24 @@ export function ProjectDetailPage({
       <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
         <h2 className="mb-3 text-base font-semibold text-slate-800">現場QRコード</h2>
         <div className="flex flex-col items-center gap-3 sm:flex-row sm:items-start">
-          <img
-            src={generateProjectQR(projectId)}
-            alt={`${project?.name ?? projectId} フィールドアクセス QR`}
-            width={120}
-            height={120}
-            className="rounded-lg border border-slate-200"
-          />
+          {fieldQrDataUrl ? (
+            <img
+              src={fieldQrDataUrl}
+              alt={`${project?.name ?? projectId} フィールドアクセス QR`}
+              width={120}
+              height={120}
+              className="rounded-lg border border-slate-200"
+            />
+          ) : (
+            <div
+              className="h-[120px] w-[120px] animate-pulse rounded-lg border border-slate-200 bg-slate-100"
+              aria-hidden="true"
+            />
+          )}
           <div className="text-sm text-slate-600">
             <p className="font-semibold text-slate-800">フィールドモードURL</p>
             <p className="mt-1 break-all font-mono text-xs text-slate-500">
-              {generateFieldModeUrl(projectId, "https://app.genbahub.com")}
+              {fieldModeUrl}
             </p>
             <p className="mt-2 text-xs text-slate-500">
               現場でスキャンするとモバイル最適化ビューが開きます。
