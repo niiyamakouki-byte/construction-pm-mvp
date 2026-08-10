@@ -14,7 +14,7 @@ export type TaskStatus = "todo" | "in_progress" | "done";
 
 /** A derived task generated from an EstimateLine */
 export type ProjectTask = {
-  /** Stable id: `task-${lineCode}-${index}` */
+  /** Stable id: `task-${idNamespace-}${lineCode}-${index}` */
   id: string;
   /** Human-readable task name */
   name: string;
@@ -40,6 +40,14 @@ export type EstimateToTasksInput = {
   projectStartDate: string;
   /** When true, weekends (Sat/Sun) are skipped when advancing dates */
   skipWeekends?: boolean;
+  /**
+   * Scopes generated task ids to a project (typically the projectId).
+   * Without this, ids are derived only from the estimate line code + index,
+   * so two different projects using the same standard task template produce
+   * identical ids — which collide against project_tasks' global primary key
+   * once persisted (laporta-beads-j7vx6).
+   */
+  idNamespace?: string;
 };
 
 export type EstimateToTasksResult = {
@@ -144,7 +152,8 @@ function nextWorkingDay(date: Date, skipWeekends: boolean): Date {
  * Lines with amount === 0 (e.g. note-only rows) are silently skipped.
  */
 export function estimateToTasks(input: EstimateToTasksInput): EstimateToTasksResult {
-  const { lines, projectStartDate, skipWeekends = false } = input;
+  const { lines, projectStartDate, skipWeekends = false, idNamespace } = input;
+  const idPrefix = idNamespace ? `${idNamespace}-` : "";
 
   const tasks: ProjectTask[] = [];
   let cursor = parseDate(projectStartDate);
@@ -164,7 +173,7 @@ export function estimateToTasks(input: EstimateToTasksInput): EstimateToTasksRes
     const end = addWorkingDays(start, days, skipWeekends);
 
     tasks.push({
-      id: `task-${line.code || idx}-${idx}`,
+      id: `task-${idPrefix}${line.code || idx}-${idx}`,
       name: line.name,
       estimateLineCode: line.code,
       durationDays: days,

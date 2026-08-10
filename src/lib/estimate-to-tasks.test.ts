@@ -90,6 +90,35 @@ describe("estimateToTasks — basic", () => {
     expect(new Set(ids).size).toBe(ids.length);
   });
 
+  it("bd laporta-beads-j7vx6: without idNamespace, identical lines from two different projects collide on id (reproduces the 409 bug)", () => {
+    const lines = [line({ name: "解体撤去工事", code: "DIS-001" })];
+    const projectAIds = estimateToTasks({ lines, projectStartDate: START }).tasks.map((t) => t.id);
+    const projectBIds = estimateToTasks({ lines, projectStartDate: START }).tasks.map((t) => t.id);
+    // Same standard template used by two unrelated projects → same global id today.
+    expect(projectAIds).toEqual(projectBIds);
+  });
+
+  it("bd laporta-beads-j7vx6: idNamespace scopes ids so identical lines from two different projects never collide", () => {
+    const lines = [
+      line({ name: "解体撤去工事", code: "DIS-001" }),
+      line({ name: "LGS間仕切下地工事", code: "LGS-001" }),
+    ];
+    const projectAIds = estimateToTasks({ lines, projectStartDate: START, idNamespace: "project-aaa" }).tasks.map((t) => t.id);
+    const projectBIds = estimateToTasks({ lines, projectStartDate: START, idNamespace: "project-bbb" }).tasks.map((t) => t.id);
+
+    expect(projectAIds).not.toEqual(projectBIds);
+    for (const id of projectAIds) {
+      expect(projectBIds).not.toContain(id);
+    }
+  });
+
+  it("idNamespace produces stable ids across repeated calls for the same project", () => {
+    const lines = [line({ name: "電気配線工事", code: "ELE-001" })];
+    const first = estimateToTasks({ lines, projectStartDate: START, idNamespace: "project-aaa" }).tasks.map((t) => t.id);
+    const second = estimateToTasks({ lines, projectStartDate: START, idNamespace: "project-aaa" }).tasks.map((t) => t.id);
+    expect(first).toEqual(second);
+  });
+
   it("task status defaults to todo", () => {
     const result = estimateToTasks({
       lines: [line({ name: "塗装工事" })],

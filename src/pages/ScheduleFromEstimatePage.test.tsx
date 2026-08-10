@@ -9,9 +9,10 @@
  */
 
 import { describe, it, expect, afterEach } from "vitest";
-import { render, screen, fireEvent, cleanup } from "@testing-library/react";
+import { render, screen, fireEvent, cleanup, waitFor } from "@testing-library/react";
 import { ScheduleFromEstimatePage } from "./ScheduleFromEstimatePage.js";
 import type { EstimateLine } from "../estimate/types.js";
+import type { ProjectTasksStore } from "../lib/project-tasks-store.js";
 
 afterEach(cleanup);
 
@@ -198,6 +199,37 @@ describe("ScheduleFromEstimatePage — 空見積", () => {
   it("amount=0の行のみの場合もタスクは0件", () => {
     renderPage({ initialLines: [line({ name: "備考行", amount: 0 })] });
     expect(screen.queryAllByTestId("task-row")).toHaveLength(0);
+  });
+});
+
+// ── 保存エラー表示 (bd laporta-beads-j7vx6) ──────────────────────────────────
+
+function makeThrowingTaskStore(error: Error): ProjectTasksStore {
+  return {
+    fetchProjectTasks: async () => [],
+    upsertProjectTask: async () => {
+      throw error;
+    },
+    deleteProjectTask: async () => true,
+  };
+}
+
+describe("ScheduleFromEstimatePage — 保存エラー表示", () => {
+  it("生のPostgresエラー(duplicate key)はUIにそのまま出さず、分かりやすい文言に置き換わる", async () => {
+    const rawError = new Error('duplicate key value violates unique constraint "project_tasks_pkey"');
+    renderPage({
+      projectId: "project-1",
+      taskStore: makeThrowingTaskStore(rawError),
+      initialLines: [line({ name: "解体工事", code: "DIS-001" })],
+    });
+
+    const rows = screen.getAllByTestId("task-row");
+    const btn = rows[0].querySelector("[data-testid^='status-btn-']") as HTMLButtonElement;
+    fireEvent.click(btn);
+
+    const alert = await waitFor(() => screen.getByRole("alert"));
+    expect(alert.textContent).not.toMatch(/duplicate key/i);
+    expect(alert.textContent).not.toMatch(/project_tasks_pkey/i);
   });
 });
 

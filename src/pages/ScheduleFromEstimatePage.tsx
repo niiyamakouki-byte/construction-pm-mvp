@@ -18,6 +18,7 @@ import {
   groupTasksByCategory,
 } from "../lib/estimate-to-tasks.js";
 import type { ProjectTask } from "../lib/estimate-to-tasks.js";
+import { toFriendlyErrorMessage } from "../lib/friendly-error.js";
 import { readLastProjectId, writeLastProjectId } from "../lib/last-project.js";
 import { resolveProjectTaskSchedule } from "../lib/project-task-scheduler.js";
 import {
@@ -118,11 +119,16 @@ function sanitizeTaskDependencies(dependsOn: string[] | undefined, allowedIds: s
   return Array.from(new Set(dependsOn)).filter((dependencyId) => allowedIdSet.has(dependencyId));
 }
 
-function buildTaskBlueprints(lines: EstimateLine[], projectStartDate: string): ScheduleTaskBlueprint[] {
+function buildTaskBlueprints(
+  lines: EstimateLine[],
+  projectStartDate: string,
+  idNamespace: string | null,
+): ScheduleTaskBlueprint[] {
   return estimateToTasks({
     lines,
     projectStartDate,
     skipWeekends: false,
+    idNamespace: idNamespace ?? undefined,
   }).tasks.map((task, index) => ({
     id: task.id,
     title: task.name,
@@ -417,8 +423,8 @@ export function ScheduleFromEstimatePage({
   );
 
   const taskBlueprints = useMemo(
-    () => buildTaskBlueprints(initialLines, initialStart),
-    [initialLines, initialStart],
+    () => buildTaskBlueprints(initialLines, initialStart, resolvedProjectId),
+    [initialLines, initialStart, resolvedProjectId],
   );
 
   const tasks = useMemo(
@@ -477,7 +483,7 @@ export function ScheduleFromEstimatePage({
       setPersistedTaskIds(savedTasks.map((task) => task.id));
     } catch (err) {
       options?.rollback?.();
-      setError(err instanceof Error ? err.message : "工程表の保存に失敗しました");
+      setError(toFriendlyErrorMessage(err, "工程表の保存に失敗しました"));
     } finally {
       setSaving(false);
     }
