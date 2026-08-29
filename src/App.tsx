@@ -6,6 +6,7 @@ import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts.js";
 import { useSidebarCollapsed } from "./hooks/useSidebarCollapsed.js";
 import { KeyboardShortcutHelp } from "./components/KeyboardShortcutHelp.js";
 import { InstallPrompt } from "./components/InstallPrompt.js";
+import { computeAuthGuardWouldRenderChildren, computeShouldBootstrapFirstRun } from "./lib/first-run-bootstrap-gate.js";
 
 const ProjectListPage = lazy(() => import("./pages/ProjectListPage.js").then((m) => ({ default: m.ProjectListPage })));
 const TodayDashboardPage = lazy(() => import("./pages/TodayDashboardPage.js").then((m) => ({ default: m.TodayDashboardPage })));
@@ -214,9 +215,23 @@ function AppShell() {
   // 飛んで400になる(RLS拒否)。E2Eバイパス/Supabase未設定時は従来通り即時実行。
   const isE2EBypass =
     import.meta.env.DEV && typeof window !== "undefined" && window.__E2E_BYPASS_AUTH__ === true;
-  const authGuardWouldRenderChildren = isE2EBypass || !hasSupabaseEnv() || (!authLoading && !!user);
-  const shouldBootstrapFirstRun =
-    authGuardWouldRenderChildren && !onboardingDone && route === "/app" && !lastProjectId;
+  const authGuardWouldRenderChildren = computeAuthGuardWouldRenderChildren({
+    isE2EBypass,
+    hasSupabaseEnv: hasSupabaseEnv(),
+    authLoading,
+    hasUser: !!user,
+  });
+  // pfn0s cherry-pick note: このゲート条件は design/ui-facelift-20260728 の
+  // first-run-bootstrap-gate.ts をそのまま採用したもの。"/gantt" は同ブランチの
+  // 工程表ファーストIA変更(vaolb)向けの分岐で、main には該当ルート自体が存在しない
+  // ため常にno-op(実質 route === "/app" のみが効く)。ロジック変更なしで条件式を
+  // 関数化する目的のみで取り込んでいる。
+  const shouldBootstrapFirstRun = computeShouldBootstrapFirstRun({
+    authGuardWouldRenderChildren,
+    onboardingDone,
+    route,
+    lastProjectId,
+  });
 
   // iOS keyboard detection via visualViewport
   useEffect(() => {
