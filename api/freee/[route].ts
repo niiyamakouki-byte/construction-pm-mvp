@@ -10,7 +10,7 @@
  * Vercel Hobby プランの Serverless Functions 上限(12)対応で
  * auth.ts / callback.ts / sync-payment-plans.ts / webhook.ts /
  * [resource].ts (旧 companies/deals/invoices 統合済み) の計5関数を
- * 1関数(optional catch-all `[[...route]]`)へ再統合。
+ * 1関数(単一動的セグメント `[route]`、既存の [action].ts 系と同じ規約)へ再統合。
  * URL パス・メソッド・レスポンス形は変更なし（挙動は完全維持）。
  * webhook は JSON body のみを扱い raw body 署名検証は不要なため、
  * ここへの統合で安全性上の懸念はない（stripe-webhook は対象外・維持）。
