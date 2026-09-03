@@ -222,10 +222,11 @@ function AppShell() {
     hasUser: !!user,
   });
   // pfn0s cherry-pick note: このゲート条件は design/ui-facelift-20260728 の
-  // first-run-bootstrap-gate.ts をそのまま採用したもの。"/gantt" は同ブランチの
-  // 工程表ファーストIA変更(vaolb)向けの分岐で、main には該当ルート自体が存在しない
-  // ため常にno-op(実質 route === "/app" のみが効く)。ロジック変更なしで条件式を
-  // 関数化する目的のみで取り込んでいる。
+  // first-run-bootstrap-gate.ts をそのまま採用したもの。当初"/gantt"も同ブランチの
+  // 工程表ファーストIA変更(vaolb)向け分岐としてno-op想定で持ち込んだが、main では
+  // route==="/gantt" が実際にマッチしてしまい、/gantt直接アクセスで初回サンプル案件が
+  // 自動生成され空状態CTAが消える回帰を招いた(dc-062v、e2e run #215-217で実測)。
+  // そのため first-run-bootstrap-gate.ts 側で "/app" のみに限定済み。
   const shouldBootstrapFirstRun = computeShouldBootstrapFirstRun({
     authGuardWouldRenderChildren,
     onboardingDone,

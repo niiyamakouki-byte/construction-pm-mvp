@@ -18,10 +18,14 @@ export function computeShouldBootstrapFirstRun(params: {
   route: string;
   lastProjectId: string | null;
 }): boolean {
+  // dc-062v: main には "/gantt" 直遷移向けIA(design/ui-facelift-20260728)が無いため、
+  // route==="/gantt" はここではno-opにならず実際にマッチしてしまい、/gantt への
+  // 直接アクセスでも初回サンプル案件が自動生成されて空状態CTAが消える回帰を起こした
+  // (e2e/happy-path.test.ts run #215-217で実測)。main上の対象ルートは "/app" のみ。
   return (
     params.authGuardWouldRenderChildren &&
     !params.onboardingDone &&
-    (params.route === "/app" || params.route === "/gantt") &&
+    params.route === "/app" &&
     !params.lastProjectId
   );
 }
