@@ -64,6 +64,7 @@ const ProfitRankingPageLazy = lazy(() => import("./components/ProfitRankingPage.
 const CrewOptimizerPageLazy = lazy(() => import("./components/CrewOptimizerPage.js").then((m) => ({ default: m.CrewOptimizerPage })));
 const RepeatPredictorPageLazy = lazy(() => import("./components/RepeatPredictorPage.js").then((m) => ({ default: m.RepeatPredictorPage })));
 const InquiryResponderPageLazy = lazy(() => import("./components/InquiryResponderPage.js").then((m) => ({ default: m.InquiryResponderPage })));
+const InquiryInboxPageLazy = lazy(() => import("./components/InquiryInboxPage.js").then((m) => ({ default: m.InquiryInboxPage })));
 const SalesPipelinePageLazy = lazy(() => import("./components/SalesPipelinePage.js").then((m) => ({ default: m.SalesPipelinePage })));
 const ProposalGeneratorPageLazy = lazy(() => import("./components/ProposalGeneratorPage.js").then((m) => ({ default: m.ProposalGeneratorPage })));
 const MeetingRunnerPageLazy = lazy(() => import("./components/MeetingRunnerPage.js").then((m) => ({ default: m.MeetingRunnerPage })));
@@ -645,6 +646,15 @@ function AppShell() {
         <ErrorBoundary fallbackTitle="問合せ返信AIエラー">
           <Suspense fallback={pageFallback}>
             <InquiryResponderPageLazy />
+          </Suspense>
+        </ErrorBoundary>
+      );
+    }
+    if (route === "/inquiry-inbox") {
+      return (
+        <ErrorBoundary fallbackTitle="問い合わせ受信箱エラー">
+          <Suspense fallback={pageFallback}>
+            <InquiryInboxPageLazy />
           </Suspense>
         </ErrorBoundary>
       );

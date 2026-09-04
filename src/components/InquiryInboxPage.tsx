@@ -2,32 +2,33 @@
  * InquiryInboxPage — HP問い合わせ受信箱 (Sprint 10-A)
  *
  * v2-cozy: セージグリーン (#6B8E5A) 基調、装飾最小、スレートグレー文字
- * リスト + 詳細プレビュー + 下書き編集 + 送信済みマーク
+ * リスト + 詳細プレビュー + 返信下書き（表示のみ・都度生成）+ ステータス更新
+ *
+ * データ源: Supabase `inquiries` テーブル（authenticated の SELECT/UPDATE のみ、RLSで強制）。
+ * INSERT はサーバー側 (receiveContactSubmissionAndNotify → inquiry-repository.ts, service role)
+ * に限定されるため、このページに追加・削除の操作は無い。
  */
 import { useState, useCallback, useEffect } from "react";
 import {
   listInquiries,
   updateInquiryStatus,
-  updateInquiryDraft,
-  deleteInquiry,
-} from "../lib/contact-webhook/inquiry-store.js";
-import type { InquiryRecord, InquiryStatus } from "../lib/contact-webhook/inquiry-store.js";
+} from "../lib/contact-webhook/inquiry-inbox-repository.js";
+import type { InquiryDbRecord, InquiryStatus } from "../lib/contact-webhook/inquiry-inbox-repository.js";
+import { generateReplyDraft } from "../lib/contact-webhook/reply-draft-generator.js";
 import { formatYen } from "../lib/estimate-assistant/cost-lookup.js";
 
 // ── ステータスラベル ──────────────────────────────────────────────────────────
 
 const STATUS_LABELS: Record<InquiryStatus, string> = {
   new: "新着",
-  reviewing: "対応中",
-  sent: "送信済み",
-  archived: "アーカイブ",
+  replied: "返信済み",
+  closed: "クローズ",
 };
 
 const STATUS_COLORS: Record<InquiryStatus, string> = {
   new: "bg-sage-badge text-sage-text border-sage-border",
-  reviewing: "bg-amber-50 text-amber-700 border-amber-200",
-  sent: "bg-slate-50 text-slate-500 border-slate-200",
-  archived: "bg-stone-50 text-stone-400 border-stone-200",
+  replied: "bg-slate-50 text-slate-500 border-slate-200",
+  closed: "bg-stone-50 text-stone-400 border-stone-200",
 };
 
 // ── フォーマットヘルパー ──────────────────────────────────────────────────────
@@ -58,7 +59,7 @@ function InquiryListItem({
   isSelected,
   onClick,
 }: {
-  record: InquiryRecord;
+  record: InquiryDbRecord;
   isSelected: boolean;
   onClick: () => void;
 }) {
@@ -84,7 +85,7 @@ function InquiryListItem({
   );
 }
 
-function EstimatePanel({ record }: { record: InquiryRecord }) {
+function EstimatePanel({ record }: { record: InquiryDbRecord }) {
   const { estimate } = record;
   return (
     <div className="rounded-md border border-stone-200 bg-stone-50 p-3 space-y-2">
@@ -110,27 +111,22 @@ function EstimatePanel({ record }: { record: InquiryRecord }) {
 function DetailPanel({
   record,
   onStatusChange,
-  onDraftChange,
-  onDelete,
 }: {
-  record: InquiryRecord;
+  record: InquiryDbRecord;
   onStatusChange: (id: string, status: InquiryStatus) => void;
-  onDraftChange: (id: string, subject: string, body: string) => void;
-  onDelete: (id: string) => void;
 }) {
-  const [draftSubject, setDraftSubject] = useState(record.draft.subject);
-  const [draftBody, setDraftBody] = useState(record.draft.body);
+  // 返信下書きは永続化せず、選択のたびにテンプレートから都度生成する（inquiries テーブルに draft 列は無い）。
+  const initialDraft = generateReplyDraft({ submission: record.submission, estimate: record.estimate });
+  const [draftSubject, setDraftSubject] = useState(initialDraft.subject);
+  const [draftBody, setDraftBody] = useState(initialDraft.body);
   const [copied, setCopied] = useState(false);
 
-  // record が切り替わったら下書きを更新
+  // record が切り替わったら下書きを再生成する
   useEffect(() => {
-    setDraftSubject(record.draft.subject);
-    setDraftBody(record.draft.body);
-  }, [record.id, record.draft.subject, record.draft.body]);
-
-  const handleSaveDraft = useCallback(() => {
-    onDraftChange(record.id, draftSubject, draftBody);
-  }, [record.id, draftSubject, draftBody, onDraftChange]);
+    const draft = generateReplyDraft({ submission: record.submission, estimate: record.estimate });
+    setDraftSubject(draft.subject);
+    setDraftBody(draft.body);
+  }, [record.id, record.submission, record.estimate]);
 
   const handleCopy = useCallback(() => {
     const text = `件名: ${draftSubject}\n\n${draftBody}`;
@@ -197,13 +193,6 @@ function DetailPanel({
           <div className="flex gap-2 mt-2">
             <button
               type="button"
-              onClick={handleSaveDraft}
-              className="px-3 py-1.5 rounded-md border border-[#6B8E5A] text-[#6B8E5A] text-xs font-medium hover:bg-[#f0f4ee] transition-colors"
-            >
-              下書き保存
-            </button>
-            <button
-              type="button"
               onClick={handleCopy}
               className="px-3 py-1.5 rounded-md border border-stone-300 text-slate-500 text-xs font-medium hover:bg-stone-50 transition-colors"
             >
@@ -214,40 +203,33 @@ function DetailPanel({
 
         {/* アクションボタン */}
         <div className="flex flex-wrap gap-2 pt-2 border-t border-stone-100">
-          {record.status !== "sent" && (
+          {record.status !== "replied" && (
             <button
               type="button"
-              onClick={() => onStatusChange(record.id, "sent")}
+              onClick={() => onStatusChange(record.id, "replied")}
               className="px-3 py-1.5 rounded-md bg-[#6B8E5A] text-white text-xs font-medium hover:bg-[#5a7a4b] transition-colors"
             >
-              送信済みにマーク
+              返信済みにマーク
             </button>
           )}
-          {record.status === "new" && (
+          {record.status !== "closed" && (
             <button
               type="button"
-              onClick={() => onStatusChange(record.id, "reviewing")}
-              className="px-3 py-1.5 rounded-md border border-amber-300 text-amber-700 text-xs font-medium hover:bg-amber-50 transition-colors"
-            >
-              対応中にする
-            </button>
-          )}
-          {record.status !== "archived" && (
-            <button
-              type="button"
-              onClick={() => onStatusChange(record.id, "archived")}
+              onClick={() => onStatusChange(record.id, "closed")}
               className="px-3 py-1.5 rounded-md border border-stone-200 text-slate-400 text-xs font-medium hover:bg-stone-50 transition-colors"
             >
-              アーカイブ
+              クローズ
             </button>
           )}
-          <button
-            type="button"
-            onClick={() => onDelete(record.id)}
-            className="px-3 py-1.5 rounded-md border border-red-200 text-red-400 text-xs font-medium hover:bg-red-50 transition-colors"
-          >
-            削除
-          </button>
+          {record.status === "closed" && (
+            <button
+              type="button"
+              onClick={() => onStatusChange(record.id, "new")}
+              className="px-3 py-1.5 rounded-md border border-amber-300 text-amber-700 text-xs font-medium hover:bg-amber-50 transition-colors"
+            >
+              再オープン
+            </button>
+          )}
         </div>
       </div>
     </div>
@@ -259,13 +241,14 @@ function DetailPanel({
 const STATUS_FILTER_OPTIONS: Array<{ value: InquiryStatus | "all"; label: string }> = [
   { value: "all", label: "すべて" },
   { value: "new", label: "新着" },
-  { value: "reviewing", label: "対応中" },
-  { value: "sent", label: "送信済み" },
-  { value: "archived", label: "アーカイブ" },
+  { value: "replied", label: "返信済み" },
+  { value: "closed", label: "クローズ" },
 ];
 
 export function InquiryInboxPage() {
-  const [records, setRecords] = useState<InquiryRecord[]>(() => listInquiries());
+  const [records, setRecords] = useState<InquiryDbRecord[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<InquiryStatus | "all">("all");
 
@@ -274,37 +257,44 @@ export function InquiryInboxPage() {
   const filteredRecords =
     statusFilter === "all" ? records : records.filter((r) => r.status === statusFilter);
 
-  const refresh = useCallback(() => {
-    const latest = listInquiries();
-    setRecords(latest);
+  const refresh = useCallback(async () => {
+    try {
+      const latest = await listInquiries();
+      setRecords(latest);
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "問い合わせ一覧の取得に失敗しました");
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- 初期データ取得
+    void refresh();
+  }, [refresh]);
 
   const handleStatusChange = useCallback(
     (id: string, status: InquiryStatus) => {
-      updateInquiryStatus(id, status);
-      refresh();
-    },
-    [refresh],
-  );
-
-  const handleDraftChange = useCallback(
-    (id: string, subject: string, body: string) => {
-      updateInquiryDraft(id, { subject, body });
-      refresh();
-    },
-    [refresh],
-  );
-
-  const handleDelete = useCallback(
-    (id: string) => {
-      deleteInquiry(id);
-      setSelectedId(null);
-      refresh();
+      void updateInquiryStatus(id, status)
+        .then(refresh)
+        .catch((err: unknown) => {
+          setError(err instanceof Error ? err.message : "ステータス更新に失敗しました");
+        });
     },
     [refresh],
   );
 
   const newCount = records.filter((r) => r.status === "new").length;
+
+  if (loading) {
+    return (
+      <div className="flex h-screen items-center justify-center gap-2 bg-stone-50">
+        <span className="inline-block h-5 w-5 animate-spin rounded-full border-2 border-[#6B8E5A]/30 border-t-[#6B8E5A]" />
+        <span className="text-sm text-slate-400">読み込み中...</span>
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-screen bg-stone-50 text-slate-800">
@@ -321,6 +311,7 @@ export function InquiryInboxPage() {
             )}
           </div>
           <p className="text-xs text-slate-400 mt-0.5">HP経由の問い合わせ一覧</p>
+          {error && <p className="text-xs text-red-500 mt-1">{error}</p>}
         </div>
 
         {/* フィルタタブ */}
@@ -363,12 +354,7 @@ export function InquiryInboxPage() {
       {/* 右: 詳細 */}
       <div className="flex-1 overflow-hidden">
         {selected ? (
-          <DetailPanel
-            record={selected}
-            onStatusChange={handleStatusChange}
-            onDraftChange={handleDraftChange}
-            onDelete={handleDelete}
-          />
+          <DetailPanel record={selected} onStatusChange={handleStatusChange} />
         ) : (
           <div className="flex items-center justify-center h-full">
             <div className="text-center">

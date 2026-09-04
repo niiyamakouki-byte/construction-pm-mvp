@@ -209,3 +209,50 @@ describe("receiveContactSubmissionAndNotify — 運営通知", () => {
     }
   });
 });
+
+describe("receiveContactSubmissionAndNotify — inquiries テーブルへの保存", () => {
+  it("正常な問い合わせを受信すると submission/estimate を insert する", async () => {
+    const sendEmailImpl = vi.fn().mockResolvedValue({ id: "email-contact-3" });
+    const insertInquiryImpl = vi.fn().mockResolvedValue(undefined);
+
+    const result = await receiveContactSubmissionAndNotify(makePayload(), {
+      sendEmailImpl,
+      insertInquiryImpl,
+    });
+
+    expect(result.ok).toBe(true);
+    expect(insertInquiryImpl).toHaveBeenCalledTimes(1);
+    const call = insertInquiryImpl.mock.calls[0][0];
+    expect(call.submission.name).toBe("新山光輝");
+    expect(call.estimate.taxIncludedMid).toBeGreaterThan(0);
+  });
+
+  it("insert が失敗しても通知メール送信の成功結果は変わらない", async () => {
+    const sendEmailImpl = vi.fn().mockResolvedValue({ id: "email-contact-4" });
+    const insertInquiryImpl = vi.fn().mockRejectedValue(new Error("db down"));
+
+    const result = await receiveContactSubmissionAndNotify(makePayload(), {
+      sendEmailImpl,
+      insertInquiryImpl,
+    });
+
+    expect(result.ok).toBe(true);
+    expect(sendEmailImpl).toHaveBeenCalledTimes(1);
+    if (result.ok && "notification" in result) {
+      expect(result.notification.email.id).toBe("email-contact-4");
+    }
+  });
+
+  it("無効な問い合わせでは insert しない", async () => {
+    const sendEmailImpl = vi.fn().mockResolvedValue({ id: "unused" });
+    const insertInquiryImpl = vi.fn().mockResolvedValue(undefined);
+
+    const result = await receiveContactSubmissionAndNotify(makePayload({ email: "invalid" }), {
+      sendEmailImpl,
+      insertInquiryImpl,
+    });
+
+    expect(result.ok).toBe(false);
+    expect(insertInquiryImpl).not.toHaveBeenCalled();
+  });
+});

@@ -9,6 +9,7 @@ import { sendEmail, type SendEmailResult } from "../email/resend-client.js";
 import { runAutoEstimate } from "./auto-estimate-pipeline.js";
 import { summarizeRange } from "../estimate-assistant/cost-lookup.js";
 import type { EstimateRange } from "../estimate-assistant/cost-lookup.js";
+import { insertInquiryRecord } from "./inquiry-repository.js";
 
 // ── 型定義 ───────────────────────────────────────────────────────────────────
 
@@ -126,7 +127,7 @@ export function receiveContactSubmission(payload: ContactPayload): ReceiverResul
  */
 export async function receiveContactSubmissionAndNotify(
   payload: ContactPayload,
-  deps: { sendEmailImpl?: typeof sendEmail } = {},
+  deps: { sendEmailImpl?: typeof sendEmail; insertInquiryImpl?: typeof insertInquiryRecord } = {},
 ): Promise<ReceiverResult | { ok: true; notification: ContactNotificationResult }> {
   const received = receiveContactSubmission(payload);
   if (!received.ok) return received;
@@ -156,6 +157,13 @@ export async function receiveContactSubmissionAndNotify(
     text,
     replyTo: submission.email,
   });
+
+  // DB保存が失敗してもメール通知の成功は落とさない（未設定環境・一時的なDB障害等）。
+  try {
+    await (deps.insertInquiryImpl ?? insertInquiryRecord)({ submission, estimate });
+  } catch (err) {
+    console.error("[contact-webhook-receiver] inquiries insert failed:", err);
+  }
 
   return { ok: true, notification: { submission, email, estimate } };
 }
