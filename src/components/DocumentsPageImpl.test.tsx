@@ -325,6 +325,17 @@ function fireDropEvent(target: Element, files: File[]) {
   fireEvent.drop(target, { dataTransfer });
 }
 
+// ponytail: waiting only for mockFindById races the loading->loaded state flip
+// (findAll/loading=false happen in a later microtask); poll for the real
+// dropzone element instead.
+async function waitForDropTarget(container: Element): Promise<Element> {
+  return waitFor(() => {
+    const el = container.querySelector(".relative.mx-auto");
+    expect(el).not.toBeNull();
+    return el as Element;
+  });
+}
+
 describe("DocumentsPage - ドラッグ&ドロップ一括インポート", () => {
   it("複数ファイルをドロップすると一括でdocumentRepository.createが呼ばれ、最後の1件が選択(即プレビュー)される", async () => {
     mockDocumentFindAll.mockResolvedValue([]);
@@ -337,9 +348,7 @@ describe("DocumentsPage - ドラッグ&ドロップ一括インポート", () =>
     mockDocumentCreate.mockResolvedValueOnce(createdA).mockResolvedValueOnce(createdB);
 
     const { container } = render(<DocumentsPage projectId="proj-1" />);
-    await waitFor(() => expect(mockFindById).toHaveBeenCalled());
-
-    const dropTarget = container.querySelector(".relative.mx-auto") as Element;
+    const dropTarget = await waitForDropTarget(container);
     fireDropEvent(dropTarget, [makeDropFile("a.pdf", "application/pdf"), makeDropFile("b.png", "image/png")]);
 
     await waitFor(() => expect(mockDocumentCreate).toHaveBeenCalledTimes(2));
@@ -361,9 +370,7 @@ describe("DocumentsPage - ドラッグ&ドロップ一括インポート", () =>
     mockDocumentFindAll.mockResolvedValue([]);
 
     const { container } = render(<DocumentsPage projectId="proj-1" />);
-    await waitFor(() => expect(mockFindById).toHaveBeenCalled());
-
-    const dropTarget = container.querySelector(".relative.mx-auto") as Element;
+    const dropTarget = await waitForDropTarget(container);
     fireDropEvent(dropTarget, [makeDropFile("archive.zip", "application/zip")]);
 
     await screen.findByRole("alert");
@@ -374,9 +381,7 @@ describe("DocumentsPage - ドラッグ&ドロップ一括インポート", () =>
   it("ドラッグ中はドロップを促すオーバーレイを表示する", async () => {
     mockDocumentFindAll.mockResolvedValue([]);
     const { container } = render(<DocumentsPage projectId="proj-1" />);
-    await waitFor(() => expect(mockFindById).toHaveBeenCalled());
-
-    const dropTarget = container.querySelector(".relative.mx-auto") as Element;
+    const dropTarget = await waitForDropTarget(container);
     fireEvent.dragEnter(dropTarget, { dataTransfer: { files: [], types: ["Files"] } });
 
     expect(await screen.findByText("ここにPDF・画像をドロップして登録")).toBeTruthy();
