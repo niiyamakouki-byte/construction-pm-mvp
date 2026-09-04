@@ -10,7 +10,7 @@ import type { EstimateRange } from "../estimate-assistant/cost-lookup.js";
 import type { EstimateIntent } from "../estimate-assistant/intent-parser.js";
 import type { CostMaster } from "../estimate-assistant/cost-lookup.js";
 import type { ContactSubmission } from "./contact-webhook-receiver.js";
-import costMasterData from "../../resources/cost-master.json";
+import costMasterData from "../../resources/cost-master.json" with { type: "json" };
 
 const costMaster = costMasterData as CostMaster;
 
