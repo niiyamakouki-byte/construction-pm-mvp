@@ -6,6 +6,9 @@
  */
 
 import { sendEmail, type SendEmailResult } from "../email/resend-client.js";
+import { runAutoEstimate } from "./auto-estimate-pipeline.js";
+import { summarizeRange } from "../estimate-assistant/cost-lookup.js";
+import type { EstimateRange } from "../estimate-assistant/cost-lookup.js";
 
 // ── 型定義 ───────────────────────────────────────────────────────────────────
 
@@ -43,6 +46,7 @@ export type ReceiverResult =
 export type ContactNotificationResult = {
   submission: ContactSubmission;
   email: SendEmailResult;
+  estimate: EstimateRange;
 };
 
 const OPERATIONS_EMAIL = "niiyama@laporta.co.jp";
@@ -128,6 +132,7 @@ export async function receiveContactSubmissionAndNotify(
   if (!received.ok) return received;
 
   const { submission } = received;
+  const { estimate } = runAutoEstimate(submission);
   const text = [
     "LapoSiteに新しい問い合わせが届きました。",
     "",
@@ -140,6 +145,9 @@ export async function receiveContactSubmissionAndNotify(
     "",
     "お問い合わせ内容:",
     submission.message,
+    "",
+    "AI概算（参考、担当確認前）:",
+    summarizeRange(estimate),
   ].join("\n");
 
   const email = await (deps.sendEmailImpl ?? sendEmail)({
@@ -149,5 +157,5 @@ export async function receiveContactSubmissionAndNotify(
     replyTo: submission.email,
   });
 
-  return { ok: true, notification: { submission, email } };
+  return { ok: true, notification: { submission, email, estimate } };
 }

@@ -191,4 +191,21 @@ describe("receiveContactSubmissionAndNotify — 運営通知", () => {
     expect(result.ok).toBe(false);
     expect(sendEmailImpl).not.toHaveBeenCalled();
   });
+
+  it("問い合わせ内容から AI概算を算出し、通知メール本文と結果に含める", async () => {
+    const sendEmailImpl = vi.fn().mockResolvedValue({ id: "email-contact-2" });
+
+    const result = await receiveContactSubmissionAndNotify(makePayload(), { sendEmailImpl });
+
+    expect(result.ok).toBe(true);
+    expect(sendEmailImpl).toHaveBeenCalledWith(
+      expect.objectContaining({ text: expect.stringContaining("AI概算（参考、担当確認前）:") }),
+    );
+    if (result.ok && "notification" in result) {
+      expect(result.notification.estimate.taxIncludedMid).toBeGreaterThan(0);
+      expect(result.notification.estimate.taxIncludedLow).toBeLessThanOrEqual(
+        result.notification.estimate.taxIncludedMid,
+      );
+    }
+  });
 });
