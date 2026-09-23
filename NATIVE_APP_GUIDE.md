@@ -109,6 +109,10 @@ npx cap open ios      # または android
 
 ---
 
+## ログイン（Google / Apple）
+
+WebView の中で Google を開くと拒否される。認可はシステムのブラウザで開き、`jp.co.laporta.genbahub://auth/callback` でアプリに戻す。Redirect URL と `AndroidManifest` の intent-filter は `docs/auth-google.md`。
+
 ## 注意点
 
 - **サービスワーカー**: Capacitor WebView内では自動的に無効化済み（`index.html`で対応済み）

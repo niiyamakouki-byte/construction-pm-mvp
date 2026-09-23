@@ -12,6 +12,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Leaf } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { handleInput } from "../lib/assistantCommands.js";
+import { layoutOpenChatPanel, shouldSendAssistantOnEnter } from "../lib/assistant-panel-layout.js";
 
 type ChatMessage = {
   id: string;
@@ -145,6 +146,10 @@ export function AssistantChatPanel({ userId = "demo-user", hideFab = false }: Pr
   const [viewportWidth, setViewportWidth] = useState(() =>
     typeof window !== "undefined" ? window.innerWidth : 1280,
   );
+  const [visualViewport, setVisualViewport] = useState(() => ({
+    height: typeof window !== "undefined" ? window.innerHeight : 800,
+    offsetTop: 0,
+  }));
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>(() => {
     const history = loadHistory();
@@ -191,6 +196,21 @@ export function AssistantChatPanel({ userId = "demo-user", hideFab = false }: Pr
       clearTimeout(timeoutId);
     };
   }, [showFab]);
+
+  useEffect(() => {
+    const vv = window.visualViewport;
+    if (!vv) return;
+    const sync = () => {
+      setVisualViewport({ height: vv.height, offsetTop: vv.offsetTop });
+    };
+    sync();
+    vv.addEventListener("resize", sync);
+    vv.addEventListener("scroll", sync);
+    return () => {
+      vv.removeEventListener("resize", sync);
+      vv.removeEventListener("scroll", sync);
+    };
+  }, []);
 
   useEffect(() => {
     const onResize = () => {
@@ -435,10 +455,15 @@ export function AssistantChatPanel({ userId = "demo-user", hideFab = false }: Pr
   }, [input, addMessages]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      handleSend();
-    }
+    if (!shouldSendAssistantOnEnter({
+      key: e.key,
+      shiftKey: e.shiftKey,
+      isComposing: e.nativeEvent.isComposing,
+      keyCode: e.nativeEvent.keyCode,
+      viewportWidth: window.innerWidth,
+    })) return;
+    e.preventDefault();
+    handleSend();
   };
 
   // 展開中はドラッグ位置(pos)を尊重するが、折りたたみ時のFABは
@@ -446,13 +471,33 @@ export function AssistantChatPanel({ userId = "demo-user", hideFab = false }: Pr
   // 依存させず、常に画面右下+セーフエリアへCSSで固定する(bead: leaf-fab-midscreen再発防止)。
   // 過去の修正(012877f/7d89cb5)はカード側の余白確保のみでFAB自体の位置ソースは
   // 未修正だったため、ドラッグ後の pos が再読み込みされて画面中腹に出る再発を止められなかった。
+  const openLayout = layoutOpenChatPanel({
+    viewportWidth,
+    viewportHeight: typeof window !== "undefined" ? window.innerHeight : 800,
+    visualViewportHeight: visualViewport.height,
+    visualViewportOffsetTop: visualViewport.offsetTop,
+    preferredWidth: size.w,
+    preferredHeight: size.h,
+    preferredX: pos.x,
+    preferredY: pos.y,
+  });
+
   const fabStyle: React.CSSProperties = open
-    ? {
-        position: "fixed",
-        left: pos.x,
-        top: pos.y,
-        zIndex: 50,
-      }
+    ? openLayout.sheet
+      ? {
+          position: "fixed",
+          left: 0,
+          top: openLayout.y,
+          width: openLayout.w,
+          height: openLayout.h,
+          zIndex: 60,
+        }
+      : {
+          position: "fixed",
+          left: openLayout.x,
+          top: openLayout.y,
+          zIndex: 50,
+        }
     : {
         position: "fixed",
         right: `calc(${FAB_EDGE_GAP}px + env(safe-area-inset-right, 0px))`,
@@ -477,8 +522,8 @@ export function AssistantChatPanel({ userId = "demo-user", hideFab = false }: Pr
             ref={dialogRef}
             className="flex flex-col overflow-hidden rounded-2xl shadow-2xl"
             style={{
-              width: size.w,
-              height: size.h,
+              width: openLayout.sheet ? "100%" : openLayout.w,
+              height: openLayout.sheet ? "100%" : openLayout.h,
               background: "#FDF8F0",
               border: "1px solid #E8DFD3",
             }}
@@ -490,7 +535,7 @@ export function AssistantChatPanel({ userId = "demo-user", hideFab = false }: Pr
             <div
               className="flex items-center justify-between px-4 py-3 cursor-grab active:cursor-grabbing select-none"
               style={{ background: "#7BA88A", color: "#fff" }}
-              onMouseDown={onDragStart}
+              onMouseDown={openLayout.sheet ? undefined : onDragStart}
             >
               <div className="flex items-center gap-2">
                 {/* アバター */}
@@ -623,12 +668,14 @@ export function AssistantChatPanel({ userId = "demo-user", hideFab = false }: Pr
                 </button>
               </div>
               <div className="mt-1 text-xs" style={{ color: "#A69E93" }}>
-                /help でコマンド一覧 · Enter で送信 · Shift+Enter で改行
+                {openLayout.sheet
+                  ? "/help でコマンド一覧 · 送信ボタンで送信"
+                  : "/help でコマンド一覧 · Enter で送信 · Shift+Enter で改行"}
               </div>
             </div>
 
-            {/* リサイズハンドル */}
-            <div
+            {/* リサイズハンドル（モバイルのシートでは入力欄と重なるので出さない） */}
+            {!openLayout.sheet ? <div
               onMouseDown={onResizeStart}
               className="absolute bottom-0 right-0 h-4 w-4 cursor-se-resize"
               aria-hidden="true"
@@ -636,7 +683,7 @@ export function AssistantChatPanel({ userId = "demo-user", hideFab = false }: Pr
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ color: "#A69E93" }}>
                 <path d="M14 2L2 14M14 8L8 14M14 14H14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
               </svg>
-            </div>
+            </div> : null}
           </motion.div>
         )}
       </AnimatePresence>

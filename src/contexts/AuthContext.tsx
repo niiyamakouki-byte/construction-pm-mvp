@@ -6,6 +6,8 @@ import {
   clearPasswordRecoveryMode,
   markPasswordRecoveryMode,
 } from "../lib/password-recovery.js";
+import { consumePostAuthRoute } from "../lib/auth-redirect.js";
+import { listenForNativeOAuthCallback } from "../lib/auth-callback.js";
 
 type User = {
   id: string;
@@ -86,6 +88,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     let disposed = false;
     let unsubscribe: (() => void) | null = null;
+    let stopNativeAuth: (() => void) | null = null;
 
     void getSupabaseClient()
       .then((client) => {
@@ -128,6 +131,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             const confirmedAt = (newSession.user as { email_confirmed_at?: string | null }).email_confirmed_at;
             if (confirmedAt == null) return;
             appendAuditLog({ type: "login", userId: newSession.user.id, email: newSession.user.email, ts: new Date().toISOString() });
+            const next = consumePostAuthRoute();
+            if (next) {
+              navigate(next);
+              return;
+            }
             const hash = window.location.hash.replace("#", "") || "/";
             if (hash === "/" || hash === "" || hash === "/login" || hash === "/signup") {
               navigate("/app");
@@ -139,6 +147,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           return;
         }
         unsubscribe = () => data.subscription.unsubscribe();
+        stopNativeAuth = listenForNativeOAuthCallback(client);
       })
       .catch((err) => {
         console.error("Failed to initialize auth context:", err);
@@ -151,6 +160,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => {
       disposed = true;
       unsubscribe?.();
+      stopNativeAuth?.();
     };
   }, []);
 

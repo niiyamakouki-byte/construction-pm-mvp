@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import {
   getRememberLoginPreference,
   getSupabaseClient,
@@ -6,10 +6,11 @@ import {
   setRememberLoginPreference,
 } from "../infra/supabase-client.js";
 import { navigate } from "../hooks/useHashRouter.js";
-import {
-  getOAuthRedirectUrl,
-  getPasswordRecoveryRedirectUrl,
-} from "../lib/auth-redirect.js";
+import { consumeProviderRedirectError, getPasswordRecoveryRedirectUrl } from "../lib/auth-redirect.js";
+import { startAppleOAuth } from "../lib/apple-sign-in.js";
+import { startGoogleOAuth } from "../lib/google-sign-in.js";
+import { sendMagicLink, verifyMagicLinkCode } from "../lib/magic-link.js";
+import { signInWithDevicePasskey } from "../lib/passkey-auth.js";
 
 export function LoginPage() {
   const [email, setEmail] = useState("");
@@ -19,8 +20,18 @@ export function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
+  const [appleLoading, setAppleLoading] = useState(false);
+  const [passkeyLoading, setPasskeyLoading] = useState(false);
   const [showEmailLogin, setShowEmailLogin] = useState(false);
   const [showMagicLink, setShowMagicLink] = useState(false);
+  const [magicSent, setMagicSent] = useState(false);
+  const [otpCode, setOtpCode] = useState("");
+
+  useEffect(() => {
+    const message = consumeProviderRedirectError();
+    if (message) setError(message);
+  }, []);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -67,20 +78,58 @@ export function LoginPage() {
     }
     setError(null);
     setSuccessMessage(null);
+    setGoogleLoading(true);
     try {
       const client = await getSupabaseClient();
-      await client.auth.signInWithOAuth({
-        provider: "google",
-        options: {
-          redirectTo: getOAuthRedirectUrl(),
-          // Googleカレンダー(read-only)も同時に取得し、案件×個人予定のダブり可視化に使う
-          scopes: "https://www.googleapis.com/auth/calendar.readonly",
-          queryParams: { access_type: "offline", prompt: "consent" },
-        },
-      });
+      const { errorMessage } = await startGoogleOAuth(client.auth);
+      if (errorMessage) setError(errorMessage);
     } catch (err) {
       console.error("Failed to start Google login", err);
       setError("Google ログインに失敗しました。");
+    } finally {
+      setGoogleLoading(false);
+    }
+  };
+
+  const handleApple = async () => {
+    if (!hasSupabaseEnv()) {
+      setError("Supabase が設定されていません");
+      setSuccessMessage(null);
+      return;
+    }
+    setError(null);
+    setSuccessMessage(null);
+    setAppleLoading(true);
+    try {
+      const client = await getSupabaseClient();
+      const { errorMessage } = await startAppleOAuth(client.auth);
+      if (errorMessage) setError(errorMessage);
+    } catch (err) {
+      console.error("Failed to start Apple login", err);
+      setError("Apple ログインに失敗しました。");
+    } finally {
+      setAppleLoading(false);
+    }
+  };
+
+  const handlePasskey = async () => {
+    if (!hasSupabaseEnv()) {
+      setError("Supabase が設定されていません");
+      setSuccessMessage(null);
+      return;
+    }
+    setError(null);
+    setSuccessMessage(null);
+    setPasskeyLoading(true);
+    try {
+      const client = await getSupabaseClient();
+      const { errorMessage } = await signInWithDevicePasskey(client.auth);
+      if (errorMessage) setError(errorMessage);
+    } catch (err) {
+      console.error("Failed to start passkey login", err);
+      setError("この端末ではパスキーでログインできません。Google、Apple、またはマジックリンクを使ってください。");
+    } finally {
+      setPasskeyLoading(false);
     }
   };
 
@@ -102,15 +151,39 @@ export function LoginPage() {
     setSuccessMessage(null);
     try {
       const client = await getSupabaseClient();
-      const { error: authError } = await client.auth.signInWithOtp({ email: email.trim() });
-      if (authError) {
-        setError(authError.message);
+      const { errorMessage } = await sendMagicLink(client.auth, email);
+      if (errorMessage) {
+        setError(errorMessage);
         return;
       }
-      setSuccessMessage("メールを確認してください。ログインリンクを送信しました。");
+      setMagicSent(true);
+      setSuccessMessage("メールを確認してください。ログインリンクを送信しました。届いた6桁のコードでも入れます。");
     } catch (err) {
       console.error("Failed to send magic link", err);
       setError("認証メールの送信に失敗しました。もう一度お試しください。");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleVerifyOtp = async () => {
+    if (!otpCode.trim()) {
+      setError("メールに届いたコードを入力してください。");
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    try {
+      const client = await getSupabaseClient();
+      const { errorMessage } = await verifyMagicLinkCode(client.auth, email, otpCode);
+      if (errorMessage) {
+        setError(errorMessage);
+        return;
+      }
+      navigate("/");
+    } catch (err) {
+      console.error("Failed to verify magic link code", err);
+      setError("コードを確認できませんでした。もう一度お試しください。");
     } finally {
       setLoading(false);
     }
@@ -190,7 +263,10 @@ export function LoginPage() {
           <button
             type="button"
             onClick={handleGoogle}
-            className="flex w-full items-center justify-center gap-2 rounded-lg bg-brand-600 px-4 py-3 text-sm font-semibold text-white shadow-sm hover:bg-brand-700"
+            disabled={googleLoading}
+            data-testid="google-sign-in"
+            aria-busy={googleLoading}
+            className="flex w-full items-center justify-center gap-2 rounded-lg bg-brand-600 px-4 py-3 text-sm font-semibold text-white shadow-sm hover:bg-brand-700 disabled:opacity-60"
           >
             <svg className="h-4 w-4" viewBox="0 0 24 24" aria-hidden="true">
               <path fill="#fff" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
@@ -198,8 +274,35 @@ export function LoginPage() {
               <path fill="#fff" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" />
               <path fill="#fff" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
             </svg>
-            Google でログイン
+            {googleLoading ? "Google へ移動しています..." : "Google でログイン"}
           </button>
+
+          <button
+            type="button"
+            onClick={handleApple}
+            disabled={appleLoading}
+            data-testid="apple-sign-in"
+            aria-busy={appleLoading}
+            className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-900 hover:bg-slate-50 disabled:opacity-60"
+          >
+            <svg className="h-4 w-4" viewBox="0 0 24 24" aria-hidden="true">
+              <path fill="currentColor" d="M16.37 12.64c.03 3.18 2.79 4.24 2.82 4.25-.02.07-.44 1.51-1.45 2.99-.87 1.27-1.77 2.53-3.19 2.56-1.4.03-1.85-.83-3.45-.83-1.6 0-2.1.8-3.42.86-1.37.05-2.41-1.37-3.29-2.64-1.79-2.58-3.16-7.29-1.32-10.47.91-1.58 2.54-2.58 4.31-2.61 1.35-.02 2.62.91 3.45.91.83 0 2.38-1.12 4.01-.96.68.03 2.6.28 3.83 2.07-.1.06-2.29 1.34-2.26 3.87zM14.2 5.55c.73-.89 1.22-2.12 1.09-3.35-1.05.04-2.32.7-3.07 1.58-.67.78-1.26 2.03-1.1 3.23 1.17.09 2.36-.59 3.08-1.46z" />
+            </svg>
+            {appleLoading ? "Apple へ移動しています..." : "Apple でログイン"}
+          </button>
+
+          <button
+            type="button"
+            onClick={handlePasskey}
+            disabled={passkeyLoading}
+            data-testid="passkey-sign-in"
+            className="mt-3 w-full rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-60"
+          >
+            {passkeyLoading ? "確認しています..." : "この端末のパスキーでログイン"}
+          </button>
+          <p className="mt-2 text-center text-xs text-slate-500">
+            パスキーが使えない場合は Google、Apple、またはマジックリンクを使えます。
+          </p>
 
           <div className="my-5 flex items-center gap-3">
             <hr className="flex-1 border-slate-200" />
@@ -332,6 +435,30 @@ export function LoginPage() {
               >
                 {loading ? "送信中..." : "認証メールを送信"}
               </button>
+              {magicSent ? (
+                <div className="space-y-2">
+                  <label htmlFor="magic-link-code" className="mb-1 block text-sm font-medium text-slate-700">
+                    確認コード
+                  </label>
+                  <input
+                    id="magic-link-code"
+                    inputMode="numeric"
+                    autoComplete="one-time-code"
+                    value={otpCode}
+                    onChange={(e) => setOtpCode(e.target.value)}
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200"
+                    placeholder="6桁のコード"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleVerifyOtp}
+                    disabled={loading}
+                    className="w-full rounded-lg bg-brand-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-800 disabled:opacity-60"
+                  >
+                    コードでログイン
+                  </button>
+                </div>
+              ) : null}
             </div>
           </div>
           )}

@@ -15,12 +15,7 @@ import {
 } from "../lib/google-calendar.js";
 import { readGoogleProviderToken } from "../contexts/AuthContext.js";
 import { getSupabaseClient, hasSupabaseEnv } from "../infra/supabase-client.js";
-
-/** ログイン箇所と同じ redirectTo を組み立てる薄いヘルパー */
-function buildOAuthRedirectUrl(): string | undefined {
-  if (typeof window === "undefined") return undefined;
-  return `${window.location.origin}/#/login`;
-}
+import { currentPostAuthRoute, startGoogleOAuth } from "../lib/google-sign-in.js";
 
 export type UseGoogleCalendarOptions = {
   /** 取得期間の開始（含む） */
@@ -93,14 +88,7 @@ export function useGoogleCalendar(options: UseGoogleCalendarOptions): UseGoogleC
   const reconnect = useCallback(async () => {
     if (!hasSupabaseEnv()) return;
     const client = await getSupabaseClient();
-    await client.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo: buildOAuthRedirectUrl(),
-        scopes: "https://www.googleapis.com/auth/calendar.readonly",
-        queryParams: { access_type: "offline", prompt: "consent" },
-      },
-    });
+    await startGoogleOAuth(client.auth, { postAuthRoute: currentPostAuthRoute() });
     // リダイレクトされるので戻ってこない。戻ってきた場合の保険として token を読み直す
     setToken(readGoogleProviderToken());
   }, []);

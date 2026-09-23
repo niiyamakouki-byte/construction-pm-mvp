@@ -177,6 +177,35 @@ describe("AuthContext", () => {
     expect(navigate).toHaveBeenCalledWith("/app");
   });
 
+  it("カレンダー再連携の戻り先が残っていれば /account へ戻す", async () => {
+    hasSupabaseEnv.mockReturnValue(true);
+    window.sessionStorage.setItem("genbahub_post_auth_route", "/account");
+    const session = makeSession();
+    let savedCallback: AuthStateCallback | null = null;
+    const client = makeSupabaseClient(null, {
+      onAuthChange: (cb) => { savedCallback = cb; },
+    });
+    getSupabaseClient.mockResolvedValue(client);
+    client.auth.getSession.mockResolvedValue({ data: { session: null } });
+
+    render(
+      <AuthProvider>
+        <AuthConsumer />
+      </AuthProvider>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId("loading").textContent).toBe("ready");
+    });
+
+    await act(async () => {
+      savedCallback?.("SIGNED_IN", session);
+    });
+
+    expect(navigate).toHaveBeenCalledWith("/account");
+    expect(window.sessionStorage.getItem("genbahub_post_auth_route")).toBeNull();
+  });
+
   it("SIGNED_OUT イベントで session が null になる", async () => {
     hasSupabaseEnv.mockReturnValue(true);
     const session = makeSession();

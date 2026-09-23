@@ -245,6 +245,40 @@ describe("AssistantChatPanel", () => {
       expect(texts.length).toBeGreaterThan(0);
     });
   });
+
+  it("モバイルでは保存済みの大きいパネルを画面幅のシートにする", () => {
+    localStorageMock.setItem("genbahub_chat_size", JSON.stringify({ w: 900, h: 800 }));
+    render(<AssistantChatPanel userId="test-user" />);
+    fireEvent.click(screen.getByTestId("assistant-chat-fab"));
+    const shell = screen.getByRole("dialog").parentElement as HTMLElement;
+    expect(shell.style.width).toBe("390px");
+    expect(shell.style.left).toBe("0px");
+  });
+
+  it("キーボードで見える高さが縮むとシートも縮む", () => {
+    const listeners: Record<string, () => void> = {};
+    const vv = {
+      height: 844,
+      offsetTop: 0,
+      addEventListener: (name: string, fn: () => void) => {
+        listeners[name] = fn;
+      },
+      removeEventListener: () => {},
+    };
+    Object.defineProperty(window, "visualViewport", { configurable: true, value: vv });
+    render(<AssistantChatPanel userId="test-user" />);
+    fireEvent.click(screen.getByTestId("assistant-chat-fab"));
+    vv.height = 320;
+    vv.offsetTop = 40;
+    act(() => {
+      listeners.resize?.();
+    });
+    const shell = screen.getByRole("dialog").parentElement as HTMLElement;
+    expect(shell.style.height).toBe("320px");
+    expect(shell.style.top).toBe("40px");
+    Object.defineProperty(window, "visualViewport", { configurable: true, value: undefined });
+  });
+
 });
 
 describe("AssistantChatPanel — /api/chat/poll ポーリングの開始/停止", () => {
