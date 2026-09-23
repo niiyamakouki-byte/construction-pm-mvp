@@ -4,7 +4,10 @@ import { inject } from "@vercel/analytics";
 import "./index.css";
 import "./i18n/index.js";
 import { App } from "./App.js";
+import { captureProviderRedirectError } from "./lib/auth-redirect.js";
 import { registerServiceWorker } from "./lib/sw-registration.js";
+
+captureProviderRedirectError();
 
 registerServiceWorker();
 inject();

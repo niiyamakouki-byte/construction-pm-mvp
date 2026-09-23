@@ -1,3 +1,5 @@
+import { isCapacitorNative } from "../lib/capacitor-runtime.js";
+
 // ── DB型定義（Supabaseテーブルのsnake_caseカラム） ──────────
 export type DbProject = {
   id: string;
@@ -104,6 +106,13 @@ type SupabaseQueryBuilder = {
   ): Promise<TResult1 | TResult2>;
 };
 
+export type AuthIdentity = {
+  identity_id: string;
+  id: string;
+  user_id: string;
+  provider: string;
+};
+
 type SupabaseUser = {
   id: string;
   email?: string;
@@ -135,7 +144,31 @@ type AuthChangeEvent =
 type SupabaseAuthClient = {
   getSession(): Promise<{ data: { session: SupabaseSession | null }; error: { message: string } | null }>;
   signInWithPassword(credentials: { email: string; password: string }): Promise<{ data: { session: SupabaseSession | null }; error: { message: string } | null }>;
-  signInWithOtp(credentials: { email: string }): Promise<{ data: { session: SupabaseSession | null }; error: { message: string } | null }>;
+  signInWithOtp(credentials: {
+    email: string;
+    options?: { emailRedirectTo?: string; shouldCreateUser?: boolean };
+  }): Promise<{ data: { session: SupabaseSession | null }; error: { message: string } | null }>;
+  verifyOtp?(params: {
+    email: string;
+    token: string;
+    type: "email";
+  }): Promise<{ data: { session: SupabaseSession | null }; error: { message: string } | null }>;
+  signInWithPasskey?(): Promise<{ data: { session: SupabaseSession | null; user?: SupabaseUser | null }; error: { message: string; code?: string } | null }>;
+  registerPasskey?(): Promise<{ data: { id?: string; friendly_name?: string } | null; error: { message: string; code?: string } | null }>;
+  getUserIdentities?(): Promise<{
+    data: { identities: AuthIdentity[] } | null;
+    error: { message: string } | null;
+  }>;
+  linkIdentity?(credentials: {
+    provider: "google" | "apple";
+    options?: {
+      redirectTo?: string;
+      scopes?: string;
+      queryParams?: Record<string, string>;
+      skipBrowserRedirect?: boolean;
+    };
+  }): Promise<{ data: { url?: string | null } | null; error: { message: string; code?: string } | null }>;
+  unlinkIdentity?(identity: AuthIdentity): Promise<{ data: unknown; error: { message: string } | null }>;
   signInWithOAuth(options: {
     provider: string;
     options?: {
@@ -144,8 +177,11 @@ type SupabaseAuthClient = {
       scopes?: string;
       /** OAuth認可URLに付与するクエリパラメータ（例: access_type, prompt） */
       queryParams?: Record<string, string>;
+      /** true のときブラウザを自動遷移せず、認可 URL だけ返す（Capacitor） */
+      skipBrowserRedirect?: boolean;
     };
-  }): Promise<{ data: unknown; error: { message: string } | null }>;
+  }): Promise<{ data: { url?: string | null } | null; error: { message: string; code?: string } | null }>;
+  exchangeCodeForSession?(authCode: string): Promise<{ data: { session: SupabaseSession | null }; error: { message: string } | null }>;
   signUp(credentials: { email: string; password: string; options?: { data?: Record<string, unknown> } }): Promise<{ data: { session: SupabaseSession | null }; error: { message: string } | null }>;
   signOut(): Promise<{ error: { message: string } | null }>;
   resetPasswordForEmail(email: string, options?: { redirectTo?: string }): Promise<{ data: unknown; error: { message: string } | null }>;
@@ -180,6 +216,9 @@ type SupabaseModule = {
     options?: {
       auth?: {
         persistSession?: boolean;
+        autoRefreshToken?: boolean;
+        detectSessionInUrl?: boolean;
+        flowType?: "implicit" | "pkce";
         storage?: StorageLike;
         storageKey?: string;
       };
@@ -249,6 +288,14 @@ export function getRememberLoginPreference(): boolean {
   return storedValue !== "0";
 }
 
+/**
+ * デスクトップは「ログイン状態を保持」に従う。
+ * Android WebView はプロセスが死ぬと sessionStorage が消えるため、常に localStorage。
+ */
+export function prefersPersistentAuthStorage(): boolean {
+  return isCapacitorNative() || getRememberLoginPreference();
+}
+
 export function setRememberLoginPreference(remember: boolean): void {
   writeStorageValue(
     getRememberPreferenceStorage(),
@@ -258,6 +305,14 @@ export function setRememberLoginPreference(remember: boolean): void {
 
   const localStorageRef = getBrowserStorage("localStorage");
   const sessionStorageRef = getBrowserStorage("sessionStorage");
+  if (isCapacitorNative()) {
+    const nativeSession = readStorageValue(sessionStorageRef, AUTH_STORAGE_KEY);
+    if (nativeSession) {
+      writeStorageValue(localStorageRef, AUTH_STORAGE_KEY, nativeSession);
+      removeStorageValue(sessionStorageRef, AUTH_STORAGE_KEY);
+    }
+    return;
+  }
   const sourceStorage = remember ? sessionStorageRef : localStorageRef;
   const targetStorage = remember ? localStorageRef : sessionStorageRef;
   const existingSession = readStorageValue(sourceStorage, AUTH_STORAGE_KEY);
@@ -270,13 +325,13 @@ export function setRememberLoginPreference(remember: boolean): void {
 
 const authStorage: StorageLike = {
   getItem(key) {
-    const storage = getRememberLoginPreference()
+    const storage = prefersPersistentAuthStorage()
       ? getBrowserStorage("localStorage")
       : getBrowserStorage("sessionStorage");
     return readStorageValue(storage, key);
   },
   setItem(key, value) {
-    const useLocalStorage = getRememberLoginPreference();
+    const useLocalStorage = prefersPersistentAuthStorage();
     const primaryStorage = getBrowserStorage(useLocalStorage ? "localStorage" : "sessionStorage");
     const secondaryStorage = getBrowserStorage(useLocalStorage ? "sessionStorage" : "localStorage");
     writeStorageValue(primaryStorage, key, value);
@@ -311,6 +366,9 @@ export async function getSupabaseClient(): Promise<SupabaseClientLike> {
     return createClient(url!, anonKey!, {
       auth: {
         persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: true,
+        flowType: "pkce",
         storage: authStorage,
         storageKey: AUTH_STORAGE_KEY,
       },

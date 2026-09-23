@@ -3,9 +3,12 @@
  * SaaS必須ページ (P1)
  */
 
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { useAuth, readGoogleProviderToken } from "../contexts/AuthContext.js";
-import { getSupabaseClient, hasSupabaseEnv } from "../infra/supabase-client.js";
+import { getSupabaseClient, hasSupabaseEnv, type AuthIdentity } from "../infra/supabase-client.js";
+import { linkProvider, loadLinkedIdentities, providerLabel, unlinkProvider } from "../lib/account-linking.js";
+import { startGoogleOAuth } from "../lib/google-sign-in.js";
+import { registerDevicePasskey } from "../lib/passkey-auth.js";
 import {
   clearPasswordRecoveryMode,
   isPasswordRecoveryMode,
@@ -18,17 +21,35 @@ import {
   type TaxRoundingMode,
 } from "../lib/tax-rounding.js";
 
-function getOAuthRedirectUrl(): string | undefined {
-  if (typeof window === "undefined") return undefined;
-  return `${window.location.origin}/#/account`;
-}
-
 export function AccountSettingsPage() {
   const { user } = useAuth();
 
   // Googleカレンダー連携
   const [googleConnected, setGoogleConnected] = useState(() => readGoogleProviderToken() !== null);
   const [googleError, setGoogleError] = useState<string | null>(null);
+  const [identities, setIdentities] = useState<AuthIdentity[]>([]);
+  const [linkError, setLinkError] = useState<string | null>(null);
+  const [linkMessage, setLinkMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!hasSupabaseEnv()) return;
+    let cancelled = false;
+    void (async () => {
+      try {
+        const client = await getSupabaseClient();
+        if (!client?.auth?.getUserIdentities) return;
+        const loaded = await loadLinkedIdentities(client.auth);
+        if (cancelled) return;
+        setIdentities(loaded.identities);
+        if (loaded.errorMessage) setLinkError(loaded.errorMessage);
+      } catch {
+        // 未ログインのテストや未対応クライアントでは空のままにする
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const handleConnectGoogleCalendar = async () => {
     if (!hasSupabaseEnv()) {
@@ -38,14 +59,11 @@ export function AccountSettingsPage() {
     setGoogleError(null);
     try {
       const client = await getSupabaseClient();
-      await client.auth.signInWithOAuth({
-        provider: "google",
-        options: {
-          redirectTo: getOAuthRedirectUrl(),
-          scopes: "https://www.googleapis.com/auth/calendar.readonly",
-          queryParams: { access_type: "offline", prompt: "consent" },
-        },
-      });
+      const { errorMessage } = await startGoogleOAuth(client.auth, { postAuthRoute: "/account" });
+      if (errorMessage) {
+        setGoogleError(errorMessage);
+        return;
+      }
       // OAuth リダイレクトで遷移するためここには通常戻ってこない
       setGoogleConnected(readGoogleProviderToken() !== null);
     } catch {
@@ -129,6 +147,90 @@ export function AccountSettingsPage() {
             <p className="mt-0.5 font-mono text-xs text-slate-500">{user?.id ?? "—"}</p>
           </div>
         </div>
+      </section>
+
+      <section className="mb-8 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+        <h2 className="mb-2 text-base font-semibold text-slate-800">ログイン方法</h2>
+        <p className="mb-4 text-sm text-slate-500">
+          同じメールアドレスの Google と Apple を、このアカウントに追加できます。最後の方法は外せません。
+        </p>
+        {identities.length > 0 ? (
+          <ul className="mb-4 space-y-2">
+            {identities.map((identity) => (
+              <li key={identity.identity_id} className="flex items-center justify-between gap-3 text-sm">
+                <span className="text-slate-800">{providerLabel(identity.provider)}</span>
+                <button
+                  type="button"
+                  disabled={identities.length < 2}
+                  onClick={() => {
+                    void (async () => {
+                      const client = await getSupabaseClient();
+                      const result = await unlinkProvider(client.auth, identity, identities);
+                      if (result.errorMessage) {
+                        setLinkError(result.errorMessage);
+                        return;
+                      }
+                      setIdentities((current) => current.filter((item) => item.identity_id !== identity.identity_id));
+                      setLinkMessage("連携を解除しました。");
+                    })();
+                  }}
+                  className="text-xs text-slate-500 underline disabled:no-underline disabled:opacity-40"
+                >
+                  解除
+                </button>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="mb-4 text-sm text-slate-500">ログイン中の方法は、設定を有効にしたあとに表示されます。</p>
+        )}
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => {
+              void (async () => {
+                setLinkError(null);
+                const client = await getSupabaseClient();
+                const result = await linkProvider(client.auth, "google");
+                if (result.errorMessage) setLinkError(result.errorMessage);
+              })();
+            }}
+            className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-50"
+          >
+            Google を連携
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              void (async () => {
+                setLinkError(null);
+                const client = await getSupabaseClient();
+                const result = await linkProvider(client.auth, "apple");
+                if (result.errorMessage) setLinkError(result.errorMessage);
+              })();
+            }}
+            className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-50"
+          >
+            Apple を連携
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              void (async () => {
+                setLinkError(null);
+                const client = await getSupabaseClient();
+                const result = await registerDevicePasskey(client.auth);
+                if (result.errorMessage) setLinkError(result.errorMessage);
+                else setLinkMessage(result.friendlyName ? `${result.friendlyName} を登録しました。` : "この端末のパスキーを登録しました。");
+              })();
+            }}
+            className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-50"
+          >
+            パスキーを登録
+          </button>
+        </div>
+        {linkError ? <p className="mt-3 text-sm text-red-700" role="alert">{linkError}</p> : null}
+        {linkMessage ? <p className="mt-3 text-sm text-brand-700" role="status">{linkMessage}</p> : null}
       </section>
 
       {/* Googleカレンダー連携 */}

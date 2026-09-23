@@ -68,7 +68,7 @@
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.29.0",
     "@stripe/stripe-js": "^9.0.1",
-    "@supabase/supabase-js": "^2.0.0",
+    "@supabase/supabase-js": "^2.117.1",
     "@vercel/analytics": "^2.0.1",
     "framer-motion": "^12.38.0",
     "i18next": "^26.0.10",
